@@ -1,0 +1,36 @@
+---
+import AnimePillFilter from "./AnimePillFilter.astro";
+
+interface Props {
+	filterAllLabel: string;
+	statusWatchingLabel: string;
+	statusPlannedLabel: string;
+	statusCompletedLabel: string;
+	statusOnHoldLabel: string;
+	statusDroppedLabel: string;
+}
+
+const {
+	filterAllLabel,
+	statusWatchingLabel,
+	statusPlannedLabel,
+	statusCompletedLabel,
+	statusOnHoldLabel,
+	statusDroppedLabel,
+} = Astro.props;
+
+const options = [
+	{ key: "all", label: filterAllLabel },
+	{ key: "watching", label: statusWatchingLabel },
+	{ key: "completed", label: statusCompletedLabel },
+	{ key: "planned", label: statusPlannedLabel },
+	{ key: "onhold", label: statusOnHoldLabel },
+	{ key: "dropped", label: statusDroppedLabel },
+];
+---
+
+<AnimePillFilter
+	options={options}
+	dataAttr="data-status"
+	containerClass="anime-filter-container"
+/>

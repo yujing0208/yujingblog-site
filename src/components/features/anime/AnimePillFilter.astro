@@ -1,0 +1,38 @@
+---
+interface PillOption {
+	key: string;
+	label: string;
+	count?: number;
+}
+
+interface Props {
+	options: PillOption[];
+	activeKey?: string;
+	dataAttr: "data-category" | "data-status";
+	containerClass: string;
+}
+
+const { options, activeKey, dataAttr, containerClass } = Astro.props;
+const initialKey = activeKey ?? options[0]?.key ?? "";
+---
+
+<div class={`anime-pill-filter ${containerClass}`}>
+	<div class="anime-pill-track">
+		<span class="anime-pill-slider"></span>
+		{
+			options.map((opt) => (
+				<button
+					type="button"
+					class={`anime-filter-tag ${opt.key === initialKey ? "anime-active" : ""}`}
+					data-category={dataAttr === "data-category" ? opt.key : undefined}
+					data-status={dataAttr === "data-status" ? opt.key : undefined}
+				>
+					{opt.label}
+					{opt.count !== undefined && (
+						<span class="anime-pill-count">{opt.count}</span>
+					)}
+				</button>
+			))
+		}
+	</div>
+</div>

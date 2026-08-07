@@ -1,0 +1,32 @@
+---
+import AnimePillFilter from "./AnimePillFilter.astro";
+
+interface Props {
+	filterAllLabel: string;
+	categoryAnimeLabel: string;
+	categoryNovelLabel: string;
+	categoryGameLabel: string;
+	categoryCounts: Record<string, number>;
+}
+
+const {
+	filterAllLabel,
+	categoryAnimeLabel,
+	categoryNovelLabel,
+	categoryGameLabel,
+	categoryCounts,
+} = Astro.props;
+
+const options = [
+	{ key: "all", label: filterAllLabel, count: categoryCounts["all"] ?? 0 },
+	{ key: "anime", label: categoryAnimeLabel, count: categoryCounts["anime"] ?? 0 },
+	{ key: "novel", label: categoryNovelLabel, count: categoryCounts["novel"] ?? 0 },
+	{ key: "game", label: categoryGameLabel, count: categoryCounts["game"] ?? 0 },
+];
+---
+
+<AnimePillFilter
+	options={options}
+	dataAttr="data-category"
+	containerClass="anime-category-filter-container"
+/>

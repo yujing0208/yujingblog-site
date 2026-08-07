@@ -1,0 +1,102 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { PageHeader } from "@components/features/page-header";
+// 足迹数据来自内容仓库（yujingblog-content/data/footprints.ts），
+// 经 sync-content.js 同步到 src/data，构建时在此处被内联进静态 HTML。
+// 以后加足迹只需在内容仓库编辑该文件并推送，无需改动代码仓库。
+// 足迹数据来自内容仓库（yujingblog-content/data/footprints.ts），
+// 经 sync-content.js 同步到 src/data，构建时在此处被内联进静态 HTML。
+// 使用 import.meta.glob 容错导入：内容仓库未提供该文件时地图为空，
+// 但不会导致整站构建失败。
+const footprintGlob = import.meta.glob("/src/data/footprints.ts", {
+	eager: true,
+	import: "footprintsData",
+});
+const footprintsData = Object.values(footprintGlob)[0] ?? [];
+
+// ============================================================
+//  配置区：按需修改下方三项即可
+// ============================================================
+// 1) 高德地图 Web 端(JS API) Key（必填，否则地图无法加载）
+//    申请：https://console.amap.com/ -> 应用管理 -> 创建应用 -> 添加 Key
+//    服务平台务必选择「Web端(JS API)」，并在 Key 设置里把域名
+//     yujingblog.top 与 localhost 加入白名单。
+const amapKey = "6b3785c9aa907565f3c30245f24a91d1";
+
+// 2) 高德「安全密钥」：仅当你的 Key 启用了安全密钥时才需要填写，否则留空字符串。
+//    （2021 年 12 月之后创建、且开启了安全密钥的 Key 必须填，否则报 INVALID_USER_SCODE）
+const amapSecurityCode = "d9076c57f83b1ff68d2c20a423560646";
+
+// 3) 区域高亮模式：
+//    'visited' 永久点亮去过的省份/国家（足迹数据 categories 含「计划」的不会被点亮）
+//    'hover'   鼠标悬浮到标记时联动高亮
+//    'none'    关闭高亮（无需加载 GeoJSON）
+const highlightMode = "visited";
+
+const title = "我的足迹";
+const description = "用一张地图，记录我去过的山川与城市 🗺️";
+---
+
+<MainGridLayout title={title} description={description}>
+	<link rel="stylesheet" href="/footprint/css/footprintmap.css" />
+
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-6 sm:px-9 py-6 relative w-full">
+			<PageHeader title={title} subtitle={description} />
+
+			<p class="fp-tip">
+				记录自 2026 年 8 月 5 日
+			</p>
+
+			<div
+				class="footprint-map"
+				data-footprints={JSON.stringify(footprintsData)}
+				data-amap-key={amapKey}
+				data-amap-security={amapSecurityCode}
+				data-highlight={highlightMode}
+				data-locate="auto"
+				style="width: 100%; height: 70vh; min-height: 480px; border-radius: var(--radius-large); overflow: hidden; margin-top: 1rem;"
+			>
+			</div>
+		</div>
+	</div>
+
+	<!-- 顺序加载：工具库 → 核心 → 高亮插件（visited / hover） -->
+	<script is:inline defer src="/footprint/js/utils.js"></script>
+	<script is:inline defer src="/footprint/js/footprintmap.js"></script>
+	<script is:inline defer src="/footprint/js/plugin-visited.js"></script>
+	<script is:inline defer src="/footprint/js/plugin-hover.js"></script>
+
+	<!-- 在 DOMContentLoaded 自动初始化之前，同步覆写高亮配置与 GeoJSON 绝对路径。
+	     注意：脚本块内不使用 Astro 插值（is:inline 可能按原文输出），
+	     高亮模式改由容器 data-highlight 属性传入，这里只做纯 JS 读取。 -->
+	<script is:inline defer>
+		(function () {
+			var el = document.querySelector('.footprint-map');
+			var mode = (el && el.dataset.highlight) || 'visited';
+			if (window.FootprintMap && window.FootprintMap.CONFIG) {
+				window.FootprintMap.CONFIG.HIGHLIGHT.mode = mode;
+				window.FootprintMap.CONFIG.HIGHLIGHT.geojsonUrls = [
+					'/footprint/data/provinces.geojson',
+					'/footprint/data/world.geojson',
+				];
+			}
+		})();
+	</script>
+</MainGridLayout>
+
+<style>
+	.fp-tip {
+		margin-top: 0.5rem;
+		font-size: 0.9rem;
+		line-height: 1.7;
+		color: rgba(var(--color-base-content, 0 0 0) / 0.6);
+	}
+
+	.fp-tip code {
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.3rem;
+		background: rgba(var(--color-base-content, 0 0 0) / 0.08);
+		font-size: 0.82em;
+	}
+</style>

@@ -1,0 +1,783 @@
+---
+import MomentsCover from "@components/features/diary/MomentsCover.astro";
+import { MomentCard } from "@components/features/diary";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+import { profileConfig, siteConfig } from "../config";
+import { getDiaryList } from "../data/diary";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+
+if (!siteConfig.featurePages.diary) {
+  return Astro.redirect("/404/");
+}
+
+const moments = getDiaryList();
+
+const title = i18n(I18nKey.diary);
+const subtitle = i18n(I18nKey.diarySubtitle);
+
+// 置顶（兼容 DiaryItem 无 pinned 字段的情况）
+const pinnedMoments = moments.filter((m) => (m as any).pinned);
+const normalMoments = moments.filter((m) => !(m as any).pinned);
+---
+
+<MainGridLayout title={title} description={subtitle}>
+  <!-- 微信朋友圈风格封面 -->
+  <MomentsCover />
+
+  <!-- 置顶说说（无置顶时隐藏） -->
+  <a
+    href="/diary/"
+    class="wx-pinned"
+    id="pinned-block"
+    style={pinnedMoments.length === 0 ? "display:none" : ""}
+  >
+    <div class="wx-pinned-tag">
+      <span>置顶</span>
+    </div>
+    <div class="wx-pinned-items" id="pinned-items">
+      {
+        pinnedMoments.map((m) => (
+          <div class="wx-pinned-preview">
+            {m.images && m.images.length > 0 ? (
+              <div class={`wx-pimgs wx-pimgs-${Math.min(m.images.length, 9)}`}>
+                {m.images.slice(0, 9).map((img) => (
+                  <img src={img} class="wx-pinned-img" loading="lazy" alt="" />
+                ))}
+              </div>
+            ) : (
+              <p class="wx-ptxt">
+                {m.content.slice(0, 60)}
+                {m.content.length > 60 ? "..." : ""}
+              </p>
+            )}
+          </div>
+        ))
+      }
+    </div>
+  </a>
+
+  <!-- 标签筛选状态条（默认隐藏，点击标签后出现） -->
+  <div class="wx-filter-bar" id="wx-filter-bar" hidden>
+    <span class="wx-filter-icon">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        width="14"
+        height="14"
+      >
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+      </svg>
+    </span>
+    <span class="wx-filter-tag" id="wx-filter-tag"></span>
+    <span class="wx-filter-count" id="wx-filter-count"></span>
+    <button type="button" class="wx-filter-clear" id="wx-filter-clear">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        width="12"
+        height="12"
+      >
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      显示全部
+    </button>
+  </div>
+
+  <!-- 说说列表 -->
+  <div class="wx-feed" id="moments-feed">
+    {
+      normalMoments.length > 0 ? (
+        normalMoments.map((moment) => (
+          <div class="wx-feed-item">
+            <MomentCard moment={moment} />
+            <div
+              class="twikoo-entry-comments mt-3 hidden"
+              data-diary-id={moment.id}
+            >
+              <div id={`tcomment-${moment.id}`}></div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div class="wx-empty" id="moments-empty">
+          <div class="wx-empty-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="32"
+              height="32"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 15h8"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+          </div>
+          <h3>还没有发布任何动态</h3>
+          <p>快去记录你的生活点滴吧</p>
+        </div>
+      )
+    }
+  </div>
+
+  <!-- ═══════ 评论按钮（twikoo，保留现有行为） ═══════ -->
+  <script is:inline>
+    (function () {
+      const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js";
+      const COMMENT_CONFIG = {
+        envId: "https://twikoo.yujingblog.top",
+        lang: "zh-CN",
+      };
+
+      let scriptLoading = false;
+      let scriptLoaded = false;
+      const loadedEntries = new Set();
+
+      async function ensureScript() {
+        if (scriptLoaded || document.getElementById("twikoo-diary-script")) {
+          return;
+        }
+        if (scriptLoading) {
+          await new Promise((resolve) => {
+            const check = setInterval(() => {
+              if (scriptLoaded) {
+                clearInterval(check);
+                resolve();
+              }
+            }, 100);
+          });
+          return;
+        }
+        scriptLoading = true;
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.id = "twikoo-diary-script";
+          script.src = TWIKOO_SCRIPT_URL;
+          script.async = true;
+          script.onload = () => {
+            scriptLoaded = true;
+            resolve();
+          };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      async function initEntry(container, diaryId) {
+        if (!diaryId || loadedEntries.has(diaryId)) return;
+        try {
+          await ensureScript();
+          if (typeof twikoo === "undefined") return;
+          loadedEntries.add(diaryId);
+          await twikoo.init({
+            ...COMMENT_CONFIG,
+            el: "#tcomment-" + diaryId,
+            path: "/diary/" + diaryId,
+          });
+        } catch (e) {
+          console.error("[Twikoo Diary] 初始化失败:", diaryId, e);
+        }
+      }
+
+      function handleToggle(btn) {
+        const diaryId = btn.dataset.diaryId;
+        const wrapper = btn.closest(".wx-feed-item") || btn.closest(".diary-entry-wrapper");
+        if (!wrapper || !diaryId) return;
+        const comments = wrapper.querySelector(".twikoo-entry-comments");
+        const text = btn.querySelector(".twikoo-toggle-text");
+        if (!comments) return;
+        const isOpen = !comments.classList.contains("hidden");
+        if (isOpen) {
+          comments.classList.add("hidden");
+          if (text) text.textContent = "评论";
+        } else {
+          comments.classList.remove("hidden");
+          if (text) text.textContent = "收起";
+          if (!loadedEntries.has(diaryId)) {
+            initEntry(comments, diaryId);
+          }
+        }
+      }
+
+      function bindButtons() {
+        document.querySelectorAll(".twikoo-toggle-btn").forEach((btn) => {
+          if (btn.dataset.twikooBound) return;
+          btn.dataset.twikooBound = "1";
+          btn.addEventListener("click", () => handleToggle(btn));
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bindButtons);
+      } else {
+        bindButtons();
+      }
+
+      document.addEventListener("swup:contentReplaced", () => {
+        setTimeout(bindButtons, 200);
+      });
+      document.addEventListener("mizuki:page:loaded", () => {
+        bindButtons();
+      });
+    })();
+  </script>
+
+  <!-- ═══════ 标签筛选：点击标签过滤同类说说 ═══════ -->
+  <script is:inline>
+    (function () {
+      // 模块级状态：当前筛选标签（null=全部）
+      let currentTag = null;
+
+      function applyFilter(tag) {
+        currentTag = tag || null;
+
+        const feed = document.getElementById("moments-feed");
+        const filterBar = document.getElementById("wx-filter-bar");
+        const filterTagEl = document.getElementById("wx-filter-tag");
+        const filterCountEl = document.getElementById("wx-filter-count");
+        const pinnedBlock = document.getElementById("pinned-block");
+        if (!feed || !filterBar) return;
+
+        // 1) 过滤说说卡片
+        let visible = 0;
+        feed.querySelectorAll(".wx-feed-item").forEach((item) => {
+          let match = true;
+          if (currentTag) {
+            match = Array.from(item.querySelectorAll(".tag-item")).some(
+              (t) => t.dataset.tag === currentTag,
+            );
+          }
+          item.classList.toggle("is-filtered-out", !match);
+          if (match) visible++;
+        });
+
+        // 2) 置顶块：含该标签才显示
+        if (pinnedBlock) {
+          if (currentTag) {
+            const pMatch = Array.from(pinnedBlock.querySelectorAll(".tag-item")).some(
+              (t) => t.dataset.tag === currentTag,
+            );
+            pinnedBlock.style.display = pMatch ? "" : "none";
+          } else {
+            // 无筛选：仅当确有置顶内容时才显示，否则保持隐藏
+            const hasPinned = pinnedBlock.querySelector(".wx-pinned-preview");
+            pinnedBlock.style.display = hasPinned ? "" : "none";
+          }
+        }
+
+        // 3) 高亮当前标签
+        document.querySelectorAll(".tag-item").forEach((t) => {
+          t.classList.toggle("active", currentTag !== null && t.dataset.tag === currentTag);
+        });
+
+        // 4) 筛选状态条
+        if (currentTag) {
+          filterBar.hidden = false;
+          if (filterTagEl) filterTagEl.textContent = "#" + currentTag;
+          if (filterCountEl) filterCountEl.textContent = "· " + visible + " 条";
+        } else {
+          filterBar.hidden = true;
+        }
+
+        // 5) 同步 URL（支持 ?tag= 深链，不触发跳转）
+        try {
+          const url = new URL(window.location.href);
+          if (currentTag) url.searchParams.set("tag", currentTag);
+          else url.searchParams.delete("tag");
+          history.replaceState(null, "", url.toString());
+        } catch (e) {
+          /* ignore */
+        }
+      }
+
+      // 标签点击：document 级事件委托（swup 换页后依旧有效）
+      document.addEventListener("click", (e) => {
+        const tagEl = e.target.closest(".tag-item");
+        if (!tagEl) return;
+        const feed = document.getElementById("moments-feed");
+        if (!feed || !feed.contains(tagEl)) return;
+        const tag = tagEl.dataset.tag;
+        if (!tag) return;
+        // 再次点击当前标签 = 取消筛选
+        applyFilter(currentTag === tag ? null : tag);
+      });
+
+      // 每次 DOM 就绪（含 swup 换页）时：绑定清除按钮 + 按 URL 恢复筛选
+      function boot() {
+        const clearBtn = document.getElementById("wx-filter-clear");
+        if (clearBtn && !clearBtn.dataset.bound) {
+          clearBtn.dataset.bound = "1";
+          clearBtn.addEventListener("click", () => applyFilter(null));
+        }
+        let initTag = null;
+        try {
+          initTag = new URL(window.location.href).searchParams.get("tag");
+        } catch (e) {
+          /* ignore */
+        }
+        applyFilter(initTag);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot);
+      } else {
+        boot();
+      }
+      document.addEventListener("swup:contentReplaced", () => {
+        setTimeout(boot, 200);
+      });
+      document.addEventListener("mizuki:page:loaded", boot);
+    })();
+  </script>
+
+</MainGridLayout>
+
+<style>
+  /* ============================================
+   * 说说列表
+   * ============================================ */
+  .wx-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem 0 2rem;
+  }
+
+  .wx-feed-item {
+    position: relative;
+  }
+
+  .wx-feed-item.is-filtered-out {
+    display: none;
+  }
+
+  .wx-feed-item:not(.is-filtered-out) + .wx-feed-item:not(.is-filtered-out)::before {
+    content: '';
+    position: absolute;
+    top: -0.75rem;
+    left: 1rem;
+    right: 1rem;
+    height: 1px;
+    background: var(--border);
+    opacity: 0.7;
+  }
+
+  /* 标签筛选状态条 */
+  .wx-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    margin-bottom: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--primary);
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    color: var(--text-color);
+  }
+  .wx-filter-bar[hidden] {
+    display: none;
+  }
+  .wx-filter-icon {
+    display: inline-flex;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+  .wx-filter-tag {
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .wx-filter-count {
+    color: var(--content-meta);
+  }
+  .wx-filter-clear {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    color: var(--content-meta);
+    background: var(--btn-regular-bg);
+    border: 0;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+  .wx-filter-clear:hover {
+    color: var(--primary);
+  }
+
+  /* 空状态 */
+  .wx-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .wx-empty-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--btn-regular-bg);
+    border-radius: 50%;
+    color: var(--content-meta);
+    font-size: 2rem;
+  }
+
+  .wx-empty h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.375rem;
+  }
+
+  .wx-empty p {
+    font-size: 0.875rem;
+    color: var(--content-meta);
+    margin: 0;
+  }
+
+  /* 响应式 */
+  @media (max-width: 480px) {
+    .wx-feed {
+      gap: 1.25rem;
+      padding: 0.75rem 0 1.5rem;
+    }
+
+    .wx-feed-item:not(.is-filtered-out) + .wx-feed-item:not(.is-filtered-out)::before {
+      top: -0.625rem;
+      left: 0.75rem;
+      right: 0.75rem;
+    }
+  }
+</style>
+
+<style is:global>
+  /* ============================================
+   * 置顶块样式
+   * ============================================ */
+  .wx-pinned {
+    display: flex;
+    align-items: stretch;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    min-height: 4.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1.5px solid transparent;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+  }
+  .wx-pinned:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  .wx-pinned-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 1.625rem;
+    font-weight: 400;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  :root.dark .wx-pinned-tag {
+    background: #00000000;
+    color: #fff;
+  }
+  .wx-pinned-items {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .wx-pinned-items::-webkit-scrollbar {
+    display: none;
+  }
+  .wx-pinned-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    min-width: 4rem;
+    max-width: 7.5rem;
+    flex: 1;
+    border-left: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .wx-pinned-preview:first-child {
+    border-left: none;
+  }
+  .wx-pimgs {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .wx-pimgs-1 { grid-template-columns: 1fr; }
+  .wx-pimgs-2 { grid-template-columns: 1fr 1fr; }
+  .wx-pimgs-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-3 .wx-pinned-img:first-child { grid-row: 1 / 3; }
+  .wx-pimgs-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-5,
+  .wx-pimgs-6 {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .wx-pimgs-7,
+  .wx-pimgs-8,
+  .wx-pimgs-9 {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+  }
+  .wx-pinned-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .wx-ptxt {
+    margin: 0;
+    font-size: 0.625rem;
+    color: var(--content-meta);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-all;
+  }
+  @media (max-width: 480px) {
+    .wx-pinned-preview {
+      min-width: 3.5rem;
+      max-width: 6rem;
+      padding: 0.375rem;
+    }
+    .wx-ptxt {
+      font-size: 0.5625rem;
+      -webkit-line-clamp: 3;
+    }
+  }
+
+  /* ============================================
+   * JS 动态插入的说说卡片样式
+   * ============================================ */
+  #moments-feed .moment-card {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+    padding: 1rem 1rem 1rem 1rem;
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  }
+  :root.dark #moments-feed .moment-card { border-color: #3f3f46; }
+  #moments-feed .moment-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+  :root.dark #moments-feed .moment-card:hover {
+    border-color: #fff;
+    box-shadow: 0 4px 24px rgba(255,255,255,0.08);
+  }
+
+  #moments-feed .card-header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem; }
+  #moments-feed .card-avatar { flex-shrink: 0; }
+  #moments-feed .avatar-img {
+    width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--primary); box-sizing: border-box;
+  }
+  #moments-feed .card-user-info { flex: 1; min-width: 0; }
+  #moments-feed .user-row { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.125rem; }
+  #moments-feed .pinned-badge {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.125rem 0.5rem; background: var(--btn-regular-bg);
+    color: var(--btn-content); border-radius: var(--radius);
+    font-size: 0.75rem; font-weight: 600;
+  }
+  #moments-feed .pinned-icon { width: 14px; height: 14px; }
+  #moments-feed .user-name { font-size: 0.9375rem; font-weight: 600; color: var(--primary); }
+  #moments-feed .meta-row { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--content-meta); }
+  #moments-feed .meta-dot { opacity: 0.5; }
+  #moments-feed .location {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #moments-feed .location-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; height: 14px; }
+  #moments-feed .mood {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #moments-feed .mood-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; height: 14px; }
+
+  /* 展开评论区白底卡片 */
+  #moments-feed .twikoo-entry-comments {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+    padding: 0.875rem 1rem;
+  }
+  :root.dark #moments-feed .twikoo-entry-comments {
+    border-color: #3f3f46;
+  }
+
+  #moments-feed .card-content { margin-bottom: 0.75rem; }
+  #moments-feed .moment-markdown { word-break: break-word; line-height: 1.7; color: var(--text-color); }
+  #moments-feed .moment-markdown p { margin-bottom: 0.375rem; }
+  #moments-feed .moment-markdown p:last-child { margin-bottom: 0; }
+  #moments-feed .moment-markdown img { border-radius: var(--radius); margin-top: 0.5rem; max-width: 100%; }
+  #moments-feed .moment-markdown a { color: var(--primary); text-decoration: underline; }
+
+  /* 图片网格基础布局（列数由 --img-cols 控制：1/2/3） */
+  #moments-feed .card-images {
+    display: grid;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+    grid-template-columns: repeat(var(--img-cols, 3), 1fr);
+  }
+  #moments-feed .image-item {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 1;
+    background: var(--card-bg);
+  }
+  #moments-feed .image-link { display: block; width: 100%; height: 100%; }
+  #moments-feed .image-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  #moments-feed .image-item:hover .image-img { transform: scale(1.03); }
+  #moments-feed .has-more .image-img { filter: brightness(0.6); }
+  #moments-feed .more-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #moments-feed .more-text {
+    font-size: 1.5rem; font-weight: 700; color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  /* ============================================
+   * 图片显示模式（切换：改 MomentCard.astro 顶部 IMG_MODE）
+   * ============================================ */
+  /* 模式1：填满卡片宽度，固定长宽比；图片居中，letterbox 用卡片底色（绝无彩色条） */
+  #moments-feed .card-images.mode-fill { grid-template-columns: 1fr; }
+  #moments-feed .card-images.mode-fill .image-item {
+    aspect-ratio: auto;
+    background: var(--card-bg);
+  }
+  #moments-feed .card-images.mode-fill .image-img {
+    width: 100%; height: auto; object-fit: contain;
+  }
+
+  /* 模式2：小正方形九宫格 */
+  #moments-feed .card-images.mode-grid { grid-template-columns: repeat(var(--img-cols, 3), 90px); }
+  #moments-feed .card-images.mode-grid .image-item { aspect-ratio: 1; }
+  #moments-feed .card-images.mode-grid .image-img { object-fit: cover; }
+
+  /* 模式3：中等正方形九宫格 */
+  #moments-feed .card-images.mode-mid { grid-template-columns: repeat(var(--img-cols, 3), 140px); }
+  #moments-feed .card-images.mode-mid .image-item { aspect-ratio: 1; }
+  #moments-feed .card-images.mode-mid .image-img { object-fit: cover; }
+
+  /* 模式4：大正方形填满卡片 */
+  #moments-feed .card-images.mode-squarefill { grid-template-columns: repeat(var(--img-cols, 3), 1fr); }
+  #moments-feed .card-images.mode-squarefill .image-item { aspect-ratio: 1; }
+  #moments-feed .card-images.mode-squarefill .image-img { object-fit: cover; }
+
+  /* 模式5：大图两列，长宽比不变 */
+  #moments-feed .card-images.mode-large2 { grid-template-columns: repeat(2, 1fr); align-items: start; }
+  #moments-feed .card-images.mode-large2 .image-item { aspect-ratio: auto; }
+  #moments-feed .card-images.mode-large2 .image-img { height: auto; object-fit: contain; max-height: 80vh; }
+  #moments-feed .image-item:hover .image-img { transform: scale(1.03); }
+  #moments-feed .hidden-image { display: none !important; }
+  #moments-feed .has-more .image-img { filter: brightness(0.6); }
+  #moments-feed .more-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  }
+  #moments-feed .more-text { font-size: 1.5rem; font-weight: 700; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+  #moments-feed .card-tags {
+    display: flex; flex-wrap: wrap; gap: 0.375rem;
+    padding-top: 0.625rem; border-top: 1px solid var(--border);
+  }
+  #moments-feed .tag-item {
+    padding: 0.25rem 0.625rem; background: transparent;
+    border: 1px solid var(--primary); border-radius: 9999px;
+    font-size: 0.75rem; font-family: inherit; line-height: inherit;
+    color: var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  #moments-feed .tag-item:hover {
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+  #moments-feed .tag-item.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+
+  /* 移动端 */
+  @media (max-width: 480px) {
+    #moments-feed .moment-card {
+      padding: 0.875rem 0.875rem 0.875rem 1.75rem;
+    }
+    #moments-feed .avatar-img { width: 2.25rem; height: 2.25rem; }
+    #moments-feed .user-name { font-size: 0.875rem; }
+    #moments-feed .meta-row { font-size: 0.6875rem; }
+    #moments-feed .location { max-width: 80px; }
+    #moments-feed .card-images { gap: 0.25rem; }
+    #moments-feed .more-text { font-size: 1.25rem; }
+  }
+
+</style>

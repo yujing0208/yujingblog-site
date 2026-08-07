@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+
+  /* 修复看板娘自带气泡：长文字自动换行，防止超出边界
+     匹配 l2d-widget 气泡特征（borderRadius:8px + whiteSpace:nowrap）*/
+  div[style*="border-radius: 8px"][style*="white-space: nowrap"] {
+    white-space: normal !important;
+    max-width: 250px !important;
+    word-break: break-word !important;
+    width: max-content !important;
+    min-width: 60px;
+  }
+</style>
+</head>
+<body>
+<script src="/pio/l2d-widget.min.js"></script>
+<script>
+  var widgetInstance = null;
+  var activeConfigKey = '';
+  var loadingConfigKey = '';
+  var widgetLoaded = false;
+  var baseContentHeight = 500;
+  var lastContentHeight = 500;
+  var floatingContentPadding = 12;
+  var layoutObserver = null;
+  var layoutFrame = 0;
+  var mascotTipTimer = 0;
+  var touchMessages = []; // 原博客 touch 句子（点击看板娘时随机显示）
+
+  var menuActions = {
+    home: function() { parent.postMessage({ type: 'l2d-action', action: 'home' }, '*'); },
+    scrollToTop: function() { parent.postMessage({ type: 'l2d-action', action: 'scrollToTop' }, '*'); },
+    chat: function() { parent.postMessage({ type: 'l2d-chat-toggle' }, '*'); },
+    sleep: function(w) { w.sleep(); },
+  };
+
+  // 聊天按钮状态：打开 ✕ ↔ 关闭(恢复 l2d-widget 原始图标)
+  var chatOpen = false;
+
+  // 查找聊天按钮：title 可能是"聊天"或"关闭聊天"（打开后被改过）
+  function findChatButton() {
+    return document.querySelector(
+      'button[title="聊天"], button[title="关闭聊天"]'
+    );
+  }
+
+  function setChatButtonState(open) {
+    chatOpen = !!open;
+    var btn = findChatButton();
+    if (btn) {
+      if (open) {
+        btn.innerHTML = '✕';
+        btn.title = '关闭聊天';
+      } else if (btn.__origHtml && btn.__origHtml.indexOf('<svg') !== -1) {
+        // 恢复 l2d-widget 原始图标（iconify SVG）
+        btn.innerHTML = btn.__origHtml;
+        btn.title = '聊天';
+      } else {
+        // 原始图标还没缓存到（异步加载中）→ 不动 innerHTML，只还原 title
+        btn.title = '聊天';
+      }
+    }
+  }
+
+  // 监听按钮重建（swup 切页会重建 widget）
+  var btnObserver = new MutationObserver(function() {
+    var btn = findChatButton();
+    if (btn && !btn.__stateApplied) {
+      btn.__stateApplied = true;
+      // 等 l2d-widget 的 iconify 图标异步加载完成，缓存原始 SVG
+      setTimeout(function() {
+        if (btn.innerHTML && btn.innerHTML.indexOf('<svg') !== -1) {
+          btn.__origHtml = btn.innerHTML;
+        }
+        setChatButtonState(chatOpen);
+      }, 300);
+    }
+  });
+  btnObserver.observe(document.body, { childList: true, subtree: true });
+
+  function notifyLoaded() {
+    parent.postMessage({ type: 'l2d-loaded', contentHeight: lastContentHeight }, '*');
+  }
+
+  function getWidgetHeight(size) {
+    if (typeof size === 'number') return size;
+    if (size && typeof size.height === 'number') return size.height;
+    return 500;
+  }
+
+  function measureContentHeight() {
+    if (!widgetLoaded) return;
+    var viewportHeight = window.innerHeight;
+    var minTop = viewportHeight - baseContentHeight;
+    document.body.querySelectorAll('*').forEach(function(el) {
+      if (!el.getBoundingClientRect || /^(SCRIPT|STYLE)$/.test(el.tagName)) return;
+      var style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return;
+      var paintsBox =
+        !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(style.backgroundColor) ||
+        style.backgroundImage !== 'none' ||
+        style.boxShadow !== 'none';
+      if (!paintsBox) return;
+      var rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0 && rect.top < minTop) minTop = rect.top;
+    });
+    var measuredHeight = Math.ceil(viewportHeight - minTop);
+    var nextHeight = measuredHeight > baseContentHeight
+      ? measuredHeight + floatingContentPadding
+      : baseContentHeight;
+    if (nextHeight === lastContentHeight) return;
+    lastContentHeight = nextHeight;
+    notifyLoaded();
+  }
+
+  function scheduleLayoutMeasurement() {
+    cancelAnimationFrame(layoutFrame);
+    layoutFrame = requestAnimationFrame(measureContentHeight);
+  }
+
+  function observeWidgetLayout() {
+    if (layoutObserver) layoutObserver.disconnect();
+    layoutObserver = new MutationObserver(scheduleLayoutMeasurement);
+    layoutObserver.observe(document.body, {
+      subtree: true, childList: true, characterData: true,
+      attributes: true, attributeFilter: ['class', 'style'],
+    });
+  }
+
+  function hideAboutMenu() {
+    if (document.getElementById('l2d-hide-about')) return;
+    var style = document.createElement('style');
+    style.id = 'l2d-hide-about';
+    style.textContent = 'button[title="About"] { display: none !important; }';
+    document.head.appendChild(style);
+  }
+
+  function destroyWidget() {
+    if (!widgetInstance) return;
+    try { widgetInstance.destroy(); } catch (err) {}
+    widgetInstance = null;
+    widgetLoaded = false;
+    if (layoutObserver) layoutObserver.disconnect();
+    layoutObserver = null;
+    cancelAnimationFrame(layoutFrame);
+  }
+
+  // ===== 复用看板娘自带的气泡（l2d-widget 的 tips 气泡）=====
+  function findMascotBubble() {
+    // 气泡结构：外层容器 position:absolute + zIndex:2；内层 borderRadius:8px + background
+    // 文本 span 是内层的直接子元素（prepend 的）
+    var divs = document.querySelectorAll('div');
+    for (var i = 0; i < divs.length; i++) {
+      var s = divs[i].style;
+      if (s.borderRadius === '8px' && s.background && s.fontSize === '13px') {
+        var span = divs[i].querySelector(':scope > span');
+        if (span) return { inner: divs[i], span: span };
+      }
+    }
+    return null;
+  }
+
+  // 显示文本在看板娘气泡中（模仿 widget 内部 C() 函数的行为）
+  function showMascotTip(text) {
+    if (!text) return;
+    clearTimeout(mascotTipTimer);
+    var bubble = findMascotBubble();
+    if (!bubble) return;
+    bubble.span.textContent = text;
+    bubble.inner.style.opacity = '1';
+    bubble.inner.style.animation = 'l2dw-tips-float 2.5s ease-in-out infinite';
+    mascotTipTimer = setTimeout(function() {
+      bubble.inner.style.opacity = '0';
+      bubble.inner.style.animation = 'none';
+      bubble.span.textContent = '';
+    }, 2600);
+  }
+
+  // ===== 主逻辑 =====
+  window.addEventListener('message', function(e) {
+    // 页面元素悬停 → 显示在看板娘气泡
+    if (e.data.type === 'l2d-show-tip') {
+      showMascotTip(e.data.text);
+      return;
+    }
+
+    // 聊天框开关状态 → 切换 💬/✕ 按钮
+    if (e.data.type === 'l2d-chat-state') {
+      setChatButtonState(e.data.open);
+      return;
+    }
+
+    if (e.data.type !== 'l2d-init') return;
+    var config = e.data.config;
+    var configKey = JSON.stringify(config);
+
+    // 读取 touch 句子（点击看板娘时用）
+    if (Array.isArray(config._touchMessages)) {
+      touchMessages = config._touchMessages;
+    }
+
+    if (widgetInstance && activeConfigKey === configKey) {
+      if (widgetLoaded) notifyLoaded();
+      return;
+    }
+    if (loadingConfigKey === configKey) return;
+
+    loadingConfigKey = configKey;
+    if (widgetInstance) destroyWidget();
+
+    // 映射菜单项（包括 extraItems 中的 chat）
+    if (config.menus && config.menus.items) {
+      config.menus.items = config.menus.items.map(function(item) {
+        return {
+          icon: item.icon,
+          label: item.label,
+          onClick: menuActions[item.action] || function() {}
+        };
+      });
+    }
+    if (config.menus && config.menus.extraItems) {
+      config.menus.extraItems = config.menus.extraItems.map(function(item) {
+        return {
+          icon: item.icon,
+          label: item.label,
+          onClick: menuActions[item.action] || function() {}
+        };
+      });
+    }
+
+    try {
+      widgetInstance = L2D_WIDGET.createWidget(config);
+      activeConfigKey = configKey;
+      baseContentHeight = getWidgetHeight(config.size);
+      lastContentHeight = baseContentHeight;
+    } catch (err) {
+      loadingConfigKey = '';
+      activeConfigKey = '';
+      console.error('Failed to initialize Live2D widget:', err);
+      return;
+    }
+    loadingConfigKey = '';
+
+    if (config._hideAbout) hideAboutMenu();
+
+    widgetInstance.l2d.on('loaded', function() {
+      widgetLoaded = true;
+      notifyLoaded();
+      observeWidgetLayout();
+      scheduleLayoutMeasurement();
+
+      // 点击/触摸看板娘 → 随机显示一条原博客 touch 句子（"你在干什么呀？"等）
+      var canvas = document.querySelector('canvas');
+      if (canvas && !canvas.__touchBound) {
+        canvas.__touchBound = true;
+        var lastTouch = 0;
+        canvas.addEventListener('click', function() {
+          var now = Date.now();
+          if (now - lastTouch < 800) return; // 防连点
+          lastTouch = now;
+          if (touchMessages && touchMessages.length > 0) {
+            var t = touchMessages[Math.floor(Math.random() * touchMessages.length)];
+            showMascotTip(t);
+          }
+        });
+      }
+    });
+  });
+
+  window.addEventListener('resize', scheduleLayoutMeasurement);
+</script>
+</body>
+</html>

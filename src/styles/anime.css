@@ -1,0 +1,351 @@
+.anime-card-base {
+  container-type: inline-size;
+}
+
+.anime-grid-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  transition: gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === Grid Mode === */
+.anime-grid-container.anime-grid-mode {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@container (min-width: 30rem) {
+  .anime-grid-container.anime-grid-mode {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@container (min-width: 48rem) {
+  .anime-grid-container.anime-grid-mode {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@container (min-width: 64rem) {
+  .anime-grid-container.anime-grid-mode {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* === List Mode === */
+.anime-grid-container.anime-list-mode {
+  grid-template-columns: repeat(1, 1fr);
+}
+@media (width >= 1280px) {
+  .anime-grid-container.anime-list-mode {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.anime-grid-container.anime-list-mode .group {
+  display: flex;
+  flex-direction: row;
+  min-height: 12rem;
+}
+
+.anime-grid-container.anime-list-mode .anime-cover-container {
+  width: 8.5rem;
+  height: auto;
+  aspect-ratio: 2/3;
+  flex-shrink: 0;
+}
+@media (width >= 768px) {
+  .anime-grid-container.anime-list-mode .anime-cover-container {
+    width: 11rem;
+  }
+}
+
+.anime-grid-container.anime-list-mode .p-3 {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.anime-grid-container.anime-list-mode h3 {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.anime-grid-container.anime-list-mode .p-3 .flex.flex-wrap span {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.anime-grid-container.anime-list-mode .group p.text-xs {
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* === Filter Panel === */
+.anime-filter-panel {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--line-divider, #e5e7eb);
+  border-radius: var(--radius-large, 0.75rem);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+@media (prefers-color-scheme: dark) {
+  .anime-filter-panel {
+    background: var(--card-bg, rgba(255,255,255,0.04));
+    border-color: var(--line-divider, rgba(255,255,255,0.08));
+  }
+}
+
+.anime-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.anime-filter-row + .anime-filter-row {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line-divider, #f0f0f0);
+}
+@media (prefers-color-scheme: dark) {
+  .anime-filter-row + .anime-filter-row {
+    border-top-color: rgba(255,255,255,0.06);
+  }
+}
+
+.anime-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  min-width: 2em;
+}
+
+/* === Sliding Pill Filter === */
+.anime-pill-filter {
+  display: inline-flex;
+  position: relative;
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: 4px;
+  border: 2px solid var(--line-divider, #e5e7eb);
+  border-radius: 999px;
+  background: var(--card-bg, #fff);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  justify-content: flex-start;
+}
+.anime-pill-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.anime-pill-track {
+  position: relative;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.anime-pill-slider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--primary, #3b82f6);
+  z-index: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.anime-filter-tag {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  background: transparent;
+  color: var(--btn-content, #374151);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.anime-filter-tag:hover:not(.anime-active) {
+  color: var(--primary, #3b82f6);
+}
+.anime-filter-tag.anime-active {
+  color: #fff;
+}
+.anime-pill-count {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.anime-grid-container [data-anime-status].anime-hidden {
+  display: none !important;
+}
+
+.anime-grid-container [data-anime-status] {
+  transition:
+    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s ease-out;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 350px;
+}
+
+.anime-grid-container [data-anime-status].anime-fade-out {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+.anime-grid-container [data-anime-status].anime-fade-in {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.anime-grid-container [data-anime-status].anime-fade-in-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* === Firely-style Bangumi Tab Nav (分类标签) === */
+.bangumi-tab-nav {
+  border-bottom: 1px solid var(--line-divider, #e5e7eb);
+  margin-bottom: 0.75rem;
+}
+.bangumi-tab-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bangumi-tab-scroll::-webkit-scrollbar {
+  display: none;
+}
+.bangumi-tab-list {
+  display: flex;
+  min-width: max-content;
+  gap: 2rem;
+}
+.bangumi-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0.25rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.bangumi-tab:hover {
+  color: #374151;
+}
+@media (prefers-color-scheme: dark) {
+  .bangumi-tab {
+    color: #9ca3af;
+  }
+  .bangumi-tab:hover {
+    color: #d1d5db;
+  }
+}
+.bangumi-tab-active {
+  color: var(--primary, #10b981);
+  border-bottom-color: var(--primary, #10b981);
+}
+.bangumi-tab-count {
+  margin-left: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  background: var(--btn-regular-bg, #f3f4f6);
+  color: var(--btn-content, #374151);
+  line-height: 1.5;
+}
+@media (prefers-color-scheme: dark) {
+  .bangumi-tab-count {
+    background: rgba(255,255,255,0.08);
+    color: #d1d5db;
+  }
+}
+
+/* === Firely-style Filter Pills (状态筛选) === */
+.bangumi-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+.bangumi-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--btn-regular-bg, #f3f4f6);
+  color: var(--btn-content, #374151);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.75;
+}
+.bangumi-filter-pill:hover:not(.bangumi-filter-pill-active) {
+  background: var(--btn-regular-bg-hover, #e5e7eb);
+}
+@media (prefers-color-scheme: dark) {
+  .bangumi-filter-pill {
+    background: rgba(255,255,255,0.08);
+    color: #d1d5db;
+  }
+  .bangumi-filter-pill:hover:not(.bangumi-filter-pill-active) {
+    background: rgba(255,255,255,0.12);
+  }
+}
+.bangumi-filter-pill-active {
+  background: var(--primary, #10b981);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(16,185,129,0.3);
+}
+.bangumi-filter-count {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.anime-loading-spinner {
+  border-right-color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

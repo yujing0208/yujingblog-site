@@ -1,0 +1,305 @@
+---
+// Firefly 动态卡片（原样移植），数据源改为 DiaryItem
+import { shuoShuoProfile } from "../../../config/shuoShuoProfile";
+import type { DiaryItem } from "../../../data/diary";
+
+interface Props {
+  moment: DiaryItem;
+}
+
+const { moment } = Astro.props;
+const profile = shuoShuoProfile;
+
+// 图片显示模式（可在内容仓库 diary.ts 的每条数据里用 imgMode 字段单独覆盖，缺省用 mode-fill）：
+//   mode-fill     填满卡片宽度，固定长宽比，letterbox 用卡片底色
+//   mode-grid     小正方形九宫格
+//   mode-mid      中等正方形九宫格
+//   mode-squarefill 大正方形填满卡片
+//   mode-large2   大图两列，长宽比不变
+const IMG_MODE = (moment as any).imgMode ?? "mode-fill";
+
+// 相对时间（Firefly 原版逻辑）
+const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 30) return `${days}天前`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const date = new Date(moment.date);
+const avatar = profile.avatar;
+const name = profile.nickname;
+const pinned = (moment as any).pinned === true;
+
+// 图片九宫格：直接使用 DiaryItem.images 渲染网格
+const imageList = moment.images ?? [];
+const imageCount = imageList.length;
+const gridCols = imageCount === 1 ? 1 : imageCount === 2 || imageCount === 4 ? 2 : 3;
+
+// 视频（可选，兼容接口未声明的情况）
+const videoList = (moment as any).videos ?? [];
+---
+
+<div id={`moment-${moment.id}`} class="moment-card group">
+  <div class="card-accent-bar"></div>
+
+  <!-- 卡片头部：头像 + 用户信息 -->
+  <div class="card-header">
+    <div class="card-avatar">
+      <img
+        src={avatar}
+        alt={name}
+        class="avatar-img"
+        loading="lazy"
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>'"
+      />
+    </div>
+    <div class="card-user-info">
+      <div class="user-row">
+        <span class="user-name">{name}</span>
+        {
+          pinned && (
+            <span class="pinned-badge">
+              <svg
+                t="1781845121920"
+                class="pinned-icon"
+                viewBox="0 0 1024 1024"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                p-id="1661"
+                width="14"
+                height="14"
+              >
+                <path
+                  d="M829.31 607.6L548.07 234.1c-12.93-19.17-41.01-19.61-54.82-0.89L197.3 606.71c-16.05 22.28-0.45 53.49 27.19 53.49h139.06v173.38c0 26.3 21.39 48.14 48.14 48.14H612.7c26.29 0 48.13-21.39 48.13-48.14V660.2h140.4c27.19 0 43.24-30.31 28.08-52.6z"
+                  p-id="1662"
+                  fill="var(--primary)"
+                ></path>
+                <path
+                  d="M226.72 218.06h570.5c20.95 0 37.89-16.94 37.89-37.88s-16.94-37.88-37.89-37.88h-570.5c-20.95 0-37.88 16.94-37.88 37.88s16.94 37.88 37.88 37.88z"
+                  p-id="1663"
+                  fill="var(--primary)"
+                ></path>
+              </svg>
+              <span>置顶</span>
+            </span>
+          )
+        }
+      </div>
+      <div class="meta-row">
+        <time datetime={moment.date} title={moment.date}>
+          {formatTimeAgo(date)}
+        </time>
+        {
+          moment.location && (
+            <>
+              <span class="meta-dot">·</span>
+              <span class="location">
+                <svg
+                  class="location-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                {moment.location}
+              </span>
+            </>
+          )
+        }
+        {
+          moment.mood && (
+            <>
+              <span class="meta-dot">·</span>
+              <span class="mood">
+                <svg
+                  class="mood-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                  <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                  <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                </svg>
+                {moment.mood}
+              </span>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- 内容 -->
+  <div class="card-content">
+    <div class="moment-markdown" style="white-space: pre-wrap;">{moment.content}</div>
+  </div>
+
+  <!-- 图片九宫格（点击经 Mizuki 内置 fancybox 打开大图预览） -->
+  {
+    imageCount > 0 && (
+      <div
+        class={`card-images moment-images image-cols-${gridCols} ${IMG_MODE}`}
+        style={`--img-cols:${gridCols}`}
+      >
+        {imageList.slice(0, 9).map((img, i) => (
+          <div class={`image-item${i === 8 && imageCount > 9 ? " has-more" : ""}`}>
+            <a
+              href={img}
+              data-fancybox={`diary-${moment.id}`}
+              class="image-link"
+              aria-label="查看大图"
+            >
+              <img src={img} class="image-img" loading="lazy" decoding="async" alt="" />
+              {i === 8 && imageCount > 9 && (
+                <div class="more-overlay">
+                  <span class="more-text">+{imageCount - 9}</span>
+                </div>
+              )}
+            </a>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- 视频 -->
+  {
+    videoList.length > 0 && (
+      <div class="card-videos">
+        {videoList.map((v: string) => (
+          <div class="video-wrap">
+            <video class="video" controls preload="metadata" src={v}></video>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- 底部：标签 + 评论 -->
+  <div class="card-footer">
+    {
+      moment.tags && moment.tags.length > 0 && (
+        <div class="card-tags">
+          {moment.tags.map((tag: string) => (
+            <button type="button" class="tag-item" data-tag={tag} title={`筛选 #${tag}`}>
+              #{tag}
+            </button>
+          ))}
+        </div>
+      )
+    }
+    <button
+      type="button"
+      class="card-comment twikoo-toggle-btn"
+      data-diary-id={moment.id}
+    >
+      <svg
+        class="comment-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        width="16"
+        height="16"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span class="twikoo-toggle-text">评论</span>
+    </button>
+  </div>
+</div>
+
+<style>
+  /* 左侧主题色竖条 */
+  .card-accent-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary);
+    opacity: 0.35;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* 底部：标签 + 评论 */
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .card-comment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--content-meta);
+    background: transparent;
+    border: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .card-comment:hover {
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+
+  .comment-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* 视频 */
+  .card-videos {
+    margin-bottom: 0.75rem;
+  }
+
+  .video-wrap {
+    max-width: 360px;
+    border-radius: var(--radius, 8px);
+    overflow: hidden;
+  }
+
+  .video {
+    width: 100%;
+    display: block;
+    border-radius: var(--radius, 8px);
+    background: #000;
+  }
+</style>

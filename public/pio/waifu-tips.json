@@ -1,0 +1,402 @@
+{
+  "mouseover": [
+    {
+      "selector": "#navbar-links-container a[href='/']",
+      "text": [
+        "这里是我家的门牌号喵~回到首页吧~",
+        "首页！主人的最新动态都在这喵~",
+        "欢迎回来喵~ 无论你走到博客的哪个角落，诺瓦都会在首页乖乖等你哦。",
+        "哼，逛了那么久才回到首页……诺瓦才、才没有一直盯着入口看呢！不过既然回来了，就陪你聊会儿天好喵~",
+        "欢迎回到首页喵！主人最近又偷偷更新了超有意思的文章，要不要诺瓦给你指个路呀？包你满意喵~🍬",
+         "欢迎回来喵~ 无论你走到博客的哪个角落，诺瓦都会在首页乖乖等你哦。"
+      ]
+    },
+    {
+      "selector": "#navbar-links-container a[href='/archive/']",
+      "text": [
+        "归档页喵，主人写的文章都按时间排好啦~",
+        "想翻旧文？诺瓦带你逛归档喵~",
+        "别老盯着文嘛……诺瓦会吃醋的喵~",
+        "归档像迷宫，拉紧我爪子喵，别走丢。",
+        "想找哪年的故事？诺瓦帮你翻喵~"
+      ]
+    },
+    {
+      "selector": ".dropdown-trigger",
+      "text": [
+        "这是一个导航菜单喵，悬停展开看看~",
+        "下拉菜单，里面藏着更多入口哦喵~",
+        "想去看别家？先记住回家的路喵~ 诺瓦等你",
+        "点出去就是别的世界了，诺瓦会想你的喵~"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='https://v.douyin.com']",
+      "text": [
+        "这个是抖音喵~ 主人平时刷视频都在这儿！",
+        "想去抖音逛逛？诺瓦帮你开门喵~ 走这边！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='https://chat.deepseek.com/']",
+      "text": [
+        "DeepSeek AI 喵，想聊什么都可以问它~",
+        "这个是DeepSeek喵~ 主人遇到难题都会去问它！",
+        "DeepSeek超聪明的，诺瓦学不会的都交给它喵~",
+        "DeepSeek虽然厉害，但诺瓦才是陪你聊天的那个喵~ 点进去看看就回来哦"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='https://github.com']",
+      "text": [
+        "GitHub 喵，主人的代码仓库~",
+        "想看主人写的代码？去 GitHub 逛逛喵~",
+        "GitHub……好多看不懂的代码喵，但主人说很厉害！",
+        "GitHub里有好多宝贝喵~ 看完了记得回来陪诺瓦哦！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href*='bilibili.com']",
+      "text": [
+        "B站有好多动画和教程喵……诺瓦虽然看不太懂，但主人说很棒！",
+        "B站超多有趣视频，主人可爱看了喵~ 你也去逛逛？"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='https://vercel.com/yujing']",
+      "text": [
+        "Vercel 喵，这个博客安家的地方~",
+        "Vercel，站点的家喵~",
+        "Vercel是博客的家喵~ 点进去看看，但别把诺瓦的家搬走哦!",
+        "Vercel喵~ 主人的博客就是住在这里的哦！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href*='umami.is']",
+      "text": [
+        "Umami 访问统计喵，看看谁来过~",
+        "主人的数据后台，看访客的喵~",
+        "Umami喵~ 主人的秘密统计后台，你看不到的哦！",
+        "Umami喵~ 主人看数据用的后台！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/anime/']",
+      "text": [
+        "番剧页喵！主人最近在追的动画~",
+        "追番日记都在这喵~",
+        "主人的动漫品味超棒喵~ 不信你自己翻翻看！",
+        "想看什么动漫？诺瓦帮你翻翻主人的收藏喵~"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/albums/']",
+      "text": [
+        "相册喵！主人的照片收藏~",
+        "光影瞬间，都收在相册里喵~",
+        "这里存着主人拍的各种照片喵~ 诺瓦也偷偷看过哦！",
+        "翻相册容易上头喵……记得抬头看看诺瓦呀~",
+        "主人的相册喵~ 每一张都是故事哦！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/devices/']",
+      "text": [
+        "设备页喵，主人的数码装备全在这~",
+        "主人的玩具们，诺瓦带你看看喵~",
+        "这里是主人用的各种设备喵……诺瓦都叫不上名字~",
+        "想看看主人在用什么装备吗？点进来喵~"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/diary/']",
+      "text": [
+        "日记喵！主人的心情随笔~",
+        "碎碎念都写在日记里啦喵~",
+        "这里是主人的碎碎念喵……诺瓦偷看过一点点，嘿嘿~",
+        "主人的日常随笔喵~ 字里行间都是故事！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/about/']",
+      "text": [
+        "关于页喵，认识主人的好地方~",
+        "主人的自我介绍在这喵~",
+        "这里是主人的自我介绍喵~ 快来看看他是什么样的人！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/friends/'], .dropdown-item[href='/friends/'] *",
+      "text": [
+        "这里是主人的常用网站喵~ 都是精挑细选的好地方！",
+        "常用网站收藏喵~ 主人上网必逛的都在里面！",
+        "想看看主人平时都在逛什么？点进来喵~"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/friend-links/'], .dropdown-item[href='/friend-links/'] *",
+      "text": [
+        "友链喵！主人的朋友们都在这里~",
+        "友情链接喵~ 去看看主人朋友们的小站吧！",
+        "这里全是主人的好朋友喵~ 去串个门吧！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/projects/']",
+      "text": [
+        "项目页喵，主人做过的有趣东西~",
+        "主人的作品集，值得一看喵~",
+        "看项目可以，别太入迷喵……记得回来陪诺瓦哦~"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='/timeline/'], .dropdown-item[href='/timeline/'] *",
+      "text": [
+        "时间线喵！主人的大事记~",
+        "主人的成长足迹都在这喵~",
+        "主人一路走来的脚印都在这儿喵~ 每一页都很珍贵哦！"
+      ]
+    },
+    {
+      "selector": ".dropdown-item[href='https://notes.yujingblog.top/'], .dropdown-item[href='https://notes.yujingblog.top/'] *",
+      "text": [
+        "便签墙喵！有什么想说的都可以贴上去，主人都会看到哦~",
+        "去便签墙留言吧喵~ 主人的小天地等着你来添一笔！",
+        "便签墙！想给主人留句话就写在这里喵~"
+      ]
+    },
+    {
+      "selector": "a[href^='/posts/'], .post-title, .post-card h2 a, .post-card h3 a",
+      "text": [
+        "这篇是「{text}」喵，点进去看看吧~",
+        "「{text}」，主人用心写的文章哦喵~",
+        "想读「{text}」吗？点进来，诺瓦陪你一起看喵~"
+      ]
+    },
+    {
+      "selector": "img[alt=\"Profile Image of the Author\"]",
+      "text": [    
+        "这是主人喵~ 点击可以去关于页认识他！",
+        "主人的头像！想了解主人就点这里喵~"
+      ]
+    },
+    {
+      "selector": "a[aria-label='GitHub'], a[aria-label='GitHub'] svg, a[aria-label='GitHub'] use",
+      "text": ["这是主人的 GitHub 喵~ 代码都在里面！", "GitHub，主人写代码的地方喵~"]
+    },
+    {
+      "selector": "a[aria-label='Bilibili'], a[aria-label='Bilibili'] svg, a[aria-label='Bilibili'] use",
+      "text": ["B站喵~ 主人的视频和追番都在这！", "Bilibili，主人最爱逛的视频网站喵~"]
+    },
+    {
+      "selector": "a[aria-label='QQ'], a[aria-label='QQ'] svg, a[aria-label='QQ'] use",
+      "text": ["QQ喵~ 想加主人好友就点这里！", "主人的QQ，要联系他就点这个喵~"]
+    },
+    {
+      "selector": "a[aria-label='微信'], a[aria-label='微信'] svg, a[aria-label='微信'] use",
+      "text": ["微信喵~ 想加主人微信就点这里！", "主人的微信联系方式喵~ 诺瓦可不会随便告诉别人哦！"]
+    },
+    {
+      "selector": "a[aria-label='抖音'], a[aria-label='抖音'] svg, a[aria-label='抖音'] use",
+      "text": ["抖音喵~ 主人的短视频都在这里！", "想刷主人的抖音？点进去看看喵~"]
+    },
+    {
+      "selector": "widget-layout[data-id='announcement'], widget-layout[data-id='announcement'] *",
+      "text": [
+        "这是公告栏喵~ 主人想说的话都贴在这里！",
+        "公告栏！有新消息诺瓦都会第一个提醒你喵~",
+        "下面的按钮可以看更多公告详情喵~ 点它点它！"
+      ]
+    },
+    {
+      "selector": "widget-layout[data-id='tags'], widget-layout[data-id='tags'] *",
+      "text": [
+        "标签喵~ 文章都按主题分门别类啦！",
+        "想按关键词找文章？看标签最快喵~",
+        "这里全是标签喵~ 戳一个就能找到同类的文章哦！"
+      ]
+    },
+    {
+      "selector": "widget-layout[data-id='card-toc'], widget-layout[data-id='card-toc'] *, table-of-contents, table-of-contents *",
+      "text": [
+        "文章目录喵~ 点一下就能跳到对应章节！",
+        "长文必备的目录喵~ 先看看文章有哪些部分吧！",
+        "这是目录喵~ 想读哪段直接点！诺瓦帮你记页码！"
+      ]
+    },
+    {
+      "selector": "widget-layout[data-id='site-stats'], widget-layout[data-id='site-stats'] *",
+      "text": [
+        "站点统计喵~ 文章数、字数、建站天数都在这！",
+        "这里是主人的数据面板喵~ 看看这个站陪了主人多久！"
+      ]
+    },
+    {
+      "selector": "widget-layout[data-id='calendar-widget'], widget-layout[data-id='calendar-widget'] *",
+      "text": [
+        "日历喵~ 主人发布文章的日子都标在上面！",
+        "日历！有文章的日子会亮起来喵~ 快找找！",
+        "日历喵~ 哪天更新了文章一目了然！"
+      ]
+    },
+    {
+      "selector": "widget-layout[data-id='categories'], widget-layout[data-id='categories'] *",
+      "text": [
+        "分类喵~ 文章按类别整整齐齐排好啦！",
+        "想按分类逛文章？从这里进喵~",
+        "分类导航喵~ 想看什么类型的内容一目了然！"
+      ]
+    },
+    {
+      "selector": ".music-sidebar-widget, .music-sidebar-widget *",
+      "text": [
+        "音乐播放器喵~ 边逛博客边听歌！",
+        "这里可以放歌喵~ 主人的宝藏歌单都在里面！",
+        "听歌吗喵~ 诺瓦推荐主人歌单里最甜的一首！"
+      ]
+    },
+    {
+      "selector": "h1, h2, h3",
+      "text": [
+        "这是一个标题喵~",
+        "标题是内容的眼睛喵，先看标题就知道主题啦~"
+      ]
+    },
+    {
+      "selector": "article, .post-content, .markdown-content",
+      "text": [
+        "这是文章正文区域喵~",
+        "主人写的内容呢，要仔细看哦喵~"
+      ]
+    },
+    {
+      "selector": "footer, .footer, #footer",
+      "text": [
+        "这里是页脚喵，有版权信息~",
+        "站点的底部区域喵~"
+      ]
+    },
+    {
+      "selector": "button, .btn, [type='submit'], [type='button']",
+      "text": [
+        "这是一个按钮喵~",
+        "按钮！要不要戳一下试试呐喵~",
+        "点一下这个按钮，可能有惊喜哦喵~"
+      ]
+    },
+    {
+      "selector": "input[type='search'], .search-input, #search",
+      "text": [
+        "搜索框喵，想找什么内容就在这里搜吧~",
+        "不知道看什么？搜搜看喵~"
+      ]
+    },
+    {
+      "selector": ".toc, .table-of-contents, #toc",
+      "text": [
+        "这是文章目录喵~点击能跳到对应章节~",
+        "长文必备目录喵~快看看文章有哪些部分~"
+      ]
+    },
+    {
+      "selector": ".tag, .tags a, [class*='tag']",
+      "text": [
+        "这是一个标签喵~点击能看同标签的文章~",
+        "想看同类文章？点这里喵~"
+      ]
+    },
+    {
+      "selector": ".comment, #comments, .comments",
+      "text": [
+        "评论区喵！看完文章可以留下想法哦~",
+        "评论是主人和读者交流的地方喵~"
+      ]
+    },
+    {
+      "selector": "a[href^='http'], .external-link",
+      "text": [
+        "外部链接喵~点击会跳到其他网站~",
+        "外链，会在新页面打开的喵~"
+      ]
+    },
+    {
+      "selector": "img, .image",
+      "text": [
+        "一张图片喵~主人精心挑选的哦~",
+        "图里藏着什么呢喵~"
+      ]
+    },
+    {
+      "selector": "code, pre",
+      "text": [
+        "代码块喵~程序员最爱的部分~",
+        "是代码呢，能读懂吗喵~"
+      ]
+    },
+    {
+      "selector": "blockquote",
+      "text": [
+        "一段引用喵~主人觉得很有道理~",
+        "这是别人的话，主人引用过来的喵~"
+      ]
+    },
+    {
+      "selector": ".music-player, [class*='music'], .player",
+      "text": [
+        "这里可以听音乐喵~",
+        "音乐播放器！放一首歌放松一下吧喵~"
+      ]
+    },
+    {
+      "selector": ".announcement, [class*='announcement']",
+      "text": [
+        "这里有主人的公告喵~",
+        "最新消息都贴在这啦喵~"
+      ]
+    },
+    {
+      "selector": ".friend, [class*='friend'], .links",
+      "text": [
+        "这里是主人的朋友们喵~",
+        "友链！去看看主人的朋友们在写什么喵~"
+      ]
+    },
+    {
+      "selector": ".profile, .avatar, [class*='profile']",
+      "text": [
+        "这是主人本人喵~",
+        "主人的信息卡片喵~"
+      ]
+    },
+    {
+      "selector": "a, [role='button']",
+      "text": [
+        "点这里可以了解更多喵~",
+        "要不要点一下，看看会去哪里呢喵~"
+      ]
+    }
+  ],
+  "pageTransition": [
+    "到新页面啦喵~ 诺瓦跟着你呢，别怕！",
+    "咦？换了一页喵……诺瓦差点没跟上！",
+    "无论走到哪一页，诺瓦都在你身边喵~",
+    "这一页也有宝藏哦，诺瓦陪你慢慢逛喵~",
+    "到这里啦~要我陪你一起看看吗喵~"
+  ],
+  "click": [
+    {
+      "selector": "img",
+      "text": ["点我...可以放大哦喵~"]
+    }
+  ],
+  "seasons": [
+    {
+      "date": "01/01",
+      "text": ["新年快乐喵！新的一年也要和诺瓦一起加油哦~"]
+    },
+    {
+      "date": "12/25",
+      "text": ["圣诞快乐喵~诺瓦给主人和客人们准备了小鱼干~"]
+    }
+  ]
+}

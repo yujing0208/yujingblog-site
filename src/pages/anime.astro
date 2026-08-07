@@ -1,0 +1,599 @@
+---
+import "../styles/anime.css";
+
+import { AnimeCategoryFilter, AnimeFilterPills, AnimeFilters, AnimeGrid, AnimeTabNav } from "@components/features/anime";
+import { PageHeader } from "@components/features/page-header";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Comment from "@components/comment/index.astro";
+
+import { siteConfig } from "../config";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import {
+	getAnimeList,
+	getAnimeSourceConfigs,
+	getStatusMap,
+} from "../utils/anime-data";
+import { widgetManager } from "../utils/widget-manager";
+
+if (!siteConfig.featurePages.anime) {
+	return Astro.redirect("/404/");
+}
+
+const hasRightSidebars =
+	widgetManager.getComponentsByPosition("top", "right", "desktop").length > 0 ||
+	widgetManager.getComponentsByPosition("sticky", "right", "desktop").length >
+		0;
+
+const ANIME_MODE = siteConfig.anime?.mode || "bangumi";
+const sourceConfigs = getAnimeSourceConfigs();
+const { animeList, currentConfig } = getAnimeList(ANIME_MODE, sourceConfigs);
+
+let emptyDescription = "";
+let showEmptyState = false;
+
+if (
+	ANIME_MODE === "bilibili" &&
+	(!siteConfig.bilibili?.vmid || siteConfig.bilibili.vmid === "")
+) {
+	showEmptyState = true;
+	emptyDescription = i18n(I18nKey.animeConfigBilibili);
+} else if (
+	ANIME_MODE === "bangumi" &&
+	siteConfig.bangumi?.userId === "your-user-id"
+) {
+	showEmptyState = true;
+	emptyDescription = i18n(I18nKey.animeConfigBangumi);
+} else if (animeList.length === 0) {
+	showEmptyState = true;
+	if (
+		currentConfig &&
+		currentConfig.type === "json" &&
+		"emptyDescription" in currentConfig &&
+		currentConfig.emptyDescription
+	) {
+		emptyDescription = currentConfig.emptyDescription;
+	} else if (ANIME_MODE === "local") {
+		emptyDescription = i18n(I18nKey.animeEmptyLocal);
+	} else {
+		emptyDescription = "No anime data found.";
+	}
+}
+
+const statusMap = getStatusMap();
+const INITIAL_DISPLAY_COUNT = 24;
+const visibleAnimeList = animeList.slice(0, INITIAL_DISPLAY_COUNT);
+const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
+const emptyMessage = i18n(I18nKey.animeEmpty);
+
+// Compute category counts
+const categoryCounts = animeList.reduce(
+	(acc, item) => {
+		const cat = item.category || "anime";
+		acc[cat] = (acc[cat] || 0) + 1;
+		acc["all"] = (acc["all"] || 0) + 1;
+		return acc;
+	},
+	{ all: 0, anime: 0, novel: 0, game: 0 } as Record<string, number>
+);
+
+// Firely-style TabNav 数据（分类标签）
+const categoryTabs = [
+	{ id: "anime", name: i18n(I18nKey.animeCategoryAnime), count: categoryCounts["anime"] ?? 0 },
+	{ id: "novel", name: i18n(I18nKey.animeCategoryNovel), count: categoryCounts["novel"] ?? 0 },
+	{ id: "game", name: i18n(I18nKey.animeCategoryGame), count: categoryCounts["game"] ?? 0 },
+];
+
+// Firely-style FilterPills 数据（状态筛选）
+const statusFilterPills = [
+	{ value: "all", label: i18n(I18nKey.animeFilterAll), count: categoryCounts["all"] ?? 0 },
+	{ value: "watching", label: i18n(I18nKey.animeStatusWatching) },
+	{ value: "completed", label: i18n(I18nKey.animeStatusCompleted) },
+	{ value: "planned", label: i18n(I18nKey.animeStatusPlanned) },
+];
+---
+
+<MainGridLayout
+	title={i18n(I18nKey.anime)}
+	description={i18n(I18nKey.animeSubtitle)}
+>
+	<div
+		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
+	>
+		<div class="card-base anime-card-base z-10 px-9 py-6 relative w-full">
+			<div class="relative w-full mb-8">
+				<PageHeader
+					title={i18n(I18nKey.animeTitle)}
+					subtitle={i18n(I18nKey.animeSubtitle)}
+				/>
+
+				<!-- Firely-style Filter: 分类标签 + 状态药片 -->
+			<div class="bangumi-filter-section">
+				<!-- 分类标签 (TabNav) -->
+				<AnimeTabNav tabs={categoryTabs} activeTab="anime" />
+
+				<!-- 状态筛选 (FilterPills) -->
+				<AnimeFilterPills
+					filters={statusFilterPills}
+					activeFilter="all"
+					dataAttr="data-status"
+					containerClass="bangumi-status-filters"
+				/>
+			</div>
+			</div>
+
+			<div class="mb-8">
+				{
+					showEmptyState ? (
+						<div class="text-center py-12">
+							<div class="text-5xl mb-4">😢</div>
+							<h3 class="text-xl font-medium text-black/80 dark:text-white/80 mb-2">
+								{emptyMessage}
+							</h3>
+							<p class="text-black/60 dark:text-white/60">
+								{emptyDescription}
+							</p>
+						</div>
+					) : (
+						<AnimeGrid
+							visibleAnimeList={visibleAnimeList}
+							hiddenAnimeList={hiddenAnimeList}
+							statusMap={statusMap}
+							yearLabel={i18n(I18nKey.animeYear)}
+							studioLabel={i18n(I18nKey.animeStudio)}
+							episodesLabel={i18n(I18nKey.animeEpisodes)}
+						/>
+					)
+				}
+			</div>
+
+			<!-- Comments Section -->
+			<Comment path="/anime/" />
+		</div>
+	</div>
+
+	<script is:inline define:vars={{ hasRightSidebars }}>
+		(function () {
+			const containerId = "anime-list-container";
+
+			function updateAnimeListLayout(layout, shouldAnimate = true) {
+				const animeListContainer = document.getElementById(containerId);
+				if (!animeListContainer) {
+					return;
+				}
+				animeListContainer.dataset.currentLayout = layout;
+
+				const animeItems = Array.from(
+					document.querySelectorAll("[data-anime-status]"),
+				);
+				const visibleItems = animeItems.filter(
+					(item) => item.offsetParent !== null,
+				);
+				const firstPositions = new Map();
+				if (shouldAnimate) {
+					visibleItems.forEach((item) => {
+						const rect = item.getBoundingClientRect();
+						firstPositions.set(item, {
+							left: rect.left,
+							top: rect.top,
+							width: rect.width,
+							height: rect.height,
+						});
+					});
+				}
+
+				const style = document.createElement("style");
+				style.innerHTML = `.anime-grid-container .group { transition: none !important; }`;
+				document.head.appendChild(style);
+				animeListContainer.classList.remove(
+					"anime-list-mode",
+					"anime-grid-mode",
+				);
+				animeListContainer.classList.remove(
+					"grid-cols-1",
+					"md:grid-cols-2",
+					"lg:grid-cols-3",
+				);
+				if (layout === "grid") {
+					animeListContainer.classList.add("anime-grid-mode");
+					if (hasRightSidebars) {
+						const rightSidebar = document.querySelector(
+							".right-sidebar-container",
+						);
+						if (rightSidebar) {
+							rightSidebar.style.display = "none";
+							rightSidebar.classList.add("hidden-in-grid-mode");
+						}
+					}
+					const mainGrid = document.getElementById("main-grid");
+					if (mainGrid) {
+						mainGrid.style.gridTemplateColumns = "17.5rem 1fr";
+						mainGrid.classList.add("two-column-layout");
+					}
+				} else {
+					animeListContainer.classList.add("anime-list-mode");
+					animeListContainer.classList.add(
+						"grid-cols-1",
+						"lg:grid-cols-2",
+					);
+					if (hasRightSidebars) {
+						const rightSidebar = document.querySelector(
+							".right-sidebar-container",
+						);
+						if (rightSidebar) {
+							rightSidebar.style.display = "";
+							rightSidebar.classList.remove(
+								"hidden-in-grid-mode",
+							);
+						}
+					}
+					const mainGrid = document.getElementById("main-grid");
+					if (mainGrid) {
+						mainGrid.style.gridTemplateColumns = "";
+						mainGrid.classList.remove("two-column-layout");
+					}
+				}
+
+				void animeListContainer.offsetHeight;
+				if (!shouldAnimate) {
+					if (style.parentNode) {
+						style.parentNode.removeChild(style);
+					}
+					return;
+				}
+
+				requestAnimationFrame(() => {
+					if (style.parentNode) {
+						style.parentNode.removeChild(style);
+					}
+
+					visibleItems.forEach((item) => {
+						const first = firstPositions.get(item);
+						if (!first) {
+							return;
+						}
+						const last = item.getBoundingClientRect();
+
+						const deltaX = Math.round(first.left - last.left);
+						const deltaY = Math.round(first.top - last.top);
+						const deltaW = first.width / last.width;
+						const deltaH = first.height / last.height;
+
+						if (
+							Math.abs(deltaX) < 1 &&
+							Math.abs(deltaY) < 1 &&
+							Math.abs(deltaW - 1) < 0.01 &&
+							Math.abs(deltaH - 1) < 0.01
+						) {
+							return;
+						}
+
+						item.style.willChange = "transform";
+						item.style.transition = "none";
+						item.style.transformOrigin = "top left";
+						item.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${deltaW}, ${deltaH})`;
+					});
+
+					void animeListContainer.offsetHeight;
+					requestAnimationFrame(() => {
+						visibleItems.forEach((item) => {
+							item.style.transition =
+								"transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)";
+							item.style.transform = "";
+						});
+
+						setTimeout(() => {
+							visibleItems.forEach((item) => {
+								item.classList.remove(
+									"anime-fade-in-active",
+								);
+								item.style.transition = "";
+								item.style.transformOrigin = "";
+								item.style.transform = "";
+								item.style.willChange = "";
+								item.style.transitionDelay = "";
+							});
+						}, 500);
+					});
+				});
+			}
+
+			function isPostListLayoutEnabled() {
+				return document.documentElement.getAttribute("data-post-list-layout-enabled") !== "false";
+			}
+
+			function initAnimeLayout() {
+				const animeListContainer = document.getElementById(containerId);
+				if (!animeListContainer) {
+					return false;
+				}
+				const currentLayout =
+					(isPostListLayoutEnabled() ? localStorage.getItem("postListLayout") : null) || "list";
+				updateAnimeListLayout(currentLayout, false);
+				requestAnimationFrame(() => {
+					animeListContainer.classList.remove("opacity-0");
+				});
+				return true;
+			}
+
+			let retryCount = 0;
+			const maxRetries = 10;
+
+			function tryInit() {
+				if (initAnimeLayout()) {
+					return;
+				}
+				if (retryCount < maxRetries) {
+					retryCount++;
+					const delay = Math.min(
+						100 * Math.pow(1.5, retryCount),
+						1000,
+					);
+					setTimeout(tryInit, delay);
+				} else {
+					setTimeout(() => {
+						const animeListContainer =
+							document.getElementById(containerId);
+						if (animeListContainer) {
+							const currentLayout =
+								(isPostListLayoutEnabled() ? localStorage.getItem("postListLayout") : null) || "list";
+							updateAnimeListLayout(currentLayout, false);
+							animeListContainer.classList.remove("opacity-0");
+						}
+					}, 2000);
+				}
+			}
+
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", tryInit);
+			} else {
+				tryInit();
+			}
+
+			window.addEventListener("layoutChange", (event) => {
+				updateAnimeListLayout(event.detail.layout);
+			});
+		})();
+	</script>
+
+	<script is:inline>
+		if (typeof window.animeFilterEventListeners === "undefined") {
+			window.animeFilterEventListeners = [];
+		}
+
+		// Track current filter state
+		let activeCategory = "all";
+		let activeStatus = "all";
+
+		function applyFilters() {
+			const listContainer = document.getElementById("anime-list-container");
+			if (!listContainer) return;
+
+			const animeItems = Array.from(
+				listContainer.children,
+			).filter((item) => item.hasAttribute("data-anime-status"));
+
+			animeItems.forEach((item) => {
+				const itemCategory = item.getAttribute("data-anime-category") || "anime";
+				const itemStatus = item.getAttribute("data-anime-status");
+
+				const categoryMatch = activeCategory === "all" || itemCategory === activeCategory;
+				const statusMatch = activeStatus === "all" || itemStatus === activeStatus;
+
+				const shouldShow = categoryMatch && statusMatch;
+				const isCurrentlyVisible = !item.classList.contains("anime-hidden");
+
+				if (shouldShow && !isCurrentlyVisible) {
+					item.classList.remove("anime-hidden");
+					item.classList.add("anime-fade-in");
+					item.style.transition = "none";
+					requestAnimationFrame(() => {
+						item.classList.remove("anime-fade-in");
+						item.classList.add("anime-fade-in-active");
+						setTimeout(() => {
+							item.classList.remove("anime-fade-in-active");
+							item.style.transition = "";
+							item.style.transform = "";
+							item.style.willChange = "";
+						}, 500);
+					});
+				} else if (!shouldShow && isCurrentlyVisible) {
+					item.classList.add("anime-fade-out");
+					setTimeout(() => {
+						item.classList.add("anime-hidden");
+						item.classList.remove("anime-fade-out");
+					}, 200);
+				}
+			});
+		}
+
+		function initFilterButtons() {
+			// Firely TabNav: 分类标签点击
+			const categoryTabs = document.querySelectorAll(".bangumi-tab[data-tab-id]");
+			// Firely FilterPills: 状态筛选点击
+			const statusPills = document.querySelectorAll(".bangumi-status-filters .bangumi-filter-pill");
+			const sentinel = document.getElementById(
+				"infinite-scroll-sentinel",
+			);
+			const listContainer = document.getElementById(
+				"anime-list-container",
+			);
+			const lazyStore = document.getElementById("anime-lazy-store");
+			window.animeFilterEventListeners.forEach((listener) => {
+				const [element, type, handler] = listener;
+				element.removeEventListener(type, handler);
+			});
+			window.animeFilterEventListeners = [];
+
+			// Category tab click handlers (Firely TabNav)
+			categoryTabs.forEach((tab) => {
+				const clickHandler = function () {
+					if (this.classList.contains("bangumi-tab-active")) return;
+
+					categoryTabs.forEach((t) => t.classList.remove("bangumi-tab-active"));
+					this.classList.add("bangumi-tab-active");
+
+					activeCategory = this.getAttribute("data-tab-id") || "anime";
+					applyFilters();
+				};
+
+				tab.addEventListener("click", clickHandler);
+				window.animeFilterEventListeners.push([tab, "click", clickHandler]);
+			});
+
+			// Status pill click handlers (Firely FilterPills)
+			statusPills.forEach((pill) => {
+				const clickHandler = function () {
+					if (this.classList.contains("bangumi-filter-pill-active")) return;
+
+					statusPills.forEach((p) => p.classList.remove("bangumi-filter-pill-active"));
+					this.classList.add("bangumi-filter-pill-active");
+
+					// Show all hidden items first, then re-filter
+					if (lazyStore && lazyStore.content.children.length > 0 && listContainer) {
+						const fragment = document.createDocumentFragment();
+						while (lazyStore.content.firstChild) {
+							const node = lazyStore.content.firstChild;
+							fragment.appendChild(node);
+						}
+						listContainer.appendChild(fragment);
+					}
+
+					if (sentinel) sentinel.style.display = "none";
+
+					const initialHidden = listContainer.querySelectorAll(".initial-hidden");
+					initialHidden.forEach((el) => {
+						el.classList.remove("hidden", "initial-hidden");
+					});
+
+					activeStatus = this.getAttribute("data-status") || "all";
+					applyFilters();
+				};
+
+				pill.addEventListener("click", clickHandler);
+				window.animeFilterEventListeners.push([pill, "click", clickHandler]);
+			});
+
+			// Infinite scroll observer
+			if (sentinel && lazyStore && listContainer) {
+				const observer = new IntersectionObserver(
+					(entries) => {
+						if (entries[0].isIntersecting) {
+							const BATCH_SIZE = 24;
+							if (lazyStore.content.children.length === 0) {
+								sentinel.style.display = "none";
+								observer.disconnect();
+								return;
+							}
+
+							const fragment = document.createDocumentFragment();
+							let movedCount = 0;
+							while (
+								lazyStore.content.firstChild &&
+								movedCount < BATCH_SIZE
+							) {
+								const node = lazyStore.content.firstChild;
+								if (node.nodeType === 1) {
+									node.classList.add("anime-fade-in-active");
+								}
+								fragment.appendChild(node);
+								movedCount++;
+							}
+
+							requestAnimationFrame(() => {
+								listContainer.appendChild(fragment);
+								if (lazyStore.content.children.length === 0) {
+									sentinel.style.display = "none";
+									observer.disconnect();
+								}
+								// Re-apply filters after loading more items
+								applyFilters();
+							});
+						}
+					},
+					{ rootMargin: "200px" },
+				);
+				observer.observe(sentinel);
+		} else if (sentinel) {
+			sentinel.style.display = "none";
+		}
+	}
+
+	function initPillFilters() {
+		const containers = document.querySelectorAll(".anime-pill-filter");
+		containers.forEach((container) => {
+			if (container.dataset.pillInit === "true") return;
+
+			const slider = container.querySelector(".anime-pill-slider");
+			const buttons = Array.from(
+				container.querySelectorAll(".anime-filter-tag"),
+			);
+			if (!slider || buttons.length === 0) return;
+
+			const moveTo = (btn) => {
+				slider.style.width = btn.offsetWidth + "px";
+				slider.style.transform = `translateX(${btn.offsetLeft}px)`;
+			};
+
+			const placeInitial = () => {
+				const active =
+					container.querySelector(".anime-filter-tag.anime-active") ||
+					buttons[0];
+				moveTo(active);
+			};
+
+			buttons.forEach((btn) => {
+				btn.addEventListener("click", () => moveTo(btn));
+			});
+
+			requestAnimationFrame(placeInitial);
+			if (document.fonts && document.fonts.ready) {
+				document.fonts.ready.then(placeInitial);
+			}
+
+			container.dataset.pillInit = "true";
+		});
+
+		if (!window.__animePillResizeBound) {
+			window.__animePillResizeBound = true;
+			window.addEventListener("resize", () => {
+				document
+					.querySelectorAll(".anime-pill-filter")
+					.forEach((container) => {
+						const slider = container.querySelector(
+							".anime-pill-slider",
+						);
+						const active =
+							container.querySelector(
+								".anime-filter-tag.anime-active",
+							) || container.querySelector(".anime-filter-tag");
+						if (slider && active) {
+							slider.style.width = active.offsetWidth + "px";
+							slider.style.transform = `translateX(${active.offsetLeft}px)`;
+						}
+					});
+			});
+		}
+	}
+
+	document.addEventListener("DOMContentLoaded", initFilterButtons);
+		function setupSwupListeners() {
+			if (window.swup) {
+				window.swup.hooks.on("content:replace", () =>
+					setTimeout(initFilterButtons, 150),
+				);
+				window.swup.hooks.on("page:view", () =>
+					setTimeout(initFilterButtons, 150),
+				);
+			}
+		}
+
+		if (typeof window !== "undefined") {
+			if (window.swup) {
+				setupSwupListeners();
+			} else {
+				document.addEventListener("swup:enable", setupSwupListeners);
+			}
+		}
+	</script>
+</MainGridLayout>

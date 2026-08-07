@@ -1,0 +1,31 @@
+---
+interface Filter {
+	value: string;
+	label: string;
+	count?: number;
+}
+
+interface Props {
+	filters: Filter[];
+	activeFilter: string;
+	dataAttr?: string;
+	containerClass?: string;
+}
+
+const { filters, activeFilter, dataAttr = "data-status", containerClass = "" } = Astro.props;
+---
+
+<div class={`bangumi-filter-pills ${containerClass}`} data-filter-container>
+  {filters.map((filter) => (
+    <button
+      class={`bangumi-filter-pill ${filter.value === activeFilter ? "bangumi-filter-pill-active" : ""}`}
+      type="button"
+      {...{ [dataAttr]: filter.value }}
+    >
+      {filter.label}
+      {filter.count !== undefined && (
+        <span class="bangumi-filter-count">({filter.count})</span>
+      )}
+    </button>
+  ))}
+</div>

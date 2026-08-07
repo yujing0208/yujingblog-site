@@ -1,0 +1,33 @@
+---
+interface Tab {
+	id: string;
+	name: string;
+	count?: number;
+}
+
+interface Props {
+	tabs: Tab[];
+	activeTab: string;
+}
+
+const { tabs, activeTab } = Astro.props;
+---
+
+<div class="bangumi-tab-nav">
+  <div class="bangumi-tab-scroll" data-tab-scroll-container>
+    <nav class="bangumi-tab-list" aria-label="分类标签">
+      {tabs.map((tab) => (
+        <button
+          class={`bangumi-tab ${tab.id === activeTab ? "bangumi-tab-active" : ""}`}
+          data-tab-id={tab.id}
+          type="button"
+        >
+          {tab.name}
+          {tab.count !== undefined && (
+            <span class="bangumi-tab-count">{tab.count}</span>
+          )}
+        </button>
+      ))}
+    </nav>
+  </div>
+</div>

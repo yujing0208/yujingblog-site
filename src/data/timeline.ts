@@ -1,0 +1,55 @@
+import type { TimelineItem } from "../components/features/timeline/types";
+
+export const timelineData: TimelineItem[] = [
+	{
+		id: "初中毕业",
+		title: "初中毕业",
+		description:
+			"三年初中学习结束",
+		type: "education",
+		startDate: "2023-09-01",
+		endDate: "2025-06-10",
+		location: "安徽 合肥",
+		organization: "合肥市一六八玫瑰园学校南校",
+		achievements: [
+			"获得了优异的学习成绩",
+		],
+		icon: "material-symbols:school",
+		color: "#59f0cf",
+	},
+	{
+		id: "高一学习",
+		title: "高一学习",
+		description:
+			"中考发挥失常，进入徭役开始高中学习，在高一57班。",
+		type: "education",
+		startDate: "2025-08-27",
+		endDate: "2026-07-11",
+		location: "安徽 合肥",
+		organization: "合肥市第一中学瑶海校区",
+		achievements: [
+			"积极参与志愿服务活动",
+			"青年志愿者协会成员",
+			"学习状态堪忧，成绩一落千丈，整天发呆",
+		],
+		icon: "material-symbols:school",
+		color: "#9a6bf1",
+	},
+	{
+		id: "高二学习",
+		title: "高二学习",
+		description:
+			"高一学习结束，进入高二54班。",
+		type: "",
+		startDate: "2026-09-01",
+		location: "安徽 合肥",
+		organization: "合肥市第一中学瑶海校区",
+		achievements: [
+			"成为尊贵的物化生学者",
+			"物化生素养班学生",
+			"",
+		],
+		icon: "material-symbols:school",
+		color: "#3983f1",
+	},
+];

@@ -1,0 +1,224 @@
+---
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const { class: className, style } = Astro.props;
+
+// Umami 公开分享链接（在 Umami 后台对应站点开启 Share 后获得）
+const UMAMI_SHARE_URL = "https://cloud.umami.is/share/eq6I2iWnakVCH2Rt";
+---
+
+<WidgetLayout
+	id="umami-stats"
+	name="访问统计"
+	class:list={["umami-visit-stats", className]}
+	style={style}
+>
+	<a
+		href={UMAMI_SHARE_URL}
+		target="_blank"
+		rel="noopener noreferrer"
+		class="block umami-link"
+	>
+		<div class="text-center py-2">
+			<div
+				class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-pageviews"
+			>
+				-
+			</div>
+			<div class="text-sm text-neutral-500 dark:text-neutral-400">
+				总浏览量
+			</div>
+		</div>
+		<div
+			class="grid grid-cols-2 divide-x divide-neutral-200 dark:divide-neutral-700 text-center pt-2"
+		>
+			<div class="px-2">
+				<div
+					class="text-xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-visits"
+				>
+					-
+				</div>
+				<div class="text-sm text-neutral-500 dark:text-neutral-400">
+					访问数
+				</div>
+			</div>
+			<div class="px-2">
+				<div
+					class="text-xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-visitors"
+				>
+					-
+				</div>
+				<div class="text-sm text-neutral-500 dark:text-neutral-400">
+					游客数
+				</div>
+			</div>
+		</div>
+	</a>
+</WidgetLayout>
+
+<script is:inline define:vars={{ UMAMI_SHARE_URL }}>
+	const UMAMI_CONFIG = { shareUrl: UMAMI_SHARE_URL };
+	// 统计周期（天）：30 = 最近 30 天；设为 0 表示全部时间
+	const STATS_PERIOD_DAYS = 30;
+	// API 请求失败时的兜底数据（保持 UI 美观）
+	const FALLBACK_STATS = { pageviews: 1000, visits: 1000, visitors: 1000 };
+
+	let __UMAMI_INTERNAL = {
+		baseUrl: "",
+		websiteId: "",
+		shareToken: "",
+		shareId: "",
+		isReady: false,
+	};
+
+	async function initUmamiConfig() {
+		try {
+			const sharePath = UMAMI_CONFIG.shareUrl.split("/share/")[1];
+			if (!sharePath) throw new Error("Invalid Umami Share URL");
+
+			let apiBase = "";
+			if (
+				UMAMI_CONFIG.shareUrl.includes("cloud.umami.is") ||
+				UMAMI_CONFIG.shareUrl.includes("analytics.umami.is")
+			) {
+				const region = UMAMI_CONFIG.shareUrl.includes("/analytics/eu/")
+					? "eu"
+					: "us";
+				apiBase = `https://cloud.umami.is/analytics/${region}/api`;
+			} else {
+				const urlObj = new URL(UMAMI_CONFIG.shareUrl);
+				apiBase = `${urlObj.origin}/api`;
+			}
+
+			const res = await fetch(`${apiBase}/share/${sharePath}`);
+			if (!res.ok)
+				throw new Error(`Failed to fetch share config: ${res.status}`);
+			const data = await res.json();
+
+			__UMAMI_INTERNAL = {
+				baseUrl: apiBase,
+				websiteId: data.websiteId,
+				shareToken: data.token,
+				shareId: data.shareId,
+				isReady: true,
+			};
+
+			document
+				.querySelectorAll(".umami-link")
+				.forEach((link) => link.setAttribute("href", UMAMI_CONFIG.shareUrl));
+		} catch (e) {
+			console.error("Umami Config Init Failed:", e);
+		}
+	}
+
+	function formatNumber(num) {
+		if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+		if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+		return Math.round(num).toString();
+	}
+
+	function setStats(values) {
+		const pageviewsEls = document.querySelectorAll(".umami-total-pageviews");
+		const visitsEls = document.querySelectorAll(".umami-total-visits");
+		const visitorsEls = document.querySelectorAll(".umami-total-visitors");
+		const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+		const animHandles = new Map();
+
+		const animateStat = (el, to, duration = 2000) => {
+			if (!el) return;
+			const prev = animHandles.get(el);
+			if (prev) cancelAnimationFrame(prev);
+			const from = 0;
+			const startTime = performance.now();
+			const tick = (now) => {
+				const elapsed = now - startTime;
+				const progress = Math.min(1, elapsed / duration);
+				const eased = easeOutCubic(progress);
+				const current = from + (to - from) * eased;
+				el.textContent = formatNumber(current);
+				if (progress < 1) animHandles.set(el, requestAnimationFrame(tick));
+			};
+			animHandles.set(el, requestAnimationFrame(tick));
+		};
+
+		pageviewsEls.forEach((el) => animateStat(el, values.pageviews));
+		visitsEls.forEach((el) => animateStat(el, values.visits));
+		visitorsEls.forEach((el) => animateStat(el, values.visitors));
+	}
+
+	async function fetchUmamiStats() {
+		if (!__UMAMI_INTERNAL.isReady) await initUmamiConfig();
+		if (!__UMAMI_INTERNAL.isReady) {
+			setStats(FALLBACK_STATS);
+			return;
+		}
+		try {
+			const endAt = Date.now();
+			const startAt =
+				STATS_PERIOD_DAYS > 0
+					? Date.now() - STATS_PERIOD_DAYS * 24 * 60 * 60 * 1000
+					: 0;
+			const url = `${__UMAMI_INTERNAL.baseUrl}/websites/${__UMAMI_INTERNAL.websiteId}/stats?startAt=${startAt}&endAt=${endAt}&unit=hour&timezone=Asia%2FShanghai`;
+			const response = await fetch(url, {
+				headers: {
+					"x-umami-share-context": "1",
+					"x-umami-share-token": __UMAMI_INTERNAL.shareToken,
+				},
+			});
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			const data = await response.json();
+			const getValue = (field) =>
+				(typeof field === "object" && field !== null
+					? field.value
+					: field) || 0;
+			setStats({
+				pageviews: getValue(data.pageviews),
+				visits: getValue(data.visits),
+				visitors: getValue(data.visitors),
+			});
+		} catch (error) {
+			console.error("Umami Fetch Failed:", error);
+			setStats(FALLBACK_STATS);
+		}
+	}
+
+	let __umamiStatsStarted = false;
+	function startUmamiStats() {
+		if (__umamiStatsStarted) return;
+		__umamiStatsStarted = true;
+		fetchUmamiStats();
+	}
+
+	function initUmamiStatsVisibility() {
+		const containers = document.querySelectorAll(".umami-visit-stats");
+		if (!containers.length) return;
+		const io = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						startUmamiStats();
+						io.unobserve(entry.target);
+					}
+				});
+			},
+			{ threshold: 0.1 },
+		);
+		containers.forEach((c) => io.observe(c));
+	}
+
+	initUmamiStatsVisibility();
+
+	// Mizuki 使用 Swup 做 SPA 导航，content:replace 时重新拉取数据
+	if (window.swup) {
+		window.swup.hooks.on("content:replace", () => {
+			setTimeout(() => {
+				__umamiStatsStarted = false;
+				initUmamiStatsVisibility();
+			}, 150);
+		});
+	}
+</script>

@@ -1,0 +1,195 @@
+---
+// ============================================================
+// Hitokoto.astro — 每日一言 Widget
+// ------------------------------------------------------------
+// 数据源：Hitokoto 一言官方 API (https://v1.hitokoto.cn)
+//   - 前端直接 fetch，无需后端、零成本
+//   - API 原生支持 CORS，国内可直连
+// 行为：
+//   - 加载时自动拉取一句
+//   - 点击「换一句」可刷新
+//   - API 失败时显示兜底文案
+// 自定义：修改下方 CATEGORIES / SHOW_FROM 即可调整分类或隐藏出处
+// ============================================================
+import { Icon } from "astro-icon/components";
+
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+// 可选分类：a动画 b漫画 c游戏 d文学 e原创 f网络 g其他 h影视 i诗词 j网易云 k哲学 l抖机灵
+const CATEGORIES = "c=d&c=i&c=k"; // 文学 / 诗词 / 哲学，偏文艺
+const SHOW_FROM = true;
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const className = Astro.props.class;
+const style = Astro.props.style;
+---
+<WidgetLayout name="每日一言" id="hitokoto" class={className} style={style}>
+	<div class="hitokoto-widget">
+		<p class="hitokoto-text" id="hitokoto-text">正在加载一句话…</p>
+		<div class="hitokoto-foot">
+			<span class="hitokoto-from" id="hitokoto-from"></span>
+			<button
+				type="button"
+				class="hitokoto-refresh btn-regular"
+				id="hitokoto-refresh"
+				title="换一句"
+				aria-label="换一句"
+			>
+				<Icon name="material-symbols:refresh" class="text-base" />
+			</button>
+		</div>
+	</div>
+</WidgetLayout>
+
+<style>
+	.hitokoto-widget {
+		min-height: 3.5rem;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.hitokoto-text {
+		font-size: 0.9rem;
+		line-height: 1.65;
+		color: var(--text-neutral-700, #404040);
+		word-break: break-word;
+		transition: opacity 0.3s ease;
+	}
+
+	:global(.dark) .hitokoto-text {
+		color: var(--text-neutral-300, #d4d4d4);
+	}
+
+	.hitokoto-foot {
+		margin-top: 0.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.hitokoto-from {
+		font-size: 0.75rem;
+		color: var(--text-neutral-400, #a3a3a3);
+		text-align: right;
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.hitokoto-refresh {
+		flex-shrink: 0;
+		width: 1.85rem;
+		height: 1.85rem;
+		border-radius: 9999px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-neutral-500, #737373);
+		transition:
+			transform 0.3s ease,
+			color 0.2s ease,
+			background-color 0.2s ease;
+	}
+
+	.hitokoto-refresh:hover {
+		color: var(--primary, #3b82f6);
+		background: color-mix(in srgb, var(--primary, #3b82f6) 10%, transparent);
+	}
+
+	.hitokoto-refresh.spinning {
+		animation: hitokoto-spin 0.6s linear infinite;
+	}
+
+	@keyframes hitokoto-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hitokoto-text {
+			transition: none;
+		}
+
+		.hitokoto-refresh.spinning {
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	// 与组件内 CONFIG 保持一致
+	const CAT = "c=d&c=i&c=k";
+	const SHOW_FROM = true;
+	const FALLBACK_TEXT = "愿你被这个世界温柔以待。";
+
+	async function fetchHitokoto(): Promise<{ text: string; from: string }> {
+		const res = await fetch(`https://v1.hitokoto.cn/?${CAT}&encode=json`);
+		if (!res.ok) throw new Error("bad status " + res.status);
+		const data = await res.json();
+		const text = data.hitokoto ?? "";
+		let from = "";
+		if (SHOW_FROM && data.from) {
+			from = (data.from_who ? data.from_who + " · " : "—— ") + data.from;
+		}
+		return { text, from };
+	}
+
+	function renderHitokoto(widget: HTMLElement) {
+		const textEl = widget.querySelector<HTMLElement>("#hitokoto-text");
+		const fromEl = widget.querySelector<HTMLElement>("#hitokoto-from");
+		const btn = widget.querySelector<HTMLButtonElement>("#hitokoto-refresh");
+		if (!textEl) return;
+
+		let loading = false;
+
+		async function load() {
+			if (loading) return;
+			loading = true;
+			btn?.classList.add("spinning");
+			textEl!.style.opacity = "0.5";
+			try {
+				const { text, from } = await fetchHitokoto();
+				textEl!.textContent = text;
+				if (fromEl) fromEl.textContent = from;
+			} catch {
+				textEl!.textContent = FALLBACK_TEXT;
+				if (fromEl) fromEl.textContent = "";
+			} finally {
+				textEl!.style.opacity = "1";
+				btn?.classList.remove("spinning");
+				loading = false;
+			}
+		}
+
+		btn?.addEventListener("click", load);
+		load();
+	}
+
+	function initHitokoto() {
+		const widgets = document.querySelectorAll(
+			'widget-layout[data-id="hitokoto"]',
+		);
+		widgets.forEach((w) => renderHitokoto(w as HTMLElement));
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initHitokoto);
+	} else {
+		initHitokoto();
+	}
+
+	// 支持 Swup 页面切换后重新初始化
+	if (window.swup && window.swup.hooks?.on) {
+		window.swup.hooks.on("content:replace", () => {
+			setTimeout(initHitokoto, 100);
+		});
+	}
+</script>

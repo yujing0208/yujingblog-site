@@ -1,0 +1,554 @@
+---
+// ============================================================
+// Announcement.astro (升级版 — 多则公告轮播)
+// ------------------------------------------------------------
+// 功能：
+//   - 单则公告：行为与原版完全一致（纯文本展示）
+//   - 多则公告：横向滑动卡片 + 自动切换播放
+//     · 自动播放（默认 4s/则，可用 interval 字段配置）
+//     · hover 暂停 / 移开恢复
+//     · 触摸滑动（移动端）
+//     · 左右箭头（桌面端 hover 显示）
+//     · 指示点（位于链接按钮下方，可点击跳转）
+//     · 高度自适应：视口高度 = 最高卡片，切换不跳动
+//     · 每则公告可独立配置 链接(link)
+//     · 文字样式与原版一致（不区分颜色）
+//   - 关闭按钮与 localStorage 记忆（保留原行为）
+//
+// 数据格式（内容仓库 data/announcement.ts）：
+//   content: string                    → 单则（原格式，向后兼容）
+//   content: AnnouncementItem          → 单则对象（可带独立 link）
+//   content: (string|AnnouncementItem)[] → 多则，数组每一项即一则公告
+//
+//   AnnouncementItem = {
+//     content: string;                 // 公告正文
+//     link?: { enable, text, url, external };  // 独立链接（可选）
+//   }
+//
+//   全局字段 link 作为该则未配置时的默认值；
+//   interval?: number → 自动播放间隔（毫秒，默认 4000）
+// ============================================================
+import { Icon } from "astro-icon/components";
+
+import { announcementConfig } from "../../../config";
+import I18nKey from "../../../i18n/i18nKey";
+import { i18n } from "../../../i18n/translation";
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+const config = announcementConfig;
+
+// ---------- 归一化 ----------
+type ItemInput = string | { content: string; link?: unknown };
+type AnnouncementLink = {
+	enable?: boolean;
+	text: string;
+	url: string;
+	external?: boolean;
+};
+
+const rawItems = Array.isArray(config.content)
+	? config.content
+	: [config.content];
+
+const items = rawItems.map((it, i): {
+	id: number;
+	content: string;
+	link?: AnnouncementLink;
+	linkJson?: string;
+} => {
+	const isObj = typeof it === "object" && it !== null;
+	const content = isObj ? (it as { content: string }).content : (it as string);
+	const itemLink = isObj ? (it as { link?: AnnouncementLink }).link : undefined;
+	// 每则链接 = 该则独立链接 ?? 全局默认链接
+	const link = itemLink ?? config.link;
+	return {
+		id: i,
+		content,
+		link,
+		linkJson:
+			link && link.enable !== false
+				? JSON.stringify({
+						text: link.text,
+						url: link.url,
+						external: !!link.external,
+				  })
+				: undefined,
+	};
+});
+
+const multi = items.length > 1;
+const interval = config.interval ?? 4000;
+// 是否存在至少一则带链接的公告（决定是否渲染链接按钮占位）
+const hasAnyLink = items.some((it) => it.linkJson);
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const className = Astro.props.class;
+const style = Astro.props.style;
+---
+
+<!-- 组件显示现在由sidebarLayoutConfig统一控制，无需检查config.enable -->
+<WidgetLayout
+	name={config.title || i18n(I18nKey.announcement)}
+	id="announcement"
+	class={className}
+	style={style}
+>
+	<div
+		class="announcement-widget"
+		data-multi={multi}
+		data-interval={interval}
+	>
+		<!-- ===== 轮播视口 ===== -->
+		<div class="announcement-viewport" id="announcement-viewport">
+			<div
+				class="announcement-track"
+				id="announcement-track"
+				aria-live={multi ? "off" : undefined}
+			>
+				{
+					items.map((item) => (
+						<div
+							class:list={[
+								"announcement-card text-neutral-600 dark:text-neutral-300 leading-relaxed",
+								{ "announcement-card-single": !multi },
+							]}
+							data-link={item.linkJson || undefined}
+						>
+							{item.content}
+						</div>
+					))
+				}
+			</div>
+
+			{/* 左右箭头（仅多则时渲染，桌面端 hover 显示） */}
+			{multi && (
+				<>
+					<button
+						type="button"
+						class="announcement-arrow announcement-arrow-prev"
+						data-action="prev"
+						aria-label={i18n(I18nKey.announcementPrev)}
+					>
+						<Icon name="fa7-solid:chevron-left" class="text-xs" />
+					</button>
+					<button
+						type="button"
+						class="announcement-arrow announcement-arrow-next"
+						data-action="next"
+						aria-label={i18n(I18nKey.announcementNext)}
+					>
+						<Icon name="fa7-solid:chevron-right" class="text-xs" />
+					</button>
+				</>
+			)}
+		</div>
+
+		{/* ===== 底部区：链接（当前卡片）+ 指示点（链接下方）+ 关闭 ===== */}
+		<div class="flex items-start justify-between gap-3 mt-3">
+			<div class="min-w-0 flex-1">
+				{/* 链接按钮：跟随当前卡片切换 */}
+				{
+					multi ? (
+						hasAnyLink && (
+							<a
+								id="announcement-link"
+								class="announcement-link btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5"
+								href={items[0].linkJson
+									? (JSON.parse(items[0].linkJson) as { url: string }).url
+									: "#"}
+								target={
+									items[0].linkJson
+										? ((JSON.parse(items[0].linkJson) as { external: boolean })
+												.external
+											? "_blank"
+											: "_self")
+										: "_self"
+								}
+								rel={
+									items[0].linkJson &&
+									(JSON.parse(items[0].linkJson) as { external: boolean })
+										.external
+										? "noopener noreferrer"
+										: undefined
+								}
+							>
+								{
+									items[0].linkJson
+										? (JSON.parse(items[0].linkJson) as { text: string }).text
+										: ""
+								}
+							</a>
+						)
+					) : (
+						items[0].link && items[0].link.enable !== false && (
+							<a
+								href={items[0].link.url}
+								target={items[0].link.external ? "_blank" : "_self"}
+								rel={
+									items[0].link.external
+										? "noopener noreferrer"
+										: undefined
+								}
+								class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform inline-flex items-center gap-1.5"
+							>
+								{items[0].link.text}
+							</a>
+						)
+					)
+				}
+
+				{/* 指示点：位于链接按钮下方 */}
+				{multi && (
+					<div class="announcement-dots mt-2" id="announcement-dots">
+						{
+							items.map((item) => (
+								<button
+									type="button"
+									class="announcement-dot"
+									data-index={item.id}
+									aria-label={i18n(I18nKey.announcementDot) + " " + (item.id + 1)}
+								></button>
+							))
+						}
+					</div>
+				)}
+			</div>
+
+			{
+				config.closable && (
+					<button
+						class="btn-regular rounded-lg h-8 w-8 text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex-shrink-0"
+						onclick="closeAnnouncement()"
+						aria-label={i18n(I18nKey.announcementClose)}
+					>
+						<Icon name="fa7-solid:xmark" class="text-sm" />
+					</button>
+				)
+			}
+		</div>
+	</div>
+</WidgetLayout>
+
+<style>
+	/* ===== 轮播核心 ===== */
+	.announcement-widget[data-multi="true"] .announcement-viewport {
+		position: relative;
+		overflow: hidden;
+		/* 高度由 JS 按最高卡片动态计算，保证切换不跳动 */
+	}
+
+	.announcement-track {
+		display: flex;
+		transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+		will-change: transform;
+	}
+
+	.announcement-card {
+		width: 100%;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		word-break: break-word;
+	}
+
+	/* 单则公告：保持原样，无额外内边距 */
+	.announcement-widget[data-multi="false"] .announcement-card {
+		min-height: auto;
+	}
+
+	/* ===== 箭头 ===== */
+	.announcement-arrow {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		border-radius: 9999px;
+		color: var(--text-neutral-500, #737373);
+		background: color-mix(in srgb, var(--card-bg, #fff) 80%, transparent);
+		box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+		opacity: 0;
+		transition: opacity 0.2s ease, background-color 0.2s ease;
+		z-index: 2;
+		cursor: pointer;
+	}
+
+	.announcement-widget[data-multi="true"]:hover .announcement-arrow,
+	.announcement-arrow:focus-visible {
+		opacity: 1;
+	}
+
+	.announcement-arrow:hover {
+		background: color-mix(
+			in srgb,
+			var(--primary, #3b82f6) 12%,
+			var(--card-bg, #fff)
+		);
+		color: var(--primary, #3b82f6);
+	}
+
+	.announcement-arrow-prev {
+		left: 2px;
+	}
+
+	.announcement-arrow-next {
+		right: 2px;
+	}
+
+	/* ===== 指示点 ===== */
+	.announcement-dots {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.announcement-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+		padding: 0;
+		cursor: pointer;
+		background: var(--text-neutral-300, #d4d4d4);
+		transition: all 0.3s ease;
+		flex-shrink: 0;
+	}
+
+	.announcement-dot:hover {
+		background: var(--text-neutral-400, #a3a3a3);
+	}
+
+	.announcement-dot.active {
+		width: 18px;
+		background: var(--primary, #3b82f6);
+	}
+
+	/* ===== 关闭按钮 hover 红色（保持原样式一致） ===== */
+	.announcement-widget button[onclick="closeAnnouncement()"] {
+		margin-left: auto;
+	}
+
+	/* ===== 减少动效偏好 ===== */
+	@media (prefers-reduced-motion: reduce) {
+		.announcement-track {
+			transition: none;
+		}
+	}
+
+	/* ===== 移动端：隐藏箭头，用触摸滑动 ===== */
+	@media (width < 768px) {
+		.announcement-arrow {
+			display: none;
+		}
+
+		.announcement-widget[data-multi="false"] .announcement-card {
+			font-size: 0.875rem;
+		}
+	}
+</style>
+
+<script>
+	// ============================================================
+	// 多则公告轮播逻辑
+	// ============================================================
+	function initAnnouncementCarousel() {
+		const widgetLayouts = document.querySelectorAll(
+			'widget-layout[data-id="announcement"]',
+		);
+		if (widgetLayouts.length === 0) return;
+
+		widgetLayouts.forEach((widget) => {
+			const widgetEl = widget as HTMLElement;
+			const track = widgetEl.querySelector<HTMLElement>(
+				".announcement-track",
+			);
+			const viewport = widgetEl.querySelector<HTMLElement>(
+				".announcement-viewport",
+			);
+			if (!track || !viewport) return;
+
+			const cards = Array.from(
+				track.querySelectorAll<HTMLElement>(".announcement-card"),
+			);
+			if (cards.length <= 1) return; // 单则公告不启动轮播
+
+			const dots = Array.from(
+				widgetEl.querySelectorAll<HTMLElement>(".announcement-dot"),
+			);
+			const arrows = Array.from(
+				widgetEl.querySelectorAll<HTMLElement>(".announcement-arrow"),
+			);
+			const linkEl = widgetEl.querySelector<HTMLAnchorElement>(
+				".announcement-link",
+			);
+
+			let current = 0;
+			let timer: number | undefined;
+
+			// 自动播放间隔（默认 4000ms，可通过 content 配置中的 interval 字段覆盖）
+			const rawInterval = Number(widgetEl.dataset.interval);
+			const autoInterval = rawInterval > 0 ? rawInterval : 4000;
+
+			// ---- 高度自适应：视口高度 = 最高卡片 ----
+			function syncHeight() {
+				let maxH = 0;
+				cards.forEach((c) => {
+					// 卡片内容可能换行，这里使用 scrollHeight
+					const h = c.scrollHeight;
+					if (h > maxH) maxH = h;
+				});
+				viewport.style.height = maxH + "px";
+			}
+
+			// ---- 链接跟随当前卡片 ----
+			function syncLink(index: number) {
+				if (!linkEl) return;
+				const card = cards[index];
+				const raw = card.dataset.link;
+				if (!raw) {
+					linkEl.style.display = "none";
+					return;
+				}
+				const l = JSON.parse(raw) as {
+					text: string;
+					url: string;
+					external: boolean;
+				};
+				linkEl.style.display = "";
+				linkEl.href = l.url;
+				linkEl.textContent = l.text;
+				linkEl.target = l.external ? "_blank" : "_self";
+				linkEl.rel = l.external ? "noopener noreferrer" : undefined;
+			}
+
+			// ---- 切换 ----
+			function goTo(index: number) {
+				const total = cards.length;
+				current = ((index % total) + total) % total;
+				track.style.transform = `translateX(-${current * 100}%)`;
+				dots.forEach((d, i) => {
+					d.classList.toggle("active", i === current);
+				});
+				syncLink(current);
+			}
+
+			function next() {
+				goTo(current + 1);
+			}
+
+			function prev() {
+				goTo(current - 1);
+			}
+
+			function startAuto() {
+				stopAuto();
+				timer = window.setInterval(next, autoInterval);
+			}
+
+			function stopAuto() {
+				if (timer !== undefined) {
+					window.clearInterval(timer);
+					timer = undefined;
+				}
+			}
+
+			// ---- 触摸滑动 ----
+			let startX = 0;
+			let dragging = false;
+			viewport.addEventListener("touchstart", (e) => {
+				startX = e.touches[0].clientX;
+				dragging = true;
+				stopAuto();
+			});
+			viewport.addEventListener("touchend", (e) => {
+				if (!dragging) return;
+				dragging = false;
+				const dx = e.changedTouches[0].clientX - startX;
+				if (Math.abs(dx) > 40) {
+					dx < 0 ? next() : prev();
+				}
+				startAuto();
+			});
+
+			// ---- hover 暂停 ----
+			widgetEl.addEventListener("mouseenter", stopAuto);
+			widgetEl.addEventListener("mouseleave", startAuto);
+
+			// ---- 指示点点击 ----
+			dots.forEach((d) => {
+				d.addEventListener("click", () => {
+					goTo(Number(d.dataset.index) || 0);
+					// 点击后重置计时
+					startAuto();
+				});
+			});
+
+			// ---- 箭头点击 ----
+			arrows.forEach((a) => {
+				a.addEventListener("click", () => {
+					a.dataset.action === "prev" ? prev() : next();
+					startAuto();
+				});
+			});
+
+			// ---- 窗口尺寸变化时重新同步高度 ----
+			window.addEventListener("resize", syncHeight);
+
+			// ---- 启动 ----
+			syncHeight();
+			goTo(0);
+			startAuto();
+		});
+	}
+
+	// ============================================================
+	// 关闭公告（保留原行为）
+	// ============================================================
+	function closeAnnouncement() {
+		// 通过data-id属性找到整个widget-layout元素
+		const widgetLayouts = document.querySelectorAll(
+			'widget-layout[data-id="announcement"]',
+		);
+		if (widgetLayouts.length > 0) {
+			widgetLayouts.forEach((widget) => {
+				// 隐藏整个widget-layout元素
+				(widget as HTMLElement).style.display = "none";
+			});
+			// 保存关闭状态到localStorage
+			localStorage.setItem("announcementClosed", "true");
+		}
+	}
+
+	// 页面加载时检查是否已关闭
+	function onReady() {
+		const widgetLayouts = document.querySelectorAll(
+			'widget-layout[data-id="announcement"]',
+		);
+
+		if (
+			widgetLayouts.length > 0 &&
+			localStorage.getItem("announcementClosed") === "true"
+		) {
+			widgetLayouts.forEach((widget) => {
+				(widget as HTMLElement).style.display = "none";
+			});
+		}
+
+		// 启动轮播
+		initAnnouncementCarousel();
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", onReady);
+	} else {
+		onReady();
+	}
+
+	// 使公告栏函数全局可用
+	window.closeAnnouncement = closeAnnouncement;
+</script>

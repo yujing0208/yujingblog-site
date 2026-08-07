@@ -1,0 +1,270 @@
+/* ===== 看板娘 AI 聊天窗口（自适应日间/夜间模式）=====
+   用自定义变量 --chat-* 统一控制，:root.dark 下切换为白字深底 */
+
+#mizuki-chat-box {
+  /* 日间默认值 */
+  --chat-bg: var(--float-panel-bg, rgba(255, 255, 255, 0.92));
+  --chat-text: var(--deep-text, #333);
+  --chat-text-secondary: var(--content-meta, rgba(0, 0, 0, 0.6));
+  --chat-border: var(--line-color, rgba(0, 0, 0, 0.1));
+  --chat-divider: var(--line-divider, rgba(0, 0, 0, 0.08));
+  --chat-bubble-bg: var(--btn-regular-bg, rgba(0, 0, 0, 0.06));
+  --chat-bubble-hover: var(--btn-plain-bg-hover, rgba(0, 0, 0, 0.05));
+  --chat-input-bg: var(--btn-regular-bg, rgba(0, 0, 0, 0.05));
+  --chat-primary: var(--primary, #5b9eff);
+
+  position: fixed;
+  bottom: 72px;
+  left: 290px; /* 贴近看板娘右侧（看板娘宽 280px） */
+  width: 320px;
+  max-height: 460px;
+  background: var(--chat-bg);
+  border-radius: 18px;
+  border: 1px solid var(--chat-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  z-index: 998;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: inherit;
+  transform: translateY(0);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+/* 夜间模式：白字 */
+:root.dark #mizuki-chat-box {
+  --chat-bg: oklch(0.19 0.015 var(--hue, 230));
+  --chat-text: rgba(255, 255, 255, 0.92);
+  --chat-text-secondary: rgba(255, 255, 255, 0.55);
+  --chat-border: rgba(255, 255, 255, 0.12);
+  --chat-divider: rgba(255, 255, 255, 0.1);
+  --chat-bubble-bg: rgba(255, 255, 255, 0.09);
+  --chat-bubble-hover: rgba(255, 255, 255, 0.12);
+  --chat-input-bg: rgba(255, 255, 255, 0.08);
+}
+
+#mizuki-chat-box.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+}
+
+/* header */
+.mizuki-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--chat-divider);
+  flex-shrink: 0;
+}
+.mizuki-chat-header .mizuki-chat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--chat-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mizuki-chat-header .mizuki-chat-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8ab4f8, #5b9eff);
+  box-shadow: 0 0 8px rgba(91, 158, 255, 0.6);
+}
+.mizuki-chat-header .mizuki-chat-tools {
+  display: flex;
+  gap: 4px;
+}
+.mizuki-chat-header .mizuki-chat-tools button {
+  background: none;
+  border: none;
+  color: var(--chat-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.mizuki-chat-header .mizuki-chat-tools button:hover {
+  color: var(--chat-text);
+  background: var(--chat-bubble-hover);
+}
+
+/* message area */
+.mizuki-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+.mizuki-chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.mizuki-chat-messages::-webkit-scrollbar-thumb {
+  background: var(--chat-text-secondary);
+  border-radius: 2px;
+}
+
+/* message bubbles */
+.mizuki-chat-msg {
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+  color: var(--chat-text);
+  animation: mizuki-chat-fadein 0.25s ease;
+}
+@keyframes mizuki-chat-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mizuki-chat-msg.user {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--chat-primary) 18%, transparent);
+  border-bottom-right-radius: 5px;
+}
+.mizuki-chat-msg.assistant {
+  align-self: flex-start;
+  background: var(--chat-bubble-bg);
+  border-bottom-left-radius: 5px;
+}
+
+/* markdown in assistant messages */
+.mizuki-chat-msg.assistant p { margin: 4px 0; }
+.mizuki-chat-msg.assistant code {
+  background: color-mix(in srgb, var(--chat-text) 10%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.mizuki-chat-msg.assistant pre {
+  background: color-mix(in srgb, var(--chat-text) 8%, transparent);
+  padding: 8px 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.mizuki-chat-msg.assistant pre code {
+  background: none;
+  padding: 0;
+}
+.mizuki-chat-msg.assistant a {
+  color: var(--chat-primary);
+  text-decoration: underline;
+}
+
+/* typing indicator */
+.mizuki-chat-msg.assistant .mizuki-typing-dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px 2px;
+}
+.mizuki-chat-msg.assistant .mizuki-typing-dots span {
+  width: 5px;
+  height: 5px;
+  background: var(--chat-text-secondary);
+  border-radius: 50%;
+  animation: mizuki-typing-bounce 1.2s infinite;
+}
+.mizuki-chat-msg.assistant .mizuki-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.mizuki-chat-msg.assistant .mizuki-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes mizuki-typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+/* quick actions */
+.mizuki-chat-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--chat-divider);
+  flex-shrink: 0;
+}
+.mizuki-chat-quick-actions .mizuki-quick-btn {
+  font-size: 12px;
+  padding: 4px 11px;
+  border-radius: 16px;
+  border: 1px solid var(--chat-border);
+  background: var(--chat-bubble-bg);
+  color: var(--chat-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mizuki-chat-quick-actions .mizuki-quick-btn:hover {
+  background: color-mix(in srgb, var(--chat-primary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--chat-primary) 40%, transparent);
+  color: var(--chat-text);
+}
+
+/* input area */
+.mizuki-chat-input-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--chat-divider);
+  flex-shrink: 0;
+}
+.mizuki-chat-input-area textarea {
+  flex: 1;
+  background: var(--chat-input-bg);
+  border: 1px solid var(--chat-border);
+  border-radius: 10px;
+  color: var(--chat-text);
+  font-size: 13px;
+  padding: 8px 12px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+  min-height: 20px;
+  max-height: 100px;
+}
+.mizuki-chat-input-area textarea::placeholder {
+  color: var(--chat-text-secondary);
+}
+.mizuki-chat-input-area textarea:focus {
+  border-color: var(--chat-primary);
+}
+.mizuki-chat-input-area button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #8ab4f8, #5b9eff);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: filter 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(91, 158, 255, 0.4);
+}
+.mizuki-chat-input-area button:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
+}
+
+/* mobile */
+@media (max-width: 768px) {
+  #mizuki-chat-box {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    bottom: 16px;
+    max-height: 60vh;
+  }
+}

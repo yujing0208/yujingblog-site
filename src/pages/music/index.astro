@@ -1,0 +1,11 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import MusicVisualizer from "@/components/features/music-visualizer/MusicVisualizer.svelte";
+import "../../styles/pages/music-visualizer.css";
+
+const pageTitle = "音乐";
+---
+
+<Layout title={pageTitle}>
+	<MusicVisualizer client:only="svelte" />
+</Layout>
