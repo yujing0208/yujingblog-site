@@ -83,34 +83,43 @@
 		});
 	}
 
-	function bindLogo() {
-		var logo = document.querySelector("#navbar a.btn-plain");
+	/**
+	 * 全局 click 委托（捕获阶段 + 冒泡阶段都绑）
+	 * 为什么用 capture: Swup 在 <a> 上有自己的监听器，处理 SPA 跳转；
+	 * 如果我们只在 bubble 阶段绑，Swup 可能先抢走导致我们被吞。
+	 * capture + stopPropagation() 让我们的逻辑优先于 Swup 生效。
+	 */
+	function onLogoClick(e) {
+		var t = e.target;
+		var logo = t && t.closest && t.closest("#navbar a.btn-plain");
 		if (!logo) return;
-		logo.addEventListener("click", function (e) {
-			var edit = document.body.getAttribute("data-edit");
-			if (!edit || EDIT_PAGES.indexOf(edit) === -1) return; // 非编辑页：正常导航
-			e.preventDefault();
-			e.stopPropagation();
-			var pat = getPat();
-			if (!pat) {
-				showPatModal().then(function (p) {
-					if (!p) return;
-					setPat(p);
-					setFrom(location.href);
-					location.href = "/admin/" + edit + "-edit";
-				});
-			} else {
+		var edit = document.body.getAttribute("data-edit");
+		if (!edit || EDIT_PAGES.indexOf(edit) === -1) return; // 非编辑页：正常导航
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+		var pat = getPat();
+		if (!pat) {
+			showPatModal().then(function (p) {
+				if (!p) return;
+				setPat(p);
 				setFrom(location.href);
 				location.href = "/admin/" + edit + "-edit";
-			}
-		});
+			});
+		} else {
+			setFrom(location.href);
+			location.href = "/admin/" + edit + "-edit";
+		}
 	}
 
-	// Swup 页面切换后导航栏 DOM 不变（SPA），但保险起见监听一下
 	function init() {
-		bindLogo();
-		document.addEventListener("swup:contentReplaced", bindLogo);
+		// 捕获阶段（capture=true）先于 Swup 的 bubble 监听器
+		document.addEventListener("click", onLogoClick, true);
+		// 针对老浏览器/Swup 可能在 capture 阶段也绑了的兜底
+		document.addEventListener("click", onLogoClick, false);
+		window.addEventListener("hashchange", function () { /* swup fallback */ });
 	}
+
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", init);
 	} else {
