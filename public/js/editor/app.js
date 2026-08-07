@@ -43,6 +43,9 @@
 					state.items = Object.keys(v).map(function (k) { return { key: k, items: v[k] }; });
 				} else if (Array.isArray(v)) {
 					state.items = v;
+				} else {
+					// ts-object（如公告）：作为单项列表
+					state.items = [v];
 				}
 			} else if (s.format === "md-file") {
 				var p = window.EditorMd.parse(state.rawSource);
@@ -104,6 +107,17 @@
 			addBtn.addEventListener("click", function () { newAlbum(); });
 		} else if (s.format === "md-posts") {
 			addBtn.addEventListener("click", function () { newPost(); });
+		} else if (s.format === "ts-map") {
+			addBtn.textContent = "+ 新增分类";
+			addBtn.addEventListener("click", function () {
+				var name = prompt("分类名称（如 手机 / 电脑 / 相机）：");
+				if (!name) return;
+				name = name.trim();
+				if (!name) return;
+				if (state.items.some(function (c) { return c.key === name; })) { alert("分类已存在"); return; }
+				state.items.push({ key: name, items: [] });
+				renderList();
+			});
 		} else {
 			addBtn.addEventListener("click", function () { addItem(); });
 		}
@@ -143,10 +157,107 @@
 			var a = state.items[i];
 			state.current = { dir: a, info: null, images: [], sha: "" };
 			renderAlbumForm();
+		} else if (s.format === "ts-map") {
+			state.current = state.items[i];
+			renderMapForm(state.current);
 		} else {
 			state.current = state.items[i];
 			renderForm();
 		}
+	}
+
+	// ts-map（设备：分类 → 设备列表）特殊表单
+	function renderMapForm(cat) {
+		var s = state.schema;
+		var panel = $(".ed-panel");
+		panel.innerHTML = "";
+		var h = el("div", "ed-panel-head");
+		h.appendChild(el("h2", "ed-panel-title", "分类：" + esc(cat.key)));
+		panel.appendChild(h);
+
+		var nameWrap = el("div", "ef-field");
+		var nl = el("label", "ef-label", "分类名称");
+		var nameInput = document.createElement("input");
+		nameInput.type = "text";
+		nameInput.className = "ef-input";
+		nameInput.value = cat.key;
+		nameInput.addEventListener("change", function () {
+			var newKey = nameInput.value.trim();
+			if (!newKey || newKey === cat.key) return;
+			var idx = state.items.indexOf(cat);
+			var map = {};
+			state.items.forEach(function (c) { map[c.key] = c.items; });
+			var arr = map[cat.key];
+			delete map[cat.key];
+			map[newKey] = arr;
+			cat.key = newKey;
+			state.items[idx].key = newKey;
+			nameInput.value = newKey;
+		});
+		nameWrap.appendChild(nl);
+		nameWrap.appendChild(nameInput);
+		panel.appendChild(nameWrap);
+
+		var listWrap = el("div", "ef-object-list");
+		function renderDevices() {
+			listWrap.innerHTML = "";
+			cat.items.forEach(function (dev, di) {
+				var row = el("div", "ef-ol-item");
+				var head = el("div", "ef-ol-head");
+				var t = el("span", "ef-ol-title", dev.name || ("设备 " + (di + 1)));
+				var del = el("button", "ef-btn ef-btn-danger ef-btn-sm", "删除");
+				del.addEventListener("click", function () {
+					if (!confirm("删除设备「" + (dev.name || "") + "」？")) return;
+					cat.items.splice(di, 1);
+					renderDevices();
+				});
+				head.appendChild(t);
+				head.appendChild(del);
+				var body = el("div", "ef-ol-body");
+				s.fields.forEach(function (f) {
+					body.appendChild(window.EditorForm.renderField(f, dev, function () { }));
+				});
+				row.appendChild(head);
+				row.appendChild(body);
+				listWrap.appendChild(row);
+			});
+			var add = el("button", "ef-btn ef-btn-sm", "+ 添加设备");
+			add.addEventListener("click", function () {
+				var dev = {};
+				s.fields.forEach(function (f) {
+					if (f.type === "boolean") dev[f.key] = false;
+					else if (f.type === "tags") dev[f.key] = [];
+					else dev[f.key] = "";
+				});
+				cat.items.push(dev);
+				renderDevices();
+			});
+			listWrap.appendChild(add);
+		}
+		renderDevices();
+		panel.appendChild(listWrap);
+
+		var acts = el("div", "ed-actions");
+		var save = el("button", "ef-btn ef-btn-primary", "💾 保存");
+		save.addEventListener("click", function () { saveItem(); });
+		var delCat = el("button", "ef-btn ef-btn-danger", "🗑 删除分类");
+		delCat.addEventListener("click", function () {
+			if (!confirm("删除分类「" + cat.key + "」及其全部设备？")) return;
+			var idx = state.items.indexOf(cat);
+			if (idx > -1) state.items.splice(idx, 1);
+			var newSource = null;
+			try {
+				var map = {};
+				state.items.forEach(function (c) { map[c.key] = c.items; });
+				newSource = window.EditorTsIO.replace(state.rawSource, s.varName, map);
+			} catch (e) { alert(e.message); return; }
+			window.EditorGit.putFile(s.owner, s.repo, s.path, newSource, "chore(editor): delete category", s.branch)
+				.then(function () { alert("已删除分类"); location.reload(); })
+				.catch(function (e) { alert(e.message); });
+		});
+		acts.appendChild(save);
+		acts.appendChild(delCat);
+		panel.appendChild(acts);
 	}
 
 	function renderForm() {
