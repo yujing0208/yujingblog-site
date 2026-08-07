@@ -181,9 +181,11 @@
 	};
 
 	// ---------- 入口一：logo 点击（capture 阶段抢在 Swup 前） ----------
+	// 只用 #site-logo（Navbar.astro 中 logo 的唯一 id），避免误伤导航栏
+	// 其他带 btn-plain class 的一级菜单链接（首页/归档等）
 	function onLogoClick(e) {
 		var t = e.target;
-		var logo = t && t.closest && t.closest("#navbar a.btn-plain");
+		var logo = t && t.closest && t.closest("#site-logo");
 		if (!logo) return;
 		var edit = document.body.getAttribute("data-edit");
 		if (!edit || EDIT_PAGES.indexOf(edit) === -1) return; // 非编辑页：正常导航
