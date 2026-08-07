@@ -668,6 +668,10 @@ const normalMoments = moments.filter((m) => !(m as any).pinned);
 
   #moments-feed .card-content { margin-bottom: 0.75rem; }
   #moments-feed .moment-markdown { word-break: break-word; line-height: 1.7; color: var(--text-color); }
+  /* 夜间模式：内容文字改为白色（主题未定义 --text-color，避免继承到黑色） */
+  :root.dark #moments-feed .moment-markdown { color: #fff; }
+  /* 空状态标题同样用了未定义的 --text-color，夜间一并改白 */
+  :root.dark .wx-empty h3 { color: #fff; }
   #moments-feed .moment-markdown p { margin-bottom: 0.375rem; }
   #moments-feed .moment-markdown p:last-child { margin-bottom: 0; }
   #moments-feed .moment-markdown img { border-radius: var(--radius); margin-top: 0.5rem; max-width: 100%; }
