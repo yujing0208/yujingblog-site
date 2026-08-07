@@ -1,0 +1,40 @@
+---
+// 可视化编辑器 · 路由壳
+// /admin/<page>-edit → 加载对应编辑器（纯静态 bundle，运行时不依赖构建）
+export const prerender = true;
+
+const EDIT_PAGES = [
+	"projects-edit", "friends-edit", "websites-edit", "about-edit",
+	"timeline-edit", "diary-edit", "devices-edit", "anime-edit",
+	"announcement-edit", "footprints-edit", "albums-edit", "post-edit",
+];
+
+export function getStaticPaths() {
+	return EDIT_PAGES.map((page) => ({ params: { page } }));
+}
+
+const { page } = Astro.params;
+const pageName = page.replace(/-edit$/, "");
+---
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex" />
+	<title>内容编辑器 - {page}</title>
+	<link rel="stylesheet" href="/js/editor/style.css" />
+</head>
+<body data-editor-page={pageName}>
+	<div id="editor-root"></div>
+
+	<script is:inline src="/js/editor/github.js"></script>
+	<script is:inline src="/js/editor/ts-io.js"></script>
+	<script is:inline src="/js/editor/md.js"></script>
+	<script is:inline src="/js/editor/schema.js"></script>
+	<script is:inline src="/js/editor/form.js"></script>
+	<script is:inline src="/js/editor/upload.js"></script>
+	<script is:inline src="/js/editor/app.js"></script>
+</body>
+</html>
