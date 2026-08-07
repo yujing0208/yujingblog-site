@@ -275,9 +275,14 @@
 		},
 	};
 
-	/** 取 schema（兼容 xxx-edit 后缀） */
+	/** 取 schema（兼容 xxx-edit 后缀 + 单复数别名） */
 	window.getSchema = function (page) {
 		var p = String(page || "").replace(/-edit$/, "");
-		return window.EditorSchemas[p] || null;
+		var s = window.EditorSchemas[p];
+		if (s) return s;
+		// 别名兼容：单数 / 复数
+		var alias = { "websites": "website", "album": "albums" };
+		if (alias[p]) return window.EditorSchemas[alias[p]] || null;
+		return null;
 	};
 })();
