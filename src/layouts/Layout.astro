@@ -47,6 +47,23 @@ let {
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
 const configHue = siteConfig.themeColor.hue;
 
+// 可视化编辑器：按当前路径映射 data-edit（点导航栏 logo 进入对应编辑器）
+const EDIT_PAGE = (() => {
+	const p = Astro.url.pathname;
+	if (p === "/projects/" || p.startsWith("/projects")) return "projects";
+	if (p === "/friends/") return "friends";
+	if (p === "/websites/") return "websites";
+	if (p === "/about/") return "about";
+	if (p === "/timeline/") return "timeline";
+	if (p === "/diary/") return "diary";
+	if (p === "/devices/") return "devices";
+	if (p === "/anime/") return "anime";
+	if (p === "/footprint/") return "footprints";
+	if (p.startsWith("/albums")) return "albums";
+	if (p.startsWith("/posts")) return "post";
+	return "";
+})();
+
 // 获取导航栏透明模式配置
 const navbarTransparentMode =
 	siteConfig.banner?.navbar?.transparentMode || "semi";
@@ -171,6 +188,9 @@ const bannerOffset =
 			})();
 		</script>
 
+		<!-- 可视化编辑器全局入口：点导航栏 logo 进入编辑 -->
+		<script is:inline src="/js/editor-core.js"></script>
+
 		<!-- 第三方分析脚本 -->
 		<AnalyticsScripts
 			thirdPartyAnalytics={siteConfig.thirdPartyAnalytics}
@@ -212,6 +232,7 @@ const bannerOffset =
 		]}
 
 		data-overlayscrollbars-initialize
+		data-edit={EDIT_PAGE || undefined}
 	>
 		<noscript
 			><iframe
