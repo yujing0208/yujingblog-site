@@ -605,13 +605,26 @@ class MusicPlayerStore {
 		if (this.state.playlist.length === 0) {
 			return;
 		}
-		const idx = this.state.playlist.findIndex(
+		let idx = this.state.playlist.findIndex(
 			(s) =>
 				(snap.id !== undefined && s.id === snap.id && s.id !== 0) ||
 				(s.url && s.url === snap.url),
 		);
 		if (idx < 0) {
-			return;
+			// 快照歌曲不在当前歌单（典型场景：播放的是网易云歌单的歌曲，
+			// 整页刷新后本地歌单里没有它）。直接用快照恢复同一首歌，
+			// 插到歌单首位，不额外请求 Meting API。
+			const restored: Song = {
+				id: snap.id ?? 0,
+				title: snap.title,
+				artist: snap.artist,
+				cover: snap.cover,
+				url: snap.url,
+				duration: 0,
+				lrc: snap.lrc,
+			};
+			this.state.playlist.unshift(restored);
+			idx = 0;
 		}
 		this.state.currentIndex = idx;
 		const shouldPlay = !!snap.isPlaying;
