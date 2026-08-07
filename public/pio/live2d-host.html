@@ -35,6 +35,7 @@
     home: function() { parent.postMessage({ type: 'l2d-action', action: 'home' }, '*'); },
     scrollToTop: function() { parent.postMessage({ type: 'l2d-action', action: 'scrollToTop' }, '*'); },
     chat: function() { parent.postMessage({ type: 'l2d-chat-toggle' }, '*'); },
+    edit: function() { parent.postMessage({ type: 'l2d-action', action: 'edit' }, '*'); },
     sleep: function(w) { w.sleep(); },
   };
 
