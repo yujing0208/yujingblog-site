@@ -57,9 +57,12 @@ if (config.menus?.items && config.menus.items.length > 0) {
 		...(config.menus.align && { align: config.menus.align }),
 	};
 } else {
-	// 未自定义菜单时，用 extraItems 追加 💬 聊天按钮到默认菜单（休眠/About）
+	// 未自定义菜单时，用 extraItems 追加 💬 聊天 + ✏️ 编辑按钮到默认菜单（休眠/About）
 	widgetConfig.menus = {
-		extraItems: [{ icon: "mdi:message-text-outline", label: "聊天", action: "chat" }],
+		extraItems: [
+			{ icon: "mdi:message-text-outline", label: "聊天", action: "chat" },
+			{ icon: "mdi:pencil-outline", label: "编辑", action: "edit" },
+		],
 	};
 }
 
@@ -175,6 +178,7 @@ const isRight = config.position === "right";
 			const menuActions: Record<string, () => void> = {
 				home: () => (window.location.href = "/"),
 				scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+				edit: () => (window as any).EditorLogin?.start?.(),
 			};
 
 			let currentEl: HTMLIFrameElement | null = null;
