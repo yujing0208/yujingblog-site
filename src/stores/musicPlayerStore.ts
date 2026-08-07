@@ -226,9 +226,15 @@ class MusicPlayerStore {
 		if (typeof window !== "undefined") {
 			window.addEventListener("beforeunload", this.persistOnUnload);
 		}
+		// 先捕获断点快照再加载歌单：loadSong() 内部会 persistResume() 覆盖快照，
+		// 若先加载歌单会把快照冲成"歌单第一首"，导致刷新/跳转后永远回第一首。
+		const resumeRaw =
+			typeof sessionStorage !== "undefined"
+				? sessionStorage.getItem(STORAGE_KEY_RESUME)
+				: null;
 		await this.loadPlaylist();
 		// 全页刷新 / 路由跳转后，按持久化快照接力同一首歌并续播
-		this.applyResumeIfAny();
+		this.applyResumeIfAny(resumeRaw);
 		this.broadcastState();
 	}
 
@@ -585,11 +591,11 @@ class MusicPlayerStore {
 		}
 	}
 
-	private applyResumeIfAny(): void {
+	private applyResumeIfAny(rawFromInit?: string | null): void {
 		if (typeof sessionStorage === "undefined") {
 			return;
 		}
-		const raw = sessionStorage.getItem(STORAGE_KEY_RESUME);
+		const raw = rawFromInit ?? sessionStorage.getItem(STORAGE_KEY_RESUME);
 		if (!raw) {
 			return;
 		}
