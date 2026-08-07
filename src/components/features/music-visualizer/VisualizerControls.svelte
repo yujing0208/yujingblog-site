@@ -3,8 +3,7 @@ import Icon from "./Icon.svelte";
 import { onDestroy, onMount } from "svelte";
 import type { MusicPlayerState } from "@/stores/musicPlayerStore";
 import { musicPlayerStore } from "@/stores/musicPlayerStore";
-import type { PlayerMode, Song } from "@/components/widgets/music-player/types";
-import ModeToggle from "@/components/widgets/music-player/molecules/ModeToggle.svelte";
+import type { Song } from "@/components/widgets/music-player/types";
 
 interface Track {
 	name: string;
@@ -167,20 +166,16 @@ function onSwitchKeydown(e: KeyboardEvent) {
 	}
 }
 
-async function handleResetPlaylist() {
+async function handleSwitchToLocal() {
 	isSwitching = true;
 	try {
-		await musicPlayerStore.resetCloudPlaylist();
+		await musicPlayerStore.setMode("local");
 		closeSwitchDialog();
 	} catch (e) {
-		console.warn("[VisualizerControls] resetCloudPlaylist failed:", e);
+		console.warn("[VisualizerControls] setMode local failed:", e);
 	} finally {
 		isSwitching = false;
 	}
-}
-
-function handleModeChange(mode: PlayerMode) {
-	musicPlayerStore.setMode(mode);
 }
 
 onMount(() => {
@@ -432,39 +427,35 @@ onDestroy(() => {
 					<Icon icon="material-symbols:close-rounded" size="lg" />
 				</button>
 			</div>
-			<div class="music-switch-mode-bar">
-				<ModeToggle
-					mode={playerState.mode}
-					onChange={handleModeChange}
-				/>
-			</div>
 			<div class="music-switch-body">
-				<label class="music-switch-label" for="playlist-id-input">
-					输入歌单ID
-				</label>
-				<input
-					id="playlist-id-input"
-					class="music-switch-input"
-					type="text"
-					bind:value={switchPlaylistId}
-					placeholder="例如: 1234567890"
-					onkeydown={onSwitchKeydown}
-					disabled={isSwitching}
-				/>
 				<button
-					class="music-switch-submit"
-					onclick={handleSwitchPlaylist}
-					disabled={isSwitching || !switchPlaylistId.trim()}
-				>
-					{isSwitching ? "切换中..." : "确认切换"}
-				</button>
-				<button
-					class="music-switch-reset"
-					onclick={handleResetPlaylist}
+					class="music-switch-local"
+					class:music-switch-local--active={playerState.mode === "local"}
+					onclick={handleSwitchToLocal}
 					disabled={isSwitching}
 				>
-					重置为默认歌单
+					本地歌单（默认）
 				</button>
+				<div class="music-switch-cloud">
+					<div class="music-switch-cloud-title">网易云歌单 · 输入歌单ID</div>
+					<input
+						id="playlist-id-input"
+						class="music-switch-input"
+						type="text"
+						bind:value={switchPlaylistId}
+						placeholder="例如: 1234567890"
+						aria-label="网易云歌单ID"
+						onkeydown={onSwitchKeydown}
+						disabled={isSwitching}
+					/>
+					<button
+						class="music-switch-submit"
+						onclick={handleSwitchPlaylist}
+						disabled={isSwitching || !switchPlaylistId.trim()}
+					>
+						{isSwitching ? "切换中..." : "确认切换"}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>

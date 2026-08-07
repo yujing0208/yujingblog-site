@@ -1,0 +1,32 @@
+﻿name: On Content Update
+
+on:
+  push:
+    branches: [master]
+  repository_dispatch:
+    types: [content-updated]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 11
+      - run: pnpm config set store-dir ~/.pnpm-store
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install
+      - run: pnpm build
+        env:
+          ENABLE_CONTENT_SYNC: true
+          CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
+      - name: Deploy to Vercel
+        run: curl -f -X POST https://api.vercel.com/v1/integrations/deploy/prj_s44cNpfUAFZSbBgQ6lbrIUrjL2iX/C0tPxPcijZ?branch=master
+

@@ -30,7 +30,7 @@ const {
 <AccordionDrawer {show} class="playlist-drawer">
 	<div class="playlist-shell">
 		<div class="playlist-mode-bar">
-			<ModeToggle {mode} onChange={onModeChange} compact />
+			<ModeToggle {mode} onChange={onModeChange} />
 		</div>
 		<div
 			class="playlist-content"
@@ -63,8 +63,6 @@ const {
 	}
 
 	.playlist-mode-bar {
-		display: flex;
-		justify-content: center;
 		margin-bottom: 0.5rem;
 	}
 

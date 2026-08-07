@@ -47,6 +47,10 @@ function toggleMode() {
 	musicPlayerStore.toggleMode();
 }
 
+function setMode(mode: import("../music-player/types").PlayerMode) {
+	musicPlayerStore.setMode(mode);
+}
+
 function togglePlaylistView() {
 	showPlaylist = !showPlaylist;
 }
@@ -119,8 +123,10 @@ function setVolume(volume: number) {
 		currentIndex={playerState.currentIndex}
 		isPlaying={playerState.isPlaying}
 		show={showPlaylist}
+		mode={playerState.mode}
 		onClose={togglePlaylistView}
 		onPlaySong={playIndex}
+		onModeChange={setMode}
 	/>
 </div>
 

@@ -83,10 +83,9 @@ const {
 	}
 
 	.playlist-mode-bar {
-		display: flex;
-		justify-content: center;
 		padding: 0.75rem 1rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--line-divider) 50%, transparent);
+		border-bottom: 1px solid
+			color-mix(in srgb, var(--line-divider) 50%, transparent);
 	}
 
 	@media (width < 768px) {

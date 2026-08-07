@@ -128,14 +128,11 @@ class MusicPlayerStore {
 	}
 
 	private createInitialState(): MusicPlayerState {
-		const configMode = musicPlayerConfig.mode ?? "meting";
-		const defaultMode: PlayerMode = configMode === "local" ? "local" : "online";
-		const savedMode =
-			typeof localStorage !== "undefined"
-				? (localStorage.getItem(STORAGE_KEY_MODE) as PlayerMode | null)
-				: null;
-		const initialMode: PlayerMode =
-			savedMode === "online" || savedMode === "local" ? savedMode : defaultMode;
+		// 默认本地歌单：不再读取 localStorage 里遗留的 music-player-mode，
+		// 避免老访客加载页面时仍触发网易云 API。在线模式仅能通过 3D 页
+		// "切换歌单"手动输入歌单 ID 进入（本次会话内生效，刷新后回本地默认）。
+		const configMode = musicPlayerConfig.mode ?? "local";
+		const initialMode: PlayerMode = configMode === "local" ? "local" : "online";
 
 		const defaultCloudId = musicPlayerConfig.id ?? "";
 		const savedCloudId =
@@ -221,6 +218,10 @@ class MusicPlayerStore {
 		this.audio.crossOrigin = "anonymous";
 		this.setupAudioListeners();
 		this.loadVolumeFromStorage();
+		// 清理遗留的 mode 记录：默认永远本地歌单；在线仅能通过 3D 页手动切换（刷新即回本地）
+		if (typeof localStorage !== "undefined") {
+			localStorage.removeItem(STORAGE_KEY_MODE);
+		}
 		this.registerInteractionHandler();
 		if (typeof window !== "undefined") {
 			window.addEventListener("beforeunload", this.persistOnUnload);

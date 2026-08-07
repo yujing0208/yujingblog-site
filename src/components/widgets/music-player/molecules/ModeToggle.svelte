@@ -9,86 +9,64 @@ interface Props {
 const { mode, onChange }: Props = $props();
 </script>
 
-<div class="mode-toggle" role="tablist" aria-label="播放模式切换">
-	<span
-		class="mode-toggle-thumb"
-		class:mode-toggle-thumb--local={mode === "local"}
-		aria-hidden="true"
-	></span>
+<!-- 本地/网易云 音源切换：本地在前（默认），网易云在后。非滑动胶囊，点击即切换 -->
+<div class="mode-toggle" role="group" aria-label="音源切换">
 	<button
 		type="button"
-		class="mode-toggle-option"
-		class:active={mode === "online"}
-		role="tab"
-		aria-selected={mode === "online"}
-		onclick={() => onChange("online")}
-	>
-		网易云
-	</button>
-	<button
-		type="button"
-		class="mode-toggle-option"
-		class:active={mode === "local"}
-		role="tab"
-		aria-selected={mode === "local"}
+		class="mode-toggle__opt"
+		class:mode-toggle__opt--active={mode === "local"}
+		aria-pressed={mode === "local"}
 		onclick={() => onChange("local")}
 	>
 		本地
+	</button>
+	<button
+		type="button"
+		class="mode-toggle__opt"
+		class:mode-toggle__opt--active={mode === "online"}
+		aria-pressed={mode === "online"}
+		onclick={() => onChange("online")}
+	>
+		网易云
 	</button>
 </div>
 
 <style>
 	.mode-toggle {
-		position: relative;
-		display: inline-flex;
-		align-items: stretch;
-		padding: 3px;
-		border: 1px solid var(--line-color);
-		border-radius: 9999px;
-		background: color-mix(in srgb, var(--card-bg) 35%, transparent);
+		display: flex;
+		width: 100%;
+		border-radius: 0.6rem;
+		overflow: hidden;
+		border: 1px solid
+			color-mix(in srgb, var(--line-divider) 60%, transparent);
 	}
 
-	.mode-toggle-option {
-		position: relative;
-		z-index: 1;
-		flex: 1 1 0;
-		min-width: 4.5rem;
-		padding: 0.4rem 0.9rem;
-		border: none;
+	.mode-toggle__opt {
+		flex: 1;
+		padding: 0.45rem 0;
 		background: transparent;
-		border-radius: 9999px;
-		font-size: 0.8rem;
-		font-weight: 600;
-		line-height: 1;
+		border: none;
 		color: var(--content-meta);
+		font-size: 0.8rem;
+		font-weight: 500;
 		cursor: pointer;
-		transition: color 0.2s ease;
-		white-space: nowrap;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease;
 	}
 
-	.mode-toggle-option:hover {
-		color: var(--content-main);
+	.mode-toggle__opt:first-child {
+		border-right: 1px solid
+			color-mix(in srgb, var(--line-divider) 60%, transparent);
 	}
 
-	.mode-toggle-option.active {
-		color: #fff;
+	.mode-toggle__opt:hover {
+		color: var(--primary);
 	}
 
-	.mode-toggle-thumb {
-		position: absolute;
-		top: 3px;
-		bottom: 3px;
-		left: 3px;
-		width: calc(50% - 3px);
-		border-radius: 9999px;
-		background: var(--primary);
-		box-shadow: 0 1px 4px color-mix(in srgb, var(--primary) 45%, transparent);
-		transform: translateX(0);
-		transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-		z-index: 0;
-	}
-
-	.mode-toggle-thumb--local {
-		transform: translateX(100%);
+	.mode-toggle__opt--active {
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		font-weight: 600;
 	}
 </style>

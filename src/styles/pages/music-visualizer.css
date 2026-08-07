@@ -1346,27 +1346,48 @@ html:has(.music-visualizer-page) .footer {
 	cursor: not-allowed;
 }
 
-.music-switch-reset {
+.music-switch-local {
 	width: 100%;
-	padding: 0.5rem;
+	padding: 0.7rem;
 	border-radius: 0.75rem;
 	border: 1px solid rgba(142, 197, 255, 0.2);
-	background: rgba(142, 197, 255, 0.08);
-	color: rgba(200, 223, 255, 0.7);
-	font-size: 0.8rem;
+	background: rgba(255, 255, 255, 0.05);
+	color: rgba(200, 223, 255, 0.8);
+	font-size: 0.9rem;
+	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s;
 }
 
-.music-switch-reset:hover:not(:disabled) {
-	background: rgba(142, 197, 255, 0.15);
+.music-switch-local:hover:not(:disabled) {
+	background: rgba(142, 197, 255, 0.12);
 	color: #c8dfff;
 	border-color: rgba(142, 197, 255, 0.35);
 }
 
-.music-switch-reset:disabled {
+.music-switch-local--active {
+	border-color: rgba(68, 170, 255, 0.55);
+	background: rgba(68, 136, 255, 0.2);
+	color: #fff;
+	box-shadow: 0 0 0 3px rgba(68, 136, 255, 0.1);
+}
+
+.music-switch-local:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
+}
+
+.music-switch-cloud {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	border-top: 1px solid rgba(142, 197, 255, 0.12);
+	padding-top: 0.75rem;
+}
+
+.music-switch-cloud-title {
+	font-size: 0.8rem;
+	color: rgba(200, 223, 255, 0.45);
 }
 
 /* 手机端增强 */
