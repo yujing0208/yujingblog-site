@@ -1,15 +1,16 @@
 ---
 // 可视化编辑器 · 路由壳
 // /admin/<page>-edit → 加载对应编辑器（纯静态 bundle，运行时不依赖构建）
+// 注意：EDIT_PAGES 必须定义在 getStaticPaths 内部——Astro 会把 getStaticPaths 提取为
+// 独立模块，frontmatter 顶层非 export 的 const 不会进入该模块作用域（否则构建报 not defined）。
 export const prerender = true;
 
-const EDIT_PAGES = [
-	"projects-edit", "friends-edit", "websites-edit", "about-edit",
-	"timeline-edit", "diary-edit", "devices-edit", "anime-edit",
-	"announcement-edit", "footprints-edit", "albums-edit", "post-edit",
-];
-
 export function getStaticPaths() {
+	const EDIT_PAGES = [
+		"projects-edit", "friends-edit", "websites-edit", "about-edit",
+		"timeline-edit", "diary-edit", "devices-edit", "anime-edit",
+		"announcement-edit", "footprints-edit", "albums-edit", "post-edit",
+	];
 	return EDIT_PAGES.map((page) => ({ params: { page } }));
 }
 
