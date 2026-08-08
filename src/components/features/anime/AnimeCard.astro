@@ -12,6 +12,7 @@ interface Props {
 		progress: number;
 		totalEpisodes: number;
 		description: string;
+		episodes?: string;
 		year: string;
 		studio: string;
 		genre: string[];
@@ -28,15 +29,20 @@ interface Props {
 
 const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } = Astro.props;
 
+// Normalize episodes: prefer numeric totalEpisodes, fallback to parsing "12 episodes"
+const parsedEpisodes = parseInt(anime.episodes ?? "", 10);
+const totalEpisodes =
+	anime.totalEpisodes > 0 ? anime.totalEpisodes : parsedEpisodes || 0;
+
 const progressPercent =
-	anime.totalEpisodes > 0 ? (anime.progress / anime.totalEpisodes) * 100 : 0;
+	totalEpisodes > 0 ? (anime.progress / totalEpisodes) * 100 : 0;
 
 // Show meta info (year/studio/genre/episodes) for all categories when the data exists
 const showMeta =
 	Boolean(anime.year) ||
 	Boolean(anime.studio) ||
 	(anime.genre?.length ?? 0) > 0 ||
-	anime.totalEpisodes > 0;
+	totalEpisodes > 0;
 ---
 
 <div
@@ -100,19 +106,19 @@ const showMeta =
 		</div>
 
 		{
-			anime.status === "watching" && showMeta && (
-				<div class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-2">
-					<div class="w-full bg-white/20 rounded-full h-1.5 mb-1">
-						<div
-							class="bg-linear-to-r from-emerald-400 to-teal-400 h-1.5 rounded-full transition-all duration-300"
-							style={`width: ${progressPercent}%`}
-						/>
-					</div>
-					<div class="text-white text-xs font-medium">
-						{anime.progress}/{anime.totalEpisodes} (
-						{Math.round(progressPercent)}%)
-					</div>
+			anime.status === "watching" && showMeta && totalEpisodes > 0 && (
+			<div class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-2">
+				<div class="w-full bg-white/20 rounded-full h-1.5 mb-1">
+					<div
+						class="bg-linear-to-r from-emerald-400 to-teal-400 h-1.5 rounded-full transition-all duration-300"
+						style={`width: ${progressPercent}%`}
+					/>
 				</div>
+				<div class="text-white text-xs font-medium">
+					{anime.progress}/{totalEpisodes} (
+					{Math.round(progressPercent)}%)
+				</div>
+			</div>
 			)
 		}
 	</div>
@@ -133,16 +139,18 @@ const showMeta =
 		{
 			showMeta && (
 				<div class="space-y-1 text-xs">
-					<div class="flex justify-between items-center">
-						<span class="text-black/50 dark:text-white/50 shrink-0">
-							{episodesLabel}
-						</span>
-						<span
-							class="text-black/70 dark:text-white/70 truncate ml-2 text-right"
-						>
-							{anime.totalEpisodes} 集
-						</span>
-					</div>
+					{
+						(totalEpisodes > 0 || anime.episodes) && (
+							<div class="flex justify-between items-center">
+								<span class="text-black/50 dark:text-white/50 shrink-0">
+									{episodesLabel}
+								</span>
+								<span class="text-black/70 dark:text-white/70 truncate ml-2 text-right">
+									{totalEpisodes > 0 ? `${totalEpisodes} 集` : anime.episodes}
+								</span>
+							</div>
+						)
+					}
 					<div class="flex justify-between items-center">
 						<span class="text-black/50 dark:text-white/50 shrink-0">
 							{yearLabel}
