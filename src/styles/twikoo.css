@@ -272,3 +272,40 @@ html.dark .twikoo select option {
 .el-loading-spinner .path {
   stroke: var(--primary) !important;
 }
+
+/* ========================================================
+   表情面板尺寸调整（OwO） - 2026-08-09
+   1) 面板宽度 = 文章正文区宽度（.prose 为 65ch），移动端不超过视口
+   2) 可上下滑动区域高度 = 原高度 1.5 倍（基准 40vh -> 60vh，可调）
+   3) 单个表情大小 = 原约 35px 的 4 倍 -> 140px
+   ======================================================== */
+
+/* 面板整体宽度对齐文章正文列 */
+#twikoo .OwO .OwO-body {
+  max-width: min(65ch, 92vw);
+}
+
+/* 可上下滑动的区域（.OwO-items）限高 -> 出现滚动条 */
+#twikoo .OwO .OwO-body .OwO-items {
+  max-height: 60vh;            /* 原高度基准 40vh 的 1.5 倍 */
+}
+
+/* 单个表情包图片放大 4 倍 */
+#twikoo .OwO .OwO-body .OwO-items-image .OwO-item {
+  width: auto;
+  padding: 6px 8px;
+}
+#twikoo .OwO .OwO-body .OwO-items-image .OwO-item img {
+  width: 140px;
+  height: 140px;
+  max-width: none;
+  object-fit: contain;
+}
+
+/* 底部分类 tab 的图片图标，避免被裁切 */
+#twikoo .OwO .OwO-bar .OwO-packages li img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+}
