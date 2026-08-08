@@ -276,8 +276,8 @@ html.dark .twikoo select option {
 /* ========================================================
    表情面板尺寸调整（OwO） - 2026-08-09
    1) 面板宽度 = 原文 1.5 倍（.prose 正文 65ch -> 97.5ch），移动端限视口
-   2) 可上下滑动区域高度 = 70vh
-   3) 单个表情大小 = 约 75px
+   2) 可上下滑动区域高度 = 原高度 1.4 倍（基准 40vh -> 56vh，可调）
+   3) 单个表情大小 = 约 76px
    ======================================================== */
 
 /* 面板整体宽度 = 原文 1.5 倍 */
@@ -287,17 +287,17 @@ html.dark .twikoo select option {
 
 /* 可上下滑动的区域（.OwO-items）限高 -> 出现滚动条 */
 #twikoo .OwO .OwO-body .OwO-items {
-  max-height: 70vh;
+  max-height: 56vh;            /* 原高度基准 40vh 的 1.4 倍 */
 }
 
-/* 单个表情包图片约 75px */
+/* 单个表情包图片放大 2 倍 */
 #twikoo .OwO .OwO-body .OwO-items-image .OwO-item {
   width: auto;
   padding: 8px 10px;
 }
 #twikoo .OwO .OwO-body .OwO-items-image .OwO-item img {
-  width: 75px;
-  height: 75px;
+  width: 76px;
+  height: 76px;
   max-width: none;
   object-fit: contain;
 }
