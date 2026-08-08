@@ -1,6 +1,8 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { tick } from "svelte";
+import { onMount, tick } from "svelte";
+import { type EmojiItem, type EmojiPack, loadEmojiPacks } from "./lib/emoji";
+import { getServerConfig } from "./lib/twikooClient";
 import type { GuestbookChatMessage as Message, GuestbookProfile } from "./lib/types";
 import { MAX_IMAGE_SIZE_BYTES, MAX_MESSAGE_LENGTH, readImageAsDataUrl } from "./lib/utils";
 
@@ -47,7 +49,20 @@ let pendingImage = $state<{ name: string; url: string; size: number } | null>(nu
 let isProcessingImage = $state(false);
 let fileInput = $state<HTMLInputElement | null>(null);
 
+/* === 表情（与评论区同源，数据地址取自 Twikoo 服务端配置） === */
+let emojiTrigger = $state<HTMLButtonElement | null>(null);
+let emojiPanel = $state<HTMLDivElement | null>(null);
+let isEmojiOpen = $state(false);
+let emojiPacks = $state<EmojiPack[]>([]);
+let activeEmojiPack = $state(0);
+let emojiStatus = $state<"idle" | "loading" | "ready" | "error">("idle");
+let emojiError = $state("");
+/** 站长在 Twikoo 后台关掉表情时（SHOW_EMOTION !== "true"）不显示入口，与官方一致 */
+let showEmotion = $state(false);
+let emotionCdn = "";
+
 const inputDisabled = $derived(isOffline);
+const currentEmojiItems = $derived(emojiPacks[activeEmojiPack]?.items ?? []);
 const hasGuestProfile = $derived(profile.nick.trim().length >= 2);
 
 async function openGuestProfile() {
@@ -201,6 +216,94 @@ function handleKeydown(event: KeyboardEvent) {
 	void submitMessage();
 }
 
+/* === 表情面板 === */
+
+/**
+ * 读取 Twikoo 服务端配置决定是否显示表情入口、以及表情数据地址。
+ * getServerConfig 内部有模块级缓存，此处与留言列表共用同一次请求。
+ */
+onMount(() => {
+	void (async () => {
+		try {
+			const config = await getServerConfig();
+			// 官方 SDK 判定：'true' === config.SHOW_EMOTION
+			showEmotion = config.SHOW_EMOTION === "true";
+			emotionCdn =
+				typeof config.EMOTION_CDN === "string" ? config.EMOTION_CDN : "";
+		} catch {
+			// 配置拉取失败：隐藏表情入口，不影响正常发言
+		}
+	})();
+});
+
+async function ensureEmojiPacks() {
+	if (emojiStatus === "loading" || emojiStatus === "ready") return;
+	emojiStatus = "loading";
+	emojiError = "";
+	try {
+		const packs = await loadEmojiPacks(emotionCdn);
+		emojiPacks = packs;
+		activeEmojiPack = 0;
+		if (packs.length === 0) {
+			emojiStatus = "error";
+			emojiError = "表情包为空";
+			return;
+		}
+		emojiStatus = "ready";
+	} catch (error) {
+		emojiStatus = "error";
+		emojiError = error instanceof Error ? error.message : "表情加载失败";
+	}
+}
+
+function toggleEmojiPanel() {
+	isEmojiOpen = !isEmojiOpen;
+	// 首次打开才拉取 owo.json（约 100KB），避免拖慢留言板首屏
+	if (isEmojiOpen) void ensureEmojiPacks();
+}
+
+/**
+ * 插入表情，规则与官方 OwO 组件一致：
+ *   图片表情插入短码 `:text: `（服务端存短码，渲染时再翻译成图片）
+ *   颜文字 / Emoji 直接插入字符本身
+ * 这样留言板与评论区互发的表情内容格式相同，两边都能正确显示。
+ */
+async function insertEmoji(item: EmojiItem) {
+	const insertText = item.src ? `:${item.text}: ` : item.icon;
+	const caret = textarea?.selectionEnd ?? draft.length;
+	const next = draft.slice(0, caret) + insertText + draft.slice(caret);
+	// textarea 的 maxlength 拦不住程序化写入，这里自己兜底
+	if (next.length > MAX_MESSAGE_LENGTH) {
+		onToolError(`内容不能超过 ${MAX_MESSAGE_LENGTH} 个字符`);
+		return;
+	}
+	onDraftChange(next);
+	await tick();
+	if (!textarea) return;
+	const position = caret + insertText.length;
+	textarea.focus();
+	textarea.setSelectionRange(position, position);
+	resizeTextarea();
+}
+
+function closeEmojiPanel(refocusTrigger = false) {
+	if (!isEmojiOpen) return;
+	isEmojiOpen = false;
+	if (refocusTrigger) emojiTrigger?.focus();
+}
+
+function handleGlobalPointerDown(event: PointerEvent) {
+	if (!isEmojiOpen) return;
+	const target = event.target as Node | null;
+	if (!target) return;
+	if (emojiPanel?.contains(target) || emojiTrigger?.contains(target)) return;
+	closeEmojiPanel();
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+	if (event.key === "Escape") closeEmojiPanel(true);
+}
+
 /* === 图片粘贴/拖拽 === */
 async function handleImageFile(file: File) {
 	if (isProcessingImage) return;
@@ -269,7 +372,11 @@ async function submitMessage() {
 }
 </script>
 
-<svelte:window onresize={handleWindowResize} />
+<svelte:window
+	onresize={handleWindowResize}
+	onpointerdown={handleGlobalPointerDown}
+	onkeydown={handleGlobalKeydown}
+/>
 
 <footer class="guestbook-composer">
 	{#if replyTarget}
@@ -305,6 +412,68 @@ async function submitMessage() {
 			aria-label="调整输入框高度"
 			title="向上拖动扩大输入框"
 		></button>
+
+		{#if isEmojiOpen}
+			<div class="guestbook-composer__emojis" bind:this={emojiPanel}>
+				{#if emojiStatus === "ready"}
+					<div class="guestbook-composer__emoji-tabs" role="tablist">
+						{#each emojiPacks as pack, index (index)}
+							<button
+								type="button"
+								role="tab"
+								aria-selected={index === activeEmojiPack}
+								class:is-active={index === activeEmojiPack}
+								title={pack.tabText || `表情包 ${index + 1}`}
+								onclick={() => (activeEmojiPack = index)}
+							>
+								{#if pack.tabSrc}
+									<img src={pack.tabSrc} alt="" loading="lazy" />
+								{:else}
+									<span>{pack.tabText}</span>
+								{/if}
+							</button>
+						{/each}
+					</div>
+					<div
+						class="guestbook-composer__emoji-grid"
+						class:is-emoji={emojiPacks[activeEmojiPack]?.type === "emoji"}
+						class:is-text={emojiPacks[activeEmojiPack]?.type === "emoticon"}
+					>
+						{#each currentEmojiItems as item, index (index)}
+							<button
+								type="button"
+								title={item.text}
+								onclick={() => void insertEmoji(item)}
+							>
+								{#if item.src}
+									<img src={item.src} alt={item.text} loading="lazy" />
+								{:else}
+									<span>{item.icon}</span>
+								{/if}
+							</button>
+						{/each}
+					</div>
+				{:else if emojiStatus === "error"}
+					<div class="guestbook-composer__emoji-state">
+						<span>{emojiError}</span>
+						<button type="button" onclick={() => void ensureEmojiPacks()}>
+							重试
+						</button>
+					</div>
+				{:else}
+					<div class="guestbook-composer__emoji-state">
+						<Icon
+							icon="lucide:loader-circle"
+							class="is-spinning"
+							width={16}
+							height={16}
+						/>
+						<span>表情加载中…</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
 		<textarea
 			bind:this={textarea}
 			value={draft}
@@ -339,6 +508,21 @@ async function submitMessage() {
 		<div class="guestbook-composer__footer">
 			<div class="guestbook-composer__actions">
 				<span class="guestbook-composer__count">{draft.length}/{MAX_MESSAGE_LENGTH}</span>
+				{#if showEmotion}
+					<button
+						bind:this={emojiTrigger}
+						type="button"
+						class="guestbook-composer__emoji-trigger"
+						class:is-active={isEmojiOpen}
+						onclick={toggleEmojiPanel}
+						aria-label="插入表情"
+						aria-expanded={isEmojiOpen}
+						title="表情"
+						disabled={inputDisabled}
+					>
+						<Icon icon="lucide:smile" width={18} height={18} />
+					</button>
+				{/if}
 				<button
 					type="button"
 					class="guestbook-composer__image-trigger"
@@ -402,7 +586,8 @@ async function submitMessage() {
 				<Icon icon="lucide:x" width={15} height={15} />
 			</button>
 		</div>
-	{/if}
+		{/if}
+	</div>
 </footer>
 
 <dialog

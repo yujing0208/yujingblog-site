@@ -1620,6 +1620,38 @@
 	object-fit: contain;
 }
 
+/* Emoji 分组：字符本身即内容，放大字号 */
+.guestbook-composer__emoji-grid.is-emoji button {
+	font-size: 1.35rem;
+	line-height: 1;
+}
+
+/* 颜文字分组：内容较长，改为自适应列宽并允许换行 */
+.guestbook-composer__emoji-grid.is-text {
+	grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+}
+
+.guestbook-composer__emoji-grid.is-text button {
+	width: 100%;
+	height: auto;
+	min-height: 2rem;
+	padding: var(--space-1);
+	color: inherit;
+	font-size: 0.75rem;
+	line-height: 1.2;
+	word-break: break-all;
+}
+
+/* 无图标的分组标签（如「颜文字」「Emoji」）以文字呈现 */
+.guestbook-composer__emoji-tabs button span {
+	padding: 0 0.1rem;
+	color: inherit;
+	font-size: 0.6rem;
+	line-height: 1.1;
+	text-align: center;
+	word-break: break-all;
+}
+
 /* ============================================================
    图片预览
    ============================================================ */

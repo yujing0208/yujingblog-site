@@ -86,6 +86,10 @@ export interface TwikooServerConfig {
 	GRAVATAR_CDN?: string;
 	/** 默认头像风格，如 "monsterid"；未配置时官方回退为昵称首字母 */
 	DEFAULT_GRAVATAR?: string;
+	/** 是否开启表情，官方判定为字符串 "true" */
+	SHOW_EMOTION?: string;
+	/** 表情包 owo.json 地址，支持逗号分隔多个；未配置时官方回退 owo.imaegoo.com */
+	EMOTION_CDN?: string;
 	[key: string]: unknown;
 }
 

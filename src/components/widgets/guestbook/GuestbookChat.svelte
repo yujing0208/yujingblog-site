@@ -21,7 +21,7 @@ import {
 import GuestbookChatComposer from "./GuestbookChatComposer.svelte";
 import GuestbookChatMessage from "./GuestbookChatMessage.svelte";
 import { guestbookConfig, type GuestbookAnnouncementItem } from "@/config/guestbookConfig";
-import { loadEmojiPacks } from "./lib/emoji";
+import { loadEmojiPacks, setEmotionCdn } from "./lib/emoji";
 
 const PAGE_SIZE = 30;
 const POLL_INTERVAL = 30_000;
@@ -137,7 +137,9 @@ async function fetchPage(page: number, signal?: AbortSignal) {
  */
 async function ensureServerConfig() {
 	try {
-		applyServerConfig(await getServerConfig());
+		const cfg = await getServerConfig();
+		setEmotionCdn(cfg.EMOTION_CDN);
+		applyServerConfig(cfg);
 	} catch {
 		// 配置拉取失败：保持默认头像策略，不影响留言展示
 	}
@@ -627,8 +629,12 @@ onMount(() => {
 		void tick().then(() => void openAnnouncement(firstAnnouncement));
 	}
 
-	// 后台预加载表情库：保证手输 :key: 也能转图片
-	void loadEmojiPacks().catch(() => {});
+	// 后台预加载表情库：先取服务端 EMOTION_CDN 再预热缓存，
+	// 保证历史留言里的 :key: 与评论区用同一份 owo 渲染
+	void getServerConfig()
+		.then((cfg) => setEmotionCdn(cfg.EMOTION_CDN))
+		.then(() => loadEmojiPacks())
+		.catch(() => {});
 
 	void loadInitial();
 	startPolling();
