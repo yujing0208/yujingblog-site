@@ -145,7 +145,7 @@ const episodesUnit = isNovel ? "册" : "集";
 		}
 	</div>
 
-	<div class={isGame ? "mt-1" : "p-3"}>
+	<div class={isGame ? "mt-1 anime-game-title" : "p-3"}>
 		<h3
 			class={`text-black/90 dark:text-white/90 mb-1 leading-tight ${isGame ? "text-center text-sm font-medium" : "text-sm font-bold"}`}
 		>
@@ -217,11 +217,16 @@ const episodesUnit = isNovel ? "册" : "集";
 	/* In list mode, keep game cards as icon + name below, not a horizontal row */
 	.anime-grid-container.anime-list-mode .anime-card-game {
 		flex-direction: column !important;
-		align-items: center !important;
+		align-items: flex-start !important;
 		min-height: 0 !important;
 	}
 	.anime-grid-container.anime-list-mode .anime-card-game .anime-cover-container {
-		width: auto !important;
+		width: 8rem !important;
 		max-width: 8rem;
+	}
+	.anime-grid-container.anime-list-mode .anime-card-game .anime-game-title {
+		width: 8rem !important;
+		max-width: 8rem;
+		text-align: center;
 	}
 </style>
