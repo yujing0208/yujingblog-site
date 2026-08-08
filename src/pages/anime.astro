@@ -84,13 +84,29 @@ const categoryTabs = [
 	{ id: "game", name: i18n(I18nKey.animeCategoryGame), count: categoryCounts["game"] ?? 0 },
 ];
 
-// Firely-style FilterPills 数据（状态筛选）
-const statusFilterPills = [
-	{ value: "all", label: i18n(I18nKey.animeFilterAll), count: categoryCounts["all"] ?? 0 },
-	{ value: "watching", label: i18n(I18nKey.animeStatusWatching) },
-	{ value: "completed", label: i18n(I18nKey.animeStatusCompleted) },
-	{ value: "planned", label: i18n(I18nKey.animeStatusPlanned) },
-];
+// Firely-style FilterPills 数据（状态筛选，按大分类区分标签）
+const statusOptionsByCategory = {
+	anime: [
+		{ value: "all", label: i18n(I18nKey.animeFilterAll) },
+		{ value: "watching", label: i18n(I18nKey.animeStatusWatching) },
+		{ value: "completed", label: i18n(I18nKey.animeStatusCompleted) },
+		{ value: "planned", label: i18n(I18nKey.animeStatusPlanned) },
+		{ value: "onhold", label: i18n(I18nKey.animeStatusOnHold) },
+		{ value: "dropped", label: i18n(I18nKey.animeStatusDropped) },
+	],
+	novel: [
+		{ value: "all", label: i18n(I18nKey.animeFilterAll) },
+		{ value: "completed", label: "读过" },
+		{ value: "watching", label: "在读" },
+		{ value: "planned", label: "想读" },
+	],
+	game: [
+		{ value: "all", label: i18n(I18nKey.animeFilterAll) },
+		{ value: "watching", label: "在玩" },
+		{ value: "planned", label: "想玩" },
+		{ value: "onhold", label: i18n(I18nKey.animeStatusOnHold) },
+	],
+};
 ---
 
 <MainGridLayout
@@ -112,13 +128,25 @@ const statusFilterPills = [
 				<!-- 分类标签 (TabNav) -->
 				<AnimeTabNav tabs={categoryTabs} activeTab="anime" />
 
-				<!-- 状态筛选 (FilterPills) -->
-				<AnimeFilterPills
-					filters={statusFilterPills}
-					activeFilter="all"
-					dataAttr="data-status"
-					containerClass="bangumi-status-filters"
-				/>
+				<!-- 状态筛选 (FilterPills)，按大分类切换显示 -->
+				<div class="bangumi-status-filters">
+					{
+						categoryTabs.map((cat) => (
+							<div
+								class="bangumi-status-group"
+								data-status-group={cat.id}
+								style={cat.id === "anime" ? "" : "display: none;"}
+							>
+								<AnimeFilterPills
+									filters={statusOptionsByCategory[cat.id]}
+									activeFilter="all"
+									dataAttr="data-status"
+									containerClass=""
+								/>
+							</div>
+						))
+					}
+				</div>
 			</div>
 			</div>
 
@@ -362,7 +390,7 @@ const statusFilterPills = [
 		}
 
 		// Track current filter state
-		let activeCategory = "all";
+		let activeCategory = "anime";
 		let activeStatus = "all";
 
 		function applyFilters() {
@@ -410,8 +438,18 @@ const statusFilterPills = [
 		function initFilterButtons() {
 			// Firely TabNav: 分类标签点击
 			const categoryTabs = document.querySelectorAll(".bangumi-tab[data-tab-id]");
-			// Firely FilterPills: 状态筛选点击
-			const statusPills = document.querySelectorAll(".bangumi-status-filters .bangumi-filter-pill");
+			// Firely FilterPills: 状态筛选点击（按当前可见分组作用域）
+			function getActiveStatusGroup() {
+				return (
+					Array.from(document.querySelectorAll(".bangumi-status-group")).find(
+						(g) => g.style.display !== "none",
+					) || null
+				);
+			}
+			function getActiveStatusPills() {
+				const grp = getActiveStatusGroup();
+				return grp ? grp.querySelectorAll(".bangumi-filter-pill") : [];
+			}
 			const sentinel = document.getElementById(
 				"infinite-scroll-sentinel",
 			);
@@ -426,6 +464,23 @@ const statusFilterPills = [
 			window.animeFilterEventListeners = [];
 
 			// Category tab click handlers (Firely TabNav)
+			const statusGroups = document.querySelectorAll(".bangumi-status-group");
+			function switchStatusGroup(category) {
+				statusGroups.forEach((g) => (g.style.display = "none"));
+				const grp = document.querySelector(
+					`.bangumi-status-group[data-status-group="${category}"]`,
+				);
+				if (grp) grp.style.display = "";
+				activeStatus = "all";
+				const pills = grp ? grp.querySelectorAll(".bangumi-filter-pill") : [];
+				pills.forEach((p) =>
+					p.classList.toggle(
+						"bangumi-filter-pill-active",
+						p.getAttribute("data-status") === "all",
+					),
+				);
+			}
+
 			categoryTabs.forEach((tab) => {
 				const clickHandler = function () {
 					if (this.classList.contains("bangumi-tab-active")) return;
@@ -434,6 +489,7 @@ const statusFilterPills = [
 					this.classList.add("bangumi-tab-active");
 
 					activeCategory = this.getAttribute("data-tab-id") || "anime";
+					switchStatusGroup(activeCategory);
 					applyFilters();
 				};
 
@@ -441,12 +497,17 @@ const statusFilterPills = [
 				window.animeFilterEventListeners.push([tab, "click", clickHandler]);
 			});
 
-			// Status pill click handlers (Firely FilterPills)
-			statusPills.forEach((pill) => {
+			// Status pill click handlers (Firely FilterPills) — 绑定全部分组，作用域限于当前可见分组
+			const allStatusPills = document.querySelectorAll(
+				".bangumi-status-filters .bangumi-filter-pill",
+			);
+			allStatusPills.forEach((pill) => {
 				const clickHandler = function () {
 					if (this.classList.contains("bangumi-filter-pill-active")) return;
 
-					statusPills.forEach((p) => p.classList.remove("bangumi-filter-pill-active"));
+					getActiveStatusPills().forEach((p) =>
+						p.classList.remove("bangumi-filter-pill-active"),
+					);
 					this.classList.add("bangumi-filter-pill-active");
 
 					// Show all hidden items first, then re-filter
@@ -517,6 +578,9 @@ const statusFilterPills = [
 		} else if (sentinel) {
 			sentinel.style.display = "none";
 		}
+
+		// 初始化时按默认大分类（动漫）过滤一次
+		applyFilters();
 	}
 
 	function initPillFilters() {
