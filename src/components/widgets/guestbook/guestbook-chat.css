@@ -1589,7 +1589,7 @@
 
 .guestbook-composer__emoji-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, 77px);
+	grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
 	justify-items: center;
 	gap: var(--space-1);
 	min-height: 0;
@@ -1600,9 +1600,10 @@
 .guestbook-composer__emoji-grid button {
 	display: grid;
 	place-items: center;
-	width: 77px;
-	height: 77px;
-	padding: 0;
+	width: 100%;
+	height: auto;
+	min-height: 95px;
+	padding: 8px 10px;
 	border: 0;
 	border-radius: var(--radius-small);
 	background: transparent;
@@ -1614,15 +1615,16 @@
 	background: var(--guestbook-editor-hover);
 }
 
+/* 与评论区 OwO 表情图片一致：77px × 77px（见 src/styles/twikoo.css） */
 .guestbook-composer__emoji-grid img {
-	width: 60px;
-	height: 60px;
+	width: 77px;
+	height: 77px;
 	object-fit: contain;
 }
 
-/* Emoji 分组：字符本身即内容，放大字号 */
+/* Emoji 字符分组：对齐评论区 .OwO-items-emoji .OwO-item 的 20px */
 .guestbook-composer__emoji-grid.is-emoji button {
-	font-size: 1.35rem;
+	font-size: 20px;
 	line-height: 1;
 }
 
