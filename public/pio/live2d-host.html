@@ -268,6 +268,24 @@
             showMascotTip(t);
           }
         });
+
+        // 触摸拖拽支持：l2d-widget 的模型身体拖动只绑在 mousemove 上，
+        // 触摸屏没有鼠标事件，这里把 touchmove 合成 mousemove 派发到 document，
+        // 复用 onMouseMove → onDrag 链路，让模型身体随手指拖动；touchend 复位。
+        canvas.style.touchAction = 'none';
+        canvas.addEventListener('touchmove', function(e) {
+          var t = e.touches[0];
+          if (!t) return;
+          e.preventDefault();
+          document.dispatchEvent(new MouseEvent('mousemove', {
+            clientX: t.clientX,
+            clientY: t.clientY,
+            bubbles: true
+          }));
+        }, { passive: false });
+        canvas.addEventListener('touchend', function() {
+          document.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+        }, { passive: false });
       }
     });
   });
