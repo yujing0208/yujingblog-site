@@ -543,7 +543,7 @@
 		var today = new Date().toISOString().slice(0, 10);
 		var s = state.schema;
 		var filename = today + "-" + slug + ".md";
-		var content = "---\ntitle: \"" + title.replace(/"/g, '\\"') + "\"\npublished: " + today + "\ndraft: true\ntags: []\ncategory: \"\"\n---\n\n# " + title + "\n";
+		var content = "---\ntitle: \"" + title.replace(/"/g, '\\"') + "\"\npublished: " + today + "\ndraft: true\ntags: []\ncategory: \"\"\ncomment: true\n---\n\n# " + title + "\n";
 		var path = s.path + "/" + filename;
 		stagePut(path, content, "chore: new post " + filename);
 		state.items.push({ name: filename, path: path, type: "file" });
