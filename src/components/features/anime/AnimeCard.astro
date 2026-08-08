@@ -43,6 +43,13 @@ const showMeta =
 	Boolean(anime.studio) ||
 	(anime.genre?.length ?? 0) > 0 ||
 	totalEpisodes > 0;
+
+// Category-specific label & feature overrides
+const isNovel = anime.category === "novel";
+const isGame = anime.category === "game";
+const studioLabelText = isNovel ? "作者" : studioLabel;
+const episodesLabelText = isNovel ? "册数" : episodesLabel;
+const episodesUnit = isNovel ? "册" : "集";
 ---
 
 <div
@@ -106,7 +113,7 @@ const showMeta =
 		</div>
 
 		{
-			anime.status === "watching" && showMeta && totalEpisodes > 0 && (
+			anime.status === "watching" && showMeta && totalEpisodes > 0 && !isGame && (
 			<div class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-2">
 				<div class="w-full bg-white/20 rounded-full h-1.5 mb-1">
 					<div
@@ -140,13 +147,13 @@ const showMeta =
 			showMeta && (
 				<div class="space-y-1 text-xs">
 					{
-						(totalEpisodes > 0 || anime.episodes) && (
+						(totalEpisodes > 0 || anime.episodes) && !isGame && (
 							<div class="flex justify-between items-center">
 								<span class="text-black/50 dark:text-white/50 shrink-0">
-									{episodesLabel}
+									{episodesLabelText}
 								</span>
 								<span class="text-black/70 dark:text-white/70 truncate ml-2 text-right">
-									{totalEpisodes > 0 ? `${totalEpisodes} 集` : anime.episodes}
+									{totalEpisodes > 0 ? `${totalEpisodes} ${episodesUnit}` : anime.episodes}
 								</span>
 							</div>
 						)
@@ -163,7 +170,7 @@ const showMeta =
 					</div>
 					<div class="flex justify-between items-start">
 						<span class="text-black/50 dark:text-white/50 shrink-0 mt-0.5">
-							{studioLabel}
+							{studioLabelText}
 						</span>
 						<span
 							class="text-black/70 dark:text-white/70 text-right ml-2 line-clamp-2 wrap-break-word"
