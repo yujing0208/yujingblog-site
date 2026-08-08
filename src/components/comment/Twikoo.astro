@@ -88,6 +88,10 @@ const config = {
 
 		/* ==== OwO 表情面板增强（在 Twikoo 初始化后调用） ==== */
 		function setupOwoEnhancements() {
+			// 防止 swup 页面切换重复绑定
+			if (window.__twikooOwOEnhanced) return;
+			window.__twikooOwOEnhanced = true;
+
 			var owo = document.querySelector("#twikoo .OwO");
 			if (!owo) return;
 
