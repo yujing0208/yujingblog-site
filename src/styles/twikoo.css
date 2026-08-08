@@ -274,219 +274,55 @@ html.dark .twikoo select option {
 }
 
 /* =====================================================
-   Twikoo OwO 表情面板修复 v4
-   日期：2026-08-09
-   核心原则：绝不覆盖 .OwO-body 的 display 属性（避免破坏 none/block 切换）
-   所有布局增强只在 .OwO.OwO-open 状态下生效
+   Twikoo OwO 表情面板修复 v5（最小安全版）
+   原则：只做必要修改，不碰 OwO 核心 display/position 逻辑
    ===================================================== */
 
-/* ---- 0. 评论卡片放行（始终生效，不影响隐藏状态） ---- */
-.card-base:has(#tcomment) {
-  overflow: visible !important;
-}
-#twikoo,
-.twikoo-container,
+/* 1. 让表情面板能浮出评论卡片 */
 #twikoo-container,
 #tcomment {
   overflow: visible !important;
 }
 
-/* ---- 1. 面板基础样式（z-index / shadow / 尺寸，不碰 display） ---- */
-#twikoo .OwO-body {
-  z-index: 2147483647 !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18) !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  /* 不设 display / top / bottom / left / right，保留 OwO 原始定位 */
-}
-
-/* ---- 2. 打开状态的布局增强（关键：只在 OwO-open 时才设 display） ---- */
+/* 2. 面板打开时：限制高度 + 内容滚动 */
 #twikoo .OwO.OwO-open .OwO-body {
-  display: flex !important;
-  flex-direction: column !important;
   max-height: 55vh !important;
-  max-width: min(520px, calc(100vw - 20px)) !important;
-  min-width: 280px !important;
+  overflow: hidden !important;
 }
-
-/* 向上展开模式（JS 动态加 .OwO-up 类） */
-#twikoo .OwO.OwO-open.OwO-up .OwO-body {
-  top: auto !important;
-  bottom: 2.4em !important;
-  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.16) !important;
-}
-
-/* ---- 3. 内容区滚动（仅在打开时） ---- */
 #twikoo .OwO.OwO-open .OwO-body .OwO-items.OwO-items-show {
-  flex: 1 1 auto !important;
-  max-height: none !important;
   overflow-y: auto !important;
-  overflow-x: hidden !important;
-  min-height: 0 !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-#twikoo .OwO.OwO-open .OwO-body .OwO-items.OwO-items-show::-webkit-scrollbar {
-  width: 5px;
-}
-#twikoo .OwO.OwO-open .OwO-body .OwO-items.OwO-items-show::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px;
+  max-height: calc(55vh - 45px) !important;
 }
 
-/* ---- 4. 底部 tab 栏（固定 + 横滑） ---- */
-#twikoo .OwO-body .OwO-bar {
-  flex-shrink: 0 !important;
+/* 3. 底部 tab 栏横滑 */
+#twikoo .OwO .OwO-bar {
   overflow-x: auto !important;
-  overflow-y: hidden !important;
   white-space: nowrap !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
-  padding: 4px 0 !important;
 }
-#twikoo .OwO-body .OwO-bar::-webkit-scrollbar {
+#twikoo .OwO .OwO-bar::-webkit-scrollbar {
   display: none !important;
 }
-#twikoo .OwO-body .OwO-bar .OwO-packages {
-  white-space: nowrap !important;
-  display: inline-block !important;
-  font-size: 0 !important;
-}
-#twikoo .OwO-body .OwO-bar .OwO-packages li {
-  font-size: 13px !important;
-  line-height: 30px !important;
-  padding: 0 12px !important;
-  white-space: nowrap !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 30px !important;
-  cursor: pointer !important;
-  transition: color 0.15s !important;
-}
-#twikoo .OwO-body .OwO-bar .OwO-packages li:hover {
-  color: var(--primary, #3b82f6) !important;
-}
-#twikoo .OwO-body .OwO-bar .OwO-packages li.OwO-package-active {
-  color: var(--primary, #3b82f6) !important;
-  font-weight: 600 !important;
-}
 
-/* ---- 5. tab 图片图标尺寸 ---- */
-#twikoo .OwO-packages li img {
-  width: 28px !important;
-  height: 28px !important;
-  object-fit: contain !important;
-  vertical-align: middle !important;
-  pointer-events: none !important;
-}
-
-/* ---- 6. 图片表情放大 ---- */
-#twikoo .OwO-items-image .OwO-item {
-  width: auto !important;
-  min-width: 64px !important;
-  max-width: none !important;
-  padding: 5px 8px !important;
-  display: inline-block !important;
-  text-align: center !important;
-}
+/* 4. 图片表情放大 */
 #twikoo .OwO-items-image .OwO-item img {
-  width: 56px !important;
-  height: 56px !important;
-  max-width: none !important;
-  object-fit: contain !important;
-}
-#twikoo .OwO-items-image .OwO-item span {
-  display: block !important;
-  font-size: 11px !important;
-  line-height: 1.3 !important;
-  margin-top: 2px !important;
-  color: #555 !important;
-  word-break: keep-all !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-html.dark #twikoo .OwO-items-image .OwO-item span {
-  color: #aaa !important;
+  width: 52px !important;
+  height: 52px !important;
 }
 
-/* ---- 7. 颜文字 / Emoji ---- */
-#twikoo .OwO-items-emoticon .OwO-item {
-  font-size: 17px !important;
-  line-height: 1.7 !important;
-  word-break: keep-all !important;
-  overflow-wrap: anywhere !important;
-  padding: 4px 8px !important;
-  max-width: 100% !important;
-}
-#twikoo .OwO-items-emoji .OwO-item {
-  font-size: 24px !important;
-  line-height: 1.4 !important;
-  padding: 4px 8px !important;
+/* 5. tab 图标尺寸 */
+#twikoo .OwO-packages li img {
+  width: 26px !important;
+  height: 26px !important;
+  vertical-align: middle !important;
 }
 
-/* ---- 8. 按钮高亮提示可关闭 ---- */
-#twikoo .OwO.OwO-open .OwO-logo {
-  color: var(--primary, #3b82f6) !important;
-  font-weight: 700 !important;
-  opacity: 1 !important;
-}
-
-/* =====================================================
-   移动端竖屏 ≤480px
-   ===================================================== */
+/* 6. 移动端微调 */
 @media screen and (max-width: 480px) {
   #twikoo .OwO.OwO-open .OwO-body {
-    max-height: 50vh !important;
-    max-width: calc(100vw - 14px) !important;
-    left: 7px !important;
-    right: 7px !important;
-  }
-  #twikoo .OwO-items-image .OwO-item {
-    min-width: 56px !important;
-    padding: 4px 5px !important;
+    max-height: 48vh !important;
   }
   #twikoo .OwO-items-image .OwO-item img {
-    width: 48px !important;
-    height: 48px !important;
-  }
-  #twikoo .OwO-items-image .OwO-item span {
-    font-size: 10px !important;
-  }
-  #twikoo .OwO-items-emoticon .OwO-item {
-    font-size: 15px !important;
-    line-height: 1.6 !important;
-    padding: 3px 5px !important;
-  }
-  #twikoo .OwO-items-emoji .OwO-item {
-    font-size: 20px !important;
-  }
-  #twikoo .OwO-body .OwO-bar .OwO-packages li {
-    font-size: 12px !important;
-    padding: 0 8px !important;
-    min-height: 26px !important;
-  }
-  #twikoo .OwO-packages li img {
-    width: 24px !important;
-    height: 24px !important;
-  }
-}
-
-/* =====================================================
-   小平板/横屏 481~768px
-   ===================================================== */
-@media screen and (min-width: 481px) and (max-width: 768px) {
-  #twikoo .OwO.OwO-open .OwO-body {
-    max-height: 52vh !important;
-  }
-  #twikoo .OwO-items-image .OwO-item img {
-    width: 52px !important;
-    height: 52px !important;
-  }
-  #twikoo .OwO-items-emoticon .OwO-item {
-    font-size: 16px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
 }
