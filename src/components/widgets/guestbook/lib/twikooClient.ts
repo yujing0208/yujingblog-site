@@ -44,6 +44,9 @@ async function call<T>(
 		throw new Error("Twikoo 服务地址未配置");
 	}
 	const accessToken = readAccessToken();
+	// 10s 超时：避免服务端卡死导致前端一直骨架屏
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 10_000);
 	const response = await fetch(ENV_ID, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -53,7 +56,9 @@ async function call<T>(
 			envId: ENV_ID,
 			...params,
 		}),
+		signal: controller.signal,
 	});
+	clearTimeout(timeoutId);
 	if (!response.ok) {
 		throw new Error(`留言服务请求失败 (${response.status})`);
 	}
