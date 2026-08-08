@@ -80,6 +80,35 @@ async function call<T>(
 	return json as T;
 }
 
+/** GET_CONFIG 返回的服务端公开配置（仅声明留言板用得到的字段） */
+export interface TwikooServerConfig {
+	/** Gravatar CDN 域名，如 "cravatar.cn"；未配置时官方默认 "weavatar.com" */
+	GRAVATAR_CDN?: string;
+	/** 默认头像风格，如 "monsterid"；未配置时官方回退为昵称首字母 */
+	DEFAULT_GRAVATAR?: string;
+	[key: string]: unknown;
+}
+
+let configPromise: Promise<TwikooServerConfig> | null = null;
+
+/**
+ * GET_CONFIG：拉取服务端公开配置
+ * 与文章评论区（Twikoo 官方 SDK）读取的是同一份配置，
+ * 留言板据此渲染头像，保证站长在 Twikoo 后台改设置后两处表现一致。
+ * 结果在页面生命周期内缓存；失败时清空缓存以便下次重试。
+ */
+export async function getServerConfig(): Promise<TwikooServerConfig> {
+	if (!configPromise) {
+		configPromise = call<{ config?: TwikooServerConfig }>("GET_CONFIG")
+			.then((result) => result.config ?? {})
+			.catch((error) => {
+				configPromise = null;
+				throw error;
+			});
+	}
+	return configPromise;
+}
+
 export interface CommentGetResult {
 	data: TwikooComment[];
 	more: boolean;

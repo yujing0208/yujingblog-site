@@ -4,10 +4,12 @@ import { onMount, tick } from "svelte";
 import {
 	deleteComment as apiDeleteComment,
 	getComments,
+	getServerConfig,
 	submitComment,
 } from "./lib/twikooClient";
 import type { GuestbookMessage, GuestbookProfile } from "./lib/types";
 import {
+	applyServerConfig,
 	dateLabel,
 	flattenComments,
 	formatMessageTime,
@@ -128,6 +130,19 @@ async function fetchPage(page: number, signal?: AbortSignal) {
 	return getComments(page, PAGE_SIZE);
 }
 
+/**
+ * 拉取并应用 Twikoo 服务端配置（头像 CDN 与默认风格）。
+ * 必须在 flattenComments 之前完成，否则头像会用兜底值渲染。
+ * 拉取失败不阻塞留言加载，此时沿用官方默认值。
+ */
+async function ensureServerConfig() {
+	try {
+		applyServerConfig(await getServerConfig());
+	} catch {
+		// 配置拉取失败：保持默认头像策略，不影响留言展示
+	}
+}
+
 async function loadInitial() {
 	if (isOffline) {
 		initialLoading = false;
@@ -144,7 +159,11 @@ async function loadInitial() {
 	syncError = "";
 
 	try {
-		const response = await fetchPage(1, controller.signal);
+		// 并行拉配置与首页数据：配置在 flattenComments 前应用，且不多一轮往返
+		const [, response] = await Promise.all([
+			ensureServerConfig(),
+			fetchPage(1, controller.signal),
+		]);
 		if (dataController !== controller) return;
 		messages = mergeMessages(
 			messages,

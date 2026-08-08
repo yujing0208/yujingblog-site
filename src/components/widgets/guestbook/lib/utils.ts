@@ -8,11 +8,64 @@ import type { GuestbookMessage, TwikooComment } from "./types";
 export const MIN_MESSAGE_LENGTH = 2;
 export const MAX_MESSAGE_LENGTH = 300;
 
-/** 解析头像：优先评论自带，否则用 mailMd5 拼 Gravatar */
+/* ============================================================
+   头像解析
+   与文章评论区（Twikoo 官方 SDK v1.7.14）的 avatarInner 逻辑保持一致：
+   读取服务端 GET_CONFIG 的 GRAVATAR_CDN / DEFAULT_GRAVATAR，
+   而不是把 CDN 与默认风格写死——否则站长在 Twikoo 后台改了头像设置，
+   评论区会变、留言板不变，两处显示不一致。
+   ============================================================ */
+
+/** 官方未配置 GRAVATAR_CDN 时的默认值 */
+const FALLBACK_GRAVATAR_CDN = "weavatar.com";
+
+let gravatarCdn = FALLBACK_GRAVATAR_CDN;
+let defaultGravatar = "";
+
+/** 应用服务端配置（由 GET_CONFIG 拉取），使留言板头像跟随 Twikoo 后台设置 */
+export function applyServerConfig(config: {
+	GRAVATAR_CDN?: unknown;
+	DEFAULT_GRAVATAR?: unknown;
+}): void {
+	gravatarCdn =
+		typeof config.GRAVATAR_CDN === "string" && config.GRAVATAR_CDN
+			? config.GRAVATAR_CDN
+			: FALLBACK_GRAVATAR_CDN;
+	defaultGravatar =
+		typeof config.DEFAULT_GRAVATAR === "string" ? config.DEFAULT_GRAVATAR : "";
+}
+
+/** 默认头像参数：未配置时与官方一致，回退为昵称首字母图 */
+function getDefaultGravatarParam(nick: string): string {
+	// 官方为 `initials&name=${nick}`；此处对昵称做编码，避免昵称含 & 破坏 URL
+	return defaultGravatar || `initials&name=${encodeURIComponent(nick)}`;
+}
+
+const QQ_NUMBER_PATTERN = /^[1-9][0-9]{4,10}$/u;
+const QQ_MAIL_PATTERN = /^[1-9][0-9]{4,10}@qq\.com$/iu;
+
+function isQQ(mail: string): boolean {
+	return QQ_NUMBER_PATTERN.test(mail) || QQ_MAIL_PATTERN.test(mail);
+}
+
+function getQQAvatar(mail: string): string {
+	return `https://thirdqq.qlogo.cn/g?b=sdk&nk=${mail.replace(/@qq\.com/giu, "")}&s=140`;
+}
+
+/**
+ * 解析头像，优先级与官方 SDK 相同：
+ *   评论自带 avatar > mailMd5 拼 Gravatar > QQ 邮箱取 QQ 头像 > 空（气泡显示首字母）
+ * 注意：不带 Gravatar 的 f=y 参数——那会强制返回默认图，把用户真实头像挡掉。
+ * 官方还有「明文邮箱非 QQ 时前端自行 md5/sha256」的分支，因 COMMENT_GET 已将
+ * mail 脱敏为 null，这里不引入哈希依赖，直接回退到首字母显示。
+ */
 export function resolveAvatar(comment: TwikooComment): string {
 	if (comment.avatar) return comment.avatar;
 	if (comment.mailMd5) {
-		return `https://cravatar.cn/avatar/${comment.mailMd5}?d=identicon&f=y`;
+		return `https://${gravatarCdn}/avatar/${comment.mailMd5}?d=${getDefaultGravatarParam(comment.nick)}`;
+	}
+	if (comment.mail && isQQ(comment.mail)) {
+		return getQQAvatar(comment.mail);
 	}
 	return "";
 }

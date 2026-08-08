@@ -9,6 +9,8 @@ export interface TwikooComment {
 	/** 头像 URL，可能为 null（此时用 mailMd5 拼 Gravatar） */
 	avatar: string | null;
 	mailMd5?: string;
+	/** 明文邮箱：COMMENT_GET 通常脱敏为 null，仅 COMMENT_SUBMIT 回包等场景可能有值 */
+	mail?: string | null;
 	link?: string;
 	/** HTML 内容（服务端已做 Markdown 转换与净化） */
 	comment: string;
