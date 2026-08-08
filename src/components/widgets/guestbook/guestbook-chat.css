@@ -898,7 +898,7 @@
 }
 
 .guestbook-composer__tools {
-	gap: 2ch;
+	gap: 6px; /* 游客访问→发送 文字间距 2 中文字符 */
 	flex: 0 1 auto;
 	min-width: 0;
 	justify-content: flex-end;
