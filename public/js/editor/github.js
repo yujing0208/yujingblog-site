@@ -125,7 +125,10 @@
 	 * 返回 { commitSha }
 	 */
 	function commitTree(owner, repo, branch, changes, message) {
+		// 注意：GET 单引用端点用单数 /git/ref/heads/{branch}；
+		//      更新引用（PATCH）端点必须用复数 /git/refs/heads/{branch}，否则返回 404 Not Found (ref-update)
 		var refUrl = API + "/repos/" + owner + "/" + repo + "/git/ref/heads/" + branch;
+		var refUpdateUrl = API + "/repos/" + owner + "/" + repo + "/git/refs/heads/" + branch;
 		return fetch(refUrl, { headers: headers() })
 			.then(function (r) { return handle(r, "ref"); })
 			.then(function (ref) {
@@ -175,8 +178,8 @@
 								body: JSON.stringify({ message: message || "chore: batch update via online editor", tree: newTree.sha, parents: [parentSha] }),
 							}).then(function (r) { return handle(r, "commit-create"); });
 						}).then(function (newCommit) {
-							// 5. 更新 ref
-							return fetch(refUrl, {
+							// 5. 更新 ref（PATCH 端点为 /git/refs/ 复数）
+							return fetch(refUpdateUrl, {
 								method: "PATCH",
 								headers: headers({ "Content-Type": "application/json" }),
 								body: JSON.stringify({ sha: newCommit.sha, force: false }),
