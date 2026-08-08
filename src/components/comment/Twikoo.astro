@@ -63,49 +63,44 @@ const config = {
 
 		async function initTwikoo() {
 			const commentEl = document.getElementById("tcomment");
-			if (!commentEl) return;
+			if (!commentEl) {
+				return;
+			}
 
 			try {
 				await loadTwikooScript();
+
 				if (typeof twikoo === "undefined") {
 					console.warn("[Twikoo] 脚本加载失败");
 					return;
 				}
+
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
-
-				// 简单的点击外部关闭
-				bindClickOutsideClose();
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
 			}
 		}
 
-		function bindClickOutsideClose() {
-			var owo = document.querySelector("#twikoo .OwO");
-			if (!owo) return;
-
-			// 延迟绑定，确保 OwO 自身的事件先注册
-			setTimeout(function () {
-				document.addEventListener("click", function onClick(e) {
-					if (!owo.classList.contains("OwO-open")) return;
-					if (!owo.contains(e.target)) {
-						owo.classList.remove("OwO-open");
-					}
-				});
-			}, 100);
-		}
-
 		function cleanup() {
-			if (observer) { observer.disconnect(); observer = null; }
+			if (observer) {
+				observer.disconnect();
+				observer = null;
+			}
+			if (window.swup?.hooks) {
+				window.swup.hooks.off("content:replace", initTwikoo);
+			}
 		}
 
 		function setupLazyLoad() {
-			var container = document.getElementById(TWIKOO_CONTAINER_ID);
-			if (!container) return;
+			const container = document.getElementById(TWIKOO_CONTAINER_ID);
+			if (!container) {
+				return;
+			}
+
 			observer = new IntersectionObserver(
-				function (entries) {
+				(entries) => {
 					if (entries[0].isIntersecting) {
 						observer.disconnect();
 						observer = null;
@@ -114,30 +109,38 @@ const config = {
 				},
 				{ rootMargin: ROOT_MARGIN },
 			);
+
 			observer.observe(container);
 		}
 
 		function setupSwupHooks() {
 			if (window.swup?.hooks) {
-				window.swup.hooks.on("content:replace", function () {
+				window.swup.hooks.on("content:replace", () => {
 					setTimeout(setupLazyLoad, 200);
 				});
 			} else {
-				document.addEventListener("swup:enable", function () {
-					if (window.swup?.hooks) {
-						window.swup.hooks.on("content:replace", function () {
-							setTimeout(setupLazyLoad, 200);
-						});
-					}
-				}, { once: true });
+				document.addEventListener(
+					"swup:enable",
+					() => {
+						if (window.swup?.hooks) {
+							window.swup.hooks.on("content:replace", () => {
+								setTimeout(setupLazyLoad, 200);
+							});
+						}
+					},
+					{ once: true },
+				);
 			}
 		}
 
-		document.addEventListener("mizuki:page:loaded", setupLazyLoad);
+		document.addEventListener("mizuki:page:loaded", () => {
+			setupLazyLoad();
+		});
+
 		window.addEventListener("beforeunload", cleanup);
 
 		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", function () {
+			document.addEventListener("DOMContentLoaded", () => {
 				setupLazyLoad();
 				setupSwupHooks();
 			});
