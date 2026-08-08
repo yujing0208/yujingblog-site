@@ -272,3 +272,231 @@ html.dark .twikoo select option {
 .el-loading-spinner .path {
   stroke: var(--primary) !important;
 }
+
+/* ========================================
+   Twikoo OWO 表情面板移动端修复
+   解决问题：
+   1. 带文字的表情包太小看不清
+   2. 手机竖屏颜文字排版错位/换行混乱
+   3. 底部分类 tab 栏被截断遮挡
+   ======================================== */
+
+/* ---- 1. 表情面板容器：限制高度 + flex布局 ---- */
+.twikoo .el-popover {
+  /* Element UI Popover = Twikoo 表情面板的外层容器 */
+}
+
+/* 面板整体：限制最大高度，防止撑开超出屏幕 */
+.twikoo .el-popover[data-reference^="tk-owo"],
+.twikoo .tk-owo-popper {
+  max-height: 55vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* ---- 2. 内容区：可纵向滚动 ---- */
+/* 面板的第一个子元素是表情内容区 */
+.twikoo .el-popover[data-reference^="tk-owo"] > div:first-of-type,
+.twikoo .tk-owo-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滚动 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+.twikoo .el-popover[data-reference^="tk-owo"] > div:first-of-type::-webkit-scrollbar {
+  width: 4px;
+}
+.twikoo .el-popover[data-reference^="tk-owo"] > div:first-of-type::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 2px;
+}
+
+/* ---- 3. 底部 Tab 栏：固定可见 + 可横滑 ---- */
+/* 面板最后一个子元素是 tab 切换栏 */
+.twikoo .el-popover[data-reference^="tk-ovo"] > div:last-of-type,
+.twikoo .tk-owo-tab,
+.twikoo .el-popover:has(> div:last-of-type span) > div:last-of-type {
+  flex-shrink: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  position: relative !important;
+  z-index: 10 !important;
+  background: var(--el-bg-color, #fff) !important;
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+  padding: 6px 8px !important;
+  /* 隐藏横滚动条但保留横滑功能 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.twikoo .tk-owo-tab::-webkit-scrollbar,
+.twikoo .el-popover:has(> div:last-of-type span) > div:last-of-type::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab 项文字样式 */
+.twikoo .tk-owo-tab span,
+.twikoo .el-popover:has(> div:last-of-type span) > div:last-of-type span {
+  display: inline-block !important;
+  padding: 5px 12px !important;
+  margin: 0 2px !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.twikoo .tk-owo-tab span:hover,
+.twikoo .el-popover:has(> div:last-of-type span) > div:last-of-type span:hover {
+  background: rgba(0,0,0,0.05) !important;
+}
+
+/* ---- 4. 图片表情：增大尺寸（带文字标签的要能看清）---- */
+/* 所有表情面板内的图片 */
+.twikoo .el-popover img {
+  width: 56px !important;
+  height: 56px !important;
+  object-fit: contain !important;
+  image-rendering: auto !important;
+}
+
+/* 表情项（图片+文字标签的容器）*/
+.twikoo .el-popover .owo-item,
+.twikoo .tk-owo-item {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 4px 2px !important;
+  min-width: 64px !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  transition: background 0.15s !important;
+}
+.twikoo .el-popover .owo-item:hover,
+.twikoo .tk-owo-item:hover {
+  background: rgba(0,0,0,0.04) !important;
+
+}
+
+/* 图片下方的文字标签（如"一群坏坏"、"中杯茶"等）*/
+.twikoo .el-popover .owo-item span:not([class*="img"]):not(img),
+.twikoo .tk-owo-text,
+.twikoo .owo-text {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  word-break: keep-all !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 66px !important;
+  color: #666 !important;
+}
+
+html.dark .twikoo .owo-text,
+html.dark .twikoo .tk-owo-text {
+  color: #9ca3af !important;
+}
+
+/* ---- 5. 颜文字优化：防止换行错位 ---- */
+/* 颜文字是 type=emoticon，渲染为纯文本 */
+.twikoo .el-popover .owo-emoticon,
+.twikoo .tk-owo-emoticon {
+  font-size: 17px !important;
+  line-height: 1.7 !important;
+  text-align: center !important;
+  word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
+  padding: 4px 6px !important;
+  display: inline-block !important;
+}
+
+/* Emoji 类型也做类似处理 */
+.twikoo .el-popover .owo-emoji,
+.twikoo .tk-owo-emoji {
+  font-size: 24px !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  padding: 4px 6px !important;
+  display: inline-block !important;
+}
+
+/* ========================================
+   手机竖屏专项优化 (≤480px)
+   ======================================== */
+@media screen and (max-width: 480px) {
+  /* 面板更矮，留空间给输入框 */
+  .twikoo .el-popover[data-reference^="tk-owo"],
+  .twikoo .tk-owo-popper {
+    max-height: 46vh !important;
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+  }
+
+  /* 图片尺寸稍小但保持可读性 */
+  .twikoo .el-popover img {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  /* 表情项更紧凑 */
+  .twikoo .el-popover .owo-item,
+  .twikoo .tk-owo-item {
+    min-width: 56px !important;
+    padding: 3px 1px !important;
+  }
+
+  /* 文字标签更小 */
+  .twikoo .owo-text,
+  .twikoo .tk-owo-text {
+    font-size: 9px !important;
+    max-width: 56px !important;
+  }
+
+  /* 颜文字进一步缩小防溢出 */
+  .twikoo .el-popover .owo-emoticon,
+  .twikoo .tk-owo-emoticon {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    padding: 3px 4px !important;
+  }
+
+  /* Emoji 稍小 */
+  .twikoo .el-popover .owo-emoji,
+  .twikoo .tk-owo-emoji {
+    font-size: 20px !important;
+  }
+
+  /* Tab 更紧凑 */
+  .twikoo .tk-owo-tab span,
+  .twikoo .el-popover:has(> div:last-of-type span) > div:last-of-type span {
+    padding: 4px 8px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+/* ========================================
+   平板/小平屏 (481px ~ 640px)
+   ======================================== */
+@media screen and (min-width: 481px) and (max-width: 640px) {
+  .twikoo .el-popover[data-reference^="tk-owo"],
+  .twikoo .tk-owo-popper {
+    max-height: 50vh !important;
+  }
+
+  .twikoo .el-popover img {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .twikoo .el-popover .owo-emoticon,
+  .twikoo .tk-owo-emoticon {
+    font-size: 15px !important;
+  }
+}
