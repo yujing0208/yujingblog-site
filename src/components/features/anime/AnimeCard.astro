@@ -57,7 +57,10 @@ const episodesUnit = isNovel ? "册" : "集";
 	data-anime-status={anime.status}
 	data-anime-category={anime.category}
 >
-	<div class={`relative anime-cover-container ${isGame ? "aspect-square" : "aspect-2/3"} overflow-hidden`}>
+	<div
+		class={`relative anime-cover-container ${isGame ? "overflow-hidden" : "aspect-2/3 overflow-hidden"}`}
+		style={isGame ? "aspect-ratio: 1 / 1;" : ""}
+	>
 		<a
 			href={anime.link}
 			target="_blank"
