@@ -57,7 +57,7 @@ const episodesUnit = isNovel ? "册" : "集";
 	data-anime-status={anime.status}
 	data-anime-category={anime.category}
 >
-	<div class="relative anime-cover-container aspect-2/3 overflow-hidden">
+	<div class={`relative anime-cover-container ${isGame ? "aspect-square" : "aspect-2/3"} overflow-hidden`}>
 		<a
 			href={anime.link}
 			target="_blank"
@@ -132,19 +132,23 @@ const episodesUnit = isNovel ? "册" : "集";
 
 	<div class="p-3">
 		<h3
-			class="text-sm font-bold text-black/90 dark:text-white/90 mb-1 leading-tight"
+			class={`text-sm font-bold text-black/90 dark:text-white/90 mb-1 leading-tight ${isGame ? "text-center" : ""}`}
 		>
 			{anime.title}
 		</h3>
-		<p
-			class="text-black/60 dark:text-white/60 text-xs mb-2 line-clamp-2"
-			title={anime.description}
-		>
-			{anime.description}
-		</p>
+		{
+			!isGame && (
+				<p
+					class="text-black/60 dark:text-white/60 text-xs mb-2 line-clamp-2"
+					title={anime.description}
+				>
+					{anime.description}
+				</p>
+			)
+		}
 
 		{
-			showMeta && (
+			showMeta && !isGame && (
 				<div class="space-y-1 text-xs">
 					{
 						(totalEpisodes > 0 || anime.episodes) && !isGame && (
