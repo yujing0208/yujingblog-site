@@ -434,3 +434,70 @@ html.dark #twikoo .OwO-items-image .OwO-item span {
     font-size: 16px !important;
   }
 }
+
+/* =====================================================
+   Twikoo OwO 增强修复（第二轮）
+   - 面板向上展开（评论框在页面底部时不超视口）
+   - 桌面端 tab 横向滑动增强
+   - 底部 tab 改为图片图标后的尺寸
+   - 打开状态高亮表情按钮（提示可点它关闭）
+   ===================================================== */
+
+/* 打开时高亮表情按钮，提示点击可关闭 */
+#twikoo .OwO.OwO-open .OwO-logo {
+  color: var(--primary) !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+/* 底部 tab 图片图标尺寸 */
+#twikoo .OwO-packages li img {
+  width: 30px !important;
+  height: 30px !important;
+  object-fit: contain !important;
+  vertical-align: middle !important;
+  pointer-events: none !important; /* 避免图片拦截点击 */
+}
+#twikoo .OwO-packages li {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 30px !important;
+}
+
+/* 桌面端 tab 横滑增强 */
+#twikoo .OwO-body .OwO-bar .OwO-packages {
+  white-space: nowrap !important;
+  display: inline-block !important;
+}
+#twikoo .OwO-body .OwO-bar .OwO-packages li {
+  white-space: nowrap !important;
+}
+
+/* 面板向上展开：bottom 定位，避免页面底部评论区向下展开超视口 */
+#twikoo .OwO-body {
+  top: auto !important;
+  bottom: 2.4em !important;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* 桌面/平板：右对齐表情按钮，向左展开（不超右边界） */
+@media screen and (min-width: 481px) {
+  #twikoo .OwO-body {
+    left: auto !important;
+    right: 0 !important;
+  }
+}
+
+/* 移动端：水平居中，避免超左右边界 */
+@media screen and (max-width: 480px) {
+  #twikoo .OwO-body {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+  #twikoo .OwO-packages li img {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
