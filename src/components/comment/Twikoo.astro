@@ -148,6 +148,18 @@ const config = {
 			setupLazyLoad();
 			setupSwupHooks();
 		}
+
+		// 点击表情面板外部时关闭（OwO 默认只响应点笑脸按钮或表情项）
+		if (!window.__twikooOwOCloseBound) {
+			window.__twikooOwOCloseBound = true;
+			document.addEventListener("click", function (e) {
+				const owo = document.querySelector("#twikoo .OwO");
+				if (!owo) return;
+				if (owo.classList.contains("OwO-open") && !owo.contains(e.target)) {
+					owo.classList.remove("OwO-open");
+				}
+			});
+		}
 	})();
 </script>
 
