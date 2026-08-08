@@ -193,6 +193,10 @@
 				var chk = document.createElement("input");
 				chk.type = "checkbox";
 				chk.className = "ef-checkbox";
+				// 未设置时采用 schema 的 default（如文章 comment 默认允许评论），并回写 target，保证保存时显式落盘
+				if ((target[field.key] === undefined || target[field.key] === null) && field.default !== undefined) {
+					target[field.key] = !!field.default;
+				}
 				chk.checked = !!target[field.key];
 				chk.addEventListener("change", function () { target[field.key] = chk.checked; if (onChange) onChange(); });
 				ctl = chk;
