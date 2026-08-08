@@ -78,8 +78,64 @@ const config = {
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
+
+				// Twikoo 初始化完成后，绑定 OwO 面板增强
+				setupOwoEnhancements();
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
+			}
+		}
+
+		/* ==== OwO 表情面板增强（在 Twikoo 初始化后调用） ==== */
+		function setupOwoEnhancements() {
+			var owo = document.querySelector("#twikoo .OwO");
+			if (!owo) return;
+
+			// 1. 监听面板开/关，动态调整展开方向
+			var mo = new MutationObserver(function (mutations) {
+				mutations.forEach(function (m) {
+					if (m.attributeName === "class") {
+						if (owo.classList.contains("OwO-open")) {
+							fixOwoPosition(owo);
+						} else {
+							owo.classList.remove("OwO-up");
+						}
+					}
+				});
+			});
+			mo.observe(owo, { attributes: true });
+
+			// 2. 点击面板外部关闭（使用 capture 阶段优先拦截）
+			document.addEventListener(
+				"click",
+				function (e) {
+					if (!owo.classList.contains("OwO-open")) return;
+					// 如果点击目标不在 OwO 容器内，关闭面板
+					if (!owo.contains(e.target)) {
+						owo.classList.remove("OwO-open");
+						owo.classList.remove("OwO-up");
+					}
+				},
+				true // capture phase
+			);
+		}
+
+		// 检测面板是否会超出视口底部，超出则切换为向上展开
+		function fixOwoPosition(owo) {
+			var body = owo.querySelector(".OwO-body");
+			if (!body) return;
+
+			// 强制浏览器 reflow 以获取准确尺寸
+			var _ = body.offsetHeight;
+
+			var rect = body.getBoundingClientRect();
+			var viewportHeight = window.innerHeight;
+
+			// 如果面板底部超出视口（留 20px 安全边距）
+			if (rect.bottom > viewportHeight - 20) {
+				owo.classList.add("OwO-up");
+			} else {
+				owo.classList.remove("OwO-up");
 			}
 		}
 
@@ -147,18 +203,6 @@ const config = {
 		} else {
 			setupLazyLoad();
 			setupSwupHooks();
-		}
-
-		// 点击表情面板外部时关闭（OwO 默认只响应点笑脸按钮或表情项）
-		if (!window.__twikooOwOCloseBound) {
-			window.__twikooOwOCloseBound = true;
-			document.addEventListener("click", function (e) {
-				const owo = document.querySelector("#twikoo .OwO");
-				if (!owo) return;
-				if (owo.classList.contains("OwO-open") && !owo.contains(e.target)) {
-					owo.classList.remove("OwO-open");
-				}
-			});
 		}
 	})();
 </script>
