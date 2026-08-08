@@ -240,7 +240,7 @@
 				{ key: "category", label: "分类", type: "select", options: ["折腾记录", "博客折腾", "博客更新", "软件推荐", "教程", "杂谈", ""], creatable: true },
 				{ key: "lang", label: "语言", type: "string" },
 				{ key: "pinned", label: "置顶", type: "boolean" },
-				{ key: "comment", label: "允许评论", type: "boolean" },
+				{ key: "comment", label: "允许评论", type: "boolean", default: true },
 				{ key: "priority", label: "优先级", type: "number", optional: true },
 				{ key: "author", label: "作者", type: "string" },
 				{ key: "sourceLink", label: "来源链接", type: "string", optional: true },
