@@ -31,8 +31,12 @@ const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } = Astro.props
 const progressPercent =
 	anime.totalEpisodes > 0 ? (anime.progress / anime.totalEpisodes) * 100 : 0;
 
-// Only anime category shows meta info (year/studio/genre/episodes)
-const showMeta = anime.category === "anime";
+// Show meta info (year/studio/genre/episodes) for all categories when the data exists
+const showMeta =
+	Boolean(anime.year) ||
+	Boolean(anime.studio) ||
+	(anime.genre?.length ?? 0) > 0 ||
+	anime.totalEpisodes > 0;
 ---
 
 <div
