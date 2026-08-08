@@ -563,7 +563,17 @@
 			else if (f.type === "object-list") it[f.key] = [];
 			else it[f.key] = "";
 		});
-		if (s.format === "ts-array") state.items.push(it);
+		// 自动为隐藏的 id 字段（动态/友链等）生成自增 id，防止新建项缺 id 导致评论区等依赖 id 的功能失效
+if (s.format === "ts-array") {
+  s.fields.forEach(function (f) {
+    if (f.hidden && f.key === "id" && f.type === "number") {
+      var maxId = 0;
+      state.items.forEach(function (e) { if (e && typeof e.id === "number" && e.id > maxId) maxId = e.id; });
+      it.id = maxId + 1;
+    }
+  });
+}
+if (s.format === "ts-array") state.items.push(it);
 		else if (s.format === "ts-object") { state.items = [it]; }
 		state.current = it;
 		renderList();
