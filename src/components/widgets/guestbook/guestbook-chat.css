@@ -1589,7 +1589,7 @@
 
 .guestbook-composer__emoji-grid {
 	display: grid;
-	grid-template-columns: repeat(8, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fill, 77px);
 	justify-items: center;
 	gap: var(--space-1);
 	min-height: 0;
@@ -1600,8 +1600,8 @@
 .guestbook-composer__emoji-grid button {
 	display: grid;
 	place-items: center;
-	width: 2.5rem;
-	height: 2.5rem;
+	width: 77px;
+	height: 77px;
 	padding: 0;
 	border: 0;
 	border-radius: var(--radius-small);
@@ -1615,8 +1615,8 @@
 }
 
 .guestbook-composer__emoji-grid img {
-	width: 2rem;
-	height: 2rem;
+	width: 60px;
+	height: 60px;
 	object-fit: contain;
 }
 
