@@ -5,38 +5,6 @@ export const STORAGE_KEY_VOLUME = "music-player-volume";
 export const DEFAULT_VOLUME = 0.7;
 
 export const LOCAL_PLAYLIST: Song[] = [
-	{
-		id: 1,
-		title: "口笛で愛は歌えない",
-		artist: "Dazbee",
-		cover: "assets/music/cover/dazbee.webp",
-		url: "assets/music/url/dazbee.mp3",
-		duration: 0,
-	},
-	{
-		id: 2,
-		title: "ひとり上手",
-		artist: "Kaya",
-		cover: "assets/music/cover/hitori.webp",
-		url: "assets/music/url/hitori.mp3",
-		duration: 240,
-	},
-	{
-		id: 3,
-		title: "眩耀夜行",
-		artist: "ス리즈ブーケ",
-		cover: "assets/music/cover/xryx.webp",
-		url: "assets/music/url/xryx.mp3",
-		duration: 180,
-	},
-	{
-		id: 4,
-		title: "春雷の頃",
-		artist: "22/7",
-		cover: "assets/music/cover/cl.webp",
-		url: "assets/music/url/cl.mp3",
-		duration: 200,
-	},
 ];
 
 export const DEFAULT_SONG: Song = {
