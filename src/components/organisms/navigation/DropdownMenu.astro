@@ -105,6 +105,7 @@ const hasChildren = children.length > 0;
 				target={link.external ? "_blank" : null}
 				rel={link.external ? "noopener noreferrer" : null}
 				class="btn-plain scale-animation rounded-lg h-11 font-bold w-11 lg:w-auto lg:px-5 active:scale-95 flex items-center justify-center lg:justify-start whitespace-nowrap"
+				{...(url(link.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 			>
 				{link.icon && (
 					<Icon

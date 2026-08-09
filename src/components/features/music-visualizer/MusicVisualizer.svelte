@@ -217,11 +217,11 @@ onDestroy(() => {
 	<nav class="music-navbar">
 		<a href="/" class="music-navbar-title" title="返回首页">YuJingMusic</a>
 		<div class="music-navbar-links">
-			<a href="/" class="music-navbar-link">首页</a>
-			<a href="/archive/" class="music-navbar-link">归档</a>
-			<a href="/about/" class="music-navbar-link">关于</a>
-			<a href="/friends/" class="music-navbar-link">友链</a>
-			<a href="/music/" class="music-navbar-link active">音乐</a>
+			<a href="/" class="music-navbar-link" data-swup-ignore>首页</a>
+			<a href="/archive/" class="music-navbar-link" data-swup-ignore>归档</a>
+			<a href="/about/" class="music-navbar-link" data-swup-ignore>关于</a>
+			<a href="/friends/" class="music-navbar-link" data-swup-ignore>友链</a>
+			<a href="/music/" class="music-navbar-link active" data-swup-ignore>音乐</a>
 		</div>
 	</nav>
 

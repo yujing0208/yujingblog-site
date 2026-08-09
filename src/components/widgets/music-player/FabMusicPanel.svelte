@@ -91,10 +91,11 @@ function setVolume(volume: number) {
 			onSetVolume={setVolume}
 		/>
 		<a
-			href="/music/"
+			href="/music"
 			class="fab-music-jump"
 			title="打开 3D 音乐可视化"
 			aria-label="打开 3D 音乐可视化"
+			data-swup-ignore
 		>
 			<Icon icon="material-symbols:view-in-ar" class="text-lg" />
 		</a>

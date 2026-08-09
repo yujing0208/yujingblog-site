@@ -89,8 +89,9 @@ const processedLinks: ProcessedNavBarLink[] = (
 											: url(child.url)
 									}
 									class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-4
-                                   hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+								hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
 									target={child.external ? "_blank" : null}
+									{...(url(child.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 								>
 									<div class="flex items-center transition text-black/60 dark:text-white/60 font-medium">
 										{child.icon && (
@@ -115,9 +116,10 @@ const processedLinks: ProcessedNavBarLink[] = (
 					<a
 						href={link.external ? link.url : url(link.url)}
 						class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4
-                    hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
-                "
+					hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
+					"
 						target={link.external ? "_blank" : null}
+						{...(url(link.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 					>
 						<div class="flex items-center transition text-black/75 dark:text-white/75 font-bold">
 							{link.icon && (

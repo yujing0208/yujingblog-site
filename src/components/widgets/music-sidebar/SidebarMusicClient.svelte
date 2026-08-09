@@ -112,6 +112,7 @@ function setVolume(volume: number) {
 		href="/music"
 		title="进入 3D 音乐可视化"
 		aria-label="进入 3D 音乐可视化"
+		data-swup-ignore
 	>
 		<Icon icon="material-symbols:cube-rounded" class="text-lg" />
 		<span>3D 音乐可视化</span>
