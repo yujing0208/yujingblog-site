@@ -1,10 +1,21 @@
-﻿name: On Content Update
+﻿name: Deploy Site
+
+# 站点部署主链路（唯一部署入口）
+# 触发：push 到 main 分支；或内容仓库通过 repository_dispatch 触发（type: deploy-site）
+# 职责：在 GitHub Actions 内构建，并用 Vercel Token 直接部署产物到 Vercel，
+#       不再 curl 触发 Vercel 二次构建。
+# ⚠️ 需配合在 Vercel 项目设置中「关闭 Git 自动部署」，否则 push 会部署两次。
+# 需要 Secrets：
+#   VERCEL_TOKEN     —— Vercel 账户 Token（https://vercel.com/account/tokens）
+#   VERCEL_ORG_ID    —— 团队/账户 ID（Vercel 项目 Settings → General）
+#   VERCEL_PROJECT_ID—— 项目 ID（Vercel 项目 Settings → General）
+#   DISPATCH_TOKEN   —— 有站点仓库 workflow 触发权限的 GitHub PAT（供内容仓库 repository_dispatch 使用）
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   repository_dispatch:
-    types: [content-updated]
+    types: [deploy-site]
 
 jobs:
   deploy:
@@ -23,10 +34,15 @@ jobs:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm install
+      # 构建：prebuild 钩子会先 sync-content 拉取内容仓库，随后 astro build + pagefind
       - run: pnpm build
         env:
           ENABLE_CONTENT_SYNC: true
           CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
+      # 用 Vercel CLI 直接部署已构建产物（dist），不再 curl 触发 Vercel 二次构建
       - name: Deploy to Vercel
-        run: curl -f -X POST https://api.vercel.com/v1/integrations/deploy/prj_s44cNpfUAFZSbBgQ6lbrIUrjL2iX/C0tPxPcijZ?branch=master
-
+        run: npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID" --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
