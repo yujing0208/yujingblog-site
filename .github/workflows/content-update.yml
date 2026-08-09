@@ -39,10 +39,11 @@ jobs:
         env:
           ENABLE_CONTENT_SYNC: true
           CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
-      # 用 Vercel CLI 直接部署已构建产物（dist），不再 curl 触发 Vercel 二次构建
+      # 用 Vercel CLI 直接部署已构建产物（dist），不再 curl 触发 Vercel 二次构建。
+      # VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID 由 CLI 自动读取，无需在命令行传 --scope/--project。
       - name: Deploy to Vercel
-        run: npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID" --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --yes
