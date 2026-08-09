@@ -3,12 +3,13 @@ import Icon from "./Icon.svelte";
 import { onDestroy, onMount } from "svelte";
 import type { MusicPlayerState } from "@/stores/musicPlayerStore";
 import { musicPlayerStore } from "@/stores/musicPlayerStore";
+import { getAssetPath } from "@/components/widgets/music-player/hooks/useKeyboardShortcuts";
 import type { Song } from "@/components/widgets/music-player/types";
 
 interface Track {
 	name: string;
 	artist: string;
-	pic?: string;
+	cover?: string;
 }
 
 function songToTrack(song: Song | null): Track | null {
@@ -16,7 +17,7 @@ function songToTrack(song: Song | null): Track | null {
 	return {
 		name: song.title,
 		artist: song.artist,
-		pic: song.cover,
+		cover: song.cover,
 	};
 }
 
@@ -24,7 +25,7 @@ function playlistToTracks(songs: Song[]): Track[] {
 	return songs.map((song) => ({
 		name: song.title,
 		artist: song.artist,
-		pic: song.cover,
+		cover: song.cover,
 	}));
 }
 
@@ -217,8 +218,8 @@ onDestroy(() => {
 	<div class="music-controls-row">
 		<div class="music-controls-left">
 			<div class="music-controls-cover">
-				{#if currentTrack?.pic}
-					<img src={currentTrack.pic} alt="" />
+				{#if currentTrack?.cover}
+					<img src={getAssetPath(currentTrack.cover)} alt="" />
 				{:else}
 					<Icon icon="material-symbols:music-note-rounded" size="lg" />
 				{/if}
@@ -378,8 +379,8 @@ onDestroy(() => {
 						title={`${track.name} - ${track.artist}`}
 					>
 						<div class="music-visualizer__playlist-cover">
-							{#if track.pic}
-								<img src={track.pic} alt="" loading="lazy" />
+							{#if track.cover}
+								<img src={getAssetPath(track.cover)} alt="" loading="lazy" />
 							{:else}
 								<Icon icon="material-symbols:music-note-rounded" size="sm" />
 							{/if}
