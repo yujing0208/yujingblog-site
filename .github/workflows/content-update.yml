@@ -41,10 +41,12 @@ jobs:
           CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
       # 用 Vercel CLI 直接部署 Astro 构建产物（dist/，由 vercel.json 的 outputDirectory 指定），
       # 不再 curl 触发 Vercel 二次构建。
-      # VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID 由 CLI 自动读取。
-      - name: Deploy to Vercel
+      # 先 vercel link 静态关联项目（避免 deploy 时交互挂起），再 vercel deploy --prod。
+      - name: Link & Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: npx vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+        run: |
+          npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
+          npx vercel deploy --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
