@@ -534,7 +534,10 @@ class MusicPlayerStore {
 			/\.(lrc|txt)(\?|#|$)/i.test(song.lrc);
 
 		if (isLrcUrl) {
-			fetch(song.lrc)
+			// 确保相对路径 lrc 从站点根目录解析，避免在 /music/
+			// 子路径下 fetch 变成 /music/assets/music/lrc/xxx.lrc 导致 404
+			const lrcUrl = getAssetPath(song.lrc);
+			fetch(lrcUrl)
 				.then((r) => r.text())
 				.then((text) => {
 					this.state.lyrics = parseLRC(text);
