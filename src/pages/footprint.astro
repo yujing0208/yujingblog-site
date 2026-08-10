@@ -61,26 +61,92 @@ const description = "用一张地图，记录我去过的山川与城市 🗺️
 		</div>
 	</div>
 
-	<!-- 顺序加载：工具库 → 核心 → 高亮插件（visited / hover） -->
-	<script is:inline defer src="/footprint/js/utils.js"></script>
-	<script is:inline defer src="/footprint/js/footprintmap.js"></script>
-	<script is:inline defer src="/footprint/js/plugin-visited.js"></script>
-	<script is:inline defer src="/footprint/js/plugin-hover.js"></script>
-
-	<!-- 在 DOMContentLoaded 自动初始化之前，同步覆写高亮配置与 GeoJSON 绝对路径。
-	     注意：脚本块内不使用 Astro 插值（is:inline 可能按原文输出），
-	     高亮模式改由容器 data-highlight 属性传入，这里只做纯 JS 读取。 -->
-	<script is:inline defer>
+	<!--
+		足迹地图初始化编排（is:inline，Swup 无刷新切换时会重新执行）：
+		- 顺序加载依赖库（async=false 保证 utils→footprintmap→plugin 执行顺序，
+		  规避 Swup 重新插入 <script defer> 时顺序错乱导致插件未定义的问题）；
+		- 库加载完成后、且在 FootprintMap 已存在时，再覆写高亮配置与 GeoJSON 绝对路径
+		  （原内联脚本在重新插入时可能跑在 footprintmap.js 之前，导致配置被跳过、地图空白）；
+		- 首次加载走 DOMContentLoaded；从导航栏经 Swup 进入时走 swup:contentReplaced / page:view，
+		  二者都重新初始化地图，确保任何入口地图都能立即渲染。
+	-->
+	<script is:inline>
 		(function () {
-			var el = document.querySelector('.footprint-map');
-			var mode = (el && el.dataset.highlight) || 'visited';
-			if (window.FootprintMap && window.FootprintMap.CONFIG) {
-				window.FootprintMap.CONFIG.HIGHLIGHT.mode = mode;
-				window.FootprintMap.CONFIG.HIGHLIGHT.geojsonUrls = [
-					'/footprint/data/provinces.geojson',
-					'/footprint/data/world.geojson',
-				];
+			function loadScript(src) {
+				return new Promise(function (resolve, reject) {
+					var s = document.createElement("script");
+					s.src = src;
+					s.async = false; // 保持与「工具库→核心→插件」一致的执行顺序
+					s.onload = resolve;
+					s.onerror = function () {
+						reject(new Error("足迹地图脚本加载失败: " + src));
+					};
+					document.head.appendChild(s);
+				});
 			}
+
+			function initFootprintMap() {
+				if (!window.FootprintMap) {
+					console.error("[footprint] FootprintMap 未定义，地图初始化失败");
+					return;
+				}
+				document.querySelectorAll(".footprint-map").forEach(function (container) {
+					if (container.dataset.fpBootstrapped === "true") return;
+					container.dataset.fpBootstrapped = "true";
+					window.FootprintMap.bootstrapMap(container);
+				});
+			}
+
+			function ensureLoadedThenInit() {
+				if (window.__footprintLibLoaded) {
+					initFootprintMap();
+					return;
+				}
+				loadScript("/footprint/js/utils.js")
+					.then(function () {
+						return loadScript("/footprint/js/footprintmap.js");
+					})
+					.then(function () {
+						return loadScript("/footprint/js/plugin-visited.js");
+					})
+					.then(function () {
+						return loadScript("/footprint/js/plugin-hover.js");
+					})
+					.then(function () {
+						window.__footprintLibLoaded = true;
+						// 此时 FootprintMap 已存在，覆写高亮模式与 GeoJSON 路径
+						var el = document.querySelector(".footprint-map");
+						var mode = (el && el.dataset.highlight) || "visited";
+						if (window.FootprintMap && window.FootprintMap.CONFIG) {
+							window.FootprintMap.CONFIG.HIGHLIGHT.mode = mode;
+							window.FootprintMap.CONFIG.HIGHLIGHT.geojsonUrls = [
+								"/footprint/data/provinces.geojson",
+								"/footprint/data/world.geojson",
+							];
+						}
+						initFootprintMap();
+					})
+					.catch(function (e) {
+						console.error("[footprint] " + e.message);
+					});
+			}
+
+			// 事件监听仅注册一次，避免每次 SPA 切换重复绑定造成泄漏
+			if (!window.__footprintBootstrapBound) {
+				window.__footprintBootstrapBound = true;
+				if (document.readyState === "loading") {
+					document.addEventListener("DOMContentLoaded", ensureLoadedThenInit);
+				}
+				document.addEventListener("swup:contentReplaced", ensureLoadedThenInit);
+				document.addEventListener("swup:page:view", ensureLoadedThenInit);
+				if (window.swup && window.swup.hooks && window.swup.hooks.on) {
+					window.swup.hooks.on("content:replace", ensureLoadedThenInit);
+					window.swup.hooks.on("page:view", ensureLoadedThenInit);
+				}
+			}
+
+			// 每次内联脚本执行（含 SPA 切到足迹页）都尝试初始化当前容器
+			ensureLoadedThenInit();
 		})();
 	</script>
 </MainGridLayout>
