@@ -1,7 +1,8 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { changelogData } from "@config/changelog";
-import { CHANGELOG_TYPE_META, type ChangelogType } from "@types/changelog";
+import { Icon } from "astro-icon/components";
+import { changelogData } from "../config/changelog";
+import { CHANGELOG_TYPE_META, type ChangelogType } from "../types/changelog";
 
 // 倒序排序（date 为定长 "YYYY-MM-DD HH:mm:ss"，字典序即时间序）
 const sorted = [...changelogData].sort((a, b) => b.date.localeCompare(a.date));
