@@ -5,15 +5,6 @@ export const DEFAULT_VOLUME = 0.7;
 
 export const LOCAL_PLAYLIST: Song[] = [
 	{
-		id: 1,
-		title: "Always Online",
-		artist: "林俊杰",
-		cover: "assets/music/cover/AlwaysOnline-林俊杰.jpg",
-		url: "assets/music/url/AlwaysOnline-林俊杰.mp3",
-		lrc: "assets/music/lrc/AlwaysOnline-林俊杰.lrc",
-		duration: 0,
-	},
-	{
 		id: 2,
 		title: "与我无关",
 		artist: "阿沉",
