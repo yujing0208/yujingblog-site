@@ -1,8 +1,7 @@
 <script lang="ts">
 import Icon from "@iconify/svelte";
-import { onMount, tick } from "svelte";
+import { tick } from "svelte";
 import { type EmojiItem, type EmojiPack, loadEmojiPacks } from "./lib/emoji";
-import { getServerConfig } from "./lib/twikooClient";
 import type { GuestbookChatMessage as Message, GuestbookProfile } from "./lib/types";
 import { MAX_IMAGE_SIZE_BYTES, MAX_MESSAGE_LENGTH, readImageAsDataUrl } from "./lib/utils";
 
@@ -18,6 +17,9 @@ interface Props {
 	onReplyCancel: () => void;
 	onSend: (content: string) => Promise<boolean>;
 	onToolError: (message: string) => void;
+	/** 是否显示表情入口：由留言板（与评论区同源）拉取 Twikoo 服务端配置后统一下发，
+	 *  与图片按钮共用同一次配置请求，保证两者同时出现。 */
+	emojiEnabled?: boolean;
 }
 
 let {
@@ -32,6 +34,7 @@ let {
 	onReplyCancel,
 	onSend,
 	onToolError,
+	emojiEnabled = true,
 }: Props = $props();
 
 let textarea = $state<HTMLTextAreaElement | null>(null);
@@ -57,9 +60,6 @@ let emojiPacks = $state<EmojiPack[]>([]);
 let activeEmojiPack = $state(0);
 let emojiStatus = $state<"idle" | "loading" | "ready" | "error">("idle");
 let emojiError = $state("");
-/** 站长在 Twikoo 后台关掉表情时（SHOW_EMOTION !== "true"）不显示入口，与官方一致 */
-let showEmotion = $state(false);
-let emotionCdn = "";
 
 const inputDisabled = $derived(isOffline);
 const currentEmojiItems = $derived(emojiPacks[activeEmojiPack]?.items ?? []);
@@ -219,29 +219,16 @@ function handleKeydown(event: KeyboardEvent) {
 /* === 表情面板 === */
 
 /**
- * 读取 Twikoo 服务端配置决定是否显示表情入口、以及表情数据地址。
- * getServerConfig 内部有模块级缓存，此处与留言列表共用同一次请求。
+ * 表情入口是否显示、表情数据地址均由留言板（与评论区同源）在拉取 Twikoo 服务端
+ * 配置后通过 emojiEnabled 下发，本组件不再单独请求配置，避免表情按钮晚于图片按钮出现。
+ * 表情包数据（约 100KB）保持「首次展开面板时才拉取」，不拖慢首屏。
  */
-onMount(() => {
-	void (async () => {
-		try {
-			const config = await getServerConfig();
-			// 官方 SDK 判定：'true' === config.SHOW_EMOTION
-			showEmotion = config.SHOW_EMOTION === "true";
-			emotionCdn =
-				typeof config.EMOTION_CDN === "string" ? config.EMOTION_CDN : "";
-		} catch {
-			// 配置拉取失败：隐藏表情入口，不影响正常发言
-		}
-	})();
-});
-
 async function ensureEmojiPacks() {
 	if (emojiStatus === "loading" || emojiStatus === "ready") return;
 	emojiStatus = "loading";
 	emojiError = "";
 	try {
-		const packs = await loadEmojiPacks(emotionCdn);
+		const packs = await loadEmojiPacks();
 		emojiPacks = packs;
 		activeEmojiPack = 0;
 		if (packs.length === 0) {
@@ -508,7 +495,7 @@ async function submitMessage() {
 		<div class="guestbook-composer__footer">
 			<div class="guestbook-composer__actions">
 				<span class="guestbook-composer__count">{draft.length}/{MAX_MESSAGE_LENGTH}</span>
-				{#if showEmotion}
+				{#if emojiEnabled}
 					<button
 						bind:this={emojiTrigger}
 						type="button"
@@ -538,6 +525,14 @@ async function submitMessage() {
 						height={18}
 					/>
 				</button>
+				<button
+					class="guestbook-composer__guest-profile"
+					type="button"
+					onclick={() => void openGuestProfile()}
+					title={hasGuestProfile ? `游客：${profile.nick}（点击修改）` : "填写游客资料"}
+				>
+					{hasGuestProfile ? profile.nick : "游客访问"}
+				</button>
 				<input
 					bind:this={fileInput}
 					class="guestbook-composer__file-input"
@@ -553,14 +548,6 @@ async function submitMessage() {
 				/>
 			</div>
 			<div class="guestbook-composer__tools">
-				<button
-					class="guestbook-composer__guest-profile"
-					type="button"
-					onclick={() => void openGuestProfile()}
-					title={hasGuestProfile ? `游客：${profile.nick}（点击修改）` : "填写游客资料"}
-				>
-					{hasGuestProfile ? profile.nick : "游客访问"}
-				</button>
 				<button
 					class="guestbook-composer__send"
 					type="button"

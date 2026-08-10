@@ -893,12 +893,15 @@
 }
 
 .guestbook-composer__actions {
-	min-width: 0;
+	display: flex;
+	align-items: center;
 	gap: var(--space-2);
+	min-width: 0;
+	flex-wrap: wrap;
 }
 
 .guestbook-composer__tools {
-	gap: 6px; /* 游客访问→发送 文字间距 2 中文字符 */
+	gap: 6px;
 	flex: 0 1 auto;
 	min-width: 0;
 	justify-content: flex-end;
@@ -1005,6 +1008,7 @@
 .guestbook-composer__guest-profile {
 	flex: 0 0 auto;
 	min-height: 2.25rem;
+	max-width: 9rem;
 	padding: 0 0.75rem;
 	border: 1px solid var(--guestbook-editor-line);
 	border-radius: var(--radius-small);
@@ -1012,6 +1016,8 @@
 	color: var(--guestbook-editor-text);
 	font-size: 0.78rem;
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	transition: border-color 160ms ease, background-color 160ms ease;
 }
 

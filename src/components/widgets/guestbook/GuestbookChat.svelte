@@ -36,6 +36,9 @@ let initialLoading = $state(true);
 let initialError = $state("");
 let syncError = $state("");
 let composerError = $state("");
+/** 表情入口开关：与评论区同源，在拉取 Twikoo 服务端配置时统一判定后下发到输入框，
+ *  与图片按钮共用同一次配置请求，确保两者同时出现。默认 true 以便首屏直接显示。 */
+let emojiEnabled = $state(true);
 let loadingOlder = $state(false);
 let syncing = $state(false);
 let isOffline = $state(false);
@@ -630,9 +633,14 @@ onMount(() => {
 	}
 
 	// 后台预加载表情库：先取服务端 EMOTION_CDN 再预热缓存，
-	// 保证历史留言里的 :key: 与评论区用同一份 owo 渲染
+	// 保证历史留言里的 :key: 与评论区用同一份 owo 渲染。
+	// 同时在此统一判定 SHOW_EMOTION 并下发到输入框（emojiEnabled），
+	// 与图片按钮共用同一次配置请求，确保表情按钮和图片按钮同时出现。
 	void getServerConfig()
-		.then((cfg) => setEmotionCdn(cfg.EMOTION_CDN))
+		.then((cfg) => {
+			setEmotionCdn(cfg.EMOTION_CDN);
+			emojiEnabled = cfg.SHOW_EMOTION === "true";
+		})
 		.then(() => loadEmojiPacks())
 		.catch(() => {});
 
@@ -832,6 +840,7 @@ onMount(() => {
 					{composerError}
 					{isOffline}
 					{isSending}
+					emojiEnabled={emojiEnabled}
 					onProfileChange={handleProfileChange}
 					onDraftChange={handleDraftChange}
 					onReplyCancel={() => (replyTarget = null)}
