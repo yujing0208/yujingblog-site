@@ -1,292 +1,506 @@
 ---
-import { FilterTabs } from "@components/atoms/filter-tabs";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { Icon } from "astro-icon/components";
+import { changelogData } from "@config/changelog";
+import { CHANGELOG_TYPE_META, type ChangelogType } from "@types/changelog";
 
-import { siteConfig } from "../config";
-import { changelogData } from "../config/changelog";
-import type { ChangelogType } from "../types/changelog";
+// 倒序排序（date 为定长 "YYYY-MM-DD HH:mm:ss"，字典序即时间序）
+const sorted = [...changelogData].sort((a, b) => b.date.localeCompare(a.date));
 
-if (!siteConfig.featurePages.changelog) {
-	return Astro.redirect("/404/");
+// 按年份分组
+const byYear = new Map<string, typeof sorted>();
+for (const item of sorted) {
+	const year = item.date.slice(0, 4);
+	if (!byYear.has(year)) byYear.set(year, []);
+	byYear.get(year)!.push(item);
 }
+const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
 
-const typeConfig: Record<ChangelogType, { label: string; icon: string }> = {
-	feature: { label: "功能新增", icon: "material-symbols:rocket-launch" },
-	improvement: { label: "功能优化", icon: "material-symbols:mop" },
-	fix: { label: "问题修复", icon: "material-symbols:bug-report" },
-	removal: { label: "功能删除", icon: "material-symbols:delete" },
-	other: { label: "其他", icon: "material-symbols:more-horiz" },
-};
+// 汇总统计：各类型数量 + 总计
+const typeOrder = Object.keys(CHANGELOG_TYPE_META) as ChangelogType[];
+const typeCounts = new Map<ChangelogType, number>();
+for (const t of typeOrder) typeCounts.set(t, 0);
+for (const item of sorted) typeCounts.set(item.type, (typeCounts.get(item.type) ?? 0) + 1);
 
-const filterTabs = [
-	{
-		value: "all",
-		label: "全部",
-		icon: "material-symbols:apps",
-		count: changelogData.length,
-	},
-	...Object.entries(typeConfig).map(([value, config]) => ({
-		value,
-		label: config.label,
-		icon: config.icon,
-		count: changelogData.filter((item) => item.type === value).length,
-	})),
-];
-
-const title = "更新日志";
-const subtitle = "记录博客项目的功能迭代、问题修复与重要变更";
+// 模块列表（按出现频次降序，再按名称）
+const moduleCounts = new Map<string, number>();
+for (const item of sorted) moduleCounts.set(item.module, (moduleCounts.get(item.module) ?? 0) + 1);
+const modules = [...moduleCounts.entries()]
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+	.map(([m]) => m);
 ---
 
-<MainGridLayout title={title} description={subtitle}>
-	<script>
-		import("../scripts/right-sidebar-layout.js");
-		import { loadIconify } from "../utils/icon-loader";
+<MainGridLayout
+	title="更新日志"
+	description="本站持续迭代的更新记录，按时间倒序整理，可按类型与功能模块筛选。"
+>
+	<div class="changelog-page">
+		<header class="clog-header">
+			<h1 class="clog-h1">
+				<Icon name="mdi:clipboard-list-outline" class="clog-h1-icon" />
+				更新日志
+			</h1>
+			<p class="clog-sub">
+				本站自 2026 年 8 月起持续迭代。以下记录按时间倒序整理，多次部署若为实现同一功能 /
+				修复同一问题 / 删除同一功能，已合并为一条；可按类型与模块筛选。
+			</p>
 
-		loadIconify().catch((error) => {
-			console.error("Failed to load Iconify:", error);
-		});
-	</script>
-
-	<script is:inline src="/js/filter-tabs-handler.js"></script>
-
-	<div
-		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
-	>
-		<div class="card-base z-10 px-6 sm:px-9 py-6 relative w-full">
-			<div class="flex flex-col items-start justify-center mb-8">
-				<h1
-					class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2 relative flex items-center gap-3
-						before:w-1 before:h-8 before:rounded-md before:bg-(--primary)
-						before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4"
-				>
-					<Icon
-						name="material-symbols:history"
-						class="text-3xl text-(--primary)"
-					/>
-					{title}
-				</h1>
-				<p class="text-lg text-black/60 dark:text-white/60">{subtitle}</p>
-			</div>
-
-			<div class="mb-8">
-				<FilterTabs tabs={filterTabs} dataAttr="type" />
-			</div>
-
-			<div id="changelog-list" class="changelog-list">
+			<!-- 汇总统计 -->
+			<div class="clog-stats">
+				<div class="stat-card stat-total">
+					<span class="stat-num">{sorted.length}</span>
+					<span class="stat-label">总计</span>
+				</div>
 				{
-					changelogData.map((item) => (
-						<div
-							class="changelog-item"
-							data-type={item.type}
-						>
-							<div class="changelog-dot" />
-							<div class="changelog-content">
-								<div class="changelog-meta">
-									<span class="changelog-date">
-										{item.date.replace(" ", " · ")}
-									</span>
-									<span
-										class:list={[
-											"changelog-badge",
-											item.type,
-										]}
-									>
-										<Icon
-											name={typeConfig[item.type].icon}
-											class="w-3 h-3"
-										/>
-										{typeConfig[item.type].label}
-									</span>
-								</div>
-								<div class="changelog-card">
-									<p class="changelog-message text-black/85 dark:text-white/85">{item.message}</p>
-									<a
-										href={`https://github.com/yujing0208/yujingblog/commit/${item.hash}`}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="changelog-hash"
-									>
-										{item.hash}
-									</a>
-								</div>
-							</div>
+					typeOrder.map((t) => (
+						<div class="stat-card" style={`--c:${CHANGELOG_TYPE_META[t].color}`}>
+							<span class="stat-num">{typeCounts.get(t) ?? 0}</span>
+							<span class="stat-label">{CHANGELOG_TYPE_META[t].label}</span>
 						</div>
 					))
 				}
 			</div>
+		</header>
 
-			<div id="no-results" class="hidden text-center py-16">
-				<Icon
-					name="material-symbols:search-off-rounded"
-					class="text-6xl text-black/15 dark:text-white/15 mb-4"
-				/>
-				<p class="text-black/40 dark:text-white/40 text-lg">
-					没有找到匹配的更新记录
-				</p>
+		<!-- 筛选 -->
+		<div class="clog-filters">
+			<div class="filter-row">
+				<span class="filter-label">类型</span>
+				<div class="filter-tabs" data-filter-type>
+					<button class="filter-tab is-active" data-type-filter="all">全部</button>
+					{
+						typeOrder.map((t) => (
+							<button class="filter-tab" data-type-filter={t}>
+								{CHANGELOG_TYPE_META[t].label}
+							</button>
+						))
+					}
+				</div>
+			</div>
+			<div class="filter-row">
+				<span class="filter-label">模块</span>
+				<div class="filter-tabs" data-filter-module>
+					<button class="filter-tab is-active" data-module-filter="all">全部</button>
+					{modules.map((m) => <button class="filter-tab" data-module-filter={m}>{m}</button>)}
+				</div>
 			</div>
 		</div>
+
+		<!-- 时间线 -->
+		<div class="clog-timeline">
+			{
+				years.map((year) => (
+					<section class="clog-year" data-year={year}>
+						<h2 class="year-title">
+							<span class="year-text">{year}</span>
+							<span class="year-count">{byYear.get(year)!.length}</span>
+						</h2>
+						<ol class="clog-list">
+							{byYear.get(year)!.map((item) => (
+								<li
+									class="clog-item"
+									id={item.id}
+									data-type={item.type}
+									data-module={item.module}
+								>
+									<span
+										class="clog-dot"
+										style={`--dot:${CHANGELOG_TYPE_META[item.type].color}`}
+									/>
+									<div class="clog-card">
+										<div class="clog-card-head">
+											<span
+												class="clog-badge"
+												style={`--c:${CHANGELOG_TYPE_META[item.type].color}`}
+											>
+												<Icon
+													name={CHANGELOG_TYPE_META[item.type].icon}
+													class="clog-badge-icon"
+												/>
+												{CHANGELOG_TYPE_META[item.type].label}
+											</span>
+											<span class="clog-module">{item.module}</span>
+											<span class="clog-date">{item.date}</span>
+											<span class="clog-version">v{item.version}</span>
+										</div>
+										<h3 class="clog-title">{item.title}</h3>
+										<p class="clog-desc">{item.description}</p>
+										{item.commits && item.commits.length > 0 && (
+											<div class="clog-commits">
+												<span class="clog-commits-label">相关 commit</span>
+												{item.commits.map((c) => (
+													<code class="clog-commit">{c}</code>
+												))}
+											</div>
+										)}
+									</div>
+								</li>
+							))}
+						</ol>
+					</section>
+				))
+			}
+		</div>
+
+		<p class="clog-empty" hidden>没有符合条件的更新记录</p>
 	</div>
 </MainGridLayout>
 
+<script>
+	// 组合筛选：类型 与 模块 同时满足才显示（AND 逻辑）
+	const typeTabs = document.querySelectorAll<HTMLButtonElement>("[data-type-filter]");
+	const moduleTabs = document.querySelectorAll<HTMLButtonElement>("[data-module-filter]");
+	const items = Array.from(document.querySelectorAll<HTMLElement>(".clog-item"));
+	const yearSections = Array.from(document.querySelectorAll<HTMLElement>(".clog-year"));
+	const emptyTip = document.querySelector<HTMLElement>(".clog-empty");
+
+	let activeType = "all";
+	let activeModule = "all";
+
+	function apply() {
+		let visible = 0;
+		for (const item of items) {
+			const okType = activeType === "all" || item.dataset.type === activeType;
+			const okModule = activeModule === "all" || item.dataset.module === activeModule;
+			const show = okType && okModule;
+			item.classList.toggle("is-hidden", !show);
+			if (show) visible++;
+		}
+		// 隐藏空年份分组
+		for (const sec of yearSections) {
+			const hasVisible = Array.from(sec.querySelectorAll<HTMLElement>(".clog-item")).some(
+				(el) => !el.classList.contains("is-hidden"),
+			);
+			sec.classList.toggle("is-hidden", !hasVisible);
+		}
+		if (emptyTip) emptyTip.hidden = visible !== 0;
+	}
+
+	function bind(tabs: NodeListOf<HTMLButtonElement>, setter: (v: string) => void) {
+		tabs.forEach((tab) => {
+			tab.addEventListener("click", () => {
+				tabs.forEach((t) => t.classList.remove("is-active"));
+				tab.classList.add("is-active");
+				setter(tab.dataset.typeFilter || tab.dataset.moduleFilter || "all");
+				apply();
+			});
+		});
+	}
+
+	bind(typeTabs, (v) => (activeType = v));
+	bind(moduleTabs, (v) => (activeModule = v));
+	apply();
+</script>
+
 <style>
-	.changelog-list {
-		position: relative;
-		padding-left: 1.5rem;
+	.changelog-page {
+		padding: 1.25rem 0.5rem 2rem;
+		max-width: 920px;
+		margin: 0 auto;
 	}
 
-	.changelog-list::before {
-		content: "";
-		position: absolute;
-		left: 5px;
-		top: 0;
-		bottom: 0;
-		width: 2px;
-		background: var(--line-divider);
-		border-radius: 1px;
+	.clog-header {
+		margin-bottom: 1.5rem;
 	}
 
-	.changelog-item {
-		position: relative;
-		padding-bottom: 1.5rem;
-		opacity: 1;
-		transition: opacity 0.2s ease, transform 0.2s ease;
-	}
-
-	.changelog-item.filtered-out {
-		display: none;
-	}
-
-	.changelog-dot {
-		position: absolute;
-		left: -1.5rem;
-		top: 0.375rem;
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		background: var(--primary);
-		border: 2px solid var(--card-bg);
-		box-shadow: 0 0 0 2px var(--primary);
-	}
-
-	.changelog-content {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.changelog-meta {
+	.clog-h1 {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		font-size: 1.9rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
+	}
+
+	.clog-h1-icon {
+		font-size: 1.6rem;
+		color: var(--primary);
+	}
+
+	.clog-sub {
+		margin: 0.6rem 0 1.2rem;
+		color: var(--text-muted, #888);
+		font-size: 0.92rem;
+		line-height: 1.7;
+	}
+
+	/* 汇总统计 */
+	.clog-stats {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
 		gap: 0.75rem;
+	}
+
+	.stat-card {
+		background: var(--bg-card, #fff);
+		border: 1px solid var(--border-color, #eee);
+		border-radius: 12px;
+		padding: 0.9rem 0.6rem;
+		text-align: center;
+		transition: transform 0.18s ease, box-shadow 0.18s ease;
+	}
+
+	.stat-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+
+	.stat-total {
+		border-color: var(--primary);
+		box-shadow: inset 0 0 0 1px var(--primary);
+	}
+
+	.stat-num {
+		display: block;
+		font-size: 1.55rem;
+		font-weight: 800;
+		color: var(--c, var(--primary));
+		line-height: 1.1;
+	}
+
+	.stat-total .stat-num {
+		color: var(--primary);
+	}
+
+	.stat-label {
+		display: block;
+		margin-top: 0.3rem;
+		font-size: 0.82rem;
+		color: var(--text-muted, #888);
+	}
+
+	/* 筛选 */
+	.clog-filters {
+		display: flex;
+		flex-direction: column;
+		gap: 0.7rem;
+		margin-bottom: 1.8rem;
+		padding: 1rem;
+		background: var(--bg-card, #fff);
+		border: 1px solid var(--border-color, #eee);
+		border-radius: 14px;
+	}
+
+	.filter-row {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
 		flex-wrap: wrap;
 	}
 
-	.changelog-date {
-		font-size: 0.9rem;
-		font-weight: 500;
-		color: var(--content-meta);
+	.filter-label {
+		flex: 0 0 auto;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--text-muted, #888);
+		min-width: 2.5em;
 	}
 
-	.changelog-badge {
+	.filter-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+	}
+
+	.filter-tab {
+		border: 1px solid var(--border-color, #e2e2e2);
+		background: var(--bg, #f6f7f9);
+		color: var(--text-color, #555);
+		padding: 0.32rem 0.85rem;
+		border-radius: 999px;
+		font-size: 0.85rem;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.filter-tab:hover {
+		border-color: var(--primary);
+		color: var(--primary);
+	}
+
+	.filter-tab.is-active {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: #fff;
+		font-weight: 600;
+	}
+
+	/* 时间线 */
+	.clog-year {
+		margin-bottom: 1rem;
+	}
+
+	.year-title {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		font-size: 1.3rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
+		margin: 1.4rem 0 1rem;
+		position: relative;
+		padding-left: 1rem;
+	}
+
+	.year-title::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0.2em;
+		bottom: 0.1em;
+		width: 4px;
+		border-radius: 4px;
+		background: var(--primary);
+	}
+
+	.year-count {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--text-muted, #999);
+		background: var(--bg-card, #fff);
+		border: 1px solid var(--border-color, #eee);
+		border-radius: 999px;
+		padding: 0.1rem 0.55rem;
+	}
+
+	.clog-list {
+		list-style: none;
+		margin: 0;
+		padding: 0 0 0 1.1rem;
+		border-left: 2px solid var(--border-color, #e6e6e6);
+	}
+
+	.clog-item {
+		position: relative;
+		padding: 0 0 1.1rem 1.3rem;
+	}
+
+	.clog-dot {
+		position: absolute;
+		left: -1.45rem;
+		top: 0.35rem;
+		width: 0.85rem;
+		height: 0.85rem;
+		border-radius: 50%;
+		background: var(--dot, var(--primary));
+		border: 3px solid var(--bg, #fff);
+		box-shadow: 0 0 0 2px var(--dot, var(--primary));
+	}
+
+	.clog-card {
+		background: var(--bg-card, #fff);
+		border: 1px solid var(--border-color, #eee);
+		border-radius: 14px;
+		padding: 0.95rem 1.1rem;
+		transition: box-shadow 0.18s ease, transform 0.18s ease;
+	}
+
+	.clog-card:hover {
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		transform: translateY(-2px);
+	}
+
+	.clog-card-head {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.7rem;
+		margin-bottom: 0.55rem;
+	}
+
+	.clog-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		border-radius: var(--radius-medium);
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--c, var(--primary));
+		background: color-mix(in srgb, var(--c, var(--primary)) 12%, transparent);
+		border-radius: 999px;
+		padding: 0.18rem 0.6rem;
+	}
+
+	.clog-badge-icon {
+		font-size: 0.95rem;
+	}
+
+	.clog-module {
+		font-size: 0.78rem;
+		color: var(--text-muted, #888);
+		background: var(--bg, #f3f4f6);
+		border-radius: 6px;
+		padding: 0.15rem 0.5rem;
+	}
+
+	.clog-date {
+		margin-left: auto;
+		font-size: 0.78rem;
+		color: var(--text-muted, #999);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.clog-version {
 		font-size: 0.75rem;
 		font-weight: 600;
-		background: var(--btn-regular-bg);
-		color: var(--btn-content);
-		border: 1px solid var(--line-divider);
-	}
-
-	.changelog-badge.feature {
-		background: rgba(var(--primary-rgb), 0.1);
 		color: var(--primary);
-		border-color: rgba(var(--primary-rgb), 0.3);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		border-radius: 6px;
+		padding: 0.12rem 0.45rem;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.changelog-badge.improvement {
-		background: rgba(34, 197, 94, 0.1);
-		color: rgb(34, 197, 94);
-		border-color: rgba(34, 197, 94, 0.3);
+	.clog-title {
+		margin: 0 0 0.4rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
 	}
 
-	.changelog-badge.fix {
-		background: rgba(239, 68, 68, 0.1);
-		color: rgb(239, 68, 68);
-		border-color: rgba(239, 68, 68, 0.3);
-	}
-
-	.changelog-badge.removal {
-		background: rgba(156, 163, 175, 0.1);
-		color: rgb(156, 163, 175);
-		border-color: rgba(156, 163, 175, 0.3);
-	}
-
-	.changelog-badge.other {
-		background: rgba(147, 51, 234, 0.1);
-		color: rgb(147, 51, 234);
-		border-color: rgba(147, 51, 234, 0.3);
-	}
-
-	.changelog-card {
-		position: relative;
-		padding: 1rem 1.25rem;
-		border: 1px solid var(--line-divider);
-		border-radius: var(--radius-large);
-		background: var(--card-bg);
-		transition: all 0.2s ease;
-	}
-
-	.changelog-card:hover {
-		border-color: var(--primary);
-		box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.08);
-	}
-
-	.changelog-message {
+	.clog-desc {
 		margin: 0;
-		font-size: 0.95rem;
-		line-height: 1.6;
+		font-size: 0.9rem;
+		line-height: 1.75;
+		color: var(--text-color, #555);
 	}
 
-	.changelog-hash {
-		display: inline-block;
-		margin-top: 0.5rem;
+	.clog-commits {
+		margin-top: 0.6rem;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.clog-commits-label {
 		font-size: 0.75rem;
-		font-family: ui-monospace, monospace;
-		color: var(--content-meta);
-		text-decoration: none;
-		transition: opacity 0.2s ease;
+		color: var(--text-muted, #aaa);
 	}
 
-	.changelog-hash:hover {
-		opacity: 1;
-		text-decoration: underline;
+	.clog-commit {
+		font-size: 0.75rem;
+		font-family: var(--font-jetbrains-mono, monospace);
+		color: var(--text-muted, #777);
+		background: var(--bg, #f3f4f6);
+		border-radius: 5px;
+		padding: 0.1rem 0.4rem;
 	}
 
-	@media (width < 768px) {
-		.changelog-list {
-			padding-left: 1.25rem;
-		}
+	.clog-empty {
+		text-align: center;
+		color: var(--text-muted, #999);
+		padding: 2rem 0;
+	}
 
-		.changelog-list::before {
-			left: 4px;
-		}
+	.is-hidden {
+		display: none !important;
+	}
 
-		.changelog-dot {
-			left: -1.25rem;
-			width: 10px;
-			height: 10px;
+	@media (max-width: 600px) {
+		.clog-h1 {
+			font-size: 1.6rem;
 		}
-
-		.changelog-card {
-			padding: 0.875rem 1rem;
-		}
-
-		.changelog-message {
-			font-size: 0.9rem;
+		.clog-date {
+			width: 100%;
+			margin-left: 0;
 		}
 	}
 </style>

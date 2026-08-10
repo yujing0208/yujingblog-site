@@ -2,14 +2,20 @@
 /**
  * scripts/update-changelog.mjs
  *
- * 从 git 提交历史重新生成更新日志数据（src/config/changelog.ts）。
- * - 只保留重要更新（功能新增 / 功能优化 / 问题修复 / 功能删除），过滤小改动
- * - 有变化时自动 commit 并 push，供 Vercel 重新部署
+ * 更新日志「只读建议」模式。
+ *
+ * 历史说明：本脚本原本会根据 git 提交历史自动覆盖 src/config/changelog.ts。
+ * 由于更新日志现在由人工维护（需要把同一功能 / 修复 / 删除的多次部署
+ * 合并为一条记录，含版本号 / 分类 / 模块 / 详细描述），自动覆盖会丢失这些
+ * 整理信息。因此本脚本改为「只读」：
+ *   - 读取已维护的 changelog.ts，提取其中已收录的 commit 哈希；
+ *   - 扫描 git 提交历史，列出尚未被任何条目覆盖的提交；
+ *   - 仅向控制台打印「建议补充」清单，不写入、不提交、不推送。
  *
  * 用法: node scripts/update-changelog.mjs
  */
 import { execFileSync } from "node:child_process";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -27,23 +33,24 @@ function git(args, opts = {}) {
 	}).trim();
 }
 
-/* ========== 1. 同步远程（尽力而为，失败不中断） ========== */
-try {
-	git(["fetch", "origin"]);
-} catch {
-	console.warn("[update-changelog] git fetch 失败，使用本地历史");
+/* ========== 1. 读取已维护日志中收录的 commit 哈希 ========== */
+const knownHashes = new Set();
+if (existsSync(outFile)) {
+	const src = readFileSync(outFile, "utf8");
+	const re = /commits:\s*\[([\s\S]*?)\]/g;
+	let m;
+	while ((m = re.exec(src))) {
+		const inner = m[1];
+		const hashes = inner.match(/"([0-9a-f]+)"/g) || [];
+		for (const h of hashes) knownHashes.add(h.replace(/"/g, ""));
+	}
 }
 
 /* ========== 2. 获取提交历史（新→旧） ========== */
 let logRaw = "";
 for (const branch of ["master", "main"]) {
 	try {
-		logRaw = git([
-			"log",
-			branch,
-			"--pretty=format:%H|%ai|%s",
-			"--no-merges",
-		]);
+		logRaw = git(["log", branch, "--pretty=format:%H|%ai|%s", "--no-merges"]);
 		break;
 	} catch {
 		/* try next branch */
@@ -54,65 +61,23 @@ if (!logRaw) {
 	process.exit(1);
 }
 
-/* ========== 3. 过滤规则：小改动不收录 ========== */
-// 直接跳过的小改动类型前缀
+/* ========== 3. 小改动过滤规则（仅用于建议，不写入） ========== */
 const SKIP_PREFIX = /^(chore|docs|style|test|build|ci|deps|refactor)(\([^)]*\))?:/i;
-// 内容同步类提交
 const SKIP_SYNC = /(^|\s)(sync\s+content|content\s+sync|同步内容|更新内容)/i;
-// 无用户价值的小改动关键词（命中即跳过）
 const SKIP_KEYWORDS = [
-	"typo",
-	"错别字",
-	"拼写",
-	"文案",
-	"注释",
-	"README",
-	"readme",
-	"格式",
-	"格式化",
-	"重命名",
-	"rename",
-	"微调",
-	"小优化",
-	"小调整",
-	"样式微调",
-	"dependenc",
-	"lockfile",
-	"pnpm-lock",
-	"package-lock",
-	"yarn.lock",
-	"version bump",
-	"bump",
-	"升级依赖",
-	"更新依赖",
-	"update navbarconfig",
-	"favicon",
-	"部署",
-	"deploy",
-	// 内部技术性改动（非用户可见）
-	"构建",
-	"vercel",
-	"module not found",
-	"图标集",
-	"icon set",
-	"类型错误",
-	"type error",
-	"渲染映射表",
-	"移出",
-	"移至",
-	"emoji.ts",
-	"OwOPack",
-	"自动更新",
+	"typo", "错别字", "拼写", "文案", "注释", "README", "readme", "格式", "格式化",
+	"重命名", "rename", "微调", "小优化", "小调整", "样式微调", "dependenc", "lockfile",
+	"pnpm-lock", "package-lock", "yarn.lock", "version bump", "bump", "升级依赖",
+	"更新依赖", "update navbarconfig", "favicon", "部署", "deploy", "构建", "vercel",
+	"module not found", "图标集", "icon set", "类型错误", "type error", "渲染映射表",
+	"移出", "移至", "emoji.ts", "OwOPack", "自动更新",
 ];
-
 function isMinor(message) {
 	if (SKIP_PREFIX.test(message)) return true;
 	if (SKIP_SYNC.test(message)) return true;
 	const lower = message.toLowerCase();
 	return SKIP_KEYWORDS.some((k) => lower.includes(k.toLowerCase()));
 }
-
-/* ========== 4. 类型归类 ========== */
 function classify(message) {
 	const lower = message.toLowerCase();
 	if (/删除|移除|remove|delete/.test(lower)) return "removal";
@@ -122,56 +87,32 @@ function classify(message) {
 	return "other";
 }
 
-/* ========== 5. 生成数据 ========== */
-const entries = [];
+/* ========== 4. 比对：找出尚未收录的提交 ========== */
+const suggestions = [];
 for (const line of logRaw.split("\n")) {
 	if (!line) continue;
 	const [hash, date, ...msgParts] = line.split("|");
 	const message = msgParts.join("|").trim();
 	if (!message) continue;
 	if (isMinor(message)) continue;
-
-	entries.push({
+	if (knownHashes.has(hash.slice(0, 7))) continue;
+	suggestions.push({
 		hash: hash.slice(0, 7),
-		date: date.replace(" +0800", ""),
-		message: message.replace(/\\/g, "\\\\").replace(/"/g, '\\"'),
+		date: date.replace(" +0800", "").slice(0, 10),
+		message,
 		type: classify(message),
 	});
 }
 
-let out = 'import type { ChangelogItem } from "../types/changelog";\n\n';
-out += "export const changelogData: ChangelogItem[] = [\n";
-for (const item of entries) {
-	out += "\t{\n";
-	out += `\t\thash: "${item.hash}",\n`;
-	out += `\t\tdate: "${item.date}",\n`;
-	out += `\t\tmessage: "${item.message}",\n`;
-	out += `\t\ttype: "${item.type}",\n`;
-	out += "\t},\n";
+/* ========== 5. 仅打印建议，绝不写入 / 提交 / 推送 ========== */
+console.log(
+	`[update-changelog] 已收录 ${knownHashes.size} 个 commit 哈希；` +
+		`待补充提交 ${suggestions.length} 条：`,
+);
+for (const s of suggestions) {
+	console.log(`  - [${s.type}] ${s.date} ${s.hash}  ${s.message}`);
 }
-out += "];\n";
-
-/* ========== 6. 写入（如有变化）并推送 ========== */
-const prev = existsSync(outFile) ? readFileSync(outFile, "utf8") : "";
-if (prev === out) {
-	console.log(`[update-changelog] 无变化（共 ${entries.length} 条重要更新）`);
-} else {
-	writeFileSync(outFile, out, "utf8");
-	console.log(`[update-changelog] 已生成 ${entries.length} 条重要更新 -> ${outFile}`);
-	try {
-		git(["add", "src/config/changelog.ts"]);
-		git(["commit", "-m", `chore(changelog): 每日自动更新更新日志（${entries.length} 条重要更新）`]);
-		console.log("[update-changelog] 已提交");
-	} catch (e) {
-		console.log("[update-changelog] 提交跳过:", e.message.split("\n")[0]);
-	}
-}
-
-// 推送本地未推送的提交（含历史遗留）
-try {
-	git(["push", "origin", "master"]);
-	console.log("[update-changelog] 已推送");
-} catch (e) {
-	console.warn("[update-changelog] 推送失败:", e.message.split("\n")[0]);
-	process.exit(1);
-}
+console.log(
+	"\n[update-changelog] 维护说明：请手工将以上提交合并到 src/config/changelog.ts " +
+		"（同主题的多条合并为一条）。本脚本不会修改任何文件。",
+);
