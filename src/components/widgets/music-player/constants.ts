@@ -5,15 +5,6 @@ export const DEFAULT_VOLUME = 0.7;
 
 export const LOCAL_PLAYLIST: Song[] = [
 	{
-		id: 2,
-		title: "与我无关",
-		artist: "阿沉",
-		cover: "assets/music/cover/与我无关-阿沉.jpg",
-		url: "assets/music/url/与我无关-阿沉.mp3",
-		lrc: "assets/music/lrc/与我无关-阿沉.lrc",
-		duration: 0,
-	},
-	{
 		id: 3,
 		title: "其实",
 		artist: "薛之谦",
