@@ -13,6 +13,7 @@ import type {
 	Song,
 } from "@/components/widgets/music-player/types";
 import { musicPlayerConfig } from "@/config";
+import { audioAnalyzer } from "@/components/features/music-visualizer/AudioAnalyzer";
 
 export interface LyricLine {
 	time: number;
@@ -373,6 +374,7 @@ class MusicPlayerStore {
 	private registerInteractionHandler(): void {
 		const handler = () => {
 			if (this.state.autoplayFailed && this.audio) {
+				audioAnalyzer.resume();
 				const playPromise = this.audio.play();
 				if (playPromise !== undefined) {
 					playPromise
@@ -679,6 +681,9 @@ class MusicPlayerStore {
 		if (this.state.isPlaying) {
 			this.audio.pause();
 		} else {
+			// 用户手势内 resume AudioContext：3D 页已用 createMediaElementSource
+			// 接管 <audio> 输出，若 context 仍处于 suspended 则播放无声。
+			audioAnalyzer.resume();
 			this.audio.play().catch(() => {});
 		}
 	}
@@ -687,6 +692,7 @@ class MusicPlayerStore {
 		if (!this.audio || !this.state.currentSong.url) {
 			return;
 		}
+		audioAnalyzer.resume();
 		this.audio.play().catch(() => {});
 	}
 
