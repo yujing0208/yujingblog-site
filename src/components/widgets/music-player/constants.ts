@@ -175,6 +175,15 @@ export const LOCAL_PLAYLIST: Song[] = [
 		lrc: "assets/music/lrc/花海-周杰伦.lrc",
 		duration: 0,
 	},
+	{
+		id: 20,
+		title: "七里香",
+		artist: "周杰伦",
+		cover: "assets/music/cover/七里香-周杰伦.jpg",
+		url: "assets/music/url/七里香-周杰伦.mp3",
+		lrc: "assets/music/lrc/七里香-周杰伦.lrc",
+		duration: 0,
+	},
 ];
 
 export const DEFAULT_SONG: Song = {

@@ -636,8 +636,10 @@ class MusicPlayerStore {
 			idx = 0;
 		}
 		this.state.currentIndex = idx;
-		const shouldPlay = !!snap.isPlaying;
-		this.state.isPlaying = shouldPlay;
+		// 打开网站不自动播放：恢复上次歌曲与进度，但保持暂停，
+		// 等待用户手动点击播放（避免刷新/路由跳转后突然出声）
+		const shouldPlay = false;
+		this.state.isPlaying = false;
 		this.state.currentTime = snap.currentTime || 0;
 		if (snap.currentTime && snap.currentTime > 0.5) {
 			this.pendingSeekTime = snap.currentTime;
