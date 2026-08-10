@@ -149,15 +149,6 @@ export const LOCAL_PLAYLIST: Song[] = [
 		duration: 0,
 	},
 	{
-		id: 17,
-		title: "爱在西元前",
-		artist: "周杰伦",
-		cover: "assets/music/cover/爱在西元前-周杰伦.jpg",
-		url: "assets/music/url/爱在西元前-周杰伦.mp3",
-		lrc: "assets/music/lrc/爱在西元前-周杰伦.lrc",
-		duration: 0,
-	},
-	{
 		id: 18,
 		title: "第57次取消发送",
 		artist: "菲菲公主（陆绮菲）",
@@ -173,15 +164,6 @@ export const LOCAL_PLAYLIST: Song[] = [
 		cover: "assets/music/cover/花海-周杰伦.jpg",
 		url: "assets/music/url/花海-周杰伦.mp3",
 		lrc: "assets/music/lrc/花海-周杰伦.lrc",
-		duration: 0,
-	},
-	{
-		id: 20,
-		title: "七里香",
-		artist: "周杰伦",
-		cover: "assets/music/cover/七里香-周杰伦.jpg",
-		url: "assets/music/url/七里香-周杰伦.mp3",
-		lrc: "assets/music/lrc/七里香-周杰伦.lrc",
 		duration: 0,
 	},
 ];

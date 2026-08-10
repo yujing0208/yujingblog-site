@@ -215,7 +215,10 @@ class MusicPlayerStore {
 		}
 
 		this.audio = new Audio();
-		this.audio.crossOrigin = "anonymous";
+		// 注意：crossOrigin 不能写死为 anonymous。
+		// 本地 mp3 为同源请求，若强制 anonymous 会要求响应带 CORS 头，
+		// 而 Vercel 静态资源默认不带该头，导致部署后本地歌曲播放失败。
+		// 只在切换到云音乐（跨域）时才设 anonymous（频谱可视化需要）。
 		this.setupAudioListeners();
 		this.loadVolumeFromStorage();
 		// 清理遗留的 mode 记录：默认永远本地歌单；在线仅能通过 3D 页手动切换（刷新即回本地）
@@ -514,6 +517,13 @@ class MusicPlayerStore {
 			if (this.audio.src && song.url) {
 				this.audio.src = "";
 			}
+			// 仅当资源确为跨域（云音乐 API）时才设 crossOrigin，
+			// 本地同源 mp3 不设，避免 Vercel 静态资源无 CORS 头导致播放失败
+			const isCrossOrigin =
+				/^(https?:)?\/\//.test(song.url) &&
+				typeof window !== "undefined" &&
+				!song.url.startsWith(window.location.origin);
+			this.audio.crossOrigin = isCrossOrigin ? "anonymous" : null;
 			this.audio.src = getAssetPath(song.url);
 			this.audio.load();
 		}
