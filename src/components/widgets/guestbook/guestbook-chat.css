@@ -62,6 +62,19 @@
 	--guestbook-admin-text: oklch(0.88 0.1 var(--hue));
 	--guestbook-muted: color-mix(in srgb, oklch(0.92 0.01 var(--hue)) 70%, transparent);
 	--guestbook-guest-color: oklch(0.72 0.14 155);
+	/* 标题与未加链接的访客昵称：原映射 --deep-text(0.25 深色) 在深色背景下不可见，
+	   深色模式改为浅色，确保夜间清晰可读（日间模式不受影响）。 */
+	--guestbook-title-color: oklch(0.95 0.015 var(--hue));
+	--guestbook-nick-color: oklch(0.9 0.01 var(--hue));
+}
+
+/* 深色模式专属覆盖：标题「留言板」与无链接访客昵称 */
+:root.dark .guestbook-chat__title-row h2 {
+	color: var(--guestbook-title-color);
+}
+
+:root.dark .guestbook-message__heading strong {
+	color: var(--guestbook-nick-color);
 }
 
 .guestbook-chat {
