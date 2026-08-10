@@ -21,10 +21,11 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 	data-default-layout={defaultLayout}
 	data-both-sidebars={hasRightSidebars}
 >
-	{
+		{
 		page.data.map((entry, index) => (
 			<PostCard
 				entry={entry}
+				index={index}
 				class:list="onload-animation"
 				style={`--i: ${index}; --interval: 50ms;`}
 			/>
@@ -33,26 +34,34 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 </div>
 
 <script>
+	// 优化点：提取"读取当前布局状态"为纯函数，消除 initLayout 与
+	// resize 回调中重复的 localStorage / getAttribute 读取（每次都触发
+	// 一次强制同步布局）。读取结果在单次事件内只算一次。
+	function resolveLayout() {
+		const postListContainer = document.getElementById("post-list-container");
+		if (!postListContainer) return null;
+
+		const layoutEnabled =
+			document.documentElement.getAttribute("data-post-list-layout-enabled") !==
+			"false";
+		const savedLayout = layoutEnabled ? localStorage.getItem("postListLayout") : null;
+		const defaultLayout =
+			postListContainer.getAttribute("data-default-layout") || "list";
+		const targetLayout = savedLayout || defaultLayout;
+
+		const hasGridClass = postListContainer.classList.contains("grid-mode");
+		const isClassCorrect =
+			(targetLayout === "grid" && hasGridClass) ||
+			(targetLayout === "list" && !hasGridClass);
+
+		return { postListContainer, targetLayout, isClassCorrect };
+	}
+
 	function initLayout() {
 		requestAnimationFrame(() => {
-			const postListContainer = document.getElementById(
-				"post-list-container",
-			);
-			if (!postListContainer) {
-				return;
-			}
-
-			const postListLayoutEnabled = document.documentElement.getAttribute("data-post-list-layout-enabled") !== "false";
-			const savedLayout = postListLayoutEnabled ? localStorage.getItem("postListLayout") : null;
-			const defaultLayout =
-				postListContainer.getAttribute("data-default-layout") || "list";
-			const currentLayout = savedLayout || defaultLayout;
-
-			const hasGridClass =
-				postListContainer.classList.contains("grid-mode");
-			const isClassCorrect =
-				(currentLayout === "grid" && hasGridClass) ||
-				(currentLayout === "list" && !hasGridClass);
+			const state = resolveLayout();
+			if (!state) return;
+			const { postListContainer, targetLayout, isClassCorrect } = state;
 
 			if (isClassCorrect) {
 				postListContainer.classList.add("js-initialized");
@@ -61,7 +70,7 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 			}
 
 			if (window.innerWidth >= 769) {
-				updatePostListLayout(currentLayout);
+				updatePostListLayout(targetLayout);
 			} else {
 				postListContainer.classList.add("js-initialized");
 			}
@@ -76,38 +85,21 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 			return;
 		}
 
+		const isGrid = layout === "grid";
+		// 优化点：合并 grid/list 两个分支中重复的 DOM 查询，每个元素只查一次，
+		// 避免在读 class 与写 class 之间反复触发强制重排。
+		const rightSidebar = document.querySelector(".right-sidebar-container");
+		const mainGrid = document.getElementById("main-grid");
+
 		container.classList.add("layout-switching");
+		container.classList.toggle("grid-mode", isGrid);
+		container.classList.toggle("list-mode", !isGrid);
 
-		if (layout === "grid") {
-			container.classList.remove("list-mode");
-			container.classList.add("grid-mode");
-
-			const rightSidebar = document.querySelector(
-				".right-sidebar-container",
-			);
-			if (rightSidebar) {
-				rightSidebar.classList.add("hidden-in-grid-mode");
-			}
-
-			const mainGrid = document.getElementById("main-grid");
-			if (mainGrid) {
-				mainGrid.setAttribute("data-layout-mode", "grid");
-			}
-		} else {
-			container.classList.remove("grid-mode");
-			container.classList.add("list-mode");
-
-			const rightSidebar = document.querySelector(
-				".right-sidebar-container",
-			);
-			if (rightSidebar) {
-				rightSidebar.classList.remove("hidden-in-grid-mode");
-			}
-
-			const mainGrid = document.getElementById("main-grid");
-			if (mainGrid) {
-				mainGrid.setAttribute("data-layout-mode", "list");
-			}
+		if (rightSidebar) {
+			rightSidebar.classList.toggle("hidden-in-grid-mode", isGrid);
+		}
+		if (mainGrid) {
+			mainGrid.setAttribute("data-layout-mode", layout);
 		}
 
 		container.classList.add("js-initialized");
@@ -128,13 +120,8 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 		clearTimeout(resizeTimeout);
 		resizeTimeout = window.setTimeout(() => {
 			if (window.innerWidth >= 769) {
-				const postListLayoutEnabled = document.documentElement.getAttribute("data-post-list-layout-enabled") !== "false";
-				const savedLayout = postListLayoutEnabled ? localStorage.getItem("postListLayout") : null;
-				const defaultLayout =
-					document
-						.getElementById("post-list-container")
-						?.getAttribute("data-default-layout") || "list";
-				updatePostListLayout(savedLayout || defaultLayout);
+				const state = resolveLayout();
+				if (state) updatePostListLayout(state.targetLayout);
 			}
 		}, 100);
 	});
@@ -213,6 +200,12 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 		animation-delay: calc(
 			var(--content-delay) + var(--i) * var(--interval)
 		);
+	}
+
+	/* LCP 优化：首页第一张卡片始终可见，不被 content-visibility: auto 延迟 */
+	#post-list-container > :global(:first-child),
+	.lcp-candidate {
+		content-visibility: visible !important;
 	}
 
 	#post-list-container.grid-mode > :global(*) {

@@ -5,6 +5,8 @@ export interface PostCardProps {
 	class?: string;
 	entry: CollectionEntry<"posts">;
 	style?: string;
+	/** 首页列表中的索引，用于判断是否为 LCP 候选首图 */
+	index?: number;
 }
 
 export interface PostMetaProps {

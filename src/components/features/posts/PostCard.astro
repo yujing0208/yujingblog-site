@@ -12,7 +12,7 @@ import Image from "../../atoms/Image/Image.astro";
 import PostMetadata from "./PostMeta.astro";
 import type { PostCardProps } from "./types";
 
-const { entry, style }: PostCardProps = Astro.props as PostCardProps;
+const { entry, style, index = 0 }: PostCardProps = Astro.props as PostCardProps;
 const className = Astro.props.class;
 
 const {
@@ -149,6 +149,7 @@ const homeContent = getPostHomeContent(
 					"group",
 					"max-h-[20vh] md:max-h-none mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
 					"md:w-(--coverWidth) relative md:absolute md:top-3 md:bottom-3 md:right-3 rounded-xl overflow-hidden active:scale-95",
+					{ "lcp-candidate": index === 0 }, // 标记 LCP 候选元素
 				]}
 			>
 				<div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition" />
@@ -165,6 +166,11 @@ const homeContent = getPostHomeContent(
 					class="w-full h-full"
 					widths={[200, 400, 800]}
 					sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+					// LCP 优化：首页第一张封面图立即加载 + 高优先级预取
+					loading={index === 0 ? "eager" : "lazy"}
+					fetchpriority={index === 0 ? "high" : "auto"}
+					// 封面缩略图不需要高质量，65% 足够视觉清晰且节省 ~40%
+					quality={index === 0 ? 65 : undefined}
 				/>
 			</a>
 		)

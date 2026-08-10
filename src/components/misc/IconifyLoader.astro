@@ -116,6 +116,16 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
 
 					script.onload = () => {
 						clearTimeout(timeoutId);
+						// 禁用 iconify 自动加载远程图标集 API（api.unisvg.com），
+						// 避免在国内网络环境下超时报错（ERR_CONNECTION_TIMED_OUT）。
+						// 构建时已通过 buildIconInclude() 内联所有需要的 SVG sprite，
+						// 运行时仅使用本地缓存即可。
+						if (window.Iconify && window.Iconify.setConfig) {
+							window.Iconify.setConfig({
+								defaultAPI: "",
+								autoLoad: false,
+							});
+						}
 						this.waitForIconifyReady().then(resolve).catch(reject);
 					};
 
@@ -252,14 +262,25 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
 		// 创建全局实例
 		window.__iconifyLoader = new IconifyLoader();
 
-		// 立即开始加载
-		window.__iconifyLoader.load().catch((error) => {
-			console.error("Failed to initialize Iconify:", error);
-		});
+		// 性能优化：延迟到 DOMContentLoaded 后再加载 iconify-icon，
+		// 避免在首屏渲染关键路径上抢占带宽和主线程。
+		// 图标在构建时已内联为 SVG sprite（buildIconInclude），
+		// 运行时加载仅用于动态/未预收集的图标。
+		const onReady = () => {
+			window.__iconifyLoader.load().catch((error) => {
+				console.error("Failed to initialize Iconify:", error);
+			});
 
-		// 如果有预加载图标，添加到队列
-		if (preloadIcons && preloadIcons.length > 0) {
-			window.__iconifyLoader.addToPreloadQueue(preloadIcons);
+			// 如果有预加载图标，添加到队列
+			if (preloadIcons && preloadIcons.length > 0) {
+				window.__iconifyLoader.addToPreloadQueue(preloadIcons);
+			}
+		};
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", onReady);
+		} else {
+			onReady();
 		}
 
 		// 导出便捷函数到全局

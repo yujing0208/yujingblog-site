@@ -97,8 +97,12 @@ const favicons: Favicon[] =
 <!-- 字体通过构建脚本压缩到 /assets/font/ 目录，此处不再预加载以避免 404 -->
 <!-- 字体在构建时通过 scripts/compress-fonts.js 处理并复制到 dist/ -->
 
-<!-- 预连接 Iconify API 以减少图标加载延迟 -->
+<!-- 预连接关键第三方域名，减少 DNS + TCP + TLS 握手时间（预计节省 ~110ms 渲染阻塞） -->
 <link rel="preconnect" href="https://api.iconify.design" crossorigin />
+<link rel="preconnect" href="https://code.iconify.design" crossorigin />
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+<link rel="preconnect" href="https://twikoo.yujingblog.top" crossorigin />
+<link rel="preconnect" href="https://cloud.umami.is" crossorigin />
 
 <!-- Set the theme before the page is rendered to avoid a flash -->
 <script
