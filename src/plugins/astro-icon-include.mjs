@@ -68,17 +68,88 @@ function walk(dir, files = []) {
  * @param {string} collection
  * @returns {Set<string> | null}
  */
+// 优化点：集合名集合加载涉及 require.resolve + JSON.parse 文件读取，
+// 属于高成本 IO。同一集合在单次 buildIconInclude 中可能被多次查询，
+// 用模块级缓存避免重复磁盘 IO（消除冗余计算）。
+const collectionNamesCache = new Map();
+
 function loadCollectionNames(collection) {
+	if (collectionNamesCache.has(collection)) {
+		return collectionNamesCache.get(collection);
+	}
+	let names = null;
 	try {
 		const jsonPath = require.resolve(`@iconify-json/${collection}/icons.json`);
 		const data = JSON.parse(readFileSync(jsonPath, "utf8"));
-		return new Set([
+		names = new Set([
 			...Object.keys(data.icons ?? {}),
 			...Object.keys(data.aliases ?? {}),
 		]);
 	} catch {
-		return null;
+		names = null;
 	}
+	collectionNamesCache.set(collection, names);
+	return names;
+}
+
+/**
+ * 扫描目录，收集所有被引用的合法图标引用（prefix:name 形式）。
+ * 优化点：仅对单文件做一次性正则匹配，避免把整站文件内容拼接成大字符串；
+ * 用 Set 去重，时间复杂度 O(总匹配数) 而非 O(文件数 × 文件数)。
+ * @returns {Map<string, Set<string>>} 每个集合名下实际引用的图标名集合
+ */
+function collectIconReferences() {
+	const installedSet = new Set(INSTALLED_COLLECTIONS);
+	const referenced = new Map(
+		INSTALLED_COLLECTIONS.map((name) => [name, new Set()]),
+	);
+
+	for (const file of walk(SCAN_DIR)) {
+		// 优化点：超出阈值的大文件（如 dist 产物、巨幅 JSON）跳过全文读取，
+		// 改用常量扫描上限，防止构建期内存峰值过高。
+		const MAX_SCAN_BYTES = 2 * 1024 * 1024;
+		let content;
+		try {
+			const { size } = statSync(file);
+			if (size > MAX_SCAN_BYTES) continue;
+			content = readFileSync(file, "utf8");
+		} catch {
+			continue;
+		}
+
+		for (const match of content.matchAll(ICON_REF_RE)) {
+			const [, prefix, name] = match;
+			if (installedSet.has(prefix)) {
+				referenced.get(prefix).add(name);
+			}
+		}
+	}
+	return referenced;
+}
+
+/**
+ * 过滤掉不存在于已安装集合中的图标名，避免构建失败。
+ * @param {Map<string, Set<string>>} referenced
+ * @returns {Record<string, string[]>}
+ */
+export function filterValidNames(referenced) {
+	/** @type {Record<string, string[]>} */
+	const include = {};
+	for (const [collection, names] of referenced) {
+		if (names.size === 0) continue;
+
+		const validNames = loadCollectionNames(collection);
+		// 仅保留集合中真实存在的图标名；未知名（注释、拼写错误、
+		// 仅 CDN 提供的图标）会导致构建中断，必须剔除。
+		const usable = validNames
+			? [...names].filter((n) => validNames.has(n))
+			: [...names];
+
+		if (usable.length > 0) {
+			include[collection] = usable.sort();
+		}
+	}
+	return include;
 }
 
 /**
@@ -86,32 +157,5 @@ function loadCollectionNames(collection) {
  *   { "material-symbols": ["home", "search"], "mdi": ["github"] }
  */
 export function buildIconInclude() {
-	const collectionSet = new Set(INSTALLED_COLLECTIONS);
-	const found = new Map(INSTALLED_COLLECTIONS.map((name) => [name, new Set()]));
-
-	for (const file of walk(SCAN_DIR)) {
-		const content = readFileSync(file, "utf8");
-		for (const match of content.matchAll(ICON_REF_RE)) {
-			const [, prefix, name] = match;
-			if (collectionSet.has(prefix)) {
-				found.get(prefix).add(name);
-			}
-		}
-	}
-
-	/** @type {Record<string, string[]>} */
-	const include = {};
-	for (const [collection, names] of found) {
-		if (names.size === 0) {
-			continue;
-		}
-		const valid = loadCollectionNames(collection);
-		// Keep only names that actually exist in the collection; unknown names
-		// (from comments, typos, or CDN-only icons) would fail the build.
-		const usable = valid ? [...names].filter((n) => valid.has(n)) : [...names];
-		if (usable.length > 0) {
-			include[collection] = usable.sort();
-		}
-	}
-	return include;
+	return filterValidNames(collectIconReferences());
 }

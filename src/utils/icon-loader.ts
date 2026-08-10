@@ -234,22 +234,25 @@ class IconLoader {
 			return;
 		}
 
-		await new Promise<void>((resolve) => {
-			let resolved = false;
+		// 优化点：用单一 resolve 守卫替代嵌套的 finish() 闭包，
+		// 避免每次调用都重建 Promise 工厂；超时与成功共用一个出口。
+		const ICON_LOAD_TIMEOUT_MS = 5000;
 
-			const finish = () => {
-				if (resolved) return;
-				resolved = true;
+		await new Promise<void>((resolve) => {
+			let isResolved = false;
+			const markResolved = () => {
+				if (isResolved) return;
+				isResolved = true;
+				clearTimeout(timeoutId);
 				resolve();
 			};
 
-			const timeoutId = setTimeout(finish, 5000);
+			const timeoutId = setTimeout(markResolved, ICON_LOAD_TIMEOUT_MS);
 
 			IconifyIcon.loadIcons(icons, (_loaded, _missing, pending) => {
-				if (pending.length === 0) {
-					clearTimeout(timeoutId);
-					finish();
-				}
+				// pending 为空表示全部图标已加载完成或失败，
+				// 不再需要继续等待，立即结束预加载流程。
+				if (pending.length === 0) markResolved();
 			});
 		});
 	}
