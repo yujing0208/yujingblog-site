@@ -1,11 +1,16 @@
 {
   "title": "你的来信",
-  "description": "你的字很帅！(依旧，纯数字)",
+  "description": "你的字很帅！",
   "date": "2026-06-03",
   "encrypted": true,
   "password": "201038",
   "location": "高一57班",
-  "tags": ["回忆","手写信","学校" ],
+  "tags": [
+    "回忆",
+    "手写信",
+    "学校"
+  ],
   "layout": "Grid",
-  "columns": 3
+  "columns": 3,
+  "passwordHint": "依旧，纯数字"
 }
