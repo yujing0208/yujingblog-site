@@ -73,7 +73,7 @@
 				{ key: "title", label: "名称", type: "string", required: true },
 				{ key: "imgurl", label: "图标", type: "image", placeholder: "图片外链 URL" },
 				{ key: "desc", label: "描述", type: "text" },
-				{ key: "siteurl", label: "网址", type: "string", required: true },
+				{ key: "siteurl", label: "网址", type: "string", required: true, autoIconTarget: "imgurl", autoFillIcon: true },
 				{
 					key: "category",
 					label: "分类",

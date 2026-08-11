@@ -164,6 +164,21 @@
 		return wrap;
 	}
 
+	/** 从网址中提取根域名，用于 favicon.im 接口（去掉协议、路径、www. 等子域前缀） */
+	function guessFaviconDomain(url) {
+		if (!url) return "";
+		var s = String(url).trim();
+		s = s.replace(/^[a-zA-Z]+:\/\//, ""); // 去掉 http(s)://
+		s = s.replace(/^\/+/, "");
+		s = s.split("/")[0]; // 取主机部分
+		s = s.split("?")[0].split("#")[0];
+		if (!s) return "";
+		if (s.indexOf(".") === -1) return s; // 已经是裸域名
+		// 去掉常见的 www. 前缀
+		s = s.replace(/^www\./, "");
+		return s;
+	}
+
 	/** 渲染单个字段 */
 	function renderField(field, target, onChange) {
 		var type = field.type || "string";
@@ -276,6 +291,13 @@
 						if (onChange) onChange();
 					});
 				});
+				// 来自 siteurl 自动/手动生成图标后，同步刷新本输入框
+				document.addEventListener("favicon-synced", function (e) {
+					if (e.targetField === field.key) {
+						inp.value = e.value;
+						target[field.key] = e.value;
+					}
+				});
 				imgWrap.appendChild(inp);
 				imgWrap.appendChild(upBtn);
 				ctl = imgWrap;
@@ -305,7 +327,41 @@
 				inp2.className = "ef-input";
 				inp2.value = target[field.key] || "";
 				inp2.addEventListener("change", function () { target[field.key] = inp2.value; if (onChange) onChange(); });
-				ctl = inp2;
+				var ctlWrap = inp2;
+				if (field.autoIconTarget) {
+					var iconBtn = el("button", "ef-btn ef-btn-sm", "生成图标");
+					iconBtn.type = "button";
+					iconBtn.addEventListener("click", function () {
+						var domain = guessFaviconDomain(inp2.value);
+						if (!domain) { alert("请先填写有效的网站网址"); return; }
+						target[field.autoIconTarget] = "https://a.favicon.im/" + domain;
+						if (onChange) onChange();
+						// 同步刷新目标 image 输入框显示
+						var evt = new Event("favicon-synced");
+						evt.targetField = field.autoIconTarget;
+						evt.value = target[field.autoIconTarget];
+						document.dispatchEvent(evt);
+					});
+					// 输入网址后，若目标图标字段为空则自动补全
+					inp2.addEventListener("blur", function () {
+						if (field.autoFillIcon && !target[field.autoIconTarget]) {
+							var domain = guessFaviconDomain(inp2.value);
+							if (domain) {
+								target[field.autoIconTarget] = "https://a.favicon.im/" + domain;
+								if (onChange) onChange();
+								var evt2 = new Event("favicon-synced");
+								evt2.targetField = field.autoIconTarget;
+								evt2.value = target[field.autoIconTarget];
+								document.dispatchEvent(evt2);
+							}
+						}
+					});
+					var iconRow = el("div", "ef-date-row");
+					iconRow.appendChild(inp2);
+					iconRow.appendChild(iconBtn);
+					ctlWrap = iconRow;
+				}
+				ctl = ctlWrap;
 				break;
 			}
 		}
