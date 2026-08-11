@@ -1,6 +1,7 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
+import Comment from "@components/comment";
 
 import { getShuffledFriendsList } from "../data/friends";
 import { siteConfig } from "../config";
@@ -158,6 +159,9 @@ const allTags = [...new Set(items.flatMap((item) => item.tags || []))].sort();
 			</div>
 		</div>
 	</div>
+
+	<!-- 评论区 -->
+	<Comment path="/friends/" />
 
 	<script slot="head" is:inline>
 		if (!customElements.get("friend-filter")) {
