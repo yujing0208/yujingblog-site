@@ -114,71 +114,74 @@ for (const c of allCategories) {
 	</div>
 </MainGridLayout>
 
-<script>
+<script is:inline>
 	(function () {
-		const container = document.querySelector<HTMLElement>("[data-booknav-page]");
-		if (!container) return;
+		if (window.__mizukiBooknavFilterBound) return;
+		window.__mizukiBooknavFilterBound = true;
 
-		const searchInput = container.querySelector<HTMLInputElement>("[data-booknav-search]");
-		const tabs = container.querySelectorAll<HTMLButtonElement>("[data-booknav-tabs] [data-category]");
-		const sections = container.querySelectorAll<HTMLElement>("[data-booknav-results] [data-section]");
-		const empty = container.querySelector<HTMLElement>("[data-booknav-empty]");
+		var activeCategory = "all";
+		var activeSearch = "";
 
-		let activeCategory = "all";
-		let activeSearch = "";
-
-		function normalize(text: string) {
-			return text.toLowerCase().replace(/\s+/g, " ");
+		function normalize(text) {
+			return (text || "").toLowerCase().replace(/\s+/g, " ");
 		}
 
-		function update() {
-			const term = normalize(activeSearch);
-			let visibleSections = 0;
-			let visibleCards = 0;
+		function update(container) {
+			var term = normalize(activeSearch);
+			var sections = container.querySelectorAll("[data-booknav-results] [data-section]");
+			var empty = container.querySelector("[data-booknav-empty]");
+			var visibleSections = 0;
+			var visibleCards = 0;
 
-			for (const section of sections) {
-				const sectionId = section.dataset.section;
-				const categoryMatch = activeCategory === "all" || activeCategory === sectionId;
-				let sectionVisibleCards = 0;
+			for (var i = 0; i < sections.length; i++) {
+				var section = sections[i];
+				var sectionId = section.getAttribute("data-section");
+				var categoryMatch = activeCategory === "all" || activeCategory === sectionId;
+				var sectionVisibleCards = 0;
 
-				const cards = section.querySelectorAll<HTMLElement>(".booknav-card");
-				for (const card of cards) {
-					const text = normalize(card.dataset.searchText || "");
-					const searchMatch = !term || text.includes(term);
-					const show = categoryMatch && searchMatch;
+				var cards = section.querySelectorAll(".booknav-card");
+				for (var j = 0; j < cards.length; j++) {
+					var card = cards[j];
+					var text = normalize(card.getAttribute("data-search-text"));
+					var searchMatch = !term || text.indexOf(term) !== -1;
+					var show = categoryMatch && searchMatch;
 					card.classList.toggle("is-hidden", !show);
 					if (show) sectionVisibleCards++;
 				}
 
-				const showSection = sectionVisibleCards > 0;
+				var showSection = sectionVisibleCards > 0;
 				section.classList.toggle("is-hidden", !showSection);
 				if (showSection) visibleSections++;
 				visibleCards += sectionVisibleCards;
 
-				const countEl = section.querySelector<HTMLElement>("[data-section-count]");
+				var countEl = section.querySelector("[data-section-count]");
 				if (countEl) countEl.textContent = String(sectionVisibleCards);
 			}
 
 			if (empty) empty.hidden = visibleCards > 0 || visibleSections > 0;
 		}
 
-		if (searchInput) {
-			searchInput.addEventListener("input", () => {
-				activeSearch = searchInput.value;
-				update();
-			});
-		}
-
-		tabs.forEach((tab) => {
-			tab.addEventListener("click", () => {
-				tabs.forEach((t) => t.classList.remove("is-active"));
-				tab.classList.add("is-active");
-				activeCategory = tab.dataset.category || "all";
-				update();
-			});
+		document.body.addEventListener("input", function (e) {
+			var input = e.target.closest("[data-booknav-search]");
+			var container = input && input.closest("[data-booknav-page]");
+			if (!container) return;
+			activeSearch = input.value;
+			update(container);
 		});
 
-		update();
+		document.body.addEventListener("click", function (e) {
+			var tab = e.target.closest("[data-booknav-tabs] [data-category]");
+			var container = tab && tab.closest("[data-booknav-page]");
+			if (!container) return;
+			activeCategory = tab.getAttribute("data-category") || "all";
+
+			var tabs = container.querySelectorAll("[data-booknav-tabs] [data-category]");
+			for (var i = 0; i < tabs.length; i++) {
+				tabs[i].classList.toggle("is-active", tabs[i] === tab);
+			}
+
+			update(container);
+		});
 	})();
 </script>
 
