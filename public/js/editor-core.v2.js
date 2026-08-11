@@ -150,17 +150,18 @@
 	}
 
 	function doEnter(edit) {
+		var url = "/admin/" + edit + "-edit";
 		var pat = getPat();
 		if (!pat) {
 			showPatModal().then(function (p) {
 				if (!p) return;
 				setPat(p);
 				setFrom(location.href);
-				location.href = "/admin/" + edit + "-edit";
+				window.open(url, "_blank", "noopener");
 			});
 		} else {
 			setFrom(location.href);
-			location.href = "/admin/" + edit + "-edit";
+			window.open(url, "_blank", "noopener");
 		}
 	}
 
