@@ -102,6 +102,12 @@
 					state.items = Object.keys(v).map(function (k) { return { key: k, items: v[k] }; });
 				} else if (Array.isArray(v)) {
 					state.items = v;
+					// 动态等按 date 倒序：最新在最上面（列表显示与文件存储一致）
+					if (s.format === "ts-array" && v.length && "date" in v[0]) {
+						state.items.sort(function (a, b) {
+							return String(b.date || "").localeCompare(String(a.date || ""));
+						});
+					}
 				} else {
 					// ts-object（如公告）：作为单项列表
 					state.items = [v];
