@@ -211,7 +211,21 @@
 				var raw = target[field.key];
 				if (raw) dt.value = String(raw).slice(0, 10);
 				dt.addEventListener("change", function () { target[field.key] = dt.value; if (onChange) onChange(); });
-				ctl = dt;
+				var dtRow = el("div", "ef-date-row");
+				dtRow.appendChild(dt);
+				var dtBtn = el("button", "ef-btn ef-btn-sm", "现在");
+				dtBtn.type = "button";
+				dtBtn.addEventListener("click", function () {
+					var now = new Date();
+					var v = now.getFullYear() + "-" +
+						String(now.getMonth() + 1).padStart(2, "0") + "-" +
+						String(now.getDate()).padStart(2, "0");
+					dt.value = v;
+					target[field.key] = v;
+					if (onChange) onChange();
+				});
+				dtRow.appendChild(dtBtn);
+				ctl = dtRow;
 				break;
 			}
 			case "datetime": {
@@ -219,8 +233,25 @@
 				dtt.type = "text";
 				dtt.className = "ef-input";
 				dtt.value = target[field.key] || "";
+				dtt.placeholder = field.placeholder || "2026-07-26T20:58:00+08:00";
 				dtt.addEventListener("change", function () { target[field.key] = dtt.value; if (onChange) onChange(); });
-				ctl = dtt;
+				var dttRow = el("div", "ef-date-row");
+				dttRow.appendChild(dtt);
+				var dttBtn = el("button", "ef-btn ef-btn-sm", "现在");
+				dttBtn.type = "button";
+				dttBtn.addEventListener("click", function () {
+					var now = new Date();
+					var p = function (n) { return String(n).padStart(2, "0"); };
+					var v = now.getFullYear() + "-" + p(now.getMonth() + 1) + "-" + p(now.getDate()) +
+						"T" + p(now.getHours()) + ":" + p(now.getMinutes()) + ":" + p(now.getSeconds()) +
+						(now.getTimezoneOffset() <= 0 ? "+" : "-") +
+						p(Math.floor(Math.abs(now.getTimezoneOffset()) / 60)) + ":" + p(Math.abs(now.getTimezoneOffset()) % 60);
+					dtt.value = v;
+					target[field.key] = v;
+					if (onChange) onChange();
+				});
+				dttRow.appendChild(dttBtn);
+				ctl = dttRow;
 				break;
 			}
 			case "select":
