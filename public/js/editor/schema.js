@@ -136,7 +136,7 @@
 				{ key: "location", label: "地点", type: "string", optional: true },
 				{ key: "mood", label: "心情", type: "string", optional: true },
 				{ key: "tags", label: "标签", type: "tags", optional: true },
-				{ key: "imgMode", label: "图片模式", type: "select", options: ["", "mode-mid", "mode-grid"], optional: true },
+				{ key: "imgMode", label: "图片模式", type: "select", options: ["", "mode-fill", "mode-grid", "mode-mid", "mode-squarefill", "mode-large2"], optional: true },
 				{ key: "id", label: "ID", type: "number", hidden: true },
 			],
 		},
