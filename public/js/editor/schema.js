@@ -88,7 +88,6 @@
 						{ value: "resource", label: "资源" },
 					],
 				},
-				{ key: "tags", label: "标签", type: "tags", placeholder: "逗号分隔" },
 			],
 		},
 
