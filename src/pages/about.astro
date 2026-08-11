@@ -15,7 +15,7 @@ if (!aboutPost) {
 }
 
 const { Content } = await render(aboutPost);
-const title = i18n(I18nKey.about);
+const title = aboutPost.data.title || i18n(I18nKey.about);
 ---
 
 <MainGridLayout title={title}>
