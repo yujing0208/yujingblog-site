@@ -603,7 +603,8 @@ if (s.format === "ts-array") state.items.push(it);
 				(s.preserveFields || []).forEach(function (k) { if (state.current.data[k] === undefined) { /* 无则不写 */ } });
 				newSource = window.EditorMd.stringify(d, state.current.body);
 			} else if (s.format === "md-file") {
-				newSource = window.EditorMd.stringify(state.data, state.body);
+				var body = state.current && typeof state.current.body === "string" ? state.current.body : state.body;
+				newSource = window.EditorMd.stringify(state.data, body);
 			} else if (s.format === "ts-map") {
 				// 重组动态键名对象
 				var map = {};
@@ -700,8 +701,7 @@ if (s.format === "ts-array") state.items.push(it);
 			renderList();
 			if (state.items.length > 0) selectItem(0);
 			else if (schema.format === "md-file") {
-				state.current = state.data;
-				state.body = state.body || "";
+				state.current = Object.assign({}, state.data, { body: state.body || "" });
 				renderForm();
 			}
 		}).catch(function (e) {
