@@ -1,45 +1,441 @@
-import type { BooknavConfig, BooknavCategory } from "../types/booknavConfig";
-import { websiteData } from "../data/website";
+import type { BooknavConfig } from "../types/booknavConfig";
 
 /**
- * 书签导航配置。
- * 数据来源：内容仓库 data/website.ts（经 sync-content 映射至 src/data/website），
- * 由 Pages CMS 后台 /admin/websites-edit 可视化编辑。
- * 此处仅定义「分类元数据」，书签条目由 websiteData 按 category 分组得到。
+ * 书签导航数据。
+ * 整合两部分来源：
+ * 1. Firefly 主题示例书签
+ * 2. 旧 /websites/ 页面收藏（content/data/website.ts），按语义重新分类
  */
-
-interface CategoryMeta {
-	id: string;
-	name: string;
-	description: string;
-	icon: string;
-}
-
-const categoryMeta: CategoryMeta[] = [
-	{ id: "dev", name: "开发", description: "写代码时离不开的站点", icon: "material-symbols:code" },
-	{ id: "project", name: "项目", description: "好用的开源项目", icon: "material-symbols:folder" },
-	{ id: "design", name: "设计", description: "配色、图标与灵感来源", icon: "material-symbols:brush" },
-	{ id: "ai", name: "AI", description: "大模型与 AI 工具", icon: "material-symbols:smart-toy" },
-	{ id: "tool", name: "工具", description: "顺手的在线小工具", icon: "material-symbols:build" },
-	{ id: "resource", name: "资源", description: "文档、教程、阅读与下载", icon: "material-symbols:menu-book" },
-];
-
-const categories: BooknavCategory[] = categoryMeta.map((meta) => ({
-	...meta,
-	items: websiteData
-		.filter((item) => item.category === meta.id)
-		.map((item) => ({
-			name: item.name,
-			description: item.description,
-			url: item.url,
-			icon: item.icon,
-			color: item.color,
-		})),
-}));
-
 export const booknavConfig: BooknavConfig = {
 	title: "网站收藏",
 	subtitle: "收藏一些好用的网站，按分类整理",
 	placeholder: "搜索书签...",
-	categories,
+	categories: [
+		{
+			id: "dev",
+			name: "开发",
+			description: "写代码时离不开的站点",
+			icon: "material-symbols:code",
+			items: [
+				{
+					name: "GitHub",
+					description: "全球最大的代码托管平台",
+					url: "https://github.com",
+					icon: "simple-icons:github",
+					color: "#181717",
+				},
+				{
+					name: "MDN Web Docs",
+					description: "最权威的 Web 文档",
+					url: "https://developer.mozilla.org",
+					icon: "simple-icons:mdnwebdocs",
+					color: "#000000",
+				},
+				{
+					name: "Astro",
+					description: "内容驱动型网站的 Web 框架",
+					url: "https://astro.build",
+					icon: "simple-icons:astro",
+					color: "#BC52EE",
+				},
+				{
+					name: "Svelte",
+					description: "把组件编译成高效原生 JS 的框架",
+					url: "https://svelte.dev",
+					icon: "simple-icons:svelte",
+					color: "#FF3E00",
+				},
+				{
+					name: "Tailwind CSS",
+					description: "一个功能强大且灵活的 CSS 框架",
+					url: "https://tailwindcss.com",
+					icon: "simple-icons:tailwindcss",
+					color: "#06B6D4",
+				},
+				{
+					name: "Cloudflare",
+					description: "为你的站点提供免费防护与加速",
+					url: "https://dash.cloudflare.com",
+					icon: "simple-icons:cloudflare",
+					color: "#F38020",
+				},
+				{
+					name: "Vercel",
+					description: "Develop. Preview. Ship.",
+					url: "https://vercel.com",
+					icon: "simple-icons:vercel",
+					color: "#000000",
+				},
+				{
+					name: "Twikoo",
+					description: "网站评论系统，简洁、安全、免费",
+					url: "https://twikoo.js.org",
+					icon: "simple-icons:github",
+					color: "#6772E5",
+				},
+				{
+					name: "Mizuki Docs",
+					description: "Mizuki 博客主题使用手册",
+					url: "https://docs.mizuki.mysqil.com",
+					icon: "material-symbols:menu-book",
+					color: "#1769AA",
+				},
+			],
+		},
+		{
+			id: "project",
+			name: "项目",
+			description: "好用的开源项目",
+			icon: "material-symbols:folder",
+			items: [
+				{
+					name: "Firefly",
+					description: "清晰美观的 Astro 个人博客主题模板",
+					url: "https://github.com/Moelten/astro-theme-firefly",
+					icon: "simple-icons:astro",
+					color: "#BC52EE",
+				},
+			],
+		},
+		{
+			id: "design",
+			name: "设计",
+			description: "配色、图标与灵感来源",
+			icon: "material-symbols:brush",
+			items: [
+				{
+					name: "Iconify",
+					description: "开源图标集的家园",
+					url: "https://iconify.design",
+					icon: "simple-icons:iconify",
+					color: "#1769AA",
+				},
+				{
+					name: "iconfont",
+					description: "阿里巴巴矢量图标库",
+					url: "https://www.iconfont.cn",
+					icon: "simple-icons:alibabadotcom",
+					color: "#FF6A00",
+				},
+				{
+					name: "Favicon.im",
+					description: "即时网站图标获取器",
+					url: "https://favicon.im/zh",
+					icon: "material-symbols:image",
+					color: "#4F46E5",
+				},
+				{
+					name: "One Page Love",
+					description: "一页网站灵感，精心策划",
+					url: "https://onepagelove.com",
+					icon: "material-symbols:link",
+					color: "#0EA5E9",
+				},
+			],
+		},
+		{
+			id: "ai",
+			name: "AI",
+			description: "大模型与 AI 工具",
+			icon: "material-symbols:smart-toy",
+			items: [
+				{
+					name: "DeepSeek",
+					description: "深度求索，探索未至之境",
+					url: "https://www.deepseek.com",
+					icon: "simple-icons:deepseek",
+					color: "#4D6BFE",
+				},
+				{
+					name: "豆包",
+					description: "字节跳动旗下 AI 智能助手",
+					url: "https://www.doubao.com",
+					icon: "material-symbols:smart-toy",
+					color: "#3B5BFF",
+				},
+				{
+					name: "千问",
+					description: "阿里 Qwen 最新模型体验",
+					url: "https://www.qianwen.com",
+					icon: "material-symbols:smart-toy",
+					color: "#615CED",
+				},
+				{
+					name: "OpenAI",
+					description: "ChatGPT 与先进 AI 研究",
+					url: "https://openai.com",
+					icon: "simple-icons:openai",
+					color: "#412991",
+				},
+				{
+					name: "Claude",
+					description: "Anthropic 出品的 AI 助手",
+					url: "https://claude.ai",
+					icon: "simple-icons:claude",
+					color: "#D97757",
+				},
+				{
+					name: "skills mp",
+					description: "看人们正在教 AI 智能体做些什么",
+					url: "https://skillsmp.com/zh",
+					icon: "material-symbols:smart-toy",
+					color: "#10A37F",
+				},
+				{
+					name: "PromptPilot",
+					description: "火山引擎推出的提示词优化平台",
+					url: "https://promptpilot.volcengine.com",
+					icon: "material-symbols:smart-toy",
+					color: "#1366EC",
+				},
+				{
+					name: "Imagio",
+					description: "用文字描述生成或编辑图片",
+					url: "https://image.oblivionis.net",
+					icon: "material-symbols:image",
+					color: "#8B5CF6",
+				},
+			],
+		},
+		{
+			id: "tool",
+			name: "工具",
+			description: "顺手的在线小工具",
+			icon: "material-symbols:build",
+			items: [
+				{
+					name: "TinyPNG",
+					description: "在线压缩 PNG / JPEG 图片",
+					url: "https://tinypng.com",
+					icon: "simple-icons:figma",
+					color: "#F24E1E",
+				},
+				{
+					name: "Squoosh",
+					description: "Google 出品的图片压缩与格式转换",
+					url: "https://squoosh.app",
+					icon: "simple-icons:google",
+					color: "#4285F4",
+				},
+				{
+					name: "Carbon",
+					description: "把代码片段生成漂亮的图片",
+					url: "https://carbon.now.sh",
+					icon: "simple-icons:codepen",
+					color: "#000000",
+				},
+				{
+					name: "GitHub 加速",
+					description: "多区域加速，解决 GitHub 访问慢、下载失败",
+					url: "https://gh-proxy.com",
+					icon: "simple-icons:github",
+					color: "#181717",
+				},
+				{
+					name: "GitHub Proxy",
+					description: "支持 API、Clone、Releases 等资源加速下载",
+					url: "https://github.akams.cn",
+					icon: "simple-icons:github",
+					color: "#181717",
+				},
+				{
+					name: "GitHub 文件加速",
+					description: "支持 release、archive 与文件加速",
+					url: "https://ghproxy.net",
+					icon: "simple-icons:github",
+					color: "#181717",
+				},
+				{
+					name: "坐标拾取器",
+					description: "高德地图获取精确经纬度坐标",
+					url: "https://lbs.amap.com/tools/picker",
+					icon: "material-symbols:link",
+					color: "#06B66C",
+				},
+				{
+					name: "免费在线抠图",
+					description: "无需上传的在线图像抠图工具",
+					url: "https://www.koukoutu.com/removebgtool/all",
+					icon: "material-symbols:image",
+					color: "#F97316",
+				},
+				{
+					name: "imagesTool",
+					description: "无需上传文件也可在线处理图片",
+					url: "https://imagestool.com/zh_CN",
+					icon: "material-symbols:image",
+					color: "#0EA5E9",
+				},
+				{
+					name: "Itdog 在线测速",
+					description: "在线网络工具箱，网站测速",
+					url: "https://www.itdog.cn",
+					icon: "material-symbols:cloud",
+					color: "#2563EB",
+				},
+				{
+					name: "免费在线视频压缩",
+					description: "支持 MP4、MOV、WebM 等格式压缩",
+					url: "https://videocompress.io/zh-cn",
+					icon: "material-symbols:cloud",
+					color: "#7C3AED",
+				},
+				{
+					name: "OpenMediaTools",
+					description: "免费在线视频、音频、图像与 PDF 工具",
+					url: "https://openmedia.tools/zh",
+					icon: "material-symbols:cloud",
+					color: "#059669",
+				},
+				{
+					name: "小小 API",
+					description: "专业的 API 服务平台",
+					url: "https://xxapi.cn",
+					icon: "material-symbols:api",
+					color: "#DC2626",
+				},
+				{
+					name: "UApiPro",
+					description: "免费、稳定、快速的公共 API",
+					url: "https://uapis.cn",
+					icon: "material-symbols:api",
+					color: "#2563EB",
+				},
+			],
+		},
+		{
+			id: "resource",
+			name: "资源",
+			description: "文档、教程、阅读与下载",
+			icon: "material-symbols:menu-book",
+			items: [
+				{
+					name: "Firefly Docs",
+					description: "Firefly 主题模板文档",
+					url: "https://firefly.cuteleaf.cn/docs",
+					icon: "simple-icons:astro",
+					color: "#BC52EE",
+				},
+				{
+					name: "夏夜流萤",
+					description: "飞萤之火自无梦的长夜亮起",
+					url: "https://firefly.cuteleaf.cn",
+					icon: "material-symbols:local-fire-department",
+					color: "#F59E0B",
+				},
+				{
+					name: "AGE 动漫",
+					description: "免费动漫资源聚合站",
+					url: "https://www.agedm.io",
+					icon: "material-symbols:link",
+					color: "#EC4899",
+				},
+				{
+					name: "MANHWATOP",
+					description: "收录漫画资源",
+					url: "https://manhwatop.com",
+					icon: "material-symbols:menu-book",
+					color: "#F43F5E",
+				},
+				{
+					name: "Z-Library",
+					description: "世界上最大的电子图书馆",
+					url: "https://zh.kid1412.by",
+					icon: "material-symbols:menu-book",
+					color: "#1D4ED8",
+				},
+				{
+					name: "哲风壁纸",
+					description: "免费 4K 高清壁纸网站",
+					url: "https://haowallpaper.com",
+					icon: "material-symbols:image",
+					color: "#0EA5E9",
+				},
+				{
+					name: "Emojiall",
+					description: "Emoji 大全",
+					url: "https://www.emojiall.com/zh-hans",
+					icon: "material-symbols:link",
+					color: "#F59E0B",
+				},
+				{
+					name: "叮叮猫资源搜索",
+					description: "免费分享百万级网盘资源",
+					url: "https://www.boosds.cn",
+					icon: "material-symbols:link",
+					color: "#16A34A",
+				},
+				{
+					name: "LX Music",
+					description: "免费开源的音乐查找工具",
+					url: "https://lxmusic.toside.cn",
+					icon: "material-symbols:music-note",
+					color: "#DC2626",
+				},
+				{
+					name: "蜜蜂图床",
+					description: "免费、稳定、高速的图片外链服务",
+					url: "https://www.beeimg.cn",
+					icon: "material-symbols:image",
+					color: "#F59E0B",
+				},
+				{
+					name: "YuJing ImgHub",
+					description: "我的个人图床",
+					url: "https://img.yujingblog.top",
+					icon: "material-symbols:image",
+					color: "#0EA5E9",
+				},
+				{
+					name: "StarDots 图床",
+					description: "图像云存储，图片托管",
+					url: "https://dashboard.stardots.io",
+					icon: "material-symbols:image",
+					color: "#8B5CF6",
+				},
+				{
+					name: "CloudFlare ImgBed",
+					description: "开源文件托管解决方案",
+					url: "https://cfbed.sanyue.de",
+					icon: "material-symbols:image",
+					color: "#F38020",
+				},
+				{
+					name: "PigHub",
+					description: "最大的猪猪图片网站",
+					url: "https://www.pighub.top",
+					icon: "material-symbols:image",
+					color: "#F472B6",
+				},
+				{
+					name: "升学 E 网通",
+					description: "高中生综合指导与备考系统",
+					url: "https://www.ewt360.com",
+					icon: "material-symbols:school",
+					color: "#2563EB",
+				},
+				{
+					name: "Qwerty Learner",
+					description: "键盘工作者单词记忆软件",
+					url: "https://qwerty.kaiyi.cool",
+					icon: "material-symbols:school",
+					color: "#0EA5E9",
+				},
+				{
+					name: "合肥一中电脑社",
+					description: "零基础友好 · 技术驱动的校园科技社团",
+					url: "https://hfyzdns.cn",
+					icon: "material-symbols:school",
+					color: "#16A34A",
+				},
+				{
+					name: "合肥市第一中学",
+					description: "怀天下抱负，做未来主人",
+					url: "http://www.hfyz.net/sy/index.html",
+					icon: "material-symbols:school",
+					color: "#DC2626",
+				},
+			],
+		},
+	],
 };
