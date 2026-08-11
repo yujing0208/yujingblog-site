@@ -1,191 +1,430 @@
 ---
-import { getEntry, render } from "astro:content";
-import Comment from "@components/comment/index.astro";
-import FriendCard from "@components/features/friends/FriendCard.astro";
-import { PageHeader } from "@components/features/page-header";
-import Markdown from "@components/misc/Markdown.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { Icon } from "astro-icon/components";
+import { booknavConfig } from "../config/booknavConfig";
 
-import { siteConfig } from "../config";
-import { getShuffledFriendsList } from "../data/website";
-import I18nKey from "../i18n/i18nKey";
-import { i18n } from "../i18n/translation";
-
-export const prerender = true;
-
-if (!siteConfig.featurePages.friends) {
-	return Astro.redirect("/404/");
+// Static filtering for initial SSR state (empty search = all)
+const initialSearch = "";
+const allCategories = booknavConfig.categories;
+const categoryCounts: Record<string, number> = {};
+let totalCount = 0;
+for (const c of allCategories) {
+	categoryCounts[c.id] = c.items.length;
+	totalCount += c.items.length;
 }
-
-const websitesPost = await getEntry("spec", "websites");
-
-if (!websitesPost) {
-	throw new Error("websites page content not found");
-}
-
-const { Content } = await render(websitesPost);
-const websitesList = getShuffledFriendsList();
-const allTags = Array.from(
-	new Set(websitesList.flatMap((item) => item.tags)),
-);
 ---
 
 <MainGridLayout
-	title={i18n(I18nKey.friends)}
-	description={i18n(I18nKey.friends)}
+	title={booknavConfig.title}
+	description={booknavConfig.subtitle}
 >
-	<script is:inline>
-		window.isFriendsPage = true;
-	</script>
-	<script>
-		import("../scripts/right-sidebar-layout.js");
-	</script>
+	<div class="booknav-page" data-booknav-page>
+		<header class="booknav-header">
+			<div class="booknav-title-wrap">
+				<Icon name="material-symbols:bookmark-outline" class="booknav-title-icon" />
+				<h1 class="booknav-title">{booknavConfig.title}</h1>
+			</div>
+			<p class="booknav-subtitle">{booknavConfig.subtitle}</p>
+		</header>
 
-	<div
-		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
-	>
-		<div class="card-base z-10 px-9 py-6 relative w-full">
-			<PageHeader
-				title={i18n(I18nKey.friends)}
-				subtitle={i18n(I18nKey.friendsSubtitle)}
+		<div class="booknav-search-wrap">
+			<Icon name="material-symbols:search" class="booknav-search-icon" />
+			<input
+				type="text"
+				class="booknav-search"
+				placeholder={booknavConfig.placeholder}
+				data-booknav-search
 			/>
-
-			<!-- 搜索和筛选栏 -->
-			<div class="mb-6 space-y-3">
-				<!-- 搜索框 -->
-				<div class="w-full">
-					<div class="relative">
-						<input
-							type="text"
-							id="friend-search"
-							placeholder={i18n(I18nKey.friendsSearchPlaceholder)}
-							class="w-full px-4 py-2 pl-10 rounded-lg bg-(--btn-regular-bg)
-									text-black/90 dark:text-white/90
-									border border-black/10 dark:border-white/10
-									focus:outline-none focus:ring-2 focus:ring-(--primary)/50
-									transition-all duration-200"
-						/>
-						<svg
-							class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40 dark:text-white/40"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-							></path>
-						</svg>
-					</div>
-				</div>
-
-				<!-- 标签筛选 -->
-				<div class="filter-container flex flex-wrap gap-2">
-					<button class="filter-tag active" data-tag="all">
-						{i18n(I18nKey.friendsFilterAll)}
-					</button>
-					{
-						allTags.map((tag) => (
-							<button class="filter-tag" data-tag={tag}>
-								{tag}
-							</button>
-						))
-					}
-				</div>
-			</div>
-
-			<!-- 友链卡片网格 -->
-			<div
-				id="friends-grid"
-				class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6"
-			>
-				{websitesList.map((item) => <FriendCard friend={item} />)}
-			</div>
-
-			<!-- 无结果提示 -->
-			<div id="no-results" class="hidden text-center py-12">
-				<svg
-					class="w-16 h-16 mx-auto mb-4 text-black/20 dark:text-white/20"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-					></path>
-				</svg>
-				<p class="text-black/50 dark:text-white/50 text-lg">
-					{i18n(I18nKey.friendsNoResults)}
-				</p>
-			</div>
-
-			<!-- 说明文档 -->
-			<Markdown class="mt-8 prose dark:prose-invert max-w-none">
-				<Content />
-			</Markdown>
-
-			<!-- 隐藏元素用于传递 i18n 文本到全局脚本 -->
-			<div id="friends-copy-success-text" style="display: none;">
-				{i18n(I18nKey.friendsCopySuccess)}
-			</div>
 		</div>
-	</div>
 
-	<!-- 引用全局脚本 -->
-	<script is:inline src="/js/friends-page-handler.js"></script>
+		<nav class="booknav-category-tabs" data-booknav-tabs>
+			<button class="booknav-tab is-active" data-category="all">
+				<Icon name="material-symbols:apps" class="booknav-tab-icon" />
+				<span>全部</span>
+				<span class="booknav-tab-count" data-count-all>{totalCount}</span>
+			</button>
+			{
+				allCategories.map((category) => (
+					<button class="booknav-tab" data-category={category.id}>
+						<Icon name={category.icon} class="booknav-tab-icon" />
+						<span>{category.name}</span>
+						<span class="booknav-tab-count" data-count={category.id}>
+							{categoryCounts[category.id]}
+						</span>
+					</button>
+				))
+			}
+		</nav>
 
-	<div class="mt-4">
-		<Comment path="/websites/" />
+		<div class="booknav-results" data-booknav-results>
+			{
+				allCategories.map((category) => (
+					<section class="booknav-section" data-section={category.id}>
+						<h2 class="booknav-section-title">
+							<Icon name={category.icon} class="booknav-section-icon" />
+							<span>{category.name}</span>
+							<span class="booknav-section-desc">{category.description}</span>
+							<span class="booknav-section-count" data-section-count={category.id}>
+								{category.items.length}
+							</span>
+						</h2>
+						<div class="booknav-grid">
+							{category.items.map((item) => (
+								<a
+									href={item.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="booknav-card"
+									data-search-text={`${item.name} ${item.description ?? ""} ${(item.tags ?? []).join(" ")}`}
+								>
+									<span
+										class="booknav-card-icon"
+										style={item.color ? `--icon-color:${item.color}` : undefined}
+									>
+										{item.icon ? (
+											<Icon name={item.icon} />
+										) : (
+											<span class="booknav-card-fallback">
+												{item.name.slice(0, 1)}
+											</span>
+										)}
+									</span>
+									<div class="booknav-card-body">
+										<h3 class="booknav-card-name">{item.name}</h3>
+										<p class="booknav-card-desc">{item.description}</p>
+									</div>
+								</a>
+							))}
+						</div>
+					</section>
+				))
+			}
+		</div>
+
+		<div class="booknav-empty" data-booknav-empty hidden>
+			<Icon name="material-symbols:search-off" class="booknav-empty-icon" />
+			<p>没有找到匹配的书签</p>
+		</div>
 	</div>
 </MainGridLayout>
 
+<script>
+	(function () {
+		const container = document.querySelector<HTMLElement>("[data-booknav-page]");
+		if (!container) return;
+
+		const searchInput = container.querySelector<HTMLInputElement>("[data-booknav-search]");
+		const tabs = container.querySelectorAll<HTMLButtonElement>("[data-booknav-tabs] [data-category]");
+		const sections = container.querySelectorAll<HTMLElement>("[data-booknav-results] [data-section]");
+		const empty = container.querySelector<HTMLElement>("[data-booknav-empty]");
+
+		let activeCategory = "all";
+		let activeSearch = "";
+
+		function normalize(text: string) {
+			return text.toLowerCase().replace(/\s+/g, " ");
+		}
+
+		function update() {
+			const term = normalize(activeSearch);
+			let visibleSections = 0;
+			let visibleCards = 0;
+
+			for (const section of sections) {
+				const sectionId = section.dataset.section;
+				const categoryMatch = activeCategory === "all" || activeCategory === sectionId;
+				let sectionVisibleCards = 0;
+
+				const cards = section.querySelectorAll<HTMLElement>(".booknav-card");
+				for (const card of cards) {
+					const text = normalize(card.dataset.searchText || "");
+					const searchMatch = !term || text.includes(term);
+					const show = categoryMatch && searchMatch;
+					card.classList.toggle("is-hidden", !show);
+					if (show) sectionVisibleCards++;
+				}
+
+				const showSection = sectionVisibleCards > 0;
+				section.classList.toggle("is-hidden", !showSection);
+				if (showSection) visibleSections++;
+				visibleCards += sectionVisibleCards;
+
+				const countEl = section.querySelector<HTMLElement>("[data-section-count]");
+				if (countEl) countEl.textContent = String(sectionVisibleCards);
+			}
+
+			if (empty) empty.hidden = visibleCards > 0 || visibleSections > 0;
+		}
+
+		if (searchInput) {
+			searchInput.addEventListener("input", () => {
+				activeSearch = searchInput.value;
+				update();
+			});
+		}
+
+		tabs.forEach((tab) => {
+			tab.addEventListener("click", () => {
+				tabs.forEach((t) => t.classList.remove("is-active"));
+				tab.classList.add("is-active");
+				activeCategory = tab.dataset.category || "all";
+				update();
+			});
+		});
+
+		update();
+	})();
+</script>
+
 <style>
-	/* 搜索框焦点效果 */
-	#friend-search:focus {
-		box-shadow: 0 0 0 3px var(--primary) / 0.1;
+	.booknav-page {
+		max-width: 980px;
+		margin: 0 auto;
+		padding: 1.5rem 0.75rem 3rem;
 	}
 
-	/* 标签筛选按钮样式 */
-	.filter-container {
+	.booknav-header {
+		margin-bottom: 1.25rem;
+	}
+
+	.booknav-title-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.booknav-title-icon {
+		font-size: 1.8rem;
+		color: var(--primary);
+	}
+
+	.booknav-title {
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
+		margin: 0;
+	}
+
+	.booknav-subtitle {
+		margin: 0.4rem 0 0;
+		color: var(--text-muted, #888);
+		font-size: 0.95rem;
+	}
+
+	.booknav-search-wrap {
+		position: relative;
+		margin-bottom: 1rem;
+	}
+
+	.booknav-search-icon {
+		position: absolute;
+		left: 1rem;
+		top: 50%;
+		transform: translateY(-50%);
+		font-size: 1.15rem;
+		color: var(--text-muted, #aaa);
+		pointer-events: none;
+	}
+
+	.booknav-search {
+		width: 100%;
+		padding: 0.85rem 1rem 0.85rem 2.8rem;
+		font-size: 0.95rem;
+		border: 1px solid var(--border-color, #e5e5e5);
+		border-radius: 14px;
+		background: var(--bg-card, #fff);
+		color: var(--text-color, #333);
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	.booknav-search::placeholder {
+		color: var(--text-muted, #bbb);
+	}
+
+	.booknav-search:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	.booknav-category-tabs {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: 0.55rem;
+		margin-bottom: 1.4rem;
 	}
 
-	.filter-tag {
-		padding: 0.5rem 1rem;
-		border: 1px solid var(--line-divider);
-		border-radius: var(--radius-large);
-		background: var(--btn-regular-bg);
-		color: var(--btn-content);
-		font-size: 0.875rem;
-		font-weight: 500;
+	.booknav-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border: 1px solid var(--border-color, #e8e8e8);
+		background: var(--bg-card, #fff);
+		color: var(--text-color, #555);
+		padding: 0.45rem 0.9rem;
+		border-radius: 999px;
+		font-size: 0.88rem;
 		cursor: pointer;
-		transition: all 0.2s ease;
-		white-space: nowrap;
+		transition: all 0.18s ease;
 	}
 
-	.filter-tag:hover:not(.active) {
-		background: var(--btn-hover-bg);
+	.booknav-tab:hover {
 		border-color: var(--primary);
-		transform: translateY(-1px);
+		color: var(--primary);
 	}
 
-	.filter-tag.active {
+	.booknav-tab.is-active {
 		background: var(--primary);
-		color: white;
+		border-color: var(--primary);
+		color: #fff;
+	}
+
+	.booknav-tab-icon {
+		font-size: 1rem;
+	}
+
+	.booknav-tab-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.35em;
+		padding: 0.05rem 0.35rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		background: color-mix(in srgb, currentColor 14%, transparent);
+	}
+
+	.booknav-section {
+		margin-bottom: 1.6rem;
+	}
+
+	.booknav-section-title {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
+		margin: 0 0 0.9rem;
+	}
+
+	.booknav-section-icon {
+		font-size: 1.15rem;
+		color: var(--primary);
+	}
+
+	.booknav-section-desc {
+		font-size: 0.78rem;
+		font-weight: 400;
+		color: var(--text-muted, #999);
+		margin-left: 0.3rem;
+	}
+
+	.booknav-section-count {
+		margin-left: auto;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--text-muted, #999);
+		background: var(--bg, #f3f4f6);
+		border-radius: 999px;
+		padding: 0.1rem 0.5rem;
+	}
+
+	.booknav-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+		gap: 0.85rem;
+	}
+
+	.booknav-card {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.85rem 1rem;
+		border: 1px solid var(--border-color, #ededed);
+		border-radius: 14px;
+		background: var(--bg-card, #fff);
+		color: inherit;
+		text-decoration: none;
+		transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+	}
+
+	.booknav-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 		border-color: var(--primary);
 	}
 
-	.filter-tag.active:hover {
-		background: var(--primary) !important;
-		color: white !important;
-		border-color: var(--primary) !important;
-		transform: translateY(-1px);
+	.booknav-card-icon {
+		flex: 0 0 auto;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 12px;
+		background: color-mix(in srgb, var(--icon-color, var(--primary)) 12%, transparent);
+		color: var(--icon-color, var(--primary));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.35rem;
+	}
+
+	.booknav-card-fallback {
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+
+	.booknav-card-body {
+		min-width: 0;
+	}
+
+	.booknav-card-name {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--text-strong, var(--text-color, #222));
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.booknav-card-desc {
+		margin: 0.15rem 0 0;
+		font-size: 0.8rem;
+		color: var(--text-muted, #888);
+		line-height: 1.45;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.booknav-empty {
+		text-align: center;
+		padding: 3rem 1rem;
+		color: var(--text-muted, #999);
+	}
+
+	.booknav-empty-icon {
+		font-size: 3rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.booknav-empty p {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.is-hidden {
+		display: none !important;
+	}
+
+	@media (max-width: 640px) {
+		.booknav-grid {
+			grid-template-columns: 1fr;
+		}
+		.booknav-title {
+			font-size: 1.45rem;
+		}
 	}
 </style>

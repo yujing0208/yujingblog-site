@@ -38,6 +38,13 @@ export const ja: Translation = {
 	[Key.friendsCopyLink]: "リンク",
 	[Key.friendsCopySuccess]: "コピーしました",
 	[Key.friendsTags]: "タグ",
+
+	[Key.booknav]: "ブックマーク",
+	[Key.booknavSubtitle]: "分類して整理したお気に入りサイト",
+	[Key.booknavSearchPlaceholder]: "ブックマークを検索...",
+	[Key.booknavFilterAll]: "すべて",
+	[Key.booknavNoResults]: "一致するブックマークが見つかりません",
+
 	[Key.friendLinks]: "友達リンク",
 	[Key.friendLinksSubtitle]: "リンク交換歓迎",
 	[Key.friendLinksSearchPlaceholder]: "友達の名前または説明を検索...",

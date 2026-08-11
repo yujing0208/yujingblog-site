@@ -58,6 +58,14 @@ enum I18nKey {
 	friendsCopyLink = "friendsCopyLink",
 	friendsCopySuccess = "friendsCopySuccess",
 	friendsTags = "friendsTags",
+
+	// 书签导航页面
+	booknav = "booknav",
+	booknavSubtitle = "booknavSubtitle",
+	booknavSearchPlaceholder = "booknavSearchPlaceholder",
+	booknavFilterAll = "booknavFilterAll",
+	booknavNoResults = "booknavNoResults",
+
 	friendLinks = "friendLinks",
 	friendLinksSubtitle = "friendLinksSubtitle",
 	friendLinksSearchPlaceholder = "friendLinksSearchPlaceholder",

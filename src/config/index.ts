@@ -66,6 +66,7 @@ export { licenseConfig } from "./licenseConfig";
 export { musicPlayerConfig } from "./musicConfig";
 // ─── 导航栏 ─────────────────────────────────────────────────
 export { navBarConfig } from "./navBarConfig";
+export { booknavConfig } from "./booknavConfig";
 export { permalinkConfig } from "./permalinkConfig";
 export { pioConfig } from "./pioConfig";
 // ─── 个人资料 ───────────────────────────────────────────────

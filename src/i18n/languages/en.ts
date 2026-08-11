@@ -38,6 +38,13 @@ export const en: Translation = {
 	[Key.friendsCopyLink]: "Copy Link",
 	[Key.friendsCopySuccess]: "Copied",
 	[Key.friendsTags]: "Tags",
+
+	[Key.booknav]: "Bookmarks",
+	[Key.booknavSubtitle]: "Hand-picked websites, organized by category",
+	[Key.booknavSearchPlaceholder]: "Search bookmarks...",
+	[Key.booknavFilterAll]: "All",
+	[Key.booknavNoResults]: "No matching bookmarks found",
+
 	[Key.friendLinks]: "Friend Links",
 	[Key.friendLinksSubtitle]: "Welcome to exchange links",
 	[Key.friendLinksSearchPlaceholder]: "Search friend's name or description...",

@@ -38,6 +38,13 @@ export const zh_TW: Translation = {
 	[Key.friendsCopyLink]: "複製鏈接",
 	[Key.friendsCopySuccess]: "已複製",
 	[Key.friendsTags]: "標籤",
+
+	[Key.booknav]: "書籤導航",
+	[Key.booknavSubtitle]: "收藏一些好用的網站，按分類整理",
+	[Key.booknavSearchPlaceholder]: "搜尋書籤...",
+	[Key.booknavFilterAll]: "全部",
+	[Key.booknavNoResults]: "沒有找到匹配的書籤",
+
 	[Key.friendLinks]: "友鏈",
 	[Key.friendLinksSubtitle]: "歡迎交換友鏈",
 	[Key.friendLinksSearchPlaceholder]: "搜索友鏈名稱或描述...",
