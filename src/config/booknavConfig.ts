@@ -13,7 +13,7 @@ export const booknavConfig: BooknavConfig = {
 			id: "dev",
 			name: "开发",
 			description: "写代码时离不开的站点",
-			icon: "ph:code",
+			icon: "material-symbols:code",
 			items: [
 				{
 					name: "GitHub",
@@ -56,7 +56,7 @@ export const booknavConfig: BooknavConfig = {
 			id: "project",
 			name: "项目",
 			description: "好用的开源项目",
-			icon: "ph:folders",
+			icon: "material-symbols:folder",
 			items: [
 				{
 					name: "Firefly",
@@ -71,7 +71,7 @@ export const booknavConfig: BooknavConfig = {
 			id: "design",
 			name: "设计",
 			description: "配色、图标与灵感来源",
-			icon: "ph:paint-brush",
+			icon: "material-symbols:brush",
 			items: [
 				{
 					name: "Iconify",
@@ -93,7 +93,7 @@ export const booknavConfig: BooknavConfig = {
 			id: "tool",
 			name: "工具",
 			description: "顺手的在线小工具",
-			icon: "ph:wrench",
+			icon: "material-symbols:build",
 			items: [
 				{
 					name: "TinyPNG",
@@ -122,7 +122,7 @@ export const booknavConfig: BooknavConfig = {
 			id: "resource",
 			name: "资源",
 			description: "文档、教程与阅读",
-			icon: "ph:books",
+			icon: "material-symbols:menu-book",
 			items: [
 				{
 					name: "Firefly Docs",
@@ -135,7 +135,7 @@ export const booknavConfig: BooknavConfig = {
 					name: "夏夜流萤",
 					description: "飞萤之火自无梦的长夜亮起",
 					url: "https://firefly.cuteleaf.cn",
-					icon: "ph:fire",
+					icon: "material-symbols:local-fire-department",
 					color: "#F59E0B",
 				},
 			],
