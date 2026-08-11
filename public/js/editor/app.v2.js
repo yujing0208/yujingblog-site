@@ -19,7 +19,20 @@
 	}
 
 	function getPat() { try { return sessionStorage.getItem("yuj_editor_pat") || ""; } catch (e) { return ""; } }
+	function setPat(p) { try { sessionStorage.setItem("yuj_editor_pat", p); } catch (e) { } }
 	function getFrom() { try { return sessionStorage.getItem("yuj_editor_from") || "/"; } catch (e) { return "/"; } }
+
+	function consumeHashPat() {
+		var h = location.hash;
+		if (!h) return;
+		var m = h.match(/^#pat=([^&]+)/);
+		if (!m) return;
+		try {
+			setPat(decodeURIComponent(m[1]));
+			history.replaceState(null, "", location.pathname + location.search);
+		} catch (e) { }
+	}
+	consumeHashPat();
 
 	function goBack() {
 		window.location.href = getFrom();

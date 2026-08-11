@@ -152,16 +152,20 @@
 	function doEnter(edit) {
 		var url = "/admin/" + edit + "-edit";
 		var pat = getPat();
+		function openEditor(token) {
+			var hash = token ? "#pat=" + encodeURIComponent(token) : "";
+			window.open(url + hash, "_blank", "noopener");
+		}
 		if (!pat) {
 			showPatModal().then(function (p) {
 				if (!p) return;
 				setPat(p);
 				setFrom(location.href);
-				window.open(url, "_blank", "noopener");
+				openEditor(p);
 			});
 		} else {
 			setFrom(location.href);
-			window.open(url, "_blank", "noopener");
+			openEditor(pat);
 		}
 	}
 
