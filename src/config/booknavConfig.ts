@@ -6,6 +6,7 @@ import { websiteData } from "../data/website";
  * 数据来源：内容仓库 data/website.ts（经 sync-content 映射至 src/data/website），
  * 由 Pages CMS 后台 /admin/websites-edit 可视化编辑。
  * 此处仅定义「分类元数据」，书签条目由 websiteData 按 category 分组得到。
+ * 图标使用图片外链（websiteData.imgurl）。
  */
 
 interface CategoryMeta {
@@ -29,11 +30,10 @@ const categories: BooknavCategory[] = categoryMeta.map((meta) => ({
 	items: websiteData
 		.filter((item) => item.category === meta.id)
 		.map((item) => ({
-			name: item.name,
-			description: item.description,
-			url: item.url,
-			icon: item.icon,
-			color: item.color,
+			name: item.title,
+			description: item.desc,
+			url: item.siteurl,
+			icon: item.imgurl,
 		})),
 }));
 

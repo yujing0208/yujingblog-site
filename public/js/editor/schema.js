@@ -68,13 +68,12 @@
 			path: "data/website.ts",
 			varName: "websiteData",
 			bom: true,
-			itemLabel: "name",
+			itemLabel: "title",
 			fields: [
-				{ key: "name", label: "名称", type: "string", required: true },
-				{ key: "description", label: "描述", type: "text" },
-				{ key: "url", label: "网址", type: "string", required: true },
-				{ key: "icon", label: "图标", type: "string", placeholder: "如 simple-icons:github" },
-				{ key: "color", label: "主题色", type: "string", placeholder: "如 #181717" },
+				{ key: "title", label: "名称", type: "string", required: true },
+				{ key: "imgurl", label: "图标", type: "image", placeholder: "图片外链 URL" },
+				{ key: "desc", label: "描述", type: "text" },
+				{ key: "siteurl", label: "网址", type: "string", required: true },
 				{
 					key: "category",
 					label: "分类",
@@ -89,6 +88,7 @@
 						{ value: "resource", label: "资源" },
 					],
 				},
+				{ key: "tags", label: "标签", type: "tags", placeholder: "逗号分隔" },
 			],
 		},
 

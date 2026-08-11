@@ -132,9 +132,11 @@
 		sel.className = "ef-input ef-select";
 		var opts = field.options || [];
 		opts.forEach(function (o) {
+			var val = (typeof o === "object" && o !== null) ? o.value : o;
+			var txt = (typeof o === "object" && o !== null) ? (o.label || o.value) : (o === "" ? "（无）" : o);
 			var opt = document.createElement("option");
-			opt.value = o;
-			opt.textContent = o === "" ? "（无）" : o;
+			opt.value = val;
+			opt.textContent = txt;
 			sel.appendChild(opt);
 		});
 		sel.value = target[field.key] !== undefined && target[field.key] !== null ? String(target[field.key]) : "";
