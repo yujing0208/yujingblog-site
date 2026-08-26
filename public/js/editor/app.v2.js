@@ -160,11 +160,13 @@
 			sessionStorage.removeItem("yuj_editor_pat");
 			goBack();
 		});
-		fetch("https://api.github.com/user", {
-			headers: { "Authorization": "Bearer " + getPat(), "Accept": "application/vnd.github+json", "User-Agent": "yujing-blog-editor" },
-		}).then(function (r) { return r.json(); }).then(function (u) {
-			if (u && u.login) $("#ed-user").textContent = "👤 " + u.login;
-		}).catch(function () { });
+		try {
+			fetch("https://api.github.com/user", {
+				headers: { "Authorization": "Bearer " + getPat(), "Accept": "application/vnd.github+json", "User-Agent": "yujing-blog-editor" },
+			}).then(function (r) { return r.json(); }).then(function (u) {
+				if (u && u.login) $("#ed-user").textContent = "👤 " + u.login;
+			}).catch(function () { });
+		} catch (e) { /* 编辑器不依赖用户信息，获取失败不影响使用 */ }
 	}
 
 	function renderList() {
@@ -351,6 +353,7 @@
 			var bl = el("label", "ef-label", s.format === "md-posts" ? "正文（Markdown）" : "正文（Markdown）");
 			var ta = document.createElement("textarea");
 			ta.className = "ef-input ef-textarea ef-body";
+			ta.id = "ef-body";
 			ta.rows = 16;
 			ta.value = editing.body || "";
 			ta.addEventListener("change", function () { editing.body = ta.value; });
@@ -476,23 +479,54 @@
 		var h = el("div", "ed-panel-head");
 		h.appendChild(el("h2", "ed-panel-title", "相册：" + esc(cur.dir.name)));
 		panel.appendChild(h);
-		// info.json 加载
 		window.EditorGit.getFile(s.owner, s.repo, s.path + "/" + cur.dir.name + "/info.json", s.branch).then(function (f) {
 			var info = {};
 			if (f && f.content) { try { info = JSON.parse(f.content); } catch (e) { } cur.sha = f.sha; }
 			cur.info = info;
+			// 基础字段（title/description/date/location/tags/password 等）
 			panel.appendChild(window.EditorForm.renderFields(s.fields, info, function () { }));
+			// 模式选择：本地 / 外链
+			var modeField = el("div", "ef-field");
+			modeField.appendChild(el("label", "ef-label", "图片模式"));
+			var modeWrap = el("div", "ef-select-wrap");
+			var modeSel = el("select", "ef-input ef-select");
+			modeSel.id = "al-mode";
+			var optLocal = el("option", null, "本地（上传图片到仓库）"); optLocal.value = "local";
+			var optExt = el("option", null, "外链（填写图片 URL，不占仓库空间）"); optExt.value = "external";
+			modeSel.appendChild(optLocal); modeSel.appendChild(optExt);
+			modeSel.value = info.mode === "external" ? "external" : "local";
+			modeWrap.appendChild(modeSel);
+			modeField.appendChild(modeWrap);
+			panel.appendChild(modeField);
+			// 外链模式 UI
+			var extBox = el("div", "al-external");
+			extBox.id = "al-external";
+			var coverField = el("div", "ef-field");
+			coverField.appendChild(el("label", "ef-label", "外链封面 URL"));
+			var coverInput = el("input", "ef-input");
+			coverInput.id = "al-cover-url";
+			coverInput.placeholder = "https://... 封面图片直链";
+			coverInput.value = info.mode === "external" ? (info.cover || "") : "";
+			coverField.appendChild(coverInput);
+			extBox.appendChild(coverField);
+			var photosField = el("div", "ef-field");
+			photosField.appendChild(el("label", "ef-label", "外链图片列表"));
+			var photosBox = el("div", "al-photos");
+			photosBox.id = "al-photos";
+			photosField.appendChild(photosBox);
+			var addPhoto = el("button", "ef-btn ef-btn-sm", "➕ 添加外链图片");
+			addPhoto.addEventListener("click", function () { addExternalPhotoRow(photosBox, {}); });
+			photosField.appendChild(addPhoto);
+			extBox.appendChild(photosField);
+			panel.appendChild(extBox);
+			// 本地模式 UI
+			var localBox = el("div", "al-local");
+			localBox.id = "al-local";
 			var acts = el("div", "ed-actions");
-			var save = el("button", "ef-btn ef-btn-primary", "💾 暂存配置");
-			save.addEventListener("click", function () {
-				var content = JSON.stringify(info, null, 2);
-				var path = s.path + "/" + cur.dir.name + "/info.json";
-				stagePut(path, content, "chore: update album " + cur.dir.name);
-			});
 			var upCover = el("button", "ef-btn", "🖼 上传封面");
 			upCover.addEventListener("click", function () {
 				var target = s.path + "/" + cur.dir.name + "/cover.webp";
-				window.EditorUpload.pickForPath(target, function () { alert("封面已上传（cover.webp 优先于 cover.jpg）"); });
+				window.EditorUpload.pickForPath(target, function () { alert("封面已上传（cover.webp 优先于 cover.jpg）"); refreshImages(); });
 			});
 			var addImg = el("button", "ef-btn", "➕ 上传图片");
 			addImg.addEventListener("click", function () {
@@ -500,25 +534,81 @@
 				if (!target.endsWith("/")) return;
 				window.EditorUpload.pickForPath(target, function () { alert("已上传"); refreshImages(); });
 			});
+			acts.appendChild(upCover); acts.appendChild(addImg);
+			localBox.appendChild(acts);
+			var imgBox = el("div", "ed-images");
+			imgBox.id = "al-images-local";
+			localBox.appendChild(imgBox);
 			var delAll = el("button", "ef-btn ef-btn-danger", "🗑 删除整个相册");
 			delAll.addEventListener("click", function () { deleteAlbum(cur); });
-			acts.appendChild(save);
-			acts.appendChild(upCover);
-			acts.appendChild(addImg);
-			acts.appendChild(delAll);
-			panel.appendChild(acts);
+			localBox.appendChild(delAll);
+			panel.appendChild(localBox);
+			// 模式切换
+			function toggleMode() {
+				var ext = modeSel.value === "external";
+				extBox.style.display = ext ? "" : "none";
+				localBox.style.display = ext ? "none" : "";
+			}
+			modeSel.addEventListener("change", toggleMode);
+			toggleMode();
+			// 初始外链图片行
+			var initialPhotos = info.mode === "external" ? (info.photos || []) : [];
+			initialPhotos.forEach(function (p) { addExternalPhotoRow(photosBox, p); });
+			if (initialPhotos.length === 0) addExternalPhotoRow(photosBox, {});
+			// 暂存按钮
+			var saveActs = el("div", "ed-actions");
+			var save = el("button", "ef-btn ef-btn-primary", "💾 暂存配置");
+			save.addEventListener("click", function () {
+				var finalInfo = JSON.parse(JSON.stringify(info));
+				var mode = modeSel.value;
+				if (mode === "external") {
+					finalInfo.mode = "external";
+					finalInfo.cover = coverInput.value.trim();
+					var photos = [];
+					photosBox.querySelectorAll(".al-photo-row").forEach(function (row) {
+						var src = row.querySelector(".al-photo-src").value.trim();
+						var alt = row.querySelector(".al-photo-alt").value.trim();
+						if (src) photos.push({ src: src, alt: alt || "" });
+					});
+					finalInfo.photos = photos;
+				} else {
+					delete finalInfo.mode;
+					delete finalInfo.photos;
+				}
+				var content = JSON.stringify(finalInfo, null, 2);
+				var path = s.path + "/" + cur.dir.name + "/info.json";
+				stagePut(path, content, "chore: update album " + cur.dir.name);
+			});
+			saveActs.appendChild(save);
+			panel.appendChild(saveActs);
 			refreshImages();
 		});
+	}
+
+	function addExternalPhotoRow(box, p) {
+		var row = el("div", "al-photo-row ef-field");
+		var srcI = el("input", "ef-input al-photo-src");
+		srcI.placeholder = "图片直链 URL";
+		srcI.value = p.src || "";
+		var altI = el("input", "ef-input al-photo-alt");
+		altI.placeholder = "图片描述（可选）";
+		altI.value = p.alt || "";
+		var del = el("button", "ef-btn ef-btn-danger ef-btn-sm", "删除");
+		del.addEventListener("click", function () { row.parentNode.removeChild(row); });
+		row.appendChild(srcI); row.appendChild(altI); row.appendChild(del);
+		box.appendChild(row);
 	}
 
 	function refreshImages() {
 		var s = state.schema;
 		var cur = state.current;
-		var imgBox = $(".ed-images");
+		var imgBox = $("#al-images-local");
 		if (!imgBox) {
 			imgBox = el("div", "ed-images");
+			imgBox.id = "al-images-local";
 			imgBox.appendChild(el("h3", "ed-panel-title", "相册图片"));
-			$(".ed-panel").appendChild(imgBox);
+			var localBox = $("#al-local");
+			if (localBox) localBox.appendChild(imgBox); else $(".ed-panel").appendChild(imgBox);
 		}
 		imgBox.innerHTML = "";
 		window.EditorGit.listDir(s.owner, s.repo, s.path + "/" + cur.dir.name, s.branch).then(function (files) {

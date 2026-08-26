@@ -68,6 +68,12 @@ html, body { margin: 0; padding: 0; background: #0f1115; color: #e6e6e6; font-fa
 
 /* 相册图片 */
 .ed-images { margin-top: 16px; }
+.al-external, .al-local { margin-top: 4px; }
+.al-photos { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.al-photo-row { flex-direction: row; align-items: center; gap: 8px; }
+.al-photo-row .al-photo-src { flex: 1; }
+.al-photo-row .al-photo-alt { width: 30%; }
+.al-photo-row .ef-btn { flex: 0 0 auto; }
 .ed-img-item { display: inline-block; width: 150px; margin: 0 10px 10px 0; vertical-align: top; text-align: center; }
 .ed-img-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; background: #0f1115; }
 .ed-img-name { font-size: 11px; color: #8b93a3; margin: 4px 0; word-break: break-all; }
