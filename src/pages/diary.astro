@@ -709,6 +709,10 @@ const normalMoments = moments.filter((m) => !(m as any).pinned);
     font-size: 1.5rem; font-weight: 700; color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
+  /* 隐藏的「更多」gallery 链接：仅用于挂载第10张及之后的图片，不参与网格布局 */
+  #moments-feed .image-more-link {
+    display: none !important;
+  }
 
   /* ============================================
    * 图片显示模式（切换：改 MomentCard.astro 顶部 IMG_MODE）

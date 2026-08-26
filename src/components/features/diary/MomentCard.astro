@@ -166,23 +166,38 @@ const videoList = (moment as any).videos ?? [];
         class={`card-images moment-images image-cols-${gridCols} ${IMG_MODE}`}
         style={`--img-cols:${gridCols}`}
       >
-        {imageList.slice(0, 9).map((img, i) => (
-          <div class={`image-item${i === 8 && imageCount > 9 ? " has-more" : ""}`}>
-            <a
-              href={img}
-              data-fancybox={`diary-${moment.id}`}
-              class="image-link"
-              aria-label="查看大图"
-            >
-              <img src={img} class="image-img" loading="lazy" decoding="async" alt="" />
-              {i === 8 && imageCount > 9 && (
-                <div class="more-overlay">
-                  <span class="more-text">+{imageCount - 9}</span>
-                </div>
-              )}
-            </a>
-          </div>
-        ))}
+        {imageList.slice(0, 9).map((img, i) => {
+          // 超过 9 张时，第 9 格作为「更多」入口：点击打开第 10 张及之后的所有图片预览
+          const isMoreEntry = i === 8 && imageCount > 9;
+          const galleryName = isMoreEntry ? `diary-rest-${moment.id}` : `diary-${moment.id}`;
+          const linkHref = isMoreEntry ? imageList[9] : img;
+          return (
+            <div class={`image-item${isMoreEntry ? " has-more" : ""}`}>
+              <a
+                href={linkHref}
+                data-fancybox={galleryName}
+                class="image-link"
+                aria-label="查看大图"
+              >
+                <img src={img} class="image-img" loading="lazy" decoding="async" alt="" />
+                {isMoreEntry && (
+                  <div class="more-overlay">
+                    <span class="more-text">+{imageCount - 9}</span>
+                  </div>
+                )}
+              </a>
+              {/* 把第 10 张及之后的图片作为隐藏链接挂到「更多」gallery，保证点击第 9 格可预览全部剩余图片 */}
+              {isMoreEntry && imageList.slice(10).map((restImg) => (
+                <a
+                  href={restImg}
+                  data-fancybox={galleryName}
+                  class="image-more-link"
+                  aria-label="查看大图"
+                ></a>
+              ))}
+            </div>
+          );
+        })}
       </div>
     )
   }
