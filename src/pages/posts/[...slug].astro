@@ -257,23 +257,6 @@ const jsonLd = {
 				</div>
 			</div>
 
-			<!-- share card (置顶) -->
-			{
-				shareConfig.enable && (
-					<ShareCard
-						class:list={[{ "encrypted-hidden": isEncrypted }]}
-						title={entry.data.title}
-						author={entry.data.author}
-						description={publicDescription}
-						pubDate={formatDateToYYYYMMDD(entry.data.published)}
-						coverImage={posterCoverUrl}
-						url={Astro.url.toString()}
-						siteTitle={siteConfig.title}
-						avatar={posterAvatarUrl}
-					/>
-				)
-			}
-
 			<!-- title -->
 			<div class="relative onload-animation">
 				<div
@@ -348,6 +331,22 @@ const jsonLd = {
 					<Markdown class="mb-6 markdown-content onload-animation">
 						<Content />
 					</Markdown>
+				)
+			}
+
+			{
+				shareConfig.enable && entry.data.showShare !== false && (
+					<ShareCard
+						class:list={[{ "encrypted-hidden": isEncrypted }]}
+						title={entry.data.title}
+						author={entry.data.author}
+						description={publicDescription}
+						pubDate={formatDateToYYYYMMDD(entry.data.published)}
+						coverImage={posterCoverUrl}
+						url={Astro.url.toString()}
+						siteTitle={siteConfig.title}
+						avatar={posterAvatarUrl}
+					/>
 				)
 			}
 

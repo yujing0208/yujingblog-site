@@ -64,6 +64,8 @@ const postsCollection = defineCollection({
 			sourceLink: toStrOpt,
 			licenseName: toStrOpt,
 			licenseUrl: toStrOpt,
+			/* 是否显示文章分享卡片（默认显示，可在编辑页关闭） */
+			showShare: toBool.optional().default(true),
 
 			/* Page encryption fields */
 			encrypted: toBool,

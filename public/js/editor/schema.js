@@ -265,6 +265,7 @@
 				{ key: "sourceLink", label: "来源链接", type: "string", optional: true },
 				{ key: "licenseName", label: "许可名称", type: "string", optional: true },
 				{ key: "licenseUrl", label: "许可链接", type: "string", optional: true },
+				{ key: "showShare", label: "显示分享卡片", type: "boolean", default: true },
 				{ key: "encrypted", label: "加密", type: "boolean" },
 				{ key: "password", label: "密码", type: "string", optional: true },
 				{ key: "passwordHint", label: "密码提示", type: "string", optional: true },
