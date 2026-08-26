@@ -138,32 +138,47 @@ for (const mapping of contentMappings) {
 }
 
 console.log("\n内容同步完成\n");
-try {
-	// 1. 获取 content 分支名
-	const branch = execSync("git rev-parse --abbrev-ref HEAD", {
-		cwd: CONTENT_DIR,
-	})
-		.toString()
-		.trim();
+// CI 环境下不同步回写站点仓库：同步进来的内容已被 .gitignore 忽略，
+// 且 CI runner 通常没有 git 身份，git commit 会直接失败并中断整个构建。
+// 本地开发仍保留 auto-commit 习惯（便于记录本次同步了哪个内容 commit）。
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+if (isCI) {
+	console.log("检测到 CI 环境，跳过站点仓库 auto-commit（内容已同步，无需回写）");
+} else {
+	try {
+		// 兜底：若本地未配置 git 身份，先设置，避免 commit 失败
+		try {
+			execSync("git config user.email", { cwd: rootDir, stdio: "ignore" });
+		} catch {
+			execSync('git config user.email "content-sync@local"', { cwd: rootDir });
+			execSync('git config user.name "content-sync"', { cwd: rootDir });
+		}
 
-	// 2. 获取 content commit hash（短）
-	const hash = execSync("git rev-parse --short HEAD", {
-		cwd: CONTENT_DIR,
-	})
-		.toString()
-		.trim();
+		// 1. 获取 content 分支名
+		const branch = execSync("git rev-parse --abbrev-ref HEAD", {
+			cwd: CONTENT_DIR,
+		})
+			.toString()
+			.trim();
 
-	// 3. 提交主仓库
-	execSync("git add .", { cwd: rootDir });
+		// 2. 获取 content commit hash（短）
+		const hash = execSync("git rev-parse --short HEAD", {
+			cwd: CONTENT_DIR,
+		})
+			.toString()
+			.trim();
 
-	execSync(
-		`git commit -m "chore(content): sync ${branch}@${hash}"`,
-		{ cwd: rootDir },
-	);
+		// 3. 提交主仓库
+		execSync("git add .", { cwd: rootDir });
 
-	console.log(`已提交内容更新（${branch}@${hash}）`);
-} catch {
-	console.log("没有变化，跳过提交");
+		execSync(`git commit -m "chore(content): sync ${branch}@${hash}"`, {
+			cwd: rootDir,
+		});
+
+		console.log(`已提交内容更新（${branch}@${hash}）`);
+	} catch {
+		console.log("没有变化，跳过提交");
+	}
 }
 
 // 递归复制函数
