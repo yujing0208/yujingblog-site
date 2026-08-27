@@ -34,6 +34,7 @@ import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-colons.mjs";
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
+import { remarkWikiLink } from "./src/plugins/remark-wiki-link.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -206,6 +207,7 @@ export default defineConfig({
 				remarkSectionize,
 				parseDirectiveNode,
 				remarkMermaid,
+			remarkWikiLink,
 			],
 			rehypePlugins: [
 				rehypeKatex,
