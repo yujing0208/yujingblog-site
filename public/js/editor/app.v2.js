@@ -418,7 +418,7 @@
 		// 正文区（文章/关于）：Markdown 编辑 + 实时预览
 		if (s.format === "md-posts" || s.format === "md-file") {
 			var bodyWrap = el("div", "ef-field");
-			var bl = el("label", "ef-label", "正文（Markdown，右侧实时预览）");
+			var bl = el("label", "ef-label", "正文（Markdown）— 右侧实时预览渲染效果");
 			bodyWrap.appendChild(bl);
 			// 工具栏：上传图片到图床
 			var toolbar = el("div", "ef-toolbar");
@@ -432,17 +432,25 @@
 			});
 			toolbar.appendChild(imgBtn);
 			bodyWrap.appendChild(toolbar);
+			// 双栏标题条：编辑 / 预览
+			var colHead = el("div", "ef-body-head");
+			colHead.appendChild(el("span", "ef-col-tag ef-col-edit", "📝 编辑"));
+			colHead.appendChild(el("span", "ef-col-tag ef-col-prev", "👁 实时预览"));
+			bodyWrap.appendChild(colHead);
 			var bodyCols = el("div", "ef-body-cols");
 			var ta = document.createElement("textarea");
 			ta.className = "ef-input ef-textarea ef-body";
 			ta.id = "ef-body";
 			ta.rows = 18;
+			ta.placeholder = "# 在此输入 Markdown\n\n正文会实时渲染到右侧预览。";
 			ta.value = editing.body || "";
 			var preview = el("div", "ef-body-preview markdown-body");
 			preview.id = "ef-body-preview";
 			function renderPreview() {
 				editing.body = ta.value;
-				if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
+				if (!window.EditorPreview) return;
+				var html = window.EditorPreview.render(ta.value);
+				preview.innerHTML = html || '<div class="ef-preview-empty">在左侧输入 Markdown，这里实时预览渲染效果。</div>';
 			}
 			ta.addEventListener("input", renderPreview);
 			ta.addEventListener("change", function () { editing.body = ta.value; });
@@ -451,7 +459,7 @@
 			bodyWrap.appendChild(bodyCols);
 			panel.appendChild(bodyWrap);
 			// 初次渲染预览
-			if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
+			renderPreview();
 		}
 		// 公告 content 特殊编辑
 		if (s.format === "ts-object" && s.contentField) {
