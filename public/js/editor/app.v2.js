@@ -43,11 +43,13 @@
 	function stagePut(path, content, message) {
 		state.staged[path] = { path: path, content: content, message: message, del: false };
 		updatePushBtn();
+		if (window.EditorPages) window.EditorPages();
 		toast("已暂存：" + path.split("/").pop() + "（待推送）");
 	}
 	function stageDelete(path, message) {
 		state.staged[path] = { path: path, content: null, message: message, del: true };
 		updatePushBtn();
+		if (window.EditorPages) window.EditorPages();
 		toast("已暂存删除：" + path.split("/").pop() + "（待推送）");
 	}
 	function updatePushBtn() {
@@ -75,11 +77,21 @@
 			return e.del ? { path: p, delete: true } : { path: p, content: e.content };
 		});
 		var msg = "chore(editor): 批量更新 " + paths.length + " 项";
+		// 记录本次涉及的所有 repo/branch，推送成功后局部刷新对应数据（不整页 reload）
+		var touched = {};
+		paths.forEach(function (p) {
+			var k = s.owner + "/" + s.repo + "@" + s.branch;
+			touched[k] = true;
+		});
 		window.EditorGit.commitTree(s.owner, s.repo, s.branch, changes, msg)
 			.then(function (r) {
 				if (!r || !r.commitSha) throw new Error("提交返回为空，可能未生效");
-				alert("已统一推送 ✅（" + paths.length + " 项，1 次提交）部署约 1-3 分钟生效");
-				location.reload();
+				toast("✅ 推送成功（" + paths.length + " 项，1 次提交）部署中…", 2600);
+				// 仅清空本次已推送的暂存项，其余页面暂存保留
+				paths.forEach(function (p) { delete state.staged[p]; });
+				renderPages();
+				// 局部刷新当前页面数据，避免整页 reload 的等待
+				loadData().then(function () { renderList(); renderForm(); });
 			})
 			.catch(function (e) { alert("推送失败：" + e.message); });
 	}
@@ -169,6 +181,47 @@
 		} catch (e) { /* 编辑器不依赖用户信息，获取失败不影响使用 */ }
 	}
 
+	// ---------- 页面切换侧栏（SPA 内切换，保留跨页 staged） ----------
+	function renderPages() {
+		var root = $("#ed-pages");
+		if (!root) return;
+		root.innerHTML = "";
+		var head = el("div", "ed-pages-head", "编辑页面");
+		root.appendChild(head);
+		var keys = Object.keys(window.EditorSchemas || {});
+		keys.forEach(function (k) {
+			var s = window.EditorSchemas[k];
+			var item = el("button", "ed-page-item" + (k === state.schema.key ? " active" : ""));
+			item.textContent = s.label || k;
+			// 统计该页面在 staged 中的待推送项
+			var pending = 0;
+			Object.keys(state.staged).forEach(function (p) {
+				if (p.indexOf(s.path) === 0 || (s.format === "album" && p.indexOf("images/" + s.path.replace(/^.*\//, "")) >= 0)) pending++;
+			});
+			if (pending > 0) {
+				var badge = el("span", "ed-page-badge", String(pending));
+				item.appendChild(badge);
+			}
+			item.addEventListener("click", function () { switchPage(k); });
+			root.appendChild(item);
+		});
+		var tip = el("div", "ed-pages-tip", "切换页面编辑，所有改动在「推送」时合并为一次提交");
+		root.appendChild(tip);
+	}
+
+	// 切换页面：重新加载目标页面数据，但保留跨页 staged（已暂存改动不丢）
+	function switchPage(key) {
+		var s = window.EditorSchemas[key];
+		if (!s) return;
+		state.schema = s;
+		state.items = [];
+		state.current = null;
+		state.search = "";
+		state.unsaved = false;
+		renderPages();
+		loadData().then(function () { renderList(); renderForm(); });
+	}
+
 	function renderList() {
 		var s = state.schema;
 		var list = $(".ed-list");
@@ -178,6 +231,9 @@
 			addBtn.addEventListener("click", function () { newAlbum(); });
 		} else if (s.format === "md-posts") {
 			addBtn.addEventListener("click", function () { newPost(); });
+			var uploadBtn = el("button", "ef-btn ef-btn-block", "⬆ 上传 .md 文档");
+			uploadBtn.addEventListener("click", function () { uploadMdFile(); });
+			list.appendChild(uploadBtn);
 		} else if (s.format === "ts-map") {
 			addBtn.textContent = "+ 新增分类";
 			addBtn.addEventListener("click", function () {
@@ -347,19 +403,31 @@
 			fields.appendChild(window.EditorForm.renderFields(s.fields, editing, function () { }));
 		}
 		panel.appendChild(fields);
-		// 正文区（文章/关于）
+		// 正文区（文章/关于）：Markdown 编辑 + 实时预览
 		if (s.format === "md-posts" || s.format === "md-file") {
 			var bodyWrap = el("div", "ef-field");
-			var bl = el("label", "ef-label", s.format === "md-posts" ? "正文（Markdown）" : "正文（Markdown）");
+			var bl = el("label", "ef-label", "正文（Markdown，右侧实时预览）");
+			bodyWrap.appendChild(bl);
+			var bodyCols = el("div", "ef-body-cols");
 			var ta = document.createElement("textarea");
 			ta.className = "ef-input ef-textarea ef-body";
 			ta.id = "ef-body";
-			ta.rows = 16;
+			ta.rows = 18;
 			ta.value = editing.body || "";
+			var preview = el("div", "ef-body-preview markdown-body");
+			preview.id = "ef-body-preview";
+			function renderPreview() {
+				editing.body = ta.value;
+				if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
+			}
+			ta.addEventListener("input", renderPreview);
 			ta.addEventListener("change", function () { editing.body = ta.value; });
-			bodyWrap.appendChild(bl);
-			bodyWrap.appendChild(ta);
+			bodyCols.appendChild(ta);
+			bodyCols.appendChild(preview);
+			bodyWrap.appendChild(bodyCols);
 			panel.appendChild(bodyWrap);
+			// 初次渲染预览
+			if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
 		}
 		// 公告 content 特殊编辑
 		if (s.format === "ts-object" && s.contentField) {
@@ -659,6 +727,60 @@
 		renderList();
 	}
 
+	// 上传 .md 文档：读取本地文件 → 解析 frontmatter/body → 新建文章并进入编辑器
+	function uploadMdFile() {
+		var s = state.schema;
+		if (!s || s.format !== "md-posts") return;
+		var input = document.createElement("input");
+		input.type = "file";
+		input.accept = ".md,.markdown,text/markdown,text/plain";
+		input.addEventListener("change", function () {
+			var file = input.files && input.files[0];
+			if (!file) return;
+			var reader = new FileReader();
+			reader.onload = function () {
+				var raw = String(reader.result || "");
+				var parsed = window.EditorMd.parseFrontmatter(raw);
+				var data = parsed.data || {};
+				var body = parsed.body || "";
+				// 文件名：优先用标题 slug，否则用上传文件名
+				var title = (typeof data.title === "string") ? data.title : file.name.replace(/\.(md|markdown)$/i, "");
+				var slug = window.EditorMd.slugify(title) || file.name.replace(/\.(md|markdown)$/i, "");
+				var today = new Date().toISOString().slice(0, 10);
+				var filename = today + "-" + slug + ".md";
+				// 重建 frontmatter（仅保留文章 schema 关注的字段，缺省补齐）
+				var fm = {
+					title: title,
+					published: data.published || today,
+					updated: data.updated || today,
+					draft: (typeof data.draft === "boolean") ? data.draft : true,
+					tags: Array.isArray(data.tags) ? data.tags : [],
+					category: typeof data.category === "string" ? data.category : "",
+					comment: (typeof data.comment === "boolean") ? data.comment : true
+				};
+				var fmStr = "---\n" + Object.keys(fm).map(function (k) {
+					var v = fm[k];
+					if (Array.isArray(v)) return k + ": [" + v.map(function (t) { return '"' + String(t).replace(/"/g, '\\"') + '"'; }).join(", ") + "]";
+					if (typeof v === "boolean") return k + ": " + v;
+					return k + ': "' + String(v).replace(/"/g, '\\"') + '"';
+				}).join("\n") + "\n---\n";
+				var content = fmStr + (body ? body.replace(/^\n+/, "\n") : "\n");
+				var path = s.path + "/" + filename;
+				var existing = state.items.find(function (it) { return it.name === filename; });
+				if (existing) { alert("已存在同名文件：" + filename); }
+				else {
+					stagePut(path, content, "chore: upload post " + filename);
+					state.items.push({ name: filename, path: path, type: "file" });
+				}
+				renderList();
+				// 直接打开刚上传的文章进入编辑
+				openItem({ name: filename, path: path, type: "file" });
+			};
+			reader.readAsText(file);
+		});
+		input.click();
+	}
+
 	// ---------- 新增/保存/删除（列表型） ----------
 
 	function addItem() {
@@ -793,6 +915,7 @@ if (s.format === "ts-array") state.items.push(it);
 			"<header class='ed-header'></header>" +
 			"<div class='ed-body'><div class='ed-list'></div><div class='ed-panel'><div class='ed-loading'>加载中…</div></div></div>";
 		renderHeader();
+		renderPages();
 		loadData().then(function () {
 			renderList();
 			if (state.items.length > 0) selectItem(0);
@@ -803,6 +926,7 @@ if (s.format === "ts-array") state.items.push(it);
 		}).catch(function (e) {
 			$(".ed-panel").innerHTML = "<div class='ed-error'>" + esc(e.message) + "</div>";
 		});
+		window.EditorPages = renderPages;
 	}
 
 	if (document.readyState === "loading") {

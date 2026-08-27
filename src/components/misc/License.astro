@@ -22,6 +22,10 @@ const { title, pubDate, author, sourceLink, licenseName, licenseUrl } =
 const className = Astro.props.class;
 const profileConf = profileConfig;
 const licenseConf = licenseConfig;
+
+// 版权信息缺省值：作者默认「余京」，许可协议默认「Unlicensed」
+const DEFAULT_AUTHOR = "余京";
+const DEFAULT_LICENSE_NAME = "Unlicensed";
 const postUrl = sourceLink || decodeURIComponent(Astro.url.toString());
 ---
 
@@ -42,7 +46,7 @@ const postUrl = sourceLink || decodeURIComponent(Astro.url.toString());
 			<div
 				class="transition text-black/75 dark:text-white/75 line-clamp-2"
 			>
-				{author || profileConf.name}
+				{author || DEFAULT_AUTHOR}
 			</div>
 		</div>
 		<div>
@@ -60,10 +64,10 @@ const postUrl = sourceLink || decodeURIComponent(Astro.url.toString());
 				{i18n(I18nKey.license)}
 			</div>
 			<a
-				href={licenseName ? licenseUrl || undefined : licenseConf.url}
+				href={licenseName ? licenseUrl || undefined : licenseConf.url || undefined}
 				target="_blank"
 				class="link text-[var(--primary)] line-clamp-2"
-				>{licenseName || licenseConf.name}</a
+				>{licenseName || DEFAULT_LICENSE_NAME}</a
 			>
 		</div>
 	</div>

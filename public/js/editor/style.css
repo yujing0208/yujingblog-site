@@ -96,3 +96,68 @@ html, body { margin: 0; padding: 0; background: #0f1115; color: #e6e6e6; font-fa
 .ed-diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 800px) { .ed-diff-cols { grid-template-columns: 1fr; } }
 .ed-diff-pre { background: #0f1115; border: 1px solid #2c323d; border-radius: 8px; padding: 12px; font-size: 11px; line-height: 1.5; max-height: 60vh; overflow: auto; white-space: pre-wrap; word-break: break-all; margin: 0; color: #c5cdd9; }
+
+/* 上传 .md 文档按钮（列表内整行按钮） */
+.ef-btn-block { display: block; width: 100%; margin: 10px 0 4px; text-align: center; }
+
+/* 正文：编辑 + 实时预览双栏 */
+.ef-body-cols { display: flex; gap: 14px; align-items: stretch; }
+.ef-body-cols .ef-body { flex: 1 1 50%; min-height: 440px; width: 100%; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 13px; }
+.ef-body-preview {
+	flex: 1 1 50%; min-height: 440px; overflow: auto;
+	padding: 14px 18px; border: 1px solid #2c323d; border-radius: 8px;
+	background: #0f1115; color: #c5cdd9; line-height: 1.75; font-size: 14px;
+}
+.ef-body-preview h1, .ef-body-preview h2, .ef-body-preview h3,
+.ef-body-preview h4, .ef-body-preview h5, .ef-body-preview h6 { margin: .6em 0 .4em; line-height: 1.3; color: #e6e6e6; }
+.ef-body-preview h1 { font-size: 1.6em; border-bottom: 1px solid #2c323d; padding-bottom: .25em; }
+.ef-body-preview h2 { font-size: 1.35em; border-bottom: 1px solid #2c323d; padding-bottom: .25em; }
+.ef-body-preview p { margin: .55em 0; }
+.ef-body-preview ul, .ef-body-preview ol { margin: .55em 0; padding-left: 1.6em; }
+.ef-body-preview li { margin: .2em 0; }
+.ef-body-preview blockquote {
+	margin: .7em 0; padding: .4em 1em; border-left: 4px solid #4c6ef5;
+	background: rgba(76, 110, 245, .08); color: #aab2c0;
+}
+.ef-body-preview code { background: rgba(255,255,255,.08); padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+.ef-body-preview pre { background: #0b0d12; color: #e2e8f0; padding: 12px 14px; border-radius: 8px; overflow: auto; }
+.ef-body-preview pre code { background: none; padding: 0; }
+.ef-body-preview a { color: #4c6ef5; text-decoration: underline; }
+.ef-body-preview img { max-width: 100%; border-radius: 6px; margin: .4em 0; }
+.ef-body-preview hr { border: none; border-top: 1px solid #2c323d; margin: 1em 0; }
+.ef-body-preview table { border-collapse: collapse; margin: .6em 0; }
+.ef-body-preview th, .ef-body-preview td { border: 1px solid #2c323d; padding: 6px 10px; }
+@media (max-width: 860px) {
+	.ef-body-cols { flex-direction: column; }
+	.ef-body-cols .ef-body, .ef-body-preview { min-height: 280px; }
+}
+
+/* 页面切换侧栏 */
+.ed-pages {
+	position: fixed; top: 0; left: 0; bottom: 0; width: 200px;
+	background: #141821; border-right: 1px solid #2c323d;
+	padding: 14px 10px; overflow-y: auto; box-sizing: border-box;
+	font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ed-pages-head { color: #8a93a3; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin: 4px 6px 10px; }
+.ed-page-item {
+	display: flex; align-items: center; justify-content: space-between; gap: 8px;
+	width: 100%; text-align: left; padding: 9px 12px; margin-bottom: 4px;
+	background: transparent; border: 1px solid transparent; border-radius: 8px;
+	color: #c5cdd9; font-size: 14px; cursor: pointer; transition: background .15s, color .15s;
+}
+.ed-page-item:hover { background: #1d2531; color: #fff; }
+.ed-page-item.active { background: #22304a; color: #fff; border-color: #4c6ef5; }
+.ed-page-badge {
+	background: #4c6ef5; color: #fff; font-size: 11px; line-height: 1;
+	padding: 3px 7px; border-radius: 999px; min-width: 18px; text-align: center;
+}
+.ed-pages-tip { color: #5a6473; font-size: 11px; line-height: 1.5; margin: 16px 6px 0; }
+/* 主区域让出侧栏宽度 */
+#editor-root { margin-left: 200px; }
+@media (max-width: 720px) {
+	.ed-pages { position: static; width: auto; height: auto; border-right: none; border-bottom: 1px solid #2c323d; display: flex; flex-wrap: wrap; gap: 6px; }
+	.ed-pages-head, .ed-pages-tip { width: 100%; }
+	.ed-page-item { width: auto; margin: 0; }
+	#editor-root { margin-left: 0; }
+}
