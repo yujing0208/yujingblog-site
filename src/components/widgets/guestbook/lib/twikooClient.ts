@@ -200,3 +200,65 @@ export async function getRecentComments(
 		{ limit, url: GUESTBOOK_PATH, lang: LANG },
 	);
 }
+
+/* ============================================================
+   站长登录 / 编辑
+   Twikoo 不支持访客编辑自己的评论（仅能删除），编辑能力由站长
+   通过管理员 ticket 鉴权后使用 COMMENT_UPDATE 实现。以下接口
+   对应该流程，与 my-blog-master 的登录态编辑等价（后端换成 Twikoo）。
+   ============================================================ */
+
+const ADMIN_TOKEN_KEY = "twikoo-admin-token";
+
+function readAdminToken(): string | null {
+	try {
+		return localStorage.getItem(ADMIN_TOKEN_KEY);
+	} catch {
+		return null;
+	}
+}
+
+function saveAdminToken(token: string) {
+	try {
+		localStorage.setItem(ADMIN_TOKEN_KEY, token);
+	} catch {
+		// 隐私模式下忽略
+	}
+}
+
+/** 当前是否已以站长身份登录（持有管理员 ticket） */
+export function isAdminLoggedIn(): boolean {
+	return Boolean(readAdminToken());
+}
+
+/** 退出站长登录 */
+export function logoutAdmin(): void {
+	try {
+		localStorage.removeItem(ADMIN_TOKEN_KEY);
+	} catch {
+		// ignore
+	}
+}
+
+/** GET_TICKET：站长登录，返回服务端签发的临时 ticket（用于管理员操作鉴权） */
+export async function loginAdmin(password: string): Promise<string> {
+	if (!password) throw new Error("请输入站长密码");
+	const result = await call<{ ticket?: string }>("GET_TICKET", { password });
+	if (!result.ticket) throw new Error("登录失败，请检查密码");
+	saveAdminToken(result.ticket);
+	return result.ticket;
+}
+
+/** COMMENT_UPDATE：站长编辑某条留言（需管理员 ticket） */
+export async function updateComment(
+	commentId: string,
+	comment: string,
+): Promise<{ id: string; comment: string }> {
+	const token = readAdminToken();
+	if (!token) throw new Error("请先以站长身份登录");
+	return call<{ id: string; comment: string }>("COMMENT_UPDATE", {
+		id: commentId,
+		comment,
+		token,
+	});
+}

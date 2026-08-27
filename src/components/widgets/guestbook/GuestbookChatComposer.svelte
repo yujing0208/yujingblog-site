@@ -515,7 +515,7 @@ async function submitMessage() {
 					class="guestbook-composer__image-trigger"
 					onclick={() => fileInput?.click()}
 					aria-label="上传图片（粘贴或拖拽也可）"
-					title="图片（≤128KB）"
+					title="图片（≤2048KB，大图建议在 Twikoo 后台配置图床）"
 					disabled={inputDisabled || isProcessingImage}
 				>
 					<Icon

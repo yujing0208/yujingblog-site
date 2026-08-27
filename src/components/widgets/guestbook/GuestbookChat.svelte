@@ -6,6 +6,10 @@ import {
 	getComments,
 	getServerConfig,
 	submitComment,
+	updateComment as apiUpdateComment,
+	loginAdmin,
+	isAdminLoggedIn,
+	logoutAdmin,
 } from "./lib/twikooClient";
 import type { GuestbookMessage, GuestbookProfile } from "./lib/types";
 import {
@@ -60,6 +64,19 @@ let pollTimer: number | undefined;
 let dataController: AbortController | null = null;
 let syncQueued = false;
 
+let memberSidebarOpen = $state(false);
+let profileCardTarget = $state<GuestbookMessage | null>(null);
+let profileCardDialog = $state<HTMLDialogElement | null>(null);
+let profileCardMessageCount = $state(0);
+let editingTarget = $state<GuestbookMessage | null>(null);
+let editDraft = $state("");
+let editError = $state("");
+let editDialog = $state<HTMLDialogElement | null>(null);
+let adminDialog = $state<HTMLDialogElement | null>(null);
+let adminPassword = $state("");
+let adminLoginError = $state("");
+let isAdmin = $state(isAdminLoggedIn());
+
 const hasMore = $derived(currentPage < totalPages);
 const isSending = $derived(
 	messages.some((message) => message.localState === "sending"),
@@ -68,6 +85,131 @@ const isSending = $derived(
 function canManageMessage(message: GuestbookMessage): boolean {
 	if (message.localState) return false;
 	return Boolean(message.isOwner) || message.isAdmin;
+}
+
+function canEditMessage(message: GuestbookMessage): boolean {
+	if (message.localState) return false;
+	return isAdmin;
+}
+
+const memberList = $derived.by(() => {
+	const map = new Map<
+		string,
+		{ nick: string; avatar: string; link?: string; count: number; isAdmin: boolean }
+	>();
+	for (const m of messages) {
+		if (m.localState) continue;
+		const key = m.nick || "匿名";
+		const existing = map.get(key);
+		if (existing) {
+			existing.count += 1;
+			if (!existing.avatar && m.avatar) existing.avatar = m.avatar;
+			existing.isAdmin = existing.isAdmin || m.isAdmin;
+		} else {
+			map.set(key, {
+				nick: m.nick,
+				avatar: m.avatar,
+				link: m.link,
+				count: 1,
+				isAdmin: m.isAdmin,
+			});
+		}
+	}
+	return [...map.values()].sort((a, b) => b.count - a.count);
+});
+
+function toggleMemberSidebar() {
+	memberSidebarOpen = !memberSidebarOpen;
+}
+
+function openProfileCard(message: GuestbookMessage) {
+	profileCardTarget = message;
+	profileCardMessageCount = memberList.find((m) => m.nick === message.nick)?.count ?? 0;
+	void tick().then(() => {
+		profileCardDialog?.showModal();
+		document.body.style.overflow = "hidden";
+	});
+}
+
+function closeProfileCard() {
+	if (profileCardDialog?.open) profileCardDialog.close();
+	profileCardTarget = null;
+	document.body.style.overflow = "";
+}
+
+function openProfileCardByNick(nick: string) {
+	const target = messages.find((m) => m.nick === nick && !m.localState) ?? null;
+	if (target) openProfileCard(target);
+}
+
+function requestEdit(message: GuestbookMessage) {
+	if (!canEditMessage(message)) return;
+	editingTarget = message;
+	editDraft = message.body.replace(/<[^>]*>/gu, "");
+	editError = "";
+	void tick().then(() => {
+		editDialog?.showModal();
+		document.body.style.overflow = "hidden";
+	});
+}
+
+async function saveEdit() {
+	const target = editingTarget;
+	if (!target || !target.id) return;
+	const content = editDraft.trim();
+	const validation = validateMessageBody(content);
+	if (validation) {
+		editError = validation;
+		return;
+	}
+	try {
+		const html = renderMessageMarkdown(content);
+		const result = await apiUpdateComment(target.id, html);
+		messages = messages.map((m) =>
+			m.id === target.id ? { ...m, body: result.comment || html } : m,
+		);
+		editDialog?.close();
+		document.body.style.overflow = "";
+		editingTarget = null;
+		editError = "";
+		queueLatestSync();
+	} catch (error) {
+		editError = getErrorMessage(error) || "编辑失败，请稍后重试";
+	}
+}
+
+function cancelEdit() {
+	if (editDialog?.open) editDialog.close();
+	editingTarget = null;
+	editError = "";
+	document.body.style.overflow = "";
+}
+
+function openAdminLogin() {
+	adminLoginError = "";
+	adminPassword = "";
+	void tick().then(() => {
+		adminDialog?.showModal();
+		document.body.style.overflow = "hidden";
+	});
+}
+
+async function submitAdminLogin() {
+	try {
+		await loginAdmin(adminPassword);
+		isAdmin = true;
+		adminDialog?.close();
+		document.body.style.overflow = "";
+		adminPassword = "";
+		queueLatestSync();
+	} catch (error) {
+		adminLoginError = getErrorMessage(error) || "登录失败，请检查密码";
+	}
+}
+
+function handleLogoutAdmin() {
+	logoutAdmin();
+	isAdmin = false;
 }
 
 function readStoredValue<T>(storage: Storage, key: string): T | null {
@@ -689,6 +831,38 @@ onMount(() => {
 						>
 							<Icon icon="lucide:refresh-cw" width={17} height={17} />
 						</button>
+						<span class="guestbook-chat__header-divider" aria-hidden="true"></span>
+						<button
+							class:is-active={memberSidebarOpen}
+							class="guestbook-chat__refresh"
+							type="button"
+							onclick={toggleMemberSidebar}
+							aria-label="成员列表"
+							title="成员列表"
+						>
+							<Icon icon="lucide:users" width={17} height={17} />
+						</button>
+						{#if isAdmin}
+							<button
+								class="guestbook-chat__refresh"
+								type="button"
+								onclick={handleLogoutAdmin}
+								aria-label="退出站长登录"
+								title="退出站长登录"
+							>
+								<Icon icon="lucide:shield-check" width={17} height={17} />
+							</button>
+						{:else}
+							<button
+								class="guestbook-chat__refresh"
+								type="button"
+								onclick={openAdminLogin}
+								aria-label="站长登录"
+								title="站长登录"
+							>
+								<Icon icon="lucide:shield" width={17} height={17} />
+							</button>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -697,6 +871,7 @@ onMount(() => {
 
 	<div
 		class:has-announcement-bar={announcementBarVisible && guestbookConfig.announcements.length > 0}
+		class:has-sidebar={memberSidebarOpen}
 		class="guestbook-chat__workspace"
 	>
 		{#if announcementBarVisible && guestbookConfig.announcements.length > 0}
@@ -804,6 +979,9 @@ onMount(() => {
 							onRetry={(target) => void retryMessage(target)}
 							onDiscard={discardMessage}
 							onCopyError={handleCopyError}
+							onShowProfile={openProfileCard}
+							onEdit={requestEdit}
+							canEdit={canEditMessage(message)}
 						/>
 					{/each}
 				</div>
@@ -849,6 +1027,48 @@ onMount(() => {
 				/>
 			</div>
 		</div>
+		{#if memberSidebarOpen}
+			<aside class="guestbook-chat__sidebar" aria-label="成员列表">
+				<div class="guestbook-chat__sidebar-header">
+					<span>成员</span>
+					<span class="guestbook-chat__sidebar-count-total">{memberList.length}</span>
+				</div>
+				<ul class="guestbook-chat__sidebar-list">
+					{#each memberList as member (member.nick)}
+						<li class="guestbook-chat__sidebar-item">
+							<button
+								type="button"
+								class="guestbook-chat__sidebar-user"
+								onclick={() => openProfileCardByNick(member.nick)}
+							>
+								<span class="guestbook-chat__sidebar-avatar">
+									{#if member.avatar}
+										<img
+											src={member.avatar}
+											alt=""
+											loading="lazy"
+											referrerpolicy="no-referrer"
+											onerror={(event) => {
+												(event.currentTarget as HTMLImageElement).style.display = "none";
+											}}
+										/>
+									{:else}
+										{member.nick.slice(0, 1)}
+									{/if}
+								</span>
+								<span class="guestbook-chat__sidebar-name">
+									{member.nick}
+									{#if member.isAdmin}
+										<span class="guestbook-chat__sidebar-tag">站长</span>
+									{/if}
+								</span>
+								<span class="guestbook-chat__sidebar-count">{member.count}</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</aside>
+		{/if}
 	</div>
 
 	{#if guestbookConfig.announcements.length > 0}
@@ -960,5 +1180,119 @@ onMount(() => {
 				</div>
 			</div>
 		{/if}
+	</dialog>
+
+	<!-- 访客资料卡 -->
+	<dialog bind:this={profileCardDialog} class="guestbook-modal guestbook-profilecard-modal" onclose={closeProfileCard}>
+		<div class="guestbook-modal__overlay" onclick={closeProfileCard}></div>
+		{#if profileCardTarget}
+			<div class="guestbook-modal__panel">
+				<div class="guestbook-modal__header">
+					<h2>访客资料</h2>
+					<button type="button" class="guestbook-modal__close" onclick={closeProfileCard} aria-label="关闭">
+						<Icon icon="lucide:x" width={18} height={18} />
+					</button>
+				</div>
+				<div class="guestbook-modal__body guestbook-profilecard-modal__body">
+					<div class="guestbook-profilecard-modal__hero">
+						<span class="guestbook-profilecard-modal__avatar">
+							{#if profileCardTarget.avatar}
+								<img
+									src={profileCardTarget.avatar}
+									alt=""
+									loading="lazy"
+									referrerpolicy="no-referrer"
+									onerror={(event) => {
+										(event.currentTarget as HTMLImageElement).style.display = "none";
+									}}
+								/>
+							{:else}
+								{profileCardTarget.nick.slice(0, 1)}
+							{/if}
+						</span>
+						<div class="guestbook-profilecard-modal__hero-info">
+							<strong>{profileCardTarget.nick}</strong>
+							{#if profileCardTarget.isAdmin}
+								<span class="guestbook-message__badge guestbook-message__badge--admin">站长</span>
+							{/if}
+							<div class="guestbook-profilecard-modal__count">{profileCardMessageCount} 条留言</div>
+						</div>
+					</div>
+					<dl class="guestbook-profilecard-modal__meta">
+						{#if profileCardTarget.link}
+							<div>
+								<dt>网站</dt>
+								<dd><a href={profileCardTarget.link} target="_blank" rel="nofollow noopener noreferrer">{profileCardTarget.link}</a></dd>
+							</div>
+						{/if}
+						{#if profileCardTarget.addr}
+							<div><dt>属地</dt><dd>{profileCardTarget.addr}</dd></div>
+						{/if}
+						{#if profileCardTarget.browser}
+							<div><dt>浏览器</dt><dd>{profileCardTarget.browser}</dd></div>
+						{/if}
+						{#if profileCardTarget.os}
+							<div><dt>系统</dt><dd>{profileCardTarget.os}</dd></div>
+						{/if}
+					</dl>
+				</div>
+				<div class="guestbook-modal__footer">
+					<button type="button" class="guestbook-modal__confirm" onclick={closeProfileCard}>关闭</button>
+				</div>
+			</div>
+		{/if}
+	</dialog>
+
+	<!-- 编辑消息 -->
+	<dialog bind:this={editDialog} class="guestbook-modal guestbook-edit-modal" onclose={cancelEdit}>
+		<div class="guestbook-modal__overlay" onclick={cancelEdit}></div>
+		<form method="dialog" class="guestbook-modal__panel" onsubmit={(event) => { event.preventDefault(); void saveEdit(); }}>
+			<div class="guestbook-modal__header">
+				<h2>编辑消息</h2>
+				<button type="button" class="guestbook-modal__close" onclick={cancelEdit} aria-label="关闭">
+					<Icon icon="lucide:x" width={18} height={18} />
+				</button>
+			</div>
+			<div class="guestbook-modal__body">
+				<textarea class="guestbook-edit-modal__textarea" bind:value={editDraft} placeholder="修改留言内容…"></textarea>
+				{#if editError}
+					<p class="guestbook-delete-modal__error">{editError}</p>
+				{/if}
+			</div>
+			<div class="guestbook-modal__footer">
+				<button type="button" onclick={cancelEdit}>取消</button>
+				<button type="submit" class="guestbook-modal__confirm">保存</button>
+			</div>
+		</form>
+	</dialog>
+
+	<!-- 站长登录 -->
+	<dialog bind:this={adminDialog} class="guestbook-modal guestbook-admin-modal" onclose={() => (document.body.style.overflow = "")}>
+		<div class="guestbook-modal__overlay" onclick={() => adminDialog?.close()}></div>
+		<form method="dialog" class="guestbook-modal__panel" onsubmit={(event) => { event.preventDefault(); void submitAdminLogin(); }}>
+			<div class="guestbook-modal__header">
+				<h2>站长登录</h2>
+				<button type="button" class="guestbook-modal__close" onclick={() => adminDialog?.close()} aria-label="关闭">
+					<Icon icon="lucide:x" width={18} height={18} />
+				</button>
+			</div>
+			<div class="guestbook-modal__body guestbook-admin-modal__body">
+				<p class="guestbook-admin-modal__hint">输入 Twikoo 站长密码，以编辑 / 管理留言。</p>
+				<input
+					type="password"
+					class="guestbook-admin-modal__input"
+					bind:value={adminPassword}
+					placeholder="站长密码"
+					autocomplete="current-password"
+				/>
+				{#if adminLoginError}
+					<p class="guestbook-delete-modal__error">{adminLoginError}</p>
+				{/if}
+			</div>
+			<div class="guestbook-modal__footer">
+				<button type="button" onclick={() => adminDialog?.close()}>取消</button>
+				<button type="submit" class="guestbook-modal__confirm">登录</button>
+			</div>
+		</form>
 	</dialog>
 </section>

@@ -1,4 +1,4 @@
-// 友情链接数据配置
+﻿// 友情链接数据配置
 // 用于管理友情链接页面的数据
 import type { FriendItem } from "../types/friends";
 const friendsData: FriendItem[] = [
@@ -129,6 +129,17 @@ const friendsData: FriendItem[] = [
 			"博客"
 		],
 		id: 19
+	},
+	{
+		title: "Innei",
+		imgurl: "https://avatars.githubusercontent.com/u/41265413?v=5",
+		desc: "Innei's personal blog on frontend and full-stack development — TypeScript, React, Next.js, AI engineering, indie hacking, travel and life.",
+		siteurl: "https://innei.in/",
+		tags: [
+			"博客",
+			"优质"
+		],
+		id: 20
 	}
 ];
 export function getFriendsList(): FriendItem[] {

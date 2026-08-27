@@ -14,6 +14,9 @@ interface Props {
 	onRetry: (message: GuestbookMessage) => void;
 	onDiscard: (message: GuestbookMessage) => void;
 	onCopyError: (message: string) => void;
+	onShowProfile: (message: GuestbookMessage) => void;
+	onEdit: (message: GuestbookMessage) => void;
+	canEdit: boolean;
 }
 
 let {
@@ -27,6 +30,9 @@ let {
 	onRetry,
 	onDiscard,
 	onCopyError,
+	onShowProfile,
+	onEdit,
+	canEdit,
 }: Props = $props();
 
 let copied = $state(false);
@@ -55,7 +61,19 @@ async function copyMessage() {
 	class:is-sending={message.localState === "sending"}
 	class="guestbook-message"
 >
-	<div class="guestbook-message__avatar" aria-hidden="true">
+	<div
+		class="guestbook-message__avatar"
+		role="button"
+		tabindex="0"
+		aria-label={`查看 ${message.nick} 的资料`}
+		onclick={() => onShowProfile(message)}
+		onkeydown={(event) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				onShowProfile(message);
+			}
+		}}
+	>
 		<span>{getInitials(message.nick)}</span>
 		{#if message.avatar}
 			<img
@@ -142,6 +160,16 @@ async function copyMessage() {
 							height={15}
 						/>
 					</button>
+					{#if canEdit}
+						<button
+							type="button"
+							onclick={() => onEdit(message)}
+							aria-label="编辑消息"
+							title="编辑消息"
+						>
+							<Icon icon="lucide:pencil" width={15} height={15} />
+						</button>
+					{/if}
 					{#if canManage}
 						<button
 							type="button"

@@ -2,6 +2,7 @@
  * 留言板工具函数：评论树扁平化、合并、头像解析、时间格式化、Markdown 渲染
  */
 import { marked } from "marked";
+import hljs from "highlight.js/lib/common";
 import { convertEmojiShortcodes } from "./emoji";
 import type { GuestbookMessage, TwikooComment } from "./types";
 
@@ -84,7 +85,7 @@ export function normalizeComment(comment: TwikooComment): GuestbookMessage {
 		nick: comment.nick,
 		avatar: resolveAvatar(comment),
 		link: comment.link || undefined,
-		body: comment.comment,
+		body: sanitizeGuestbookHtml(comment.comment),
 		createdAt: comment.created,
 		isAdmin: Boolean(comment.master),
 		isOwner: Boolean(comment.isOwner),
@@ -205,7 +206,7 @@ export function validateMessageBody(content: string): string {
 
 /**
  * 将 markdown 转换为可安全展示的 HTML（与官方 Twikoo 客户端一致，用 marked）
- * 说明：Twikoo 服务端对评论内容有 XSS 净化（isSpam 过滤），此处仅做展示转换
+ * 渲染前先高亮代码块、再白名单净化，确保即便服务端净化被绕过也不会执行注入脚本。
  * 渲染前会先把 ":key:" 短码（如 :微笑:）转成 markdown 图片，行为与 Twikoo 原评论区一致
  */
 export function renderMessageMarkdown(content: string): string {
@@ -214,13 +215,112 @@ export function renderMessageMarkdown(content: string): string {
 		gfm: true,
 		breaks: true,
 	}) as string;
-	return html;
+	return sanitizeGuestbookHtml(html);
+}
+
+/* ============================================================
+   前端 XSS 净化（白名单）+ 代码高亮
+   借鉴 my-blog-master 的 sanitizeGuestbookHtml 思路，但适配本留言板
+   允许的富文本标签（markdown 渲染产物）。防御纵深：即便 Twikoo 服务端
+   已净化，前端再净化一次，避免历史 / 乐观消息中的注入脚本执行。
+   ============================================================ */
+
+const ALLOWED_TAGS = new Set([
+	"p", "br", "strong", "em", "del", "code", "pre", "blockquote",
+	"ul", "ol", "li", "a", "img", "hr", "h1", "h2", "h3", "h4",
+	"span", "details", "summary",
+]);
+
+const ALLOWED_ATTRS: Record<string, Set<string>> = {
+	a: new Set(["href", "title", "target", "rel"]),
+	img: new Set(["src", "alt", "title"]),
+	code: new Set(["class"]),
+	pre: new Set(["class"]),
+	span: new Set(["class"]),
+};
+
+function safeUrl(value: string | null): string | null {
+	if (!value) return null;
+	const v = value.trim().toLowerCase();
+	if (v.startsWith("javascript:") || v.startsWith("data:text/html")) return null;
+	if (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("data:image/")) {
+		return value;
+	}
+	return null;
+}
+
+function highlightCodeInDoc(doc: Document): void {
+	doc.querySelectorAll("pre > code").forEach((codeEl) => {
+		const langMatch = /language-([\w-]+)/u.exec(codeEl.className);
+		const text = codeEl.textContent ?? "";
+		try {
+			const result = langMatch
+				? hljs.highlight(text, { language: langMatch[1] })
+				: hljs.highlightAuto(text);
+			codeEl.innerHTML = result.value;
+			codeEl.className = "hljs" + (result.language ? ` language-${result.language}` : "");
+		} catch {
+			/* 高亮失败保留原文 */
+		}
+	});
+}
+
+function sanitizeNode(node: Node, doc: Document): Node | null {
+	if (node.nodeType === Node.TEXT_NODE) return node;
+	if (node.nodeType !== Node.ELEMENT_NODE) return null;
+	const el = node as Element;
+	const tag = el.tagName.toLowerCase();
+	if (!ALLOWED_TAGS.has(tag)) return null;
+	const clean = doc.createElement(tag);
+	const allowed = ALLOWED_ATTRS[tag];
+	if (allowed) {
+		for (const attr of Array.from(el.attributes)) {
+			const name = attr.name.toLowerCase();
+			if (!allowed.has(name)) continue;
+			let value = attr.value;
+			if (name === "href") {
+				const safe = safeUrl(value);
+				if (!safe) continue;
+				value = safe;
+				clean.setAttribute("target", "_blank");
+				clean.setAttribute("rel", "noopener noreferrer nofollow");
+			} else if (name === "src") {
+				const safe = safeUrl(value);
+				if (!safe) continue;
+				value = safe;
+			}
+			clean.setAttribute(attr.name, value);
+		}
+	}
+	for (const child of Array.from(el.childNodes)) {
+		const cleaned = sanitizeNode(child, doc);
+		if (cleaned) clean.appendChild(cleaned);
+	}
+	return clean;
+}
+
+/** 白名单净化 + 代码高亮。无 DOM 环境（SSR）时原样返回 */
+export function sanitizeGuestbookHtml(html: string): string {
+	if (typeof window === "undefined" || !window.DOMParser) return html;
+	try {
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		highlightCodeInDoc(doc);
+		const container = doc.createElement("div");
+		for (const child of Array.from(doc.body.childNodes)) {
+			const cleaned = sanitizeNode(child, doc);
+			if (cleaned) container.appendChild(cleaned);
+		}
+		return container.innerHTML;
+	} catch {
+		return html;
+	}
 }
 
 /* ============================================================
    图片内嵌工具（base64 ≤128KB，零服务端依赖）
    ============================================================ */
-export const MAX_IMAGE_SIZE_BYTES = 128 * 1024;
+// 2MB；更大图片建议在 Twikoo 后台配置图床（IMAGE_CDN）自动转存，否则会以内嵌 base64 提交
+export const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 
 export const SUPPORTED_IMAGE_TYPES = new Set([
 	"image/png",
@@ -237,7 +337,7 @@ export async function readImageAsDataUrl(
 		return { error: "仅支持 PNG / JPEG / GIF / WebP 图片" };
 	}
 	if (file.size > MAX_IMAGE_SIZE_BYTES) {
-		return { error: `图片不能超过 ${MAX_IMAGE_SIZE_BYTES / 1024} KB` };
+		return { error: `图片不能超过 ${Math.round(MAX_IMAGE_SIZE_BYTES / 1024)} KB，大图建议在 Twikoo 后台配置图床` };
 	}
 	const dataUrl = await new Promise<string>((resolve, reject) => {
 		const reader = new FileReader();
