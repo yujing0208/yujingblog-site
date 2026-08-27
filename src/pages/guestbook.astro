@@ -15,6 +15,19 @@ const description = "在这里给我留言，畅所欲言～";
 	</div>
 </MainGridLayout>
 
+<script is:inline>
+	// 给 #main-grid 加标记，让 CSS 能隐藏侧边栏（兼容不支持 :has() 的浏览器）
+	document.addEventListener('DOMContentLoaded', () => {
+		const grid = document.getElementById('main-grid');
+		if (grid) grid.classList.add('guestbook-page-active');
+	});
+	// Swup 页面切换后重新标记
+	document.addEventListener('swup:page:view', () => {
+		const grid = document.getElementById('main-grid');
+		if (grid) grid.classList.add('guestbook-page-active');
+	});
+</script>
+
 <style>
 	.guestbook-fullscreen {
 		height: calc(100dvh - 8.5rem);

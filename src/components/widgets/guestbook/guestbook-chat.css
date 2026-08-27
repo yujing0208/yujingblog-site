@@ -2070,7 +2070,31 @@
 
 /* ============================================================
    独立留言板页面：全屏模式（隐藏博客左右侧边栏）
+   方案1: :has() 从 #main-grid 向内检测 .guestbook-fullscreen
+   方案2: JS 给 #main-grid 加 .guestbook-page-active class（兜底）
    ============================================================ */
+
+/* 隐藏左侧边栏 */
+#main-grid:has(.guestbook-fullscreen) #sidebar,
+#main-grid:has(.guestbook-fullscreen) .sidebar-root,
+#main-grid.guestbook-page-active #sidebar,
+#main-grid.guestbook-page-active .sidebar-root {
+	display: none !important;
+}
+
+/* 隐藏右侧边栏 */
+#main-grid:has(.guestbook-fullscreen) .right-sidebar-container,
+#main-grid.guestbook-page-active .right-sidebar-container {
+	display: none !important;
+}
+
+/* 主内容区占满整行 */
+#main-grid:has(.guestbook-fullscreen) main#swup-container,
+#main-grid.guestbook-page-active main#swup-container {
+	grid-column: 1 / -1 !important;
+	max-width: 100% !important;
+}
+
 .guestbook-fullscreen {
 	height: calc(100dvh - 8.5rem);
 	min-height: 32rem;
@@ -2078,23 +2102,6 @@
 
 .guestbook-fullscreen .guestbook-chat {
 	height: 100%;
-}
-
-/* 隐藏左侧边栏（#sidebar 在 .contents 内） */
-.guestbook-fullscreen #sidebar,
-.guestbook-fullscreen .sidebar-root {
-	display: none !important;
-}
-
-/* 隐藏右侧边栏 */
-.guestbook-fullscreen .right-sidebar-container {
-	display: none !important;
-}
-
-/* 主内容区占满整行 */
-.guestbook-fullscreen main#swup-container {
-	grid-column: 1 / -1 !important;
-	max-width: 100% !important;
 }
 
 @media (max-width: 768px) {
