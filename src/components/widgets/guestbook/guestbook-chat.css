@@ -1359,7 +1359,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.25rem 0.6rem 0.2rem;
+	padding: 0.2rem 0.6rem 0.15rem;
 	font-size: 0.78rem;
 	font-weight: 500;
 	color: var(--text-secondary, var(--guestbook-muted));
@@ -1379,7 +1379,7 @@
 	min-height: 0;
 	overflow-y: auto;
 	margin: 0;
-	padding: 0.05rem 0.3rem 0.3rem;
+	padding: 0 0.3rem 0.15rem;
 	list-style: none;
 	display: flex;
 	flex-direction: column;
@@ -1445,10 +1445,7 @@
 	color: var(--deep-text);
 }
 
-/* 站长昵称用主题色（绿色）—— 匹配参考图中 "MmMing" 的绿色 */
-.guestbook-chat__sidebar-user[data-role="admin"] .guestbook-chat__sidebar-name {
-	color: #10b981;
-}
+/* 站长昵称保持普通颜色（不特殊高亮） */
 
 /* ---- 头像可点击（查看资料） ---- */
 .guestbook-message__avatar {
