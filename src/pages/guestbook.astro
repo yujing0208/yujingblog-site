@@ -16,7 +16,6 @@ const description = "在这里给我留言，畅所欲言～";
 </MainGridLayout>
 
 <style>
-	/* 全屏模式：隐藏博客侧边栏，留言板撑满 */
 	.guestbook-fullscreen {
 		height: calc(100dvh - 8.5rem);
 		min-height: 32rem;
@@ -24,23 +23,6 @@ const description = "在这里给我留言，畅所欲言～";
 
 	.guestbook-fullscreen :global(.guestbook-chat) {
 		height: 100%;
-	}
-
-	/* 隐藏左侧边栏 */
-	.guestbook-fullscreen :global(#main-grid > .contents > #sidebar),
-	.guestbook-fullscreen :global(#main-grid > #sidebar) {
-		display: none !important;
-	}
-
-	/* 隐藏右侧边栏 */
-	.guestbook-fullscreen :global(.right-sidebar-container) {
-		display: none !important;
-	}
-
-	/* 主内容区占满整行 */
-	.guestbook-fullscreen :global(main#swup-container) {
-		grid-column: 1 / -1 !important;
-		max-width: 100% !important;
 	}
 
 	@media (max-width: 768px) {

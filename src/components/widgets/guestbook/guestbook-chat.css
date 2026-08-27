@@ -1359,8 +1359,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.6rem 0.75rem 0.4rem;
-	font-size: 0.82rem;
+	padding: 0.3rem 0.65rem 0.25rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 	color: var(--text-secondary, var(--guestbook-muted));
 	white-space: nowrap;
@@ -1379,7 +1379,7 @@
 	min-height: 0;
 	overflow-y: auto;
 	margin: 0;
-	padding: 0.15rem 0.35rem 0.5rem;
+	padding: 0.1rem 0.35rem 0.35rem;
 	list-style: none;
 	display: flex;
 	flex-direction: column;
@@ -2066,4 +2066,40 @@
 .guestbook-composer__image-preview button:hover {
 	background: var(--guestbook-editor-hover);
 	color: var(--guestbook-editor-text);
+}
+
+/* ============================================================
+   独立留言板页面：全屏模式（隐藏博客左右侧边栏）
+   ============================================================ */
+.guestbook-fullscreen {
+	height: calc(100dvh - 8.5rem);
+	min-height: 32rem;
+}
+
+.guestbook-fullscreen .guestbook-chat {
+	height: 100%;
+}
+
+/* 隐藏左侧边栏（#sidebar 在 .contents 内） */
+.guestbook-fullscreen #sidebar,
+.guestbook-fullscreen .sidebar-root {
+	display: none !important;
+}
+
+/* 隐藏右侧边栏 */
+.guestbook-fullscreen .right-sidebar-container {
+	display: none !important;
+}
+
+/* 主内容区占满整行 */
+.guestbook-fullscreen main#swup-container {
+	grid-column: 1 / -1 !important;
+	max-width: 100% !important;
+}
+
+@media (max-width: 768px) {
+	.guestbook-fullscreen {
+		height: calc(100dvh - 9rem);
+		min-height: 30rem;
+	}
 }
