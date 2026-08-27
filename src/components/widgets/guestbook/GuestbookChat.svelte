@@ -758,6 +758,17 @@ function handleCopyError(errorText: string) {
 	composerError = errorText;
 }
 
+/** 全屏模式：仅留言板页面给 #main-grid 加标记，隐藏博客侧边栏 */
+function applyFullscreenClass() {
+	const grid = document.getElementById("main-grid");
+	if (!grid) return;
+	if (document.querySelector(".guestbook-fullscreen")) {
+		grid.classList.add("guestbook-page-active");
+	} else {
+		grid.classList.remove("guestbook-page-active");
+	}
+}
+
 onMount(() => {
 	const storedProfile = readStoredValue<unknown>(
 		localStorage,
@@ -766,6 +777,10 @@ onMount(() => {
 	if (isProfile(storedProfile)) profile = storedProfile;
 	draft = readStoredString(localStorage, DRAFT_STORAGE_KEY);
 	isOffline = !navigator.onLine;
+
+	// 进入留言板页：标记全屏（隐藏侧边栏）
+	applyFullscreenClass();
+	document.addEventListener("swup:page:view", applyFullscreenClass);
 
 	// 公告栏：恢复关闭状态；首次访问自动弹出第一条公告
 	try {
@@ -802,8 +817,12 @@ onMount(() => {
 		if (deleteDialog?.open) deleteDialog.close();
 		document.body.style.overflow = "";
 		document.removeEventListener("visibilitychange", handleVisibilityChange);
+		document.removeEventListener("swup:page:view", applyFullscreenClass);
 		window.removeEventListener("online", handleOnline);
 		window.removeEventListener("offline", handleOffline);
+		// 离开留言板页：移除全屏标记，恢复其他页面的侧边栏
+		const grid = document.getElementById("main-grid");
+		grid?.classList.remove("guestbook-page-active");
 	};
 });
 </script>
