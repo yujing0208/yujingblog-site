@@ -177,7 +177,6 @@ const isRight = config.position === "right";
 			const menuActions: Record<string, () => void> = {
 				home: () => (window.location.href = "/"),
 				scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
-				edit: () => (window as any).EditorLogin?.start?.(),
 			};
 
 			let currentEl: HTMLIFrameElement | null = null;
