@@ -117,15 +117,14 @@ const postIndex = new Map();
 })();
 
 // ─── 工具函数 ─────────────────────────────────────────────────────
-function escapeHtml(s) {
-	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-function escapeAttr(s) {
-	return String(s)
-		.replace(/&/g, "&amp;")
-		.replace(/"/g, "&quot;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
+// 用 mdast 节点（paragraph 配合 hName）构造任意 HTML 元素，
+// 这样 remark-rehype 会直接转换为 hast 元素，无需 rehype-raw。
+function el(name, props, children) {
+	return {
+		type: "paragraph",
+		data: { hName: name, hProperties: props || {} },
+		children: children && children.length ? children : [{ type: "text", value: "" }],
+	};
 }
 
 // 生成标题锚点 slug（与 rehype-slug / github-slugger 近似）
@@ -166,7 +165,7 @@ function lookup(article) {
 }
 
 // 生成行内链接节点（mdast link）
-function makeLinkNode(target, alias) {
+function makeLinkNode({ target, alias }) {
 	const hashIdx = target.indexOf("#");
 	let article = hashIdx >= 0 ? target.slice(0, hashIdx) : target;
 	const heading = hashIdx >= 0 ? target.slice(hashIdx + 1) : "";
@@ -202,7 +201,7 @@ function makeLinkNode(target, alias) {
 	};
 }
 
-// 生成单独成段的文章卡片（原始 HTML 字符串）
+// 生成单独成段的文章卡片（mdast 结构，hName 强制为 div 等元素）
 function makeCardNode({ target, alias }) {
 	const hashIdx = target.indexOf("#");
 	const article = (hashIdx >= 0 ? target.slice(0, hashIdx) : target).trim();
@@ -212,26 +211,57 @@ function makeCardNode({ target, alias }) {
 
 	const href = entry.path;
 	const cover = resolveCover(entry.image);
-	const title = escapeHtml(entry.title);
-	const desc = escapeHtml(entry.description || "");
-	const date = entry.published ? escapeHtml(String(entry.published)) : "";
-	const cat = entry.category ? escapeHtml(entry.category) : "";
-	const tags = entry.tags.map((t) => `<span class="wiki-card-tag">${escapeHtml(t)}</span>`).join("");
+	const title = entry.title;
+	const desc = entry.description || "";
+	const date = entry.published ? String(entry.published) : "";
+	const cat = entry.category || "";
+	const tags = entry.tags;
 
-	return `<div class="wiki-card card-base" data-wiki-card>
-  <a class="wiki-card-link" href="${escapeAttr(href)}">
-    ${cover ? `<div class="wiki-card-cover" style="background-image:url('${escapeAttr(cover)}')"></div>` : ""}
-    <div class="wiki-card-body">
-      <div class="wiki-card-title">${title}</div>
-      ${desc ? `<div class="wiki-card-desc">${desc}</div>` : ""}
-      <div class="wiki-card-meta">
-        ${date ? `<span class="wiki-card-date">${date}</span>` : ""}
-        ${cat ? `<span class="wiki-card-cat">${cat}</span>` : ""}
-        ${tags ? `<span class="wiki-card-tags">${tags}</span>` : ""}
-      </div>
-    </div>
-  </a>
-</div>`;
+	const coverNode = cover
+		? el("div", { class: "wiki-card-cover", style: `background-image:url('${cover.replace(/'/g, "%27")}')` })
+		: null;
+
+	const titleNode = el("div", { class: "wiki-card-title" }, [{ type: "text", value: title }]);
+
+	const descNode = desc
+		? el("div", { class: "wiki-card-desc" }, [{ type: "text", value: desc }])
+		: null;
+
+	const metaChildren = [];
+	if (date) {
+		metaChildren.push(el("span", { class: "wiki-card-date" }, [{ type: "text", value: date }]));
+	}
+	if (cat) {
+		metaChildren.push(el("span", { class: "wiki-card-cat" }, [{ type: "text", value: cat }]));
+	}
+	if (tags.length) {
+		metaChildren.push(
+			el(
+				"span",
+				{ class: "wiki-card-tags" },
+				tags.map((t) => el("span", { class: "wiki-card-tag" }, [{ type: "text", value: t }])),
+			),
+		);
+	}
+	const metaNode = metaChildren.length ? el("div", { class: "wiki-card-meta" }, metaChildren) : null;
+
+	const bodyChildren = [titleNode];
+	if (descNode) bodyChildren.push(descNode);
+	if (metaNode) bodyChildren.push(metaNode);
+	const bodyNode = el("div", { class: "wiki-card-body" }, bodyChildren);
+
+	const linkChildren = [];
+	if (coverNode) linkChildren.push(coverNode);
+	linkChildren.push(bodyNode);
+
+	const linkNode = {
+		type: "link",
+		url: href,
+		data: { hProperties: { class: "wiki-card-link" } },
+		children: linkChildren,
+	};
+
+	return el("div", { class: "wiki-card card-base" }, [linkNode]);
 }
 
 // 将文本中的 [[...]] 拆分为 text / link 节点序列
@@ -281,7 +311,7 @@ function walk(tree) {
 				if (solo) {
 					const card = makeCardNode(parseInner(solo[1]));
 					if (card) {
-						newChildren.push({ type: "html", value: card });
+						newChildren.push(card);
 						continue;
 					}
 				}
