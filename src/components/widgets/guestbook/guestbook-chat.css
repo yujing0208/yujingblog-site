@@ -1354,14 +1354,14 @@
 	overflow: hidden;
 }
 
-/* 分组标题：站长 — 1 / 留言人 — 10 */
+/* 分组标题：站长 — 1 / 留言人 — 10（紧凑，参考 my-blog-master） */
 .guestbook-chat__sidebar-section {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.3rem 0.65rem 0.25rem;
-	font-size: 0.8rem;
-	font-weight: 600;
+	padding: 0.25rem 0.6rem 0.2rem;
+	font-size: 0.78rem;
+	font-weight: 500;
 	color: var(--text-secondary, var(--guestbook-muted));
 	white-space: nowrap;
 	user-select: none;
@@ -1373,26 +1373,26 @@
 	opacity: 0.55;
 }
 
-/* 成员列表 */
+/* 成员列表（紧凑） */
 .guestbook-chat__sidebar-list {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
 	margin: 0;
-	padding: 0.1rem 0.35rem 0.35rem;
+	padding: 0.05rem 0.3rem 0.3rem;
 	list-style: none;
 	display: flex;
 	flex-direction: column;
 	gap: 1px;
 }
 
-/* 单个成员 */
+/* 单个成员（参考图：头像较大 + 昵称+绿色标签） */
 .guestbook-chat__sidebar-user {
 	display: flex;
 	align-items: center;
-	gap: 0.55rem;
+	gap: 0.5rem;
 	width: 100%;
-	padding: 0.45rem 0.6rem;
+	padding: 0.35rem 0.55rem;
 	border: 0;
 	border-radius: var(--radius-sm);
 	background: transparent;
@@ -1406,17 +1406,17 @@
 	background: var(--guestbook-editor-hover);
 }
 
-/* 头像 */
+/* 头像（参考图：圆形，稍大） */
 .guestbook-chat__sidebar-avatar {
 	flex: 0 0 auto;
 	display: grid;
 	place-items: center;
-	width: 2rem;
-	height: 2rem;
+	width: 2.2rem;
+	height: 2.2rem;
 	border-radius: 50%;
 	background: var(--guestbook-accent-soft);
 	color: var(--guestbook-accent);
-	font-size: 0.8rem;
+	font-size: 0.85rem;
 	font-weight: 700;
 	overflow: hidden;
 	border: 1.5px solid transparent;
@@ -1445,9 +1445,9 @@
 	color: var(--deep-text);
 }
 
-/* 站长昵称用主题色（绿色）高亮 */
+/* 站长昵称用主题色（绿色）—— 匹配参考图中 "MmMing" 的绿色 */
 .guestbook-chat__sidebar-user[data-role="admin"] .guestbook-chat__sidebar-name {
-	color: var(--primary, #10b981);
+	color: #10b981;
 }
 
 /* ---- 头像可点击（查看资料） ---- */
@@ -2093,6 +2093,13 @@
 #main-grid.guestbook-page-active main#swup-container {
 	grid-column: 1 / -1 !important;
 	max-width: 100% !important;
+}
+
+/* 公告栏全宽（去掉左右 margin） */
+#main-grid:has(.guestbook-fullscreen) .guestbook-chat__announcement-bar,
+#main-grid.guestbook-page-active .guestbook-chat__announcement-bar {
+	margin-left: var(--space-2);
+	margin-right: var(--space-2);
 }
 
 .guestbook-fullscreen {

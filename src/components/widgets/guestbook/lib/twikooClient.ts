@@ -243,10 +243,23 @@ export function logoutAdmin(): void {
 /** GET_TICKET：站长登录，返回服务端签发的临时 ticket（用于管理员操作鉴权） */
 export async function loginAdmin(password: string): Promise<string> {
 	if (!password) throw new Error("请输入站长密码");
-	const result = await call<{ ticket?: string }>("GET_TICKET", { password });
-	if (!result.ticket) throw new Error("登录失败，请检查密码");
-	saveAdminToken(result.ticket);
-	return result.ticket;
+	try {
+		const result = await call<{ ticket?: string }>("GET_TICKET", { password });
+		if (result.ticket) {
+			saveAdminToken(result.ticket);
+			return result.ticket;
+		}
+	} catch (err) {
+		// 代码 1001 = 云函数版本不支持 GET_TICKET（旧版 Twikoo）
+		// 兜底：直接将密码作为 admin token 使用
+		const msg = err instanceof Error ? err.message : "";
+		if (msg.includes("1001") || msg.includes("最新版本")) {
+			saveAdminToken(password);
+			return password;
+		}
+		throw err;
+	}
+	throw new Error("登录失败，请检查密码");
 }
 
 /** COMMENT_UPDATE：站长编辑某条留言（需管理员 ticket） */
@@ -256,9 +269,10 @@ export async function updateComment(
 ): Promise<{ id: string; comment: string }> {
 	const token = readAdminToken();
 	if (!token) throw new Error("请先以站长身份登录");
+	// 用 accessToken 字段传管理员凭证（Twikoo 标准鉴权字段）
 	return call<{ id: string; comment: string }>("COMMENT_UPDATE", {
 		id: commentId,
 		comment,
-		token,
+		accessToken: token,
 	});
 }
