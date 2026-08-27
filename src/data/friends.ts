@@ -140,6 +140,26 @@ const friendsData: FriendItem[] = [
 			"优质"
 		],
 		id: 20
+	},
+	{
+		title: "Meet Blog 博客星图 ",
+		imgurl: "https://a.favicon.im/meet-blog.buyixiao.xyz",
+		desc: "中文独立博客星系",
+		siteurl: "https://meet-blog.buyixiao.xyz/",
+		tags: [
+			"博客园"
+		],
+		id: 21
+	},
+	{
+		title: "MmzMing的知识库",
+		imgurl: "https://i.stardots.io/784774835/StarDots-2026052116374135506.jpg",
+		desc: "哈基米，南北绿豆",
+		siteurl: "https://tblog.mmzhiku.xyz",
+		tags: [
+			"博客"
+		],
+		id: 22
 	}
 ];
 export function getFriendsList(): FriendItem[] {
