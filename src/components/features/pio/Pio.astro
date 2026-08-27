@@ -57,11 +57,10 @@ if (config.menus?.items && config.menus.items.length > 0) {
 		...(config.menus.align && { align: config.menus.align }),
 	};
 } else {
-	// 未自定义菜单时，用 extraItems 追加 💬 聊天 + ✏️ 编辑按钮到默认菜单（休眠/About）
+	// 默认菜单仅追加 💬 聊天按钮（编辑入口已迁至设置面板底部）
 	widgetConfig.menus = {
 		extraItems: [
 			{ icon: "mdi:message-text-outline", label: "聊天", action: "chat" },
-			{ icon: "mdi:pencil-outline", label: "编辑", action: "edit" },
 		],
 	};
 }
