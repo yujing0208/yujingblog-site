@@ -70,14 +70,6 @@
     transform: scaleY(0) scaleX(0.85);
   }
 
-  /* 移动端导航菜单使用 Bottom Sheet 模式，不参与 float-panel 动画 */
-  #nav-menu-panel {
-    transform: none !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    will-change: transform;
-  }
-
   #mobile-toc-panel.float-panel-closed {
     transform: scaleY(0) scaleX(0.8);
   }

@@ -6,7 +6,6 @@ import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
 import type { LinkPreset, NavBarLink } from "../../../types/config";
 import { url } from "../../../utils/url-utils";
-import { siteConfig } from "../../../config";
 import type { NavMenuPanelProps, ProcessedNavBarLink } from "./types";
 
 const navTitleMap: Record<string, string> = {
@@ -50,25 +49,19 @@ const processedLinks: ProcessedNavBarLink[] = (
 );
 ---
 
-<!-- 遮罩层 -->
-<div id="nav-menu-overlay" class="nav-menu-overlay" aria-hidden="true"></div>
-
-<!-- 底部弹出面板 -->
 <div
 	id="nav-menu-panel"
 	class:list={[
-		"nav-bottom-sheet",
+		"float-panel float-panel-closed absolute transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto",
 	]}
 >
-	<!-- 导航链接区域 -->
-	<div class="nav-sheet-links">
 	{
 		processedLinks.map((link) => (
 			<div class="mobile-menu-item">
 				{link.children && link.children.length > 0 ? (
 					<div class="mobile-dropdown" data-mobile-dropdown>
 						<button
-							class="group flex justify-between items-center py-3 px-4 rounded-xl gap-4 w-full text-left
+							class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4 w-full text-left
                             hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
 							data-mobile-dropdown-trigger
 							aria-expanded="false"
@@ -77,7 +70,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 								{link.icon && (
 									<Icon
 										name={link.icon}
-										class="text-[1.1rem] mr-2.5"
+										class="text-[1.1rem] mr-2"
 									/>
 								)}
 								{getLocalizedName(link.name)}
@@ -95,7 +88,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 											? child.url
 											: url(child.url)
 									}
-									class="group flex justify-between items-center py-2.5 pl-10 pr-4 rounded-xl gap-4
+									class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-4
 								hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
 									target={child.external ? "_blank" : null}
 									{...(url(child.url) === "/music/" ? { "data-swup-ignore": true } : {})}
@@ -104,7 +97,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 										{child.icon && (
 											<Icon
 												name={child.icon}
-												class="text-[1rem] mr-2.5"
+												class="text-[1.1rem] mr-2"
 											/>
 										)}
 										{getLocalizedName(child.name)}
@@ -122,7 +115,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 				) : (
 					<a
 						href={link.external ? link.url : url(link.url)}
-						class="group flex justify-between items-center py-3 px-4 rounded-xl gap-4
+						class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4
 					hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
 					"
 						target={link.external ? "_blank" : null}
@@ -132,7 +125,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 							{link.icon && (
 								<Icon
 									name={link.icon}
-									class="text-[1.1rem] mr-2.5"
+									class="text-[1.1rem] mr-2"
 								/>
 							)}
 							{getLocalizedName(link.name)}
@@ -140,7 +133,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 						{!link.external && (
 							<Icon
 								name="material-symbols:chevron-right-rounded"
-								class="transition text-[1.25rem] text-black/20 dark:text-white/20"
+								class="transition text-[1.25rem] text-[var(--primary)]"
 							/>
 						)}
 						{link.external && (
@@ -154,195 +147,11 @@ const processedLinks: ProcessedNavBarLink[] = (
 			</div>
 		))
 	}
-	</div>
-
-	<!-- 快捷操作图标栏 -->
-	<div class="nav-sheet-shortcuts">
-		<a href="#search" id="nav-shortcut-search" class="nav-shortcut-item" data-nav-shortcut>
-			<Icon name="material-symbols:search" class="text-[1.2rem]" />
-			<span>搜索</span>
-		</a>
-		<button id="nav-shortcut-theme" class="nav-shortcut-item" data-nav-shortcut>
-			<Icon name="material-symbols:sunny" class="text-[1.2rem]" />
-			<span>主题</span>
-		</button>
-		<a href="/archive/" class="nav-shortcut-item" data-nav-shortcut>
-			<Icon name="material-symbols:calendar-month" class="text-[1.2rem]" />
-			<span>归档</span>
-		</a>
-		<a href="/music/" class="nav-shortcut-item" data-nav-shortcut {...(true ? { "data-swup-ignore": true }) : {})}>
-			<Icon name="material-symbols:music-note" class="text-[1.2rem]" />
-			<span>音乐</span>
-		</a>
-		<button id="nav-shortcut-toc" class="nav-shortcut-item md:hidden" data-nav-shortcut>
-			<Icon name="material-symbols:format-list-bulleted" class="text-[1.2rem]" />
-			<span>目录</span>
-		</button>
-		<a href="/guestbook/" class="nav-shortcut-item" data-nav-shortcut>
-			<Icon name="material-symbols:chat-bubble-outline" class="text-[1.2rem]" />
-			<span>留言</span>
-		</a>
-		<a href="#" id="nav-shortcut-top" class="nav-shortcut-item" data-nav-shortcut>
-			<Icon name="material-symbols:keyboard-arrow-up" class="text-[1.2rem]" />
-			<span>置顶</span>
-		</a>
-	</div>
-
-	<!-- 底部栏：站名 + 关闭按钮 -->
-	<div class="nav-sheet-footer">
-		<div class="nav-sheet-site-name">
-			<Icon name="material-symbols:chat-bubble" class="text-[1.1rem] mr-1.5 text-[var(--primary)]" />
-			<span>{siteConfig.title}的博客</span>
-		</div>
-		<button id="nav-sheet-close" class="nav-sheet-close-btn" aria-label="关闭菜单">
-			<Icon name="material-symbols:close" class="text-[1.3rem]" />
-		</button>
-	</div>
 </div>
 
 <style>
 	@reference "tailwindcss";
 
-	/* ====== 遮罩层 ====== */
-	.nav-menu-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0);
-		z-index: 998;
-		pointer-events: none;
-		transition: background 0.3s ease;
-	}
-
-	.nav-menu-overlay.active {
-		background: rgba(0, 0, 0, 0.35);
-		pointer-events: auto;
-		backdrop-filter: blur(4px);
-		-webkit-backdrop-filter: blur(4px);
-	}
-
-	/* ====== 底部弹出面板 ====== */
-	.nav-bottom-sheet {
-		position: fixed;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		z-index: 999;
-		background: var(--card-bg, #fff);
-		border-radius: 1.25rem 1.25rem 0 0;
-		box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12);
-		max-height: 75vh;
-		display: flex;
-		flex-direction: column;
-		transform: translateY(100%);
-		transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-		overflow: hidden;
-	}
-
-	.nav-bottom-sheet.active {
-		transform: translateY(0);
-	}
-
-	:root.dark .nav-bottom-sheet {
-		background: var(--card-bg, #1a1b2e);
-		box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
-	}
-
-	/* ====== 导航链接区域 ====== */
-	.nav-sheet-links {
-		flex: 1;
-		overflow-y: auto;
-		padding: 0.5rem 0.75rem 0.25rem;
-		overscroll-behavior: contain;
-	}
-
-	/* ====== 快捷操作栏 ====== */
-	.nav-sheet-shortcuts {
-		display: flex;
-		justify-content: space-around;
-		align-items: center;
-		padding: 0.6rem 0.5rem 0.5rem;
-		border-top: 1px solid rgba(128, 128, 128, 0.12);
-		gap: 2px;
-	}
-
-	.nav-shortcut-item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.15rem;
-		padding: 0.35rem 0.4rem;
-		border-radius: 0.75rem;
-		color: rgb(55 65 81 / 0.8);
-		font-size: 0.65rem;
-		font-weight: 500;
-		transition: all 0.15s ease;
-		cursor: pointer;
-		text-decoration: none;
-		min-width: 0;
-	}
-
-	.nav-shortcut-item:hover,
-	.nav-shortcut-item:active {
-		background: var(--btn-plain-bg-hover, rgba(0,0,0,0.05));
-		color: var(--primary, #3b82f6);
-	}
-
-	:root.dark .nav-shortcut-item {
-		color: rgb(209 213 219 / 0.8);
-	}
-
-	:root.dark .nav-shortcut-item:hover,
-	:root.dark .nav-shortcut-item:active {
-		background: rgba(255, 255, 255, 0.08);
-	}
-
-	/* ====== 底部栏 ====== */
-	.nav-sheet-footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.6rem 1rem;
-		border-top: 1px solid rgba(128, 128, 128, 0.12);
-		flex-shrink: 0;
-	}
-
-	.nav-sheet-site-name {
-		display: flex;
-		align-items: center;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: rgb(55 65 81 / 0.9);
-	}
-
-	:root.dark .nav-sheet-site-name {
-		color: rgb(209 213 219 / 0.9);
-	}
-
-	.nav-sheet-close-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 50%;
-		border: none;
-		background: transparent;
-		color: rgb(107 114 128);
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.nav-sheet-close-btn:hover {
-		background: rgba(0, 0, 0, 0.06);
-		color: rgb(55 65 81);
-	}
-
-	:root.dark .nav-sheet-close-btn:hover {
-		background: rgba(255, 255, 255, 0.08);
-		color: rgb(209 213 219);
-	}
-
-	/* ====== 下拉子菜单 ====== */
 	.mobile-submenu {
 		@apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
 	}

@@ -152,8 +152,8 @@ const iconWebpSrc = hasIconPngFallback
                 <Icon name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
             </button>
             <ThemeSwitch client:only="svelte"></ThemeSwitch>
-            <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-full w-12 h-12 active:scale-90 md:!hidden shadow-lg bg-[var(--card-bg)]" id="nav-menu-switch" style="display: none;">
-                <Icon name="material-symbols:menu" class="text-[1.4rem]"></Icon>
+            <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:!hidden" id="nav-menu-switch">
+                <Icon name="material-symbols:unfold-more" class="text-[1.25rem]"></Icon>
             </button>
         </div>
         <NavMenuPanel links={links}></NavMenuPanel>
@@ -218,116 +218,28 @@ function loadButtonScript() {
         };
     }
 
-    // 移动端底部导航菜单 - Bottom Sheet 模式
-    const menuBtn = document.getElementById("nav-menu-switch");
-    const menuPanel = document.getElementById("nav-menu-panel");
-    const menuOverlay = document.getElementById("nav-menu-overlay");
-
-    function isMobile() {
-        return window.innerWidth < 768;
-    }
-
-    function positionMenuButton() {
-        if (!menuBtn) return;
-        if (isMobile()) {
-            // 移动端：固定在右下角
-            menuBtn.style.cssText = 'position:fixed;bottom:1.25rem;right:1.25rem;z-index:997;display:flex;align-items:center;justify-content:center;';
-        } else {
-            // 桌面端：隐藏（桌面用下拉菜单）
-            menuBtn.style.display = 'none';
-        }
-    }
-
-    function openMenu() {
-        if (!menuPanel || !menuOverlay) return;
-        menuPanel.classList.add('active');
-        menuOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeMenu() {
-        if (!menuPanel || !menuOverlay) return;
-        menuPanel.classList.remove('active');
-        menuOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    function toggleMenu() {
-        if (menuPanel && menuPanel.classList.contains('active')) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-    }
-
+    let menuBtn = document.getElementById("nav-menu-switch");
     if (menuBtn) {
-        // 初始化按钮位置
-        positionMenuButton();
-        window.addEventListener('resize', positionMenuButton);
-
-        menuBtn.onclick = function(e) {
-            e.stopPropagation();
-            toggleMenu();
-        };
-    }
-
-    // 关闭按钮
-    const closeBtn = document.getElementById('nav-sheet-close');
-    if (closeBtn) {
-        closeBtn.onclick = closeMenu;
-    }
-
-    // 遮罩层点击关闭
-    if (menuOverlay) {
-        menuOverlay.onclick = closeMenu;
-    }
-
-    // 快捷操作
-    const shortcutSearch = document.getElementById('nav-shortcut-search');
-    if (shortcutSearch) {
-        shortcutSearch.onclick = function(e) {
-            e.preventDefault();
-            closeMenu();
-            const searchContainer = document.getElementById('search-container');
-            if (searchContainer) {
-                const searchInput = searchContainer.querySelector('input');
-                if (searchInput) searchInput.focus();
+        menuBtn.onclick = function () {
+            let menuPanel = document.getElementById("nav-menu-panel");
+            if (menuPanel) {
+                menuPanel.classList.toggle("float-panel-closed");
             }
         };
     }
 
-    const shortcutTheme = document.getElementById('nav-shortcut-theme');
-    if (shortcutTheme) {
-        shortcutTheme.onclick = function() {
-            closeMenu();
-            const settingBtn2 = document.getElementById('display-settings-switch');
-            if (settingBtn2) settingBtn2.click();
-        };
-    }
-
-    const shortcutToc = document.getElementById('nav-shortcut-toc');
-    if (shortcutToc) {
-        shortcutToc.onclick = function() {
-            closeMenu();
-            const tocBtn = document.querySelector('#mobile-toc-switch');
-            if (tocBtn) tocBtn.click();
-        };
-    }
-
-    const shortcutTop = document.getElementById('nav-shortcut-top');
-    if (shortcutTop) {
-        shortcutTop.onclick = function(e) {
-            e.preventDefault();
-            closeMenu();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-    }
-
-    // ESC 关闭
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && menuPanel && menuPanel.classList.contains('active')) {
-            closeMenu();
-        }
+    document.addEventListener("click", function(event) {
+        const panels = ["display-setting", "nav-menu-panel"];
+        const buttons = ["display-settings-switch", "nav-menu-switch"];
+        panels.forEach((id, index) => {
+            const panel = document.getElementById(id);
+            const button = document.getElementById(buttons[index]);
+            if (panel && button && !panel.classList.contains("float-panel-closed")) {
+                if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
+                    panel.classList.add("float-panel-closed");
+                }
+            }
+        });
     });
 }
 
