@@ -1339,12 +1339,11 @@
 	color: var(--primary);
 }
 
-/* ---- 工作区双列（成员侧栏） ---- */
+/* ---- 成员侧栏（参考 my-blog-master 风格：分组标题 + 圆形头像 + 绿色昵称） ---- */
 .guestbook-chat__workspace.has-sidebar {
-	grid-template-columns: minmax(0, 1fr) 16rem;
+	grid-template-columns: minmax(0, 1fr) 13rem;
 }
 
-/* ---- 成员侧栏 ---- */
 .guestbook-chat__sidebar {
 	display: flex;
 	flex-direction: column;
@@ -1355,44 +1354,47 @@
 	overflow: hidden;
 }
 
-.guestbook-chat__sidebar-header {
+/* 分组标题：站长 — 1 / 留言人 — 10 */
+.guestbook-chat__sidebar-section {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: var(--space-3) var(--space-4);
-	border-bottom: 1px solid var(--guestbook-line);
-	font-size: 0.8rem;
-	font-weight: 700;
-	color: var(--guestbook-muted);
+	padding: 0.6rem 0.75rem 0.4rem;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--text-secondary, var(--guestbook-muted));
+	white-space: nowrap;
+	user-select: none;
 }
 
-.guestbook-chat__sidebar-count-total {
-	padding: 0 var(--space-2);
-	border-radius: 999px;
-	background: var(--guestbook-editor-hover);
-	color: var(--deep-text);
-	font-size: 0.72rem;
+.guestbook-chat__sidebar-section span:last-child {
+	font-weight: 400;
+	font-size: 0.75rem;
+	opacity: 0.55;
 }
 
+/* 成员列表 */
 .guestbook-chat__sidebar-list {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
 	margin: 0;
-	padding: var(--space-2);
+	padding: 0.15rem 0.35rem 0.5rem;
 	list-style: none;
-	display: grid;
-	gap: var(--space-1);
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
 }
 
+/* 单个成员 */
 .guestbook-chat__sidebar-user {
 	display: flex;
 	align-items: center;
-	gap: var(--space-2);
+	gap: 0.55rem;
 	width: 100%;
-	padding: var(--space-2);
+	padding: 0.45rem 0.6rem;
 	border: 0;
-	border-radius: var(--radius-small);
+	border-radius: var(--radius-sm);
 	background: transparent;
 	color: var(--deep-text);
 	text-align: left;
@@ -1404,6 +1406,7 @@
 	background: var(--guestbook-editor-hover);
 }
 
+/* 头像 */
 .guestbook-chat__sidebar-avatar {
 	flex: 0 0 auto;
 	display: grid;
@@ -1416,6 +1419,12 @@
 	font-size: 0.8rem;
 	font-weight: 700;
 	overflow: hidden;
+	border: 1.5px solid transparent;
+	transition: border-color 140ms ease;
+}
+
+.guestbook-chat__sidebar-user:hover .guestbook-chat__sidebar-avatar {
+	border-color: var(--primary, var(--guestbook-accent));
 }
 
 .guestbook-chat__sidebar-avatar img {
@@ -1424,32 +1433,21 @@
 	object-fit: cover;
 }
 
+/* 昵称 */
 .guestbook-chat__sidebar-name {
 	flex: 1;
 	min-width: 0;
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
-	font-size: 0.82rem;
+	font-size: 0.85rem;
+	font-weight: 500;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	color: var(--deep-text);
 }
 
-.guestbook-chat__sidebar-tag {
-	flex: 0 0 auto;
-	padding: 0 var(--space-1);
-	border-radius: 999px;
-	background: var(--guestbook-accent-soft);
-	color: var(--guestbook-accent);
-	font-size: 0.62rem;
-	font-weight: 700;
-}
-
-.guestbook-chat__sidebar-count {
-	flex: 0 0 auto;
-	color: var(--guestbook-muted);
-	font-size: 0.72rem;
+/* 站长昵称用主题色（绿色）高亮 */
+.guestbook-chat__sidebar-user[data-role="admin"] .guestbook-chat__sidebar-name {
+	color: var(--primary, #10b981);
 }
 
 /* ---- 头像可点击（查看资料） ---- */

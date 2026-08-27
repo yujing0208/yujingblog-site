@@ -118,6 +118,10 @@ const memberList = $derived.by(() => {
 	return [...map.values()].sort((a, b) => b.count - a.count);
 });
 
+/** 分组：站长 / 留言人 */
+const adminMembers = $derived(memberList.filter((m) => m.isAdmin));
+const guestMembers = $derived(memberList.filter((m) => !m.isAdmin));
+
 function toggleMemberSidebar() {
 	memberSidebarOpen = !memberSidebarOpen;
 }
@@ -1029,44 +1033,75 @@ onMount(() => {
 		</div>
 		{#if memberSidebarOpen}
 			<aside class="guestbook-chat__sidebar" aria-label="成员列表">
-				<div class="guestbook-chat__sidebar-header">
-					<span>成员</span>
-					<span class="guestbook-chat__sidebar-count-total">{memberList.length}</span>
-				</div>
-				<ul class="guestbook-chat__sidebar-list">
-					{#each memberList as member (member.nick)}
-						<li class="guestbook-chat__sidebar-item">
-							<button
-								type="button"
-								class="guestbook-chat__sidebar-user"
-								onclick={() => openProfileCardByNick(member.nick)}
-							>
-								<span class="guestbook-chat__sidebar-avatar">
-									{#if member.avatar}
-										<img
-											src={member.avatar}
-											alt=""
-											loading="lazy"
-											referrerpolicy="no-referrer"
-											onerror={(event) => {
-												(event.currentTarget as HTMLImageElement).style.display = "none";
-											}}
-										/>
-									{:else}
-										{member.nick.slice(0, 1)}
-									{/if}
-								</span>
-								<span class="guestbook-chat__sidebar-name">
-									{member.nick}
-									{#if member.isAdmin}
-										<span class="guestbook-chat__sidebar-tag">站长</span>
-									{/if}
-								</span>
-								<span class="guestbook-chat__sidebar-count">{member.count}</span>
-							</button>
-						</li>
-					{/each}
-				</ul>
+				{#if adminMembers.length > 0}
+					<div class="guestbook-chat__sidebar-section">
+						<span>站长</span>
+						<span>— {adminMembers.length}</span>
+					</div>
+					<ul class="guestbook-chat__sidebar-list">
+						{#each adminMembers as member (member.nick)}
+							<li class="guestbook-chat__sidebar-item">
+								<button
+									type="button"
+									class="guestbook-chat__sidebar-user"
+									data-role="admin"
+									onclick={() => openProfileCardByNick(member.nick)}
+								>
+									<span class="guestbook-chat__sidebar-avatar">
+										{#if member.avatar}
+											<img
+												src={member.avatar}
+												alt=""
+												loading="lazy"
+												referrerpolicy="no-referrer"
+												onerror={(event) => {
+													(event.currentTarget as HTMLImageElement).style.display = "none";
+												}}
+											/>
+										{:else}
+											{member.nick.slice(0, 1)}
+										{/if}
+									</span>
+									<span class="guestbook-chat__sidebar-name">{member.nick}</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+				{#if guestMembers.length > 0}
+					<div class="guestbook-chat__sidebar-section">
+						<span>留言人</span>
+						<span>— {guestMembers.length}</span>
+					</div>
+					<ul class="guestbook-chat__sidebar-list">
+						{#each guestMembers as member (member.nick)}
+							<li class="guestbook-chat__sidebar-item">
+								<button
+									type="button"
+									class="guestbook-chat__sidebar-user"
+									onclick={() => openProfileCardByNick(member.nick)}
+								>
+									<span class="guestbook-chat__sidebar-avatar">
+										{#if member.avatar}
+											<img
+												src={member.avatar}
+												alt=""
+												loading="lazy"
+												referrerpolicy="no-referrer"
+												onerror={(event) => {
+													(event.currentTarget as HTMLImageElement).style.display = "none";
+												}}
+											/>
+										{:else}
+											{member.nick.slice(0, 1)}
+										{/if}
+									</span>
+									<span class="guestbook-chat__sidebar-name">{member.nick}</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</aside>
 		{/if}
 	</div>
