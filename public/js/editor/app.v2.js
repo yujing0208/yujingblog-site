@@ -626,7 +626,29 @@
 				if (!target.endsWith("/")) return;
 				window.EditorUpload.pickForPath(target, function () { alert("已上传"); refreshImages(); });
 			});
-			acts.appendChild(upCover); acts.appendChild(addImg);
+			// 新增：直接上传到图床，并把 URL 写入 info.json 的 photos/cover
+			var upCoverBed = el("button", "ef-btn ef-btn-accent", "🖼 封面→图床");
+			upCoverBed.addEventListener("click", function () {
+				if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+				window.EditorImgBed.pickAndUpload(function (url) {
+					if (!cur.info) cur.info = {};
+					cur.info.cover = url;
+					alert("封面 URL 已写入（不占仓库）：" + url);
+					refreshImages();
+				});
+			});
+			var addImgBed = el("button", "ef-btn ef-btn-accent", "➕ 图片→图床");
+			addImgBed.addEventListener("click", function () {
+				if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+				window.EditorImgBed.pickAndUpload(function (url) {
+					if (!cur.info) cur.info = {};
+					if (!Array.isArray(cur.info.photos)) cur.info.photos = [];
+					cur.info.photos.push(url);
+					alert("图片 URL 已追加到相册：" + url);
+					refreshImages();
+				});
+			});
+			acts.appendChild(upCover); acts.appendChild(upCoverBed); acts.appendChild(addImg); acts.appendChild(addImgBed);
 			localBox.appendChild(acts);
 			var imgBox = el("div", "ed-images");
 			imgBox.id = "al-images-local";

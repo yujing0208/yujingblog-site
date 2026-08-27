@@ -16,6 +16,18 @@ export interface DiaryItem {
 // 日记数据
 const diaryData: DiaryItem[] = [
 	{
+		content: "我靠，终于成了，我有谷歌账号了",
+		date: "2026-08-27T10:50:32+08:00",
+		images: [
+			"https://img.yujingblog.top/file/1787799201489_Screenshot_20260827_104252.jpg"
+		],
+		location: "",
+		mood: "激动",
+		tags: [],
+		imgMode: "mode-mid",
+		id: 32
+	},
+	{
 		content: "我成功在旧手机上跑上了dsh，QQ 机器人，就是好像有点慢",
 		date: "2026-08-27T00:00:57+08:00",
 		images: [
@@ -406,16 +418,16 @@ const diaryData: DiaryItem[] = [
 		id: 24
 	},
 	{
-		content: "我靠终于成了，我有谷歌账号了",
-		date: "2026-08-27T10:50:32+08:00",
-		images: [
-			"https://img.yujingblog.top/file/1787799201489_Screenshot_20260827_104252.jpg"
-		],
+		content: "不对呀，这个gemini api key怎么要满18啊，那我不是白注册谷歌账号了吗😓",
+		date: "2026-08-27T11:55:25+08:00",
+		images: [],
 		location: "",
-		mood: "激动",
-		tags: [],
-		imgMode: "mode-mid",
-		id: 32
+		mood: "无语",
+		tags: [
+			"碎碎念"
+		],
+		imgMode: "",
+		id: 33
 	}
 ];
 

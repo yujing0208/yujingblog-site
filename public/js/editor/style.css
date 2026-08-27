@@ -103,6 +103,16 @@ html, body { margin: 0; padding: 0; background: #0f1115; color: #e6e6e6; font-fa
 /* 正文工具栏（上传图片到图床等） */
 .ef-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
 .ef-btn-sm { padding: 6px 12px; font-size: 13px; }
+/* 强调色按钮（图床等推荐操作） */
+.ef-btn-accent { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+.ef-btn-accent:hover { background: #3b5bd4; border-color: #3b5bd4; }
+/* tags 控件 wrap（图片 tags 上传按钮） */
+.ef-tags-wrap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ef-tags-wrap .ef-input { flex: 1 1 240px; min-width: 0; }
+/* image 控件：缩略图预览 */
+.ef-image { display: flex; flex-direction: column; gap: 6px; }
+.ef-image-prev { min-height: 28px; }
+.ef-image-prev img { max-height: 120px; max-width: 240px; border-radius: 6px; border: 1px solid #2c323d; object-fit: cover; }
 
 /* 正文：编辑 + 实时预览双栏 */
 .ef-body-cols { display: flex; gap: 14px; align-items: stretch; }
