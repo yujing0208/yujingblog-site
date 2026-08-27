@@ -65,8 +65,21 @@ jobs:
           echo "站点仓库 commit: ${{ github.sha }}"
           pnpm build
 
-      # 用 Vercel CLI 直接部署 Astro 构建产物（dist/，由 vercel.json 的 outputDirectory 指定），
-      # 不再 curl 触发 Vercel 二次构建。
+      # 把 Astro 静态产物 dist/ 转换成 Vercel Build Output 格式（--prebuilt 要求 .vercel/output），
+      # 否则 vercel deploy --prebuilt 会因找不到 .vercel/output 直接退出码 1。
+      - name: Package Vercel Build Output
+        run: |
+          set -euo pipefail
+          rm -rf .vercel/output
+          mkdir -p .vercel/output/static
+          cp -r dist/. .vercel/output/static/
+          printf '{"version":3}' > .vercel/output/config.json
+          # 保留 /api/chat 这个 serverless 函数（DeepSeek 代理），避免 AI 聊天功能失效
+          mkdir -p .vercel/output/functions/api
+          cp api/chat.js .vercel/output/functions/api/chat.func/index.js
+          printf '{"runtime":"nodejs22.x","handler":"index.js","launcherType":"Nodejs"}' > .vercel/output/functions/api/chat.func/.vc-config.json
+
+      # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
       - name: Link & Deploy to Vercel
         id: deploy
         env:
