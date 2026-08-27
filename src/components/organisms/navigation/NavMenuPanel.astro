@@ -49,45 +49,38 @@ const processedLinks: ProcessedNavBarLink[] = (
 );
 ---
 
-<!-- 抽屉遮罩层 -->
-<div id="nav-drawer-overlay" class="nav-drawer-overlay"></div>
-
-<!-- 右侧抽屉导航（参考 my-blog-master 竖排导航） -->
-<div id="nav-drawer-panel" class="nav-drawer-panel">
-	<!-- 头部：站点标题 + 关闭按钮 -->
-	<div class="nav-drawer-header">
-		<a href={url('/')} class="nav-drawer-brand">
-			<Icon name="material-symbols:home-pin-outline" class="text-[1.5rem]" />
-			<span>YuJing</span>
-		</a>
-		<button id="nav-drawer-close" aria-label="关闭导航" class="nav-drawer-close-btn">
-			<Icon name="material-symbols:close-rounded" class="text-[1.4rem]" />
-		</button>
-	</div>
-
-	<!-- 导航链接列表 -->
-	<nav class="nav-drawer-nav">
-		{processedLinks.map((link) => (
-			<div class="nav-drawer-item">
+<div
+	id="nav-menu-panel"
+	class:list={[
+		"float-panel float-panel-closed absolute transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto",
+	]}
+>
+	{
+		processedLinks.map((link) => (
+			<div class="mobile-menu-item">
 				{link.children && link.children.length > 0 ? (
-					<div class="nav-drawer-dropdown" data-nav-dropdown>
+					<div class="mobile-dropdown" data-mobile-dropdown>
 						<button
-							class="nav-drawer-trigger"
-							data-nav-dropdown-trigger
+							class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4 w-full text-left
+                            hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+							data-mobile-dropdown-trigger
 							aria-expanded="false"
 						>
-							<span class="nav-drawer-label">
+							<div class="flex items-center transition text-black/75 dark:text-white/75 font-bold">
 								{link.icon && (
-									<Icon name={link.icon} class="nav-drawer-icon" />
+									<Icon
+										name={link.icon}
+										class="text-[1.1rem] mr-2"
+									/>
 								)}
 								{getLocalizedName(link.name)}
-							</span>
+							</div>
 							<Icon
 								name="material-symbols:keyboard-arrow-down-rounded"
-								class="nav-drawer-arrow"
+								class="transition text-[1.25rem] text-[var(--primary)] mobile-dropdown-arrow duration-200"
 							/>
 						</button>
-						<div class="nav-drawer-submenu" data-nav-submenu>
+						<div class="mobile-submenu" data-mobile-submenu>
 							{link.children.map((child) => (
 								<a
 									href={
@@ -95,18 +88,24 @@ const processedLinks: ProcessedNavBarLink[] = (
 											? child.url
 											: url(child.url)
 									}
-									class="nav-drawer-link nav-drawer-sub-link"
+									class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-4
+								hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
 									target={child.external ? "_blank" : null}
 									{...(url(child.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 								>
-									{child.icon && (
-										<Icon name={child.icon} class="nav-drawer-icon" />
-									)}
-									{getLocalizedName(child.name)}
+									<div class="flex items-center transition text-black/60 dark:text-white/60 font-medium">
+										{child.icon && (
+											<Icon
+												name={child.icon}
+												class="text-[1.1rem] mr-2"
+											/>
+										)}
+										{getLocalizedName(child.name)}
+									</div>
 									{child.external && (
 										<Icon
 											name="fa7-solid:arrow-up-right-from-square"
-											class="nav-drawer-external-icon"
+											class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
 										/>
 									)}
 								</a>
@@ -116,321 +115,92 @@ const processedLinks: ProcessedNavBarLink[] = (
 				) : (
 					<a
 						href={link.external ? link.url : url(link.url)}
-						class="nav-drawer-link"
+						class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4
+					hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
+					"
 						target={link.external ? "_blank" : null}
 						{...(url(link.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 					>
-						<span class="nav-drawer-label">
+						<div class="flex items-center transition text-black/75 dark:text-white/75 font-bold">
 							{link.icon && (
-								<Icon name={link.icon} class="nav-drawer-icon" />
+								<Icon
+									name={link.icon}
+									class="text-[1.1rem] mr-2"
+								/>
 							)}
 							{getLocalizedName(link.name)}
-						</span>
+						</div>
 						{!link.external && (
 							<Icon
 								name="material-symbols:chevron-right-rounded"
-								class="nav-drawer-arrow-right"
+								class="transition text-[1.25rem] text-[var(--primary)]"
 							/>
 						)}
 						{link.external && (
 							<Icon
 								name="fa7-solid:arrow-up-right-from-square"
-								class="nav-drawer-external-icon"
+								class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
 							/>
 						)}
 					</a>
 				)}
 			</div>
-		))}
-	</nav>
+		))
+	}
 </div>
 
 <style>
 	@reference "tailwindcss";
 
-	/* ===== 遮罩层 ===== */
-	.nav-drawer-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 9980;
-		background: rgba(0, 0, 0, 0.35);
-		backdrop-filter: blur(6px);
-		opacity: 0;
-		visibility: hidden;
-		transition: opacity 0.3s ease, visibility 0.3s ease;
+	.mobile-submenu {
+		@apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
 	}
 
-	.nav-drawer-overlay.active {
-		opacity: 1;
-		visibility: visible;
+	.mobile-dropdown[data-expanded="true"] .mobile-submenu {
+		@apply max-h-96;
 	}
 
-	/* ===== 抽屉面板（右侧滑入） ===== */
-	.nav-drawer-panel {
-		position: fixed;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 9990;
-		width: min(280px, 75vw);
-		background: var(--card-bg, #fff);
-		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
-		transform: translateX(100%);
-		transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-		display: flex;
-		flex-direction: column;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-
-	.dark .nav-drawer-panel {
-		background: #181926;
-		box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
-	}
-
-	.nav-drawer-panel.active {
-		transform: translateX(0);
-	}
-
-	/* ===== 头部：品牌 + 关闭按钮 ===== */
-	.nav-drawer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 1rem 1.2rem;
-		border-bottom: 1px solid var(--divider, rgba(128, 128, 128, 0.15));
-		flex-shrink: 0;
-	}
-
-	.nav-drawer-brand {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		font-size: 1.05rem;
-		font-weight: 700;
-		color: var(--deep-text, #111);
-		text-decoration: none;
-		transition: color 0.15s;
-	}
-
-	.dark .nav-drawer-brand {
-		color: #eee;
-	}
-
-	.nav-drawer-brand:hover {
-		color: var(--primary, #10b981);
-	}
-
-	.nav-drawer-close-btn {
-		display: grid;
-		place-items: center;
-		width: 2.2rem;
-		height: 2.2rem;
-		border: none;
-		border-radius: 50%;
-		background: transparent;
-		color: var(--text-secondary, #666);
-		cursor: pointer;
-		transition: background 0.15s, color 0.15s;
-		flex-shrink: 0;
-	}
-
-	.nav-drawer-close-btn:hover {
-		background: var(--hover, rgba(0, 0, 0, 0.06));
-		color: var(--deep-text, #111);
-	}
-
-	/* ===== 导航列表 ===== */
-	.nav-drawer-nav {
-		flex: 1;
-		padding: 0.5rem 0;
-		overflow-y: auto;
-	}
-
-	.nav-drawer-item {
-		margin: 0;
-	}
-
-	/* 一级链接 */
-	.nav-drawer-link {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.72rem 1.2rem;
-		text-decoration: none;
-		color: var(--deep-text, #222);
-		font-size: 0.92rem;
-		font-weight: 500;
-		transition: background 0.15s, color 0.15s;
-		gap: 0.5rem;
-	}
-
-	.dark .nav-drawer-link {
-		color: #ddd;
-	}
-
-	.nav-drawer-link:hover {
-		background: var(--hover, rgba(0, 0, 0, 0.04));
-		color: var(--primary, #10b981);
-	}
-
-	.nav-drawer-label {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		min-width: 0;
-	}
-
-	.nav-drawer-icon {
-		font-size: 1.15rem;
-		flex-shrink: 0;
-		color: inherit;
-		opacity: 0.85;
-	}
-
-	.nav-drawer-arrow-right {
-		font-size: 1.2rem;
-		color: var(--primary, #10b981);
-		flex-shrink: 0;
-		opacity: 0.6;
-	}
-
-	.nav-drawer-external-icon {
-		font-size: 0.72rem;
-		color: var(--text-secondary, #999);
-		flex-shrink: 0;
-	}
-
-	/* 下拉分组 */
-	.nav-drawer-dropdown {
-		margin: 0;
-	}
-
-	.nav-drawer-trigger {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		padding: 0.72rem 1.2rem;
-		border: none;
-		background: transparent;
-		color: var(--deep-text, #222);
-		font-size: 0.92rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background 0.15s, color 0.15s;
-		text-align: left;
-	}
-
-	.dark .nav-drawer-trigger {
-		color: #ddd;
-	}
-
-	.nav-drawer-trigger:hover {
-		background: var(--hover, rgba(0, 0, 0, 0.04));
-		color: var(--primary, #10b981);
-	}
-
-	.nav-drawer-arrow {
-		font-size: 1.2rem;
-		color: var(--primary, #10b981);
-		transition: transform 0.25s ease;
-		flex-shrink: 0;
-	}
-
-	/* 子菜单 */
-	.nav-drawer-submenu {
-		max-height: 0;
-		overflow: hidden;
-		transition: max-height 0.3s ease-in-out;
-		background: var(--hover, rgba(0, 0, 0, 0.02));
-	}
-
-	.nav-drawer-dropdown[data-expanded="true"] .nav-drawer-submenu {
-		max-height: 400px;
-	}
-
-	.nav-drawer-dropdown[data-expanded="true"] .nav-drawer-arrow {
-		transform: rotate(180deg);
-	}
-
-	.nav-drawer-sub-link {
-		padding: 0.58rem 1.2rem 0.58rem 2.4rem;
-		font-size: 0.86rem;
-		font-weight: 400;
-		color: var(--text-secondary, #666);
-	}
-
-	.dark .nav-drawer-sub-link {
-		color: #aaa;
-	}
-
-	.nav-drawer-sub-link:hover {
-		color: var(--primary, #10b981);
+	.mobile-dropdown[data-expanded="true"] .mobile-dropdown-arrow {
+		@apply rotate-180;
 	}
 </style>
 
 <script>
-	// ===== 抽屉开关逻辑 =====
-	const overlay = document.getElementById("nav-drawer-overlay");
-	const panel = document.getElementById("nav-drawer-panel");
-	const closeBtn = document.getElementById("nav-drawer-close");
-	const menuSwitch = document.getElementById("nav-menu-switch");
-
-	function openDrawer() {
-		overlay?.classList.add("active");
-		panel?.classList.add("active");
-		document.body.style.overflow = "hidden";
-	}
-
-	function closeDrawer() {
-		overlay?.classList.remove("active");
-		panel?.classList.remove("active");
-		document.body.style.overflow = "";
-	}
-
-	menuSwitch?.addEventListener("click", openDrawer);
-	closeBtn?.addEventListener("click", closeDrawer);
-	overlay?.addEventListener("click", closeDrawer);
-
-	// ESC 关闭
-	document.addEventListener("keydown", (e) => {
-		if (e.key === "Escape" && panel?.classList.contains("active")) {
-			closeDrawer();
-		}
-	});
-
-	// 暴露到全局供 Navbar 脚本调用
-	// @ts-ignore
-	window.openNavDrawer = openDrawer;
-	// @ts-ignore
-	window.closeNavDrawer = closeDrawer;
-
-	// ===== 下拉展开/收起 =====
 	document.addEventListener("DOMContentLoaded", function () {
-		const dropdowns = document.querySelectorAll("[data-nav-dropdown]");
+		const mobileDropdowns = document.querySelectorAll(
+			"[data-mobile-dropdown]",
+		);
 
-		dropdowns.forEach((dropdown) => {
-			const trigger = dropdown.querySelector("[data-nav-dropdown-trigger]");
-			if (!trigger) return;
+		mobileDropdowns.forEach((dropdown) => {
+			const trigger = dropdown.querySelector(
+				"[data-mobile-dropdown-trigger]",
+			);
+			const submenu = dropdown.querySelector("[data-mobile-submenu]");
+
+			if (!trigger || !submenu) {
+				return;
+			}
 
 			trigger.addEventListener("click", function (e) {
 				e.preventDefault();
 				const isExpanded =
 					dropdown.getAttribute("data-expanded") === "true";
 
-				dropdowns.forEach((other) => {
-					if (other !== dropdown) {
-						other.setAttribute("data-expanded", "false");
-						other.querySelector("[data-nav-dropdown-trigger]")?.setAttribute(
-							"aria-expanded",
-							"false",
+				mobileDropdowns.forEach((otherDropdown) => {
+					if (otherDropdown !== dropdown) {
+						otherDropdown.setAttribute("data-expanded", "false");
+						const otherTrigger = otherDropdown.querySelector(
+							"[data-mobile-dropdown-trigger]",
 						);
+						if (otherTrigger) {
+							otherTrigger.setAttribute("aria-expanded", "false");
+						}
 					}
 				});
 
-				dropdown.setAttribute("data-expanded", String(!isExpanded));
-				trigger.setAttribute("aria-expanded", String(!isExpanded));
+				const newState = !isExpanded;
+				dropdown.setAttribute("data-expanded", newState.toString());
+				trigger.setAttribute("aria-expanded", newState.toString());
 			});
 		});
 	});
