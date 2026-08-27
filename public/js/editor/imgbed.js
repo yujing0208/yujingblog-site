@@ -17,12 +17,12 @@
 
 	var CONFIG = {
 		base: "https://img.yujingblog.top",
-		uploadApi: "/api/v1/upload",
+		uploadApi: "/upload",                  // Sanyue ImgHub 实际上传接口
 		authHeader: "Authorization",          // 形如 "Authorization: Bearer <token>"
-		authScheme: "Bearer",                 // token 前缀；若图床要裸 token 改为 ""
-		tokenQuery: "",                       // 非空则用 query 传 token（键名），如 "token" 或 "admin_token"
-		urlField: "data.url",                 // 返回 JSON 里图片 URL 的路径
-		lsKey: "editor_imgbed_token",         // localStorage 键
+		authScheme: "Bearer",                 // token 前缀
+		tokenQuery: "",                       // 非空则用 query 传 token（键名）
+		urlField: "0.src",                    // 返回 JSON 数组，首项 src 为相对路径 /file/xxx
+		lsKey: "editor_imgbed_token",         // localStorage 键（token 仅存本浏览器，不进仓库）
 		maxSize: 2000,                        // 压缩后长边上限
 		quality: 0.85                         // webp 质量
 	};
@@ -90,6 +90,8 @@
 						.then(function (res) {
 							var j = res.j;
 							var imgUrl = pickField(j, CONFIG.urlField);
+							// Sanyue ImgHub 返回相对路径 /file/xxx，需拼接 base 成完整 URL
+							if (imgUrl && imgUrl.charAt(0) === "/") imgUrl = CONFIG.base + imgUrl;
 							if (!imgUrl) throw new Error("图床未返回图片 URL（响应：" + JSON.stringify(j).slice(0, 200) + "）");
 							if (cb) cb(imgUrl);
 						});
