@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 
+import { navBarConfig, siteConfig } from "../../../config";
 import { LinkPresets } from "../../../constants/link-presets";
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
@@ -49,64 +50,56 @@ const processedLinks: ProcessedNavBarLink[] = (
 );
 ---
 
-<div
-	id="nav-menu-panel"
-	class:list={[
-		"float-panel float-panel-closed absolute transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto",
-	]}
->
-	{
-		processedLinks.map((link) => (
-			<div class="mobile-menu-item">
+<div id="nav-drawer-overlay"></div>
+
+<div id="nav-drawer-panel" class="nav-drawer">
+	<!-- 品牌 -->
+	<a href={url('/')} class="nav-drawer-brand">
+		{siteConfig.navbarTitle?.logo ? (
+			<img src={siteConfig.navbarTitle.logo} alt="logo" class="nav-drawer-logo" />
+		) : siteConfig.navbarTitle?.icon ? (
+			<Icon name={siteConfig.navbarTitle.icon} class="nav-drawer-logo-icon" is:inline />
+		) : null}
+		<span class="nav-drawer-brand-text">{siteConfig.navbarTitle?.text || siteConfig.title}</span>
+	</a>
+
+	<!-- 头部 -->
+	<div class="nav-drawer-header">
+		<span class="nav-drawer-title">Menu</span>
+		<button id="nav-drawer-close" aria-label="关闭导航" class="nav-drawer-close-btn">
+			<Icon name="material-symbols:close-rounded" is:inline />
+		</button>
+	</div>
+
+	<!-- 主体 -->
+	<div class="nav-drawer-body" data-nav-drawer-body>
+		{processedLinks.map((link, idx) => (
+			<div class="nav-drawer-item nav-drawer-item--stagger" style={`--item-index: ${idx + 1}`}>
 				{link.children && link.children.length > 0 ? (
-					<div class="mobile-dropdown" data-mobile-dropdown>
-						<button
-							class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4 w-full text-left
-                            hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
-							data-mobile-dropdown-trigger
-							aria-expanded="false"
-						>
-							<div class="flex items-center transition text-black/75 dark:text-white/75 font-bold">
+					<div class="nav-drawer-dropdown" data-nav-child-type="dropdown">
+						<button class="nav-drawer-link nav-drawer-dropdown-trigger" data-mobile-dropdown-trigger aria-expanded="false">
+							<div class="nav-drawer-link-content">
 								{link.icon && (
-									<Icon
-										name={link.icon}
-										class="text-[1.1rem] mr-2"
-									/>
+									<Icon name={link.icon} class="nav-drawer-icon" is:inline />
 								)}
 								{getLocalizedName(link.name)}
 							</div>
-							<Icon
-								name="material-symbols:keyboard-arrow-down-rounded"
-								class="transition text-[1.25rem] text-[var(--primary)] mobile-dropdown-arrow duration-200"
-							/>
+							<Icon name="material-symbols:keyboard-arrow-down-rounded" class="nav-drawer-dropdown-arrow" is:inline />
 						</button>
-						<div class="mobile-submenu" data-mobile-submenu>
+						<div class="mobile-submenu mobile-submenu--flat" data-mobile-submenu>
 							{link.children.map((child) => (
 								<a
-									href={
-										child.external
-											? child.url
-											: url(child.url)
-									}
-									class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-4
-								hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+									href={child.external ? child.url : url(child.url)}
+									class="nav-drawer-link nav-drawer-sublink"
 									target={child.external ? "_blank" : null}
 									{...(url(child.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 								>
-									<div class="flex items-center transition text-black/60 dark:text-white/60 font-medium">
-										{child.icon && (
-											<Icon
-												name={child.icon}
-												class="text-[1.1rem] mr-2"
-											/>
-										)}
-										{getLocalizedName(child.name)}
-									</div>
+									{child.icon && (
+										<Icon name={child.icon} class="nav-drawer-icon" is:inline />
+									)}
+									{getLocalizedName(child.name)}
 									{child.external && (
-										<Icon
-											name="fa7-solid:arrow-up-right-from-square"
-											class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
-										/>
+										<Icon name="fa7-solid:arrow-up-right-from-square" class="nav-drawer-sublink-external" is:inline />
 									)}
 								</a>
 							))}
@@ -115,93 +108,275 @@ const processedLinks: ProcessedNavBarLink[] = (
 				) : (
 					<a
 						href={link.external ? link.url : url(link.url)}
-						class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-4
-					hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
-					"
+						class="nav-drawer-link"
 						target={link.external ? "_blank" : null}
 						{...(url(link.url) === "/music/" ? { "data-swup-ignore": true } : {})}
 					>
-						<div class="flex items-center transition text-black/75 dark:text-white/75 font-bold">
+						<div class="nav-drawer-link-content">
 							{link.icon && (
-								<Icon
-									name={link.icon}
-									class="text-[1.1rem] mr-2"
-								/>
+								<Icon name={link.icon} class="nav-drawer-icon" is:inline />
 							)}
 							{getLocalizedName(link.name)}
 						</div>
 						{!link.external && (
-							<Icon
-								name="material-symbols:chevron-right-rounded"
-								class="transition text-[1.25rem] text-[var(--primary)]"
-							/>
+							<Icon name="material-symbols:chevron-right-rounded" class="nav-drawer-arrow" is:inline />
 						)}
 						{link.external && (
-							<Icon
-								name="fa7-solid:arrow-up-right-from-square"
-								class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
-							/>
+							<Icon name="fa7-solid:arrow-up-right-from-square" class="nav-drawer-link-external" is:inline />
 						)}
 					</a>
 				)}
 			</div>
-		))
-	}
+		))}
+	</div>
 </div>
 
 <style>
-	@reference "tailwindcss";
+	/* 移植自 my-blog-master/src/styles/layout/nav-menu-panel.css */
+	.nav-drawer-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 9980;
+		background: rgba(0, 0, 0, 0.35);
+		-webkit-backdrop-filter: blur(2px);
+		backdrop-filter: blur(2px);
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.35s ease, visibility 0.35s ease;
+	}
+	.nav-drawer-overlay.is-open {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.nav-drawer {
+		position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 9990;
+		width: min(80vw, 360px);
+		background: var(--float-panel-bg, #fff);
+		display: flex;
+		flex-direction: column;
+		transform: translateX(100%);
+		transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+	}
+	.nav-drawer.is-open {
+		transform: translateX(0);
+	}
+
+	.nav-drawer-brand {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1.25rem 1.5rem 0.75rem;
+		text-decoration: none;
+		color: var(--deep-text, #222);
+	}
+	.nav-drawer-logo {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+	.nav-drawer-logo-icon {
+		font-size: 2rem;
+		color: var(--primary, #10b981);
+	}
+	.nav-drawer-brand-text {
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+
+	.nav-drawer-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 1.25rem 0.5rem;
+	}
+	.nav-drawer-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text-secondary, #666);
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+	.nav-drawer-close-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border: none;
+		border-radius: 0.75rem;
+		background: transparent;
+		color: var(--deep-text, #222);
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+	.nav-drawer-close-btn:hover {
+		background: var(--btn-plain-bg-hover, rgba(0, 0, 0, 0.05));
+	}
+
+	.nav-drawer-body {
+		flex: 1;
+		padding: 0.5rem 0 1rem;
+	}
+
+	.nav-drawer-item--stagger {
+		opacity: 0;
+		transform: translateX(30px);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+		transition-delay: calc(var(--item-index) * 0.04s);
+	}
+	.nav-drawer.is-open .nav-drawer-item--stagger {
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	.nav-drawer-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 0.875rem 1rem;
+		text-decoration: none;
+		color: var(--deep-text, #222);
+		font-size: 0.95rem;
+		font-weight: 600;
+		transition: background-color 0.15s, color 0.15s;
+		cursor: pointer;
+		border: none;
+		background: transparent;
+		text-align: left;
+	}
+	.nav-drawer-link:hover {
+		background: var(--btn-plain-bg-hover, rgba(0, 0, 0, 0.05));
+		color: var(--primary, #10b981);
+	}
+	.nav-drawer-link-content {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.nav-drawer-icon {
+		font-size: 1.2rem;
+	}
+	.nav-drawer-arrow {
+		font-size: 1.4rem;
+		color: var(--primary, #10b981);
+	}
+	.nav-drawer-link-external {
+		font-size: 0.8rem;
+		color: var(--text-secondary, #999);
+	}
+	.nav-drawer-dropdown-arrow {
+		font-size: 1.4rem;
+		color: var(--text-secondary, #999);
+		transition: transform 0.3s ease;
+	}
+	.nav-drawer-dropdown[data-expanded="true"] .nav-drawer-dropdown-arrow {
+		transform: rotate(180deg);
+	}
 
 	.mobile-submenu {
-		@apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
+		max-height: 0;
+		overflow: hidden;
+		transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	.mobile-submenu--flat {
+		max-height: none;
+	}
+	.nav-drawer-sublink {
+		padding-left: 2.5rem;
+		font-weight: 500;
+		opacity: 0.7;
+	}
+	.nav-drawer-sublink:hover {
+		opacity: 1;
+	}
+	.nav-drawer-sublink-external {
+		font-size: 0.7rem;
 	}
 
-	.mobile-dropdown[data-expanded="true"] .mobile-submenu {
-		@apply max-h-96;
-	}
-
-	.mobile-dropdown[data-expanded="true"] .mobile-dropdown-arrow {
-		@apply rotate-180;
+	@media (min-width: 768px) {
+		.nav-drawer-overlay,
+		.nav-drawer {
+			display: none;
+		}
 	}
 </style>
 
 <script>
-	document.addEventListener("DOMContentLoaded", function () {
-		const mobileDropdowns = document.querySelectorAll(
-			"[data-mobile-dropdown]",
-		);
+	// 移植自 my-blog-master，适配 Swup 用 swup:page:view
+	function initNavDrawer() {
+		const panel = document.getElementById("nav-drawer-panel");
+		const overlay = document.getElementById("nav-drawer-overlay");
+		const menuBtn = document.getElementById("nav-menu-switch");
+		const closeBtn = document.getElementById("nav-drawer-close");
+		if (!panel || !overlay || !menuBtn || !closeBtn) return;
 
-		mobileDropdowns.forEach((dropdown) => {
-			const trigger = dropdown.querySelector(
-				"[data-mobile-dropdown-trigger]",
-			);
-			const submenu = dropdown.querySelector("[data-mobile-submenu]");
+		const openDrawer = () => {
+			overlay.classList.add("is-open");
+			panel.classList.add("is-open");
+			document.body.style.overflow = "hidden";
+		};
 
-			if (!trigger || !submenu) {
-				return;
+		const closeDrawer = () => {
+			overlay.classList.remove("is-open");
+			panel.classList.remove("is-open");
+			document.body.style.overflow = "";
+			document.removeEventListener("click", clickOutsideHandler, true);
+		};
+
+		const clickOutsideHandler = (event: Event) => {
+			const target = event.target as Node;
+			if (
+				!panel.contains(target) &&
+				!menuBtn.contains(target) &&
+				!overlay.contains(target)
+			) {
+				closeDrawer();
 			}
+		};
 
-			trigger.addEventListener("click", function (e) {
-				e.preventDefault();
-				const isExpanded =
-					dropdown.getAttribute("data-expanded") === "true";
+		const toggleDropdown = (dropdown: HTMLElement) => {
+			const isExpanded = dropdown.getAttribute("data-expanded") === "true";
+			dropdown.setAttribute("data-expanded", String(!isExpanded));
+			const trigger = dropdown.querySelector("[data-mobile-dropdown-trigger]");
+			if (trigger) trigger.setAttribute("aria-expanded", String(!isExpanded));
+		};
 
-				mobileDropdowns.forEach((otherDropdown) => {
-					if (otherDropdown !== dropdown) {
-						otherDropdown.setAttribute("data-expanded", "false");
-						const otherTrigger = otherDropdown.querySelector(
-							"[data-mobile-dropdown-trigger]",
-						);
-						if (otherTrigger) {
-							otherTrigger.setAttribute("aria-expanded", "false");
-						}
-					}
-				});
+		menuBtn.onclick = openDrawer;
+		closeBtn.onclick = closeDrawer;
+		overlay.onclick = closeDrawer;
 
-				const newState = !isExpanded;
-				dropdown.setAttribute("data-expanded", newState.toString());
-				trigger.setAttribute("aria-expanded", newState.toString());
-			});
+		const dropdowns = panel.querySelectorAll("[data-nav-child-type='dropdown']");
+		dropdowns.forEach((dropdown) => {
+			const trigger = dropdown.querySelector("[data-mobile-dropdown-trigger]");
+			if (!trigger) return;
+			trigger.addEventListener("click", () => toggleDropdown(dropdown as HTMLElement));
 		});
+
+		overlay.addEventListener("click", clickOutsideHandler, true);
+
+		// @ts-ignore
+		window.openNavDrawer = openDrawer;
+		// @ts-ignore
+		window.closeNavDrawer = closeDrawer;
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", initNavDrawer);
+	} else {
+		initNavDrawer();
+	}
+
+	document.addEventListener("swup:page:view", () => {
+		initNavDrawer();
 	});
 </script>

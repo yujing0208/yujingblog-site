@@ -153,7 +153,7 @@ const iconWebpSrc = hasIconPngFallback
             </button>
             <ThemeSwitch client:only="svelte"></ThemeSwitch>
             <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:!hidden" id="nav-menu-switch">
-                <Icon name="material-symbols:unfold-more" class="text-[1.25rem]"></Icon>
+                <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>
         </div>
         <NavMenuPanel links={links}></NavMenuPanel>
@@ -218,28 +218,16 @@ function loadButtonScript() {
         };
     }
 
-    let menuBtn = document.getElementById("nav-menu-switch");
-    if (menuBtn) {
-        menuBtn.onclick = function () {
-            let menuPanel = document.getElementById("nav-menu-panel");
-            if (menuPanel) {
-                menuPanel.classList.toggle("float-panel-closed");
-            }
-        };
-    }
+    // 移动端抽屉导航由 NavMenuPanel.astro 自己接管（open/close/点击遮罩关闭）
 
     document.addEventListener("click", function(event) {
-        const panels = ["display-setting", "nav-menu-panel"];
-        const buttons = ["display-settings-switch", "nav-menu-switch"];
-        panels.forEach((id, index) => {
-            const panel = document.getElementById(id);
-            const button = document.getElementById(buttons[index]);
-            if (panel && button && !panel.classList.contains("float-panel-closed")) {
-                if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
-                    panel.classList.add("float-panel-closed");
-                }
+        const panel = document.getElementById("display-setting");
+        const button = document.getElementById("display-settings-switch");
+        if (panel && button && !panel.classList.contains("float-panel-closed")) {
+            if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
+                panel.classList.add("float-panel-closed");
             }
-        });
+        }
     });
 }
 
