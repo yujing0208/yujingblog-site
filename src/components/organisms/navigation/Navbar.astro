@@ -153,7 +153,7 @@ const iconWebpSrc = hasIconPngFallback
             </button>
             <ThemeSwitch client:only="svelte"></ThemeSwitch>
             <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:!hidden" id="nav-menu-switch">
-                <Icon name="material-symbols:unfold-more" class="text-[1.25rem]"></Icon>
+                <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>
         </div>
         <NavMenuPanel links={links}></NavMenuPanel>
@@ -221,25 +221,21 @@ function loadButtonScript() {
     let menuBtn = document.getElementById("nav-menu-switch");
     if (menuBtn) {
         menuBtn.onclick = function () {
-            let menuPanel = document.getElementById("nav-menu-panel");
-            if (menuPanel) {
-                menuPanel.classList.toggle("float-panel-closed");
-            }
+            // @ts-ignore - openNavDrawer 由 NavMenuPanel 暴露到全局
+            if (window.openNavDrawer) window.openNavDrawer();
         };
     }
 
     document.addEventListener("click", function(event) {
-        const panels = ["display-setting", "nav-menu-panel"];
-        const buttons = ["display-settings-switch", "nav-menu-switch"];
-        panels.forEach((id, index) => {
-            const panel = document.getElementById(id);
-            const button = document.getElementById(buttons[index]);
-            if (panel && button && !panel.classList.contains("float-panel-closed")) {
-                if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
-                    panel.classList.add("float-panel-closed");
-                }
+        // 关闭设置面板（原有逻辑）
+        const settingPanel = document.getElementById("display-setting");
+        const settingBtn = document.getElementById("display-settings-switch");
+        if (settingPanel && settingBtn && !settingPanel.classList.contains("float-panel-closed")) {
+            if (event.target instanceof Node && !settingPanel.contains(event.target) && !settingBtn.contains(event.target)) {
+                settingPanel.classList.add("float-panel-closed");
             }
-        });
+        }
+        // 抽屉导航由 NavMenuPanel 自己的 overlay 处理关闭，无需在此处理
     });
 }
 
