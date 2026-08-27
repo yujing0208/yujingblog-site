@@ -17,10 +17,12 @@ if (!siteConfig.featurePages.albums) {
 
 export const getStaticPaths = async () => {
 	const albumsData = await scanAlbums();
-	return albumsData.map((album) => ({
-		params: { id: album.id },
-		props: { album },
-	}));
+	return albumsData
+		.filter(Boolean)
+		.map((album) => ({
+			params: { id: album.id },
+			props: { album },
+		}));
 };
 
 interface Props {

@@ -100,6 +100,10 @@ html, body { margin: 0; padding: 0; background: #0f1115; color: #e6e6e6; font-fa
 /* 上传 .md 文档按钮（列表内整行按钮） */
 .ef-btn-block { display: block; width: 100%; margin: 10px 0 4px; text-align: center; }
 
+/* 正文工具栏（上传图片到图床等） */
+.ef-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
+.ef-btn-sm { padding: 6px 12px; font-size: 13px; }
+
 /* 正文：编辑 + 实时预览双栏 */
 .ef-body-cols { display: flex; gap: 14px; align-items: stretch; }
 .ef-body-cols .ef-body { flex: 1 1 50%; min-height: 440px; width: 100%; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 13px; }

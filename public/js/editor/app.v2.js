@@ -22,6 +22,18 @@
 	function setPat(p) { try { sessionStorage.setItem("yuj_editor_pat", p); } catch (e) { } }
 	function getFrom() { try { return sessionStorage.getItem("yuj_editor_from") || "/"; } catch (e) { return "/"; } }
 
+	// 在 textarea 光标处插入文本（替换选区），并将光标移到插入内容之后
+	function insertAtCursor(textarea, text) {
+		if (!textarea) return;
+		var start = textarea.selectionStart || 0;
+		var end = textarea.selectionEnd || 0;
+		var v = textarea.value;
+		textarea.value = v.slice(0, start) + text + v.slice(end);
+		var pos = start + text.length;
+		textarea.selectionStart = textarea.selectionEnd = pos;
+		textarea.focus();
+	}
+
 	function consumeHashPat() {
 		var h = location.hash;
 		if (!h) return;
@@ -408,6 +420,18 @@
 			var bodyWrap = el("div", "ef-field");
 			var bl = el("label", "ef-label", "正文（Markdown，右侧实时预览）");
 			bodyWrap.appendChild(bl);
+			// 工具栏：上传图片到图床
+			var toolbar = el("div", "ef-toolbar");
+			var imgBtn = el("button", "ef-btn ef-btn-sm", "🖼 上传图片到图床");
+			imgBtn.addEventListener("click", function () {
+				if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+				window.EditorImgBed.pickAndUpload(function (imgUrl) {
+					insertAtCursor(ta, "![](" + imgUrl + ")\n");
+					renderPreview();
+				});
+			});
+			toolbar.appendChild(imgBtn);
+			bodyWrap.appendChild(toolbar);
 			var bodyCols = el("div", "ef-body-cols");
 			var ta = document.createElement("textarea");
 			ta.className = "ef-input ef-textarea ef-body";

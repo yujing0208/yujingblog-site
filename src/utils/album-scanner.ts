@@ -3,6 +3,26 @@ import * as path from "node:path";
 
 import type { AlbumGroup, Photo } from "../types/album";
 
+/**
+ * 对损坏的 JSON 做“安全”修复，使其在二次解析时尽可能通过。
+ * 设计原则：**绝不误伤合法 JSON**。只处理一类已知脏数据——数组/对象中
+ * “逗号后开启的字符串未闭合即遇到 ] 或 }”（如 `"tags": ["学校", "回忆]`）。
+ * 合法 JSON 的元素字符串自带闭合引号（"value" 与 ] 间有引号），不会被命中；
+ * 其余情况（缺逗号、控制字符、单引号等）不做猜测式修复，以免把合法文件改坏。
+ * 仅在严格 JSON.parse 失败时兜底使用；修复后仍失败才抛出，由调用方跳过该相册。
+ * 目的：单张相册的脏数据绝不让整站构建中断。
+ */
+function repairLooseJson(raw: string): string {
+	let s = raw;
+	// 去掉字符串字面量之外的注释（低风险）
+	s = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+	// 去除 BOM
+	s = s.replace(/^\uFEFF/, "");
+	// 安全修复：仅当“逗号后开启的字符串未闭合即遇到 ] 或 }”时补引号
+	s = s.replace(/,\s*"([^"\n]*?)(\]|\})/g, ', "$1"$2');
+	return s;
+}
+
 export async function scanAlbums(): Promise<AlbumGroup[]> {
 	const albumsDir = path.join(process.cwd(), "public/images/albums");
 	const albums: AlbumGroup[] = [];
@@ -28,7 +48,8 @@ export async function scanAlbums(): Promise<AlbumGroup[]> {
 		}
 	}
 
-	return albums;
+	// 兜底：确保返回数组绝不含 null/undefined，彻底杜绝坏相册泄漏到路由导致构建失败
+	return albums.filter(Boolean);
 }
 
 async function processAlbumFolder(
@@ -43,83 +64,92 @@ async function processAlbumFolder(
 		return null;
 	}
 
-	// 读取相册信息
-	const infoContent = fs.readFileSync(infoPath, "utf-8");
-	interface AlbumInfo {
-		mode?: string;
-		cover?: string;
-		photos?: Record<string, unknown>[];
-		hidden?: boolean;
-		title?: string;
-		description?: string;
-		date?: string;
-		location?: string;
-		tags?: string[];
-		password?: string;
-		passwordHint?: string;
-	}
+	// 读取相册信息。整个解析与构建过程用 try/catch 兜底，
+	// 任何一个相册的脏数据/异常都只导致该相册被跳过，绝不让整站构建中断。
 	let info: AlbumInfo;
 	try {
-		info = JSON.parse(infoContent);
-	} catch (e) {
-		console.error(`相册 ${folderName} 的 info.json 格式错误:`, e);
-		return null;
-	}
+		const infoContent = fs.readFileSync(infoPath, "utf-8");
+		interface AlbumInfo {
+			mode?: string;
+			cover?: string;
+			photos?: Record<string, unknown>[];
+			hidden?: boolean;
+			title?: string;
+			description?: string;
+			date?: string;
+			location?: string;
+			tags?: string[];
+			password?: string;
+			passwordHint?: string;
+		}
+		try {
+			info = JSON.parse(infoContent);
+		} catch {
+			// 严格解析失败 -> 宽松修复后再试一次（尽力自愈）
+			info = JSON.parse(repairLooseJson(infoContent));
+		}
 
-	// 检查是否为外链模式
-	const isExternalMode = info.mode === "external";
-	let photos: Photo[] = [];
-	let cover: string;
+		// 检查是否为外链模式
+		const isExternalMode = info.mode === "external";
+		let photos: Photo[] = [];
+		let cover: string;
 
-	if (isExternalMode) {
-		// 外链模式：从 info.json 中获取封面和照片
-		if (!info.cover) {
-			console.warn(`相册 ${folderName} 外链模式缺少 cover 字段`);
+		if (isExternalMode) {
+			// 外链模式：从 info.json 中获取封面和照片
+			if (!info.cover) {
+				console.warn(`相册 ${folderName} 外链模式缺少 cover 字段`);
+				return null;
+			}
+
+			cover = info.cover as string;
+			photos = processExternalPhotos(
+				(info.photos ?? []) as Parameters<typeof processExternalPhotos>[0],
+				folderName,
+			);
+		} else {
+			// 本地模式：检查本地文件
+			let coverPath = path.join(folderPath, "cover.webp");
+			const hasWebpCover = fs.existsSync(coverPath);
+			if (!hasWebpCover) {
+				coverPath = path.join(folderPath, "cover.jpg");
+				if (!fs.existsSync(coverPath)) {
+					console.warn(`相册 ${folderName} 缺少 cover 文件`);
+					return null;
+				}
+			}
+
+			cover = hasWebpCover
+				? `/images/albums/${folderName}/cover.webp`
+				: `/images/albums/${folderName}/cover.jpg`;
+			photos = scanPhotos(folderPath, folderName);
+		}
+
+		// 检查是否隐藏相册
+		if (info.hidden === true) {
+			console.log(`相册 ${folderName} 已设置为隐藏，跳过显示`);
 			return null;
 		}
 
-		cover = info.cover as string;
-		photos = processExternalPhotos(
-			(info.photos ?? []) as Parameters<typeof processExternalPhotos>[0],
-			folderName,
+		// 构建相册对象（title/cover 缺失时给安全兜底，避免 null 泄漏到 AlbumGroup）
+		return {
+			id: folderName,
+			title: info.title || folderName,
+			description: info.description || "",
+			cover,
+			date: info.date || new Date().toISOString().split("T")[0],
+			location: info.location || "",
+			tags: info.tags || [],
+			photos,
+			password: info.password || undefined,
+			passwordHint: info.passwordHint || undefined,
+		};
+	} catch (error) {
+		console.error(
+			`[album-scanner] ⚠️ 相册 ${folderName} 处理失败，已跳过（不影响其他相册与整站构建）：`,
+			error instanceof Error ? error.message : error,
 		);
-	} else {
-		// 本地模式：检查本地文件
-		let coverPath = path.join(folderPath, "cover.webp");
-		const hasWebpCover = fs.existsSync(coverPath);
-		if (!hasWebpCover) {
-			coverPath = path.join(folderPath, "cover.jpg");
-			if (!fs.existsSync(coverPath)) {
-				console.warn(`相册 ${folderName} 缺少 cover 文件`);
-				return null;
-			}
-		}
-
-		cover = hasWebpCover
-			? `/images/albums/${folderName}/cover.webp`
-			: `/images/albums/${folderName}/cover.jpg`;
-		photos = scanPhotos(folderPath, folderName);
-	}
-
-	// 检查是否隐藏相册
-	if (info.hidden === true) {
-		console.log(`相册 ${folderName} 已设置为隐藏，跳过显示`);
 		return null;
 	}
-
-	// 构建相册对象
-	return {
-		id: folderName,
-		title: info.title || folderName,
-		description: info.description || "",
-		cover,
-		date: info.date || new Date().toISOString().split("T")[0],
-		location: info.location || "",
-		tags: info.tags || [],
-		photos,
-		password: info.password || undefined,
-		passwordHint: info.passwordHint || undefined,
-	};
 }
 
 function scanPhotos(folderPath: string, albumId: string): Photo[] {

@@ -10,4 +10,19 @@
 //   url / urlLabel 弹窗内链接（可选）
 // 经纬度可在高德坐标拾取器获取：https://lbs.amap.com/tools/picker
 // 当前暂无足迹，待自行添加。
-export const footprintsData = [];
+export const footprintsData = [
+	{
+		name: "合肥火车站",
+		coordinates: [
+			117.316528,
+			31.88565
+		],
+		categories: [],
+		date: "2026-08-12",
+		description: "回北京",
+		photos: [],
+		markerColor: "forest",
+		url: "",
+		urlLabel: ""
+	}
+];

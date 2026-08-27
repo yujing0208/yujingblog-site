@@ -1,4 +1,4 @@
-﻿// 友情链接数据配置
+// 友情链接数据配置
 // 用于管理友情链接页面的数据
 import type { FriendItem } from "../types/friends";
 const friendsData: FriendItem[] = [
@@ -34,10 +34,10 @@ const friendsData: FriendItem[] = [
 	},
 	{
 		id: 4,
-		title: "山羊快车Blog",
+		title: "羊角快车Blog",
 		imgurl: "https://r2page.jiaoblog.dpdns.org/images/aebcb8f461af86e7df331bee79fa5d0953dbaeed.png",
 		desc: "发布各种白嫖资源/实用教程",
-		siteurl: "https://blog.xiaowang233.top",
+		siteurl: "https://jiaoblog.dpdns.org/",
 		tags: [
 			"博客"
 		]
@@ -73,16 +73,6 @@ const friendsData: FriendItem[] = [
 		]
 	},
 	{
-		id: 12,
-		title: "谶的生活记",
-		imgurl: "https://blog.fohok.xin/wp-content/uploads/2026/04/wp-17708563798823983127499835001104525740135945006403.png",
-		desc: "生活就像一杯茶,细品都是好",
-		siteurl: "https://blog.fohok.xin/",
-		tags: [
-			"博客"
-		]
-	},
-	{
 		id: 14,
 		title: "XingHuiSamaの宝藏之地",
 		imgurl: "https://bu.dusays.com/2026/03/24/69c1e38ac1846.jpg",
@@ -109,6 +99,36 @@ const friendsData: FriendItem[] = [
 		tags: [
 			"博客"
 		]
+	},
+	{
+		title: "合肥一中电脑社",
+		imgurl: "https://a.favicon.im/hfyzdns.cn",
+		desc: "零基础友好 · 技术驱动的校园科技社团",
+		siteurl: "https://hfyzdns.cn",
+		tags: [
+			"社团"
+		],
+		id: 16
+	},
+	{
+		title: "UpXuu's blog",
+		imgurl: "https://upxuu.com/images/me.jpg",
+		desc: "逐光而上",
+		siteurl: "https://upxuu.com",
+		tags: [
+			"博客"
+		],
+		id: 18
+	},
+	{
+		title: "他说",
+		imgurl: "https://090909.top/assets/images/logo.ico",
+		desc: "梁栋烨的博客网站。",
+		siteurl: "https://090909.top/",
+		tags: [
+			"博客"
+		],
+		id: 19
 	}
 ];
 export function getFriendsList(): FriendItem[] {

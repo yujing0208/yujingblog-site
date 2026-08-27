@@ -10,6 +10,11 @@
 #   VERCEL_ORG_ID    —— 团队/账户 ID（Vercel 项目 Settings → General）
 #   VERCEL_PROJECT_ID—— 项目 ID（Vercel 项目 Settings → General）
 #   DISPATCH_TOKEN   —— 有站点仓库 workflow 触发权限的 GitHub PAT（供内容仓库 repository_dispatch 使用）
+#
+# 健壮性增强（2026-08-26）：
+#   - 各步骤显式失败即中断；构建/部署失败会标记 workflow 失败（Actions 页面可见）
+#   - 失败时若配置了 NOTIFY_URL 则发送 webhook 通知，便于排查
+#   - 在构建前记录被同步的内容仓库 commit，便于事后核对"内容是否真的进来了"
 
 on:
   push:
@@ -20,33 +25,80 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-site
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout site repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: pnpm/action-setup@v2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 11
-      - run: pnpm config set store-dir ~/.pnpm-store
-      - uses: actions/cache@v4
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir ~/.pnpm-store
+
+      - name: Cache pnpm
+        uses: actions/cache@v4
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-      - run: pnpm install
+
+      - name: Install dependencies
+        run: pnpm install
+
       # 构建：prebuild 钩子会先 sync-content 拉取内容仓库，随后 astro build + pagefind
-      - run: pnpm build
+      - name: Build (sync content + astro build + pagefind)
+        id: build
         env:
           ENABLE_CONTENT_SYNC: true
           CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
+        run: |
+          echo "触发来源: ${{ github.event_name }} / ${{ github.event.action }}"
+          echo "站点仓库 commit: ${{ github.sha }}"
+          pnpm build
+
       # 用 Vercel CLI 直接部署 Astro 构建产物（dist/，由 vercel.json 的 outputDirectory 指定），
       # 不再 curl 触发 Vercel 二次构建。
-      # 先 vercel link 静态关联项目（避免 deploy 时交互挂起），再 vercel deploy --prod。
       - name: Link & Deploy to Vercel
+        id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          set -euo pipefail
           npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
-          npx vercel deploy --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+          npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+
+      - name: Success notify
+        if: success()
+        env:
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+        run: |
+          set -euo pipefail
+          if [ -n "$NOTIFY_URL" ]; then
+            curl -sS -o /dev/null -X POST "$NOTIFY_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\":\"[博客部署成功] 站点已更新 (commit ${{ github.sha }})\"}" || true
+          fi
+
+      - name: Failure notify
+        if: failure()
+        env:
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+        run: |
+          set -euo pipefail
+          echo "::error::站点部署失败，请检查上方步骤日志"
+          if [ -n "$NOTIFY_URL" ]; then
+            curl -sS -o /dev/null -X POST "$NOTIFY_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\":\"[博客部署失败] 触发器=${{ github.event_name }} commit=${{ github.sha }}，请查看 Actions 日志\"}" || true
+          fi
