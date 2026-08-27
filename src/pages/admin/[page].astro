@@ -5,6 +5,10 @@
 // 独立模块，frontmatter 顶层非 export 的 const 不会进入该模块作用域（否则构建报 not defined）。
 export const prerender = true;
 
+import "@/styles/markdown.css";
+import "@/styles/markdown-extend.styl";
+import { siteConfig } from "@/config";
+
 export function getStaticPaths() {
 	const EDIT_PAGES = [
 		"projects-edit", "friends-edit", "websites-edit", "about-edit",
@@ -16,6 +20,7 @@ export function getStaticPaths() {
 
 const { page } = Astro.params;
 const pageName = page.replace(/-edit$/, "");
+const hue = siteConfig.themeColor.hue;
 ---
 
 <!doctype html>
@@ -26,6 +31,9 @@ const pageName = page.replace(/-edit$/, "");
 	<meta name="robots" content="noindex" />
 	<title>内容编辑器 - {page}</title>
 	<link rel="stylesheet" href="/js/editor/style.css?v=5" />
+	<style define:vars={{ hue: String(hue) }}>
+		:root { --hue: var(--hue); }
+	</style>
 </head>
 <body data-editor-page={pageName}>
 	<div id="ed-pages" class="ed-pages"></div>
@@ -34,7 +42,7 @@ const pageName = page.replace(/-edit$/, "");
 	<script is:inline src="/js/editor/github.js?v=3"></script>
 	<script is:inline src="/js/editor/ts-io.js?v=3"></script>
 	<script is:inline src="/js/editor/md.js?v=3"></script>
-	<script is:inline src="/js/editor/preview.js?v=1"></script>
+	<script is:inline src="/js/editor/markdown-it.min.js?v=1"></script>
 	<script is:inline src="/js/editor/schema.js?v=3"></script>
 	<script is:inline src="/js/editor/form.js?v=3"></script>
 	<script is:inline src="/js/editor/upload.js?v=3"></script>

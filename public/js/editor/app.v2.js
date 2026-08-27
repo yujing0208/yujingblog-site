@@ -444,12 +444,27 @@
 			ta.rows = 18;
 			ta.placeholder = "# 在此输入 Markdown\n\n正文会实时渲染到右侧预览。";
 			ta.value = editing.body || "";
-			var preview = el("div", "ef-body-preview markdown-body");
+			var preview = el("div", "ef-body-preview custom-md");
 			preview.id = "ef-body-preview";
+			var _md = null;
+			function getMd() {
+				if (_md) return _md;
+				if (window.markdownit) {
+					_md = window.markdownit({ html: true, linkify: true, typographer: true, breaks: false });
+				}
+				return _md;
+			}
 			function renderPreview() {
 				editing.body = ta.value;
-				if (!window.EditorPreview) return;
-				var html = window.EditorPreview.render(ta.value);
+				var html;
+				var md = getMd();
+				if (md) {
+					html = md.render(ta.value || "");
+				} else if (window.EditorPreview) {
+					html = window.EditorPreview.render(ta.value || "");
+				} else {
+					html = "";
+				}
 				preview.innerHTML = html || '<div class="ef-preview-empty">在左侧输入 Markdown，这里实时预览渲染效果。</div>';
 			}
 			ta.addEventListener("input", renderPreview);
