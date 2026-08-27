@@ -1,8 +1,9 @@
 /**
  * 留言板工具函数：评论树扁平化、合并、头像解析、时间格式化、Markdown 渲染
  */
-import { marked } from "marked";
+
 import hljs from "highlight.js/lib/common";
+import { marked } from "marked";
 import { convertEmojiShortcodes } from "./emoji";
 import type { GuestbookMessage, TwikooComment } from "./types";
 
@@ -169,10 +170,14 @@ export function dateLabel(value: number): string {
 	return dateKey(value);
 }
 
-export function shouldShowDate(index: number, messages: GuestbookMessage[]): boolean {
+export function shouldShowDate(
+	index: number,
+	messages: GuestbookMessage[],
+): boolean {
 	return (
 		index === 0 ||
-		dateKey(messages[index - 1].createdAt) !== dateKey(messages[index].createdAt)
+		dateKey(messages[index - 1].createdAt) !==
+			dateKey(messages[index].createdAt)
 	);
 }
 
@@ -226,9 +231,27 @@ export function renderMessageMarkdown(content: string): string {
    ============================================================ */
 
 const ALLOWED_TAGS = new Set([
-	"p", "br", "strong", "em", "del", "code", "pre", "blockquote",
-	"ul", "ol", "li", "a", "img", "hr", "h1", "h2", "h3", "h4",
-	"span", "details", "summary",
+	"p",
+	"br",
+	"strong",
+	"em",
+	"del",
+	"code",
+	"pre",
+	"blockquote",
+	"ul",
+	"ol",
+	"li",
+	"a",
+	"img",
+	"hr",
+	"h1",
+	"h2",
+	"h3",
+	"h4",
+	"span",
+	"details",
+	"summary",
 ]);
 
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
@@ -242,8 +265,13 @@ const ALLOWED_ATTRS: Record<string, Set<string>> = {
 function safeUrl(value: string | null): string | null {
 	if (!value) return null;
 	const v = value.trim().toLowerCase();
-	if (v.startsWith("javascript:") || v.startsWith("data:text/html")) return null;
-	if (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("data:image/")) {
+	if (v.startsWith("javascript:") || v.startsWith("data:text/html"))
+		return null;
+	if (
+		v.startsWith("http://") ||
+		v.startsWith("https://") ||
+		v.startsWith("data:image/")
+	) {
 		return value;
 	}
 	return null;
@@ -258,7 +286,7 @@ function highlightCodeInDoc(doc: Document): void {
 				? hljs.highlight(text, { language: langMatch[1] })
 				: hljs.highlightAuto(text);
 			codeEl.innerHTML = result.value;
-			codeEl.className = "hljs" + (result.language ? ` language-${result.language}` : "");
+			codeEl.className = `hljs${result.language ? ` language-${result.language}` : ""}`;
 		} catch {
 			/* 高亮失败保留原文 */
 		}
@@ -337,7 +365,9 @@ export async function readImageAsDataUrl(
 		return { error: "仅支持 PNG / JPEG / GIF / WebP 图片" };
 	}
 	if (file.size > MAX_IMAGE_SIZE_BYTES) {
-		return { error: `图片不能超过 ${Math.round(MAX_IMAGE_SIZE_BYTES / 1024)} KB，大图建议在 Twikoo 后台配置图床` };
+		return {
+			error: `图片不能超过 ${Math.round(MAX_IMAGE_SIZE_BYTES / 1024)} KB，大图建议在 Twikoo 后台配置图床`,
+		};
 	}
 	const dataUrl = await new Promise<string>((resolve, reject) => {
 		const reader = new FileReader();

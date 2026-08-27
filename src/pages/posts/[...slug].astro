@@ -15,6 +15,7 @@ import {
 import { ReadingTime, WordCount } from "@components/features/posts/atoms";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
+import AiSummary from "@components/widgets/ai-summary/AiSummary.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getRelatedPosts, getSortedPosts } from "@utils/content-utils";
 import { hasCustomPermalink, initPostIdMap } from "@utils/permalink-utils";
@@ -27,10 +28,8 @@ import {
 	relatedPostsConfig,
 	shareConfig,
 } from "src/config";
-
 import Image from "../../components/atoms/Image/Image.astro";
 import Encryptor from "../../components/features/auth/Encryptor.astro";
-import AiSummary from "@components/widgets/ai-summary/AiSummary.astro";
 import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
 

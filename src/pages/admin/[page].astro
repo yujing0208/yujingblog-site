@@ -11,9 +11,18 @@ import { siteConfig } from "@/config";
 
 export function getStaticPaths() {
 	const EDIT_PAGES = [
-		"projects-edit", "friends-edit", "websites-edit", "about-edit",
-		"timeline-edit", "diary-edit", "devices-edit", "anime-edit",
-		"announcement-edit", "footprints-edit", "albums-edit", "post-edit",
+		"projects-edit",
+		"friends-edit",
+		"websites-edit",
+		"about-edit",
+		"timeline-edit",
+		"diary-edit",
+		"devices-edit",
+		"anime-edit",
+		"announcement-edit",
+		"footprints-edit",
+		"albums-edit",
+		"post-edit",
 	];
 	return EDIT_PAGES.map((page) => ({ params: { page } }));
 }

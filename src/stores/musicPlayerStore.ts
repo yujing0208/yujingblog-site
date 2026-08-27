@@ -101,8 +101,7 @@ function parseLRC(lrc: string): LyricLine[] {
 					const m = Number.parseInt(match[1], 10);
 					const s = Number.parseInt(match[2], 10);
 					const ms = Number.parseInt(match[3], 10);
-					const time =
-						m * 60 + s + ms / (match[3].length === 3 ? 1000 : 100);
+					const time = m * 60 + s + ms / (match[3].length === 3 ? 1000 : 100);
 					result.push({ time, text });
 				}
 			}
@@ -445,12 +444,11 @@ class MusicPlayerStore {
 			}
 			this.broadcastState();
 			return true;
-		} else {
-			this.showError(i18n(Key.musicPlayerErrorPlaylist));
-			this.state.isLoading = false;
-			this.broadcastState();
-			return false;
 		}
+		this.showError(i18n(Key.musicPlayerErrorPlaylist));
+		this.state.isLoading = false;
+		this.broadcastState();
+		return false;
 	}
 
 	private convertMetingSong(song: Record<string, unknown>): Song {
@@ -496,7 +494,7 @@ class MusicPlayerStore {
 	}
 
 	private loadSong(song: Song, autoPlay = true): void {
-		if (!song || !song.url) {
+		if (!song?.url) {
 			return;
 		}
 		if (song.url !== this.state.currentSong.url) {
@@ -572,7 +570,7 @@ class MusicPlayerStore {
 			return;
 		}
 		const song = this.state.currentSong;
-		if (!song || !song.url) {
+		if (!song?.url) {
 			return;
 		}
 		const snapshot: ResumeSnapshot = {
@@ -608,7 +606,7 @@ class MusicPlayerStore {
 		} catch {
 			return;
 		}
-		if (!snap || !snap.url) {
+		if (!snap?.url) {
 			return;
 		}
 		if (this.state.playlist.length === 0) {
@@ -808,8 +806,7 @@ class MusicPlayerStore {
 		if (mode === "local") {
 			this.loadLocalPlaylist();
 		} else {
-			const targetId =
-				this.state.cloudPlaylistId || musicPlayerConfig.id || "";
+			const targetId = this.state.cloudPlaylistId || musicPlayerConfig.id || "";
 			const ok = await this.fetchCloudPlaylist(targetId);
 			// 切回在线但网易云接口拉取失败时，回滚到原模式并恢复原歌单，
 			// 避免“在线模式却仍是本地歌单”的割裂状态（即看起来“切不回去”）

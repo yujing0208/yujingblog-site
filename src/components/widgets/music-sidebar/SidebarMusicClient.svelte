@@ -1,6 +1,6 @@
 <script lang="ts">
-import { onDestroy, onMount } from "svelte";
 import Icon from "@iconify/svelte";
+import { onDestroy, onMount } from "svelte";
 
 import type { MusicPlayerState } from "@/stores/musicPlayerStore";
 import { musicPlayerStore } from "@/stores/musicPlayerStore";

@@ -6,9 +6,7 @@ import { guestbookWidgetStore } from "@/stores/guestbookWidgetStore";
 let widgetState = $state(guestbookWidgetStore.getState());
 let unsubscribe: (() => void) | undefined;
 
-const ariaLabel = $derived(
-	widgetState.isOpen ? "关闭留言板" : "打开留言板",
-);
+const ariaLabel = $derived(widgetState.isOpen ? "关闭留言板" : "打开留言板");
 
 onMount(() => {
 	unsubscribe = guestbookWidgetStore.subscribe((nextState) => {

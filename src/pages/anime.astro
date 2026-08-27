@@ -1,10 +1,14 @@
 ---
 import "../styles/anime.css";
 
-import { AnimeFilterPills, AnimeGrid, AnimeTabNav } from "@components/features/anime";
+import Comment from "@components/comment/index.astro";
+import {
+	AnimeFilterPills,
+	AnimeGrid,
+	AnimeTabNav,
+} from "@components/features/anime";
 import { PageHeader } from "@components/features/page-header";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import Comment from "@components/comment/index.astro";
 
 import { siteConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
@@ -71,17 +75,29 @@ const categoryCounts = animeList.reduce(
 	(acc, item) => {
 		const cat = item.category || "anime";
 		acc[cat] = (acc[cat] || 0) + 1;
-		acc["all"] = (acc["all"] || 0) + 1;
+		acc.all = (acc.all || 0) + 1;
 		return acc;
 	},
-	{ all: 0, anime: 0, novel: 0, game: 0 } as Record<string, number>
+	{ all: 0, anime: 0, novel: 0, game: 0 } as Record<string, number>,
 );
 
 // Firely-style TabNav 数据（分类标签）
 const categoryTabs = [
-	{ id: "anime", name: i18n(I18nKey.animeCategoryAnime), count: categoryCounts["anime"] ?? 0 },
-	{ id: "novel", name: i18n(I18nKey.animeCategoryNovel), count: categoryCounts["novel"] ?? 0 },
-	{ id: "game", name: i18n(I18nKey.animeCategoryGame), count: categoryCounts["game"] ?? 0 },
+	{
+		id: "anime",
+		name: i18n(I18nKey.animeCategoryAnime),
+		count: categoryCounts.anime ?? 0,
+	},
+	{
+		id: "novel",
+		name: i18n(I18nKey.animeCategoryNovel),
+		count: categoryCounts.novel ?? 0,
+	},
+	{
+		id: "game",
+		name: i18n(I18nKey.animeCategoryGame),
+		count: categoryCounts.game ?? 0,
+	},
 ];
 
 // Firely-style FilterPills 数据（状态筛选，按大分类区分标签）
@@ -139,7 +155,7 @@ const statusOptionsByCategory = {
 								style={cat.id === "anime" ? "" : "display: none;"}
 							>
 								<AnimeFilterPills
-									filters={statusOptionsByCategory[cat.id]}
+									filters={statusOptionsByCategory[cat.id as keyof typeof statusOptionsByCategory]}
 									activeFilter="all"
 									dataAttr="data-status"
 									containerClass=""
@@ -582,63 +598,6 @@ const statusOptionsByCategory = {
 
 		// 初始化时按默认大分类（动漫）过滤一次
 		applyFilters();
-	}
-
-	function initPillFilters() {
-		const containers = document.querySelectorAll(".anime-pill-filter");
-		containers.forEach((container) => {
-			if (container.dataset.pillInit === "true") return;
-
-			const slider = container.querySelector(".anime-pill-slider");
-			const buttons = Array.from(
-				container.querySelectorAll(".anime-filter-tag"),
-			);
-			if (!slider || buttons.length === 0) return;
-
-			const moveTo = (btn) => {
-				slider.style.width = btn.offsetWidth + "px";
-				slider.style.transform = `translateX(${btn.offsetLeft}px)`;
-			};
-
-			const placeInitial = () => {
-				const active =
-					container.querySelector(".anime-filter-tag.anime-active") ||
-					buttons[0];
-				moveTo(active);
-			};
-
-			buttons.forEach((btn) => {
-				btn.addEventListener("click", () => moveTo(btn));
-			});
-
-			requestAnimationFrame(placeInitial);
-			if (document.fonts && document.fonts.ready) {
-				document.fonts.ready.then(placeInitial);
-			}
-
-			container.dataset.pillInit = "true";
-		});
-
-		if (!window.__animePillResizeBound) {
-			window.__animePillResizeBound = true;
-			window.addEventListener("resize", () => {
-				document
-					.querySelectorAll(".anime-pill-filter")
-					.forEach((container) => {
-						const slider = container.querySelector(
-							".anime-pill-slider",
-						);
-						const active =
-							container.querySelector(
-								".anime-filter-tag.anime-active",
-							) || container.querySelector(".anime-filter-tag");
-						if (slider && active) {
-							slider.style.width = active.offsetWidth + "px";
-							slider.style.transform = `translateX(${active.offsetLeft}px)`;
-						}
-					});
-			});
-		}
 	}
 
 	document.addEventListener("DOMContentLoaded", initFilterButtons);

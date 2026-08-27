@@ -3,8 +3,15 @@
 import { shuoShuoProfile } from "../../../config/shuoShuoProfile";
 import type { DiaryItem } from "../../../data/diary";
 
+// DiaryItem 未声明的可选扩展字段（内容仓库可选择性提供）
+type MomentWithExtras = DiaryItem & {
+	imgMode?: string;
+	pinned?: boolean;
+	videos?: string[];
+};
+
 interface Props {
-  moment: DiaryItem;
+	moment: DiaryItem;
 }
 
 const { moment } = Astro.props;
@@ -16,38 +23,39 @@ const profile = shuoShuoProfile;
 //   mode-mid      中等正方形九宫格
 //   mode-squarefill 大正方形填满卡片
 //   mode-large2   大图两列，长宽比不变
-const IMG_MODE = (moment as any).imgMode ?? "mode-fill";
+const IMG_MODE = (moment as MomentWithExtras).imgMode ?? "mode-fill";
 
 // 相对时间（Firefly 原版逻辑）
 const formatTimeAgo = (date: Date): string => {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+	const now = new Date();
+	const diff = now.getTime() - date.getTime();
+	const minutes = Math.floor(diff / 60000);
+	const hours = Math.floor(diff / 3600000);
+	const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "刚刚";
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  if (days < 30) return `${days}天前`;
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+	if (minutes < 1) return "刚刚";
+	if (minutes < 60) return `${minutes}分钟前`;
+	if (hours < 24) return `${hours}小时前`;
+	if (days < 30) return `${days}天前`;
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+	return `${y}-${m}-${d}`;
 };
 
 const date = new Date(moment.date);
 const avatar = profile.avatar;
 const name = profile.nickname;
-const pinned = (moment as any).pinned === true;
+const pinned = (moment as MomentWithExtras).pinned === true;
 
 // 图片九宫格：直接使用 DiaryItem.images 渲染网格
 const imageList = moment.images ?? [];
 const imageCount = imageList.length;
-const gridCols = imageCount === 1 ? 1 : imageCount === 2 || imageCount === 4 ? 2 : 3;
+const gridCols =
+	imageCount === 1 ? 1 : imageCount === 2 || imageCount === 4 ? 2 : 3;
 
 // 视频（可选，兼容接口未声明的情况）
-const videoList = (moment as any).videos ?? [];
+const videoList = (moment as MomentWithExtras).videos ?? [];
 ---
 
 <div id={`moment-${moment.id}`} class="moment-card group">
@@ -61,7 +69,7 @@ const videoList = (moment as any).videos ?? [];
         alt={name}
         class="avatar-img"
         loading="lazy"
-        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>'"
+        onerror="this.setAttribute('src','data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22><circle cx=%2212%22 cy=%228%22 r=%224%22/><path d=%22M20 21a8 8 0 1 0-16 0%22/></svg>')"
       />
     </div>
     <div class="card-user-info">
@@ -71,23 +79,19 @@ const videoList = (moment as any).videos ?? [];
           pinned && (
             <span class="pinned-badge">
               <svg
-                t="1781845121920"
                 class="pinned-icon"
                 viewBox="0 0 1024 1024"
                 version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
-                p-id="1661"
                 width="14"
                 height="14"
               >
                 <path
                   d="M829.31 607.6L548.07 234.1c-12.93-19.17-41.01-19.61-54.82-0.89L197.3 606.71c-16.05 22.28-0.45 53.49 27.19 53.49h139.06v173.38c0 26.3 21.39 48.14 48.14 48.14H612.7c26.29 0 48.13-21.39 48.13-48.14V660.2h140.4c27.19 0 43.24-30.31 28.08-52.6z"
-                  p-id="1662"
                   fill="var(--primary)"
                 ></path>
                 <path
                   d="M226.72 218.06h570.5c20.95 0 37.89-16.94 37.89-37.88s-16.94-37.88-37.89-37.88h-570.5c-20.95 0-37.88 16.94-37.88 37.88s16.94 37.88 37.88 37.88z"
-                  p-id="1663"
                   fill="var(--primary)"
                 ></path>
               </svg>

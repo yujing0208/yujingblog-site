@@ -124,15 +124,12 @@ export async function getComments(
 	page: number,
 	pageSize: number,
 ): Promise<CommentGetResult> {
-	return call<CommentGetResult>(
-		"COMMENT_GET",
-		{
-			url: GUESTBOOK_PATH,
-			page,
-			pageSize,
-			lang: LANG,
-		},
-	);
+	return call<CommentGetResult>("COMMENT_GET", {
+		url: GUESTBOOK_PATH,
+		page,
+		pageSize,
+		lang: LANG,
+	});
 }
 
 export interface SubmitCommentOptions {

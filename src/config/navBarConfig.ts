@@ -30,12 +30,14 @@ export const navBarConfig: NavBarConfig = {
 					external: true,
 					icon: "simple-icons:tiktok",
 				},
-				{	name: "Deepseek",
+				{
+					name: "Deepseek",
 					url: "https://chat.deepseek.com/",
 					external: true,
 					icon: "simple-icons:deepseek",
-				},	
-				{	name: "GitHub",
+				},
+				{
+					name: "GitHub",
 					url: "https://github.com",
 					external: true,
 					icon: "fa7-brands:github",
@@ -52,7 +54,6 @@ export const navBarConfig: NavBarConfig = {
 					external: true,
 					icon: "bitcoin-icons:cloud-outline",
 				},
-				
 			],
 		},
 

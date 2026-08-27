@@ -81,7 +81,7 @@ const touchMsgs = config.dialog?.touch
 	? Array.isArray(config.dialog.touch)
 		? config.dialog.touch
 		: [config.dialog.touch]
-	: config.tips?.messages ?? [];
+	: (config.tips?.messages ?? []);
 if (touchMsgs.length > 0) {
 	widgetConfig._touchMessages = touchMsgs;
 }
@@ -106,7 +106,7 @@ const isRight = config.position === "right";
 ></iframe>
 
 <!-- AI 聊天样式和脚本 -->
-<link rel="stylesheet" href="/pio/waifu-chat.css" is:inline />
+<link rel="stylesheet" href="/pio/waifu-chat.css" />
 <script src="/pio/waifu-chat.js" is:inline></script>
 
 <!-- 💬 聊天按钮已注入到 iframe 内的 l2d-widget 菜单中，无需独立按钮 -->

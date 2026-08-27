@@ -2,14 +2,21 @@
 import Icon from "@iconify/svelte";
 import { onMount, tick } from "svelte";
 import {
+	type GuestbookAnnouncementItem,
+	guestbookConfig,
+} from "@/config/guestbookConfig";
+import GuestbookChatComposer from "./GuestbookChatComposer.svelte";
+import GuestbookChatMessage from "./GuestbookChatMessage.svelte";
+import { loadEmojiPacks, setEmotionCdn } from "./lib/emoji";
+import {
 	deleteComment as apiDeleteComment,
+	updateComment as apiUpdateComment,
 	getComments,
 	getServerConfig,
-	submitComment,
-	updateComment as apiUpdateComment,
-	loginAdmin,
 	isAdminLoggedIn,
+	loginAdmin,
 	logoutAdmin,
+	submitComment,
 } from "./lib/twikooClient";
 import type { GuestbookMessage, GuestbookProfile } from "./lib/types";
 import {
@@ -22,10 +29,6 @@ import {
 	shouldShowDate,
 	validateMessageBody,
 } from "./lib/utils";
-import GuestbookChatComposer from "./GuestbookChatComposer.svelte";
-import GuestbookChatMessage from "./GuestbookChatMessage.svelte";
-import { guestbookConfig, type GuestbookAnnouncementItem } from "@/config/guestbookConfig";
-import { loadEmojiPacks, setEmotionCdn } from "./lib/emoji";
 
 const PAGE_SIZE = 30;
 const POLL_INTERVAL = 30_000;
@@ -95,7 +98,13 @@ function canEditMessage(message: GuestbookMessage): boolean {
 const memberList = $derived.by(() => {
 	const map = new Map<
 		string,
-		{ nick: string; avatar: string; link?: string; count: number; isAdmin: boolean }
+		{
+			nick: string;
+			avatar: string;
+			link?: string;
+			count: number;
+			isAdmin: boolean;
+		}
 	>();
 	for (const m of messages) {
 		if (m.localState) continue;
@@ -128,7 +137,8 @@ function toggleMemberSidebar() {
 
 function openProfileCard(message: GuestbookMessage) {
 	profileCardTarget = message;
-	profileCardMessageCount = memberList.find((m) => m.nick === message.nick)?.count ?? 0;
+	profileCardMessageCount =
+		memberList.find((m) => m.nick === message.nick)?.count ?? 0;
 	void tick().then(() => {
 		profileCardDialog?.showModal();
 		document.body.style.overflow = "hidden";
@@ -159,7 +169,7 @@ function requestEdit(message: GuestbookMessage) {
 
 async function saveEdit() {
 	const target = editingTarget;
-	if (!target || !target.id) return;
+	if (!target?.id) return;
 	const content = editDraft.trim();
 	const validation = validateMessageBody(content);
 	if (validation) {
@@ -275,7 +285,7 @@ function queueLatestSync() {
 	void syncLatest();
 }
 
-async function fetchPage(page: number, signal?: AbortSignal) {
+async function fetchPage(page: number, _signal?: AbortSignal) {
 	return getComments(page, PAGE_SIZE);
 }
 
@@ -316,10 +326,7 @@ async function loadInitial() {
 			fetchPage(1, controller.signal),
 		]);
 		if (dataController !== controller) return;
-		messages = mergeMessages(
-			messages,
-			flattenComments(response.data),
-		);
+		messages = mergeMessages(messages, flattenComments(response.data));
 		currentPage = 1;
 		totalPages = response.more ? 2 : 1;
 		totalCount = response.count;
@@ -401,10 +408,7 @@ async function loadOlder() {
 	try {
 		const response = await fetchPage(nextPage, controller.signal);
 		if (dataController !== controller) return;
-		messages = mergeMessages(
-			messages,
-			flattenComments(response.data),
-		);
+		messages = mergeMessages(messages, flattenComments(response.data));
 		currentPage = nextPage;
 		totalPages = response.more ? nextPage + 1 : nextPage;
 		totalCount = response.count;
@@ -511,15 +515,11 @@ function selectReply(message: GuestbookMessage) {
 
 async function jumpToQuotedMessage(message: GuestbookMessage) {
 	if (!message.replyToId) return;
-	let target = messages.find(
-		(candidate) => candidate.id === message.replyToId,
-	);
+	let target = messages.find((candidate) => candidate.id === message.replyToId);
 
 	while (!target && hasMore && !loadingOlder) {
 		await loadOlder();
-		target = messages.find(
-			(candidate) => candidate.id === message.replyToId,
-		);
+		target = messages.find((candidate) => candidate.id === message.replyToId);
 	}
 
 	const element = document.getElementById(
@@ -669,7 +669,7 @@ function requestDeleteMessage(message: GuestbookMessage) {
 
 async function confirmDeleteMessage() {
 	const target = deleteTarget;
-	if (!target || !target.id || !canManageMessage(target) || mutatingMessageId) {
+	if (!target?.id || !canManageMessage(target) || mutatingMessageId) {
 		return;
 	}
 
@@ -702,7 +702,9 @@ function getErrorMessage(error: unknown): string {
 const ANNOUNCEMENT_BAR_KEY = "guestbook-announcement-bar-dismissed";
 const ANNOUNCEMENT_DIALOG_KEY_PREFIX = "guestbook-announcement-dialog-shown-";
 
-async function openAnnouncement(item: typeof selectedAnnouncement extends infer T ? T : never) {
+async function openAnnouncement(
+	item: typeof selectedAnnouncement extends infer T ? T : never,
+) {
 	selectedAnnouncement = item;
 	await tick();
 	if (!announcementDialog?.open) announcementDialog?.showModal();

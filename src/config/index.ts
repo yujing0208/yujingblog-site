@@ -54,6 +54,7 @@ export { announcementConfig } from "./announcementConfig";
 
 // ─── 外观与壁纸 ─────────────────────────────────────────────
 export { fullscreenWallpaperConfig } from "./backgroundWallpaper";
+export { booknavConfig } from "./booknavConfig";
 // ─── 互动功能 ───────────────────────────────────────────────
 export { commentConfig } from "./commentConfig";
 export { sakuraConfig } from "./effectsConfig";
@@ -66,7 +67,6 @@ export { licenseConfig } from "./licenseConfig";
 export { musicPlayerConfig } from "./musicConfig";
 // ─── 导航栏 ─────────────────────────────────────────────────
 export { navBarConfig } from "./navBarConfig";
-export { booknavConfig } from "./booknavConfig";
 export { permalinkConfig } from "./permalinkConfig";
 export { pioConfig } from "./pioConfig";
 // ─── 个人资料 ───────────────────────────────────────────────

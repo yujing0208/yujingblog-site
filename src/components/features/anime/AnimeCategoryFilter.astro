@@ -18,10 +18,18 @@ const {
 } = Astro.props;
 
 const options = [
-	{ key: "all", label: filterAllLabel, count: categoryCounts["all"] ?? 0 },
-	{ key: "anime", label: categoryAnimeLabel, count: categoryCounts["anime"] ?? 0 },
-	{ key: "novel", label: categoryNovelLabel, count: categoryCounts["novel"] ?? 0 },
-	{ key: "game", label: categoryGameLabel, count: categoryCounts["game"] ?? 0 },
+	{ key: "all", label: filterAllLabel, count: categoryCounts.all ?? 0 },
+	{
+		key: "anime",
+		label: categoryAnimeLabel,
+		count: categoryCounts.anime ?? 0,
+	},
+	{
+		key: "novel",
+		label: categoryNovelLabel,
+		count: categoryCounts.novel ?? 0,
+	},
+	{ key: "game", label: categoryGameLabel, count: categoryCounts.game ?? 0 },
 ];
 ---
 

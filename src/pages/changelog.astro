@@ -12,7 +12,7 @@ const byYear = new Map<string, typeof sorted>();
 for (const item of sorted) {
 	const year = item.date.slice(0, 4);
 	if (!byYear.has(year)) byYear.set(year, []);
-	byYear.get(year)!.push(item);
+	byYear.get(year)?.push(item);
 }
 const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
 
@@ -20,11 +20,13 @@ const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
 const typeOrder = Object.keys(CHANGELOG_TYPE_META) as ChangelogType[];
 const typeCounts = new Map<ChangelogType, number>();
 for (const t of typeOrder) typeCounts.set(t, 0);
-for (const item of sorted) typeCounts.set(item.type, (typeCounts.get(item.type) ?? 0) + 1);
+for (const item of sorted)
+	typeCounts.set(item.type, (typeCounts.get(item.type) ?? 0) + 1);
 
 // 模块列表（按出现频次降序，再按名称）
 const moduleCounts = new Map<string, number>();
-for (const item of sorted) moduleCounts.set(item.module, (moduleCounts.get(item.module) ?? 0) + 1);
+for (const item of sorted)
+	moduleCounts.set(item.module, (moduleCounts.get(item.module) ?? 0) + 1);
 const modules = [...moduleCounts.entries()]
 	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 	.map(([m]) => m);

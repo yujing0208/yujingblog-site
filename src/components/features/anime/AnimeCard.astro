@@ -27,10 +27,11 @@ interface Props {
 	episodesLabel: string;
 }
 
-const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } = Astro.props;
+const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } =
+	Astro.props;
 
 // Normalize episodes: prefer numeric totalEpisodes, fallback to parsing "12 episodes"
-const parsedEpisodes = parseInt(anime.episodes ?? "", 10);
+const parsedEpisodes = Number.parseInt(anime.episodes ?? "", 10);
 const totalEpisodes =
 	anime.totalEpisodes > 0 ? anime.totalEpisodes : parsedEpisodes || 0;
 

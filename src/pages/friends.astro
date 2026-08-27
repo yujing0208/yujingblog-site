@@ -1,10 +1,9 @@
 ---
+import Comment from "@components/comment/index.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
-import Comment from "@components/comment/index.astro";
-
-import { getShuffledFriendsList } from "../data/friends";
 import { siteConfig } from "../config";
+import { getShuffledFriendsList } from "../data/friends";
 
 export const prerender = true;
 

@@ -1,10 +1,10 @@
 <script lang="ts">
-import Icon from "./Icon.svelte";
 import { onDestroy, onMount } from "svelte";
-import type { MusicPlayerState } from "@/stores/musicPlayerStore";
-import { musicPlayerStore } from "@/stores/musicPlayerStore";
 import { getAssetPath } from "@/components/widgets/music-player/hooks/useKeyboardShortcuts";
 import type { Song } from "@/components/widgets/music-player/types";
+import type { MusicPlayerState } from "@/stores/musicPlayerStore";
+import { musicPlayerStore } from "@/stores/musicPlayerStore";
+import Icon from "./Icon.svelte";
 
 interface Track {
 	name: string;
@@ -136,9 +136,9 @@ function closePlaylist() {
 	isPlaylistOpen = false;
 }
 
-	function openSwitchDialog() {
-		showSwitchDialog = true;
-	}
+function openSwitchDialog() {
+	showSwitchDialog = true;
+}
 
 function closeSwitchDialog() {
 	showSwitchDialog = false;

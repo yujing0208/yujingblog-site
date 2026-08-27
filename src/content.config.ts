@@ -21,16 +21,22 @@ const toArr = z.preprocess((v) => {
 	return [String(v)];
 }, z.array(z.string()).optional().default([]));
 const toBool = z.preprocess(
-	(v) => (v == null ? false : v === true || v === "true" || v === "1" || v === 1),
+	(v) =>
+		v == null ? false : v === true || v === "true" || v === "1" || v === 1,
 	z.boolean().optional().default(false),
 );
 const toNum = z.preprocess(
-	(v) => (v == null || v === "" || isNaN(Number(v)) ? undefined : Number(v)),
+	(v) =>
+		v == null || v === "" || Number.isNaN(Number(v)) ? undefined : Number(v),
 	z.number().optional(),
 );
 // published 是必填项，但内容仓库可能漏写/写成空值。空值兜底为构建时间，避免整站 build 失败。
 const toDateRequired = z.preprocess((v) => {
-	if (v == null || v === "" || (typeof v === "string" && isNaN(Date.parse(v)))) {
+	if (
+		v == null ||
+		v === "" ||
+		(typeof v === "string" && Number.isNaN(Date.parse(v)))
+	) {
 		return new Date();
 	}
 	return v;
@@ -56,7 +62,8 @@ const postsCollection = defineCollection({
 			lang: toStrOpt,
 			pinned: toBool,
 			comment: z.preprocess(
-				(v) => (v == null ? true : v === true || v === "true" || v === "1" || v === 1),
+				(v) =>
+					v == null ? true : v === true || v === "true" || v === "1" || v === 1,
 				z.boolean().optional().default(true),
 			),
 			priority: toNum,
@@ -73,30 +80,51 @@ const postsCollection = defineCollection({
 			passwordHint: toStrOpt,
 			hideHomeContent: z
 				.preprocess(
-					(v) => (v == null ? undefined : v === true || v === "true" || v === "1" || v === 1),
+					(v) =>
+						v == null
+							? undefined
+							: v === true || v === "true" || v === "1" || v === 1,
 					z.boolean().optional(),
 				)
 				.optional(),
 
 			/* Posts alias */
-			alias: z.preprocess((v) => (v == null ? undefined : String(v)), z.string().optional()),
+			alias: z.preprocess(
+				(v) => (v == null ? undefined : String(v)),
+				z.string().optional(),
+			),
 
 			/* Custom permalink */
-			permalink: z.preprocess((v) => (v == null ? undefined : String(v)), z.string().optional()),
+			permalink: z.preprocess(
+				(v) => (v == null ? undefined : String(v)),
+				z.string().optional(),
+			),
 
 			/* For internal use */
-			prevTitle: z.preprocess((v) => (v == null ? "" : String(v)), z.string().default("")),
-			prevSlug: z.preprocess((v) => (v == null ? "" : String(v)), z.string().default("")),
-			nextTitle: z.preprocess((v) => (v == null ? "" : String(v)), z.string().default("")),
-			nextSlug: z.preprocess((v) => (v == null ? "" : String(v)), z.string().default("")),
+			prevTitle: z.preprocess(
+				(v) => (v == null ? "" : String(v)),
+				z.string().default(""),
+			),
+			prevSlug: z.preprocess(
+				(v) => (v == null ? "" : String(v)),
+				z.string().default(""),
+			),
+			nextTitle: z.preprocess(
+				(v) => (v == null ? "" : String(v)),
+				z.string().default(""),
+			),
+			nextSlug: z.preprocess(
+				(v) => (v == null ? "" : String(v)),
+				z.string().default(""),
+			),
 		})
 		// 允许 frontmatter 中出现 schema 未显式声明的额外字段（如编辑器自定义的字段），
-		// 避免未知字段导致校验失败。
-		.passthrough(),
+		// 避免未知字段导致校验失败。Zod 4 中 .passthrough() 已弃用，改用 .loose()。
+		.loose(),
 });
 const specCollection = defineCollection({
 	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/spec" }),
-	schema: z.object({}).passthrough(),
+	schema: z.object({}).loose(),
 });
 export const collections = {
 	posts: postsCollection,

@@ -1,4 +1,9 @@
-export type ChangelogType = "feature" | "improvement" | "fix" | "removal" | "other";
+export type ChangelogType =
+	| "feature"
+	| "improvement"
+	| "fix"
+	| "removal"
+	| "other";
 
 /**
  * 单条更新记录。
@@ -34,8 +39,16 @@ export const CHANGELOG_TYPE_META: Record<
 	{ label: string; icon: string; color: string }
 > = {
 	feature: { label: "新增", icon: "mdi:plus-circle", color: "var(--green)" },
-	improvement: { label: "优化", icon: "mdi:trending-up", color: "var(--primary)" },
+	improvement: {
+		label: "优化",
+		icon: "mdi:trending-up",
+		color: "var(--primary)",
+	},
 	fix: { label: "修复", icon: "mdi:bug", color: "var(--orange)" },
 	removal: { label: "删除", icon: "mdi:minus-circle", color: "var(--red)" },
-	other: { label: "其他", icon: "mdi:dots-horizontal-circle", color: "var(--grey)" },
+	other: {
+		label: "其他",
+		icon: "mdi:dots-horizontal-circle",
+		color: "var(--grey)",
+	},
 };

@@ -39,7 +39,10 @@ let copied = $state(false);
 
 const quotePreview = $derived(
 	referencedMessage
-		? referencedMessage.body.replace(/<[^>]*>/gu, " ").replace(/\s+/gu, " ").slice(0, 72)
+		? referencedMessage.body
+				.replace(/<[^>]*>/gu, " ")
+				.replace(/\s+/gu, " ")
+				.slice(0, 72)
 		: "原消息暂未加载",
 );
 

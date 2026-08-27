@@ -41,7 +41,7 @@ export function extractDominantColor(imageUrl: string): Promise<string | null> {
 					if (luminance < 50) continue;
 
 					// Weight by brightness squared — brighter pixels dominate
-					const weight = Math.pow(luminance / 255, 2);
+					const weight = (luminance / 255) ** 2;
 
 					weightedR += r * weight;
 					weightedG += g * weight;
@@ -69,7 +69,9 @@ export function extractDominantColor(imageUrl: string): Promise<string | null> {
 				g = Math.max(0, Math.min(255, g));
 				b = Math.max(0, Math.min(255, b));
 
-				resolve(`#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`);
+				resolve(
+					`#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`,
+				);
 			} catch {
 				resolve(null);
 			}
@@ -88,9 +90,9 @@ export function extractDominantColor(imageUrl: string): Promise<string | null> {
  * Lighten a hex color by mixing with white.
  */
 export function lightenColor(hex: string, amount: number): string {
-	const r = parseInt(hex.slice(1, 3), 16);
-	const g = parseInt(hex.slice(3, 5), 16);
-	const b = parseInt(hex.slice(5, 7), 16);
+	const r = Number.parseInt(hex.slice(1, 3), 16);
+	const g = Number.parseInt(hex.slice(3, 5), 16);
+	const b = Number.parseInt(hex.slice(5, 7), 16);
 	const lr = Math.round(r + (255 - r) * amount);
 	const lg = Math.round(g + (255 - g) * amount);
 	const lb = Math.round(b + (255 - b) * amount);
@@ -101,9 +103,9 @@ export function lightenColor(hex: string, amount: number): string {
  * Darken a hex color by mixing with black.
  */
 export function darkenColor(hex: string, amount: number): string {
-	const r = parseInt(hex.slice(1, 3), 16);
-	const g = parseInt(hex.slice(3, 5), 16);
-	const b = parseInt(hex.slice(5, 7), 16);
+	const r = Number.parseInt(hex.slice(1, 3), 16);
+	const g = Number.parseInt(hex.slice(3, 5), 16);
+	const b = Number.parseInt(hex.slice(5, 7), 16);
 	const dr = Math.round(r * (1 - amount));
 	const dg = Math.round(g * (1 - amount));
 	const db = Math.round(b * (1 - amount));

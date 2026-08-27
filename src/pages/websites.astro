@@ -4,7 +4,6 @@ import { Icon } from "astro-icon/components";
 import { booknavConfig } from "../config/booknavConfig";
 
 // Static filtering for initial SSR state (empty search = all)
-const initialSearch = "";
 const allCategories = booknavConfig.categories;
 const categoryCounts: Record<string, number> = {};
 let totalCount = 0;

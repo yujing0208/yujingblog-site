@@ -10,7 +10,6 @@
 //
 import fs from "node:fs";
 import path from "node:path";
-import { visit } from "unist-util-visit";
 
 const POSTS_DIR = path.resolve(process.cwd(), "src/content/posts");
 
@@ -19,14 +18,17 @@ const POSTS_DIR = path.resolve(process.cwd(), "src/content/posts");
 let coverMap = new Map();
 try {
 	// import.meta.glob 由 Vite 在构建期解析
-	const assets = import.meta.glob("/src/content/posts/**/*.{png,jpg,jpeg,webp,gif,svg,avif}", {
-		eager: true,
-		import: "default",
-	});
+	const assets = import.meta.glob(
+		"/src/content/posts/**/*.{png,jpg,jpeg,webp,gif,svg,avif}",
+		{
+			eager: true,
+			import: "default",
+		},
+	);
 	for (const [p, url] of Object.entries(assets)) {
 		coverMap.set(path.basename(p), url);
 	}
-} catch (e) {
+} catch (_e) {
 	coverMap = new Map();
 }
 
@@ -41,7 +43,7 @@ function parseFrontmatter(content) {
 		const km = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
 		if (!km) continue;
 		const key = km[1];
-		let val = km[2];
+		const val = km[2];
 		if (val === "") {
 			// 块级数组：tags: \n - a \n - b
 			const arr = [];
@@ -61,7 +63,10 @@ function parseFrontmatter(content) {
 		if (val.startsWith("[") && val.endsWith("]")) {
 			const inner = val.slice(1, -1).trim();
 			data[key] = inner
-				? inner.split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean)
+				? inner
+						.split(",")
+						.map((s) => s.trim().replace(/^["']|["']$/g, ""))
+						.filter(Boolean)
 				: [];
 			continue;
 		}
@@ -123,7 +128,7 @@ function el(name, props, children) {
 	return {
 		type: "paragraph",
 		data: { hName: name, hProperties: props || {} },
-		children: children && children.length ? children : [{ type: "text", value: "" }],
+		children: children?.length ? children : [{ type: "text", value: "" }],
 	};
 }
 
@@ -145,7 +150,7 @@ function resolveCover(img) {
 	return "";
 }
 
-const WIKILINK_RE = /(?<!\!)\[\[([^\]\n]+?)\]\]/g;
+const WIKILINK_RE = /(?<!!)\[\[([^\]\n]+?)\]\]/g;
 
 function parseInner(inner) {
 	const pipe = inner.indexOf("|");
@@ -202,7 +207,7 @@ function makeLinkNode({ target, alias }) {
 }
 
 // 生成单独成段的文章卡片（mdast 结构，hName 强制为 div 等元素）
-function makeCardNode({ target, alias }) {
+function makeCardNode({ target }) {
 	const hashIdx = target.indexOf("#");
 	const article = (hashIdx >= 0 ? target.slice(0, hashIdx) : target).trim();
 	if (!article) return null; // 同页锚点不能做卡片
@@ -218,10 +223,15 @@ function makeCardNode({ target, alias }) {
 	const tags = entry.tags;
 
 	const coverNode = cover
-		? el("div", { class: "wiki-card-cover", style: `background-image:url('${cover.replace(/'/g, "%27")}')` })
+		? el("div", {
+				class: "wiki-card-cover",
+				style: `background-image:url('${cover.replace(/'/g, "%27")}')`,
+			})
 		: null;
 
-	const titleNode = el("div", { class: "wiki-card-title" }, [{ type: "text", value: title }]);
+	const titleNode = el("div", { class: "wiki-card-title" }, [
+		{ type: "text", value: title },
+	]);
 
 	const descNode = desc
 		? el("div", { class: "wiki-card-desc" }, [{ type: "text", value: desc }])
@@ -229,21 +239,29 @@ function makeCardNode({ target, alias }) {
 
 	const metaChildren = [];
 	if (date) {
-		metaChildren.push(el("span", { class: "wiki-card-date" }, [{ type: "text", value: date }]));
+		metaChildren.push(
+			el("span", { class: "wiki-card-date" }, [{ type: "text", value: date }]),
+		);
 	}
 	if (cat) {
-		metaChildren.push(el("span", { class: "wiki-card-cat" }, [{ type: "text", value: cat }]));
+		metaChildren.push(
+			el("span", { class: "wiki-card-cat" }, [{ type: "text", value: cat }]),
+		);
 	}
 	if (tags.length) {
 		metaChildren.push(
 			el(
 				"span",
 				{ class: "wiki-card-tags" },
-				tags.map((t) => el("span", { class: "wiki-card-tag" }, [{ type: "text", value: t }])),
+				tags.map((t) =>
+					el("span", { class: "wiki-card-tag" }, [{ type: "text", value: t }]),
+				),
 			),
 		);
 	}
-	const metaNode = metaChildren.length ? el("div", { class: "wiki-card-meta" }, metaChildren) : null;
+	const metaNode = metaChildren.length
+		? el("div", { class: "wiki-card-meta" }, metaChildren)
+		: null;
 
 	const bodyChildren = [titleNode];
 	if (descNode) bodyChildren.push(descNode);
@@ -271,11 +289,13 @@ function splitText(value) {
 	WIKILINK_RE.lastIndex = 0;
 	const out = [];
 	let last = 0;
-	let m;
-	while ((m = WIKILINK_RE.exec(value))) {
-		if (m.index > last) out.push({ type: "text", value: value.slice(last, m.index) });
+	let m = WIKILINK_RE.exec(value);
+	while (m) {
+		if (m.index > last)
+			out.push({ type: "text", value: value.slice(last, m.index) });
 		out.push(makeLinkNode(parseInner(m[1])));
 		last = m.index + m[0].length;
+		m = WIKILINK_RE.exec(value);
 	}
 	if (last < value.length) out.push({ type: "text", value: value.slice(last) });
 	return out;

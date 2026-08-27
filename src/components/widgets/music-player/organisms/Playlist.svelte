@@ -4,10 +4,10 @@ import { slide } from "svelte/transition";
 
 import Key from "../../../../i18n/i18nKey";
 import { i18n } from "../../../../i18n/translation";
-import type { PlayerMode, Song } from "../types";
+import PlaylistItem from "../atoms/PlaylistItem.svelte";
 
 import ModeToggle from "../molecules/ModeToggle.svelte";
-import PlaylistItem from "../atoms/PlaylistItem.svelte";
+import type { PlayerMode, Song } from "../types";
 
 interface Props {
 	playlist: Song[];

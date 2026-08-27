@@ -39,8 +39,8 @@ export const announcementData: AnnouncementData = {
 				enable: true,
 				text: "去留言",
 				url: "https://notes.yujingblog.top/",
-				external: true
-			}
+				external: true,
+			},
 		},
 		{
 			content: "增加了一个QQ 群聊风格的留言板，快去试试~",
@@ -48,9 +48,9 @@ export const announcementData: AnnouncementData = {
 				enable: true,
 				text: "去留言",
 				url: "https://www.yujingblog.top/guestbook/",
-				external: false
-			}
-		}
+				external: false,
+			},
+		},
 	],
 	interval: 4000,
 	closable: true,
@@ -58,6 +58,6 @@ export const announcementData: AnnouncementData = {
 		enable: true,
 		text: "Learn More",
 		url: "https://old.yujingblog.top",
-		external: true
-	}
+		external: true,
+	},
 };

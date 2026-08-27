@@ -1,5 +1,5 @@
-import type { BooknavConfig, BooknavCategory } from "../types/booknavConfig";
 import { websiteData } from "../data/website";
+import type { BooknavCategory, BooknavConfig } from "../types/booknavConfig";
 
 /**
  * 书签导航配置。
@@ -17,12 +17,42 @@ interface CategoryMeta {
 }
 
 const categoryMeta: CategoryMeta[] = [
-	{ id: "dev", name: "开发", description: "写代码时离不开的站点", icon: "material-symbols:code" },
-	{ id: "project", name: "项目", description: "好用的开源项目", icon: "material-symbols:folder" },
-	{ id: "design", name: "设计", description: "配色、图标与灵感来源", icon: "material-symbols:brush" },
-	{ id: "ai", name: "AI", description: "大模型与 AI 工具", icon: "material-symbols:smart-toy" },
-	{ id: "tool", name: "工具", description: "顺手的在线小工具", icon: "material-symbols:build" },
-	{ id: "resource", name: "资源", description: "文档、教程、阅读与下载", icon: "material-symbols:menu-book" },
+	{
+		id: "dev",
+		name: "开发",
+		description: "写代码时离不开的站点",
+		icon: "material-symbols:code",
+	},
+	{
+		id: "project",
+		name: "项目",
+		description: "好用的开源项目",
+		icon: "material-symbols:folder",
+	},
+	{
+		id: "design",
+		name: "设计",
+		description: "配色、图标与灵感来源",
+		icon: "material-symbols:brush",
+	},
+	{
+		id: "ai",
+		name: "AI",
+		description: "大模型与 AI 工具",
+		icon: "material-symbols:smart-toy",
+	},
+	{
+		id: "tool",
+		name: "工具",
+		description: "顺手的在线小工具",
+		icon: "material-symbols:build",
+	},
+	{
+		id: "resource",
+		name: "资源",
+		description: "文档、教程、阅读与下载",
+		icon: "material-symbols:menu-book",
+	},
 ];
 
 const categories: BooknavCategory[] = categoryMeta.map((meta) => ({

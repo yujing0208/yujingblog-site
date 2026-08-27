@@ -2,8 +2,15 @@
 import Icon from "@iconify/svelte";
 import { tick } from "svelte";
 import { type EmojiItem, type EmojiPack, loadEmojiPacks } from "./lib/emoji";
-import type { GuestbookChatMessage as Message, GuestbookProfile } from "./lib/types";
-import { MAX_IMAGE_SIZE_BYTES, MAX_MESSAGE_LENGTH, readImageAsDataUrl } from "./lib/utils";
+import type {
+	GuestbookProfile,
+	GuestbookChatMessage as Message,
+} from "./lib/types";
+import {
+	MAX_IMAGE_SIZE_BYTES,
+	MAX_MESSAGE_LENGTH,
+	readImageAsDataUrl,
+} from "./lib/utils";
 
 interface Props {
 	profile: GuestbookProfile;
@@ -48,7 +55,9 @@ let profileDialogError = $state("");
 let resizeStartY = 0;
 let resizeStartHeight = 0;
 
-let pendingImage = $state<{ name: string; url: string; size: number } | null>(null);
+let pendingImage = $state<{ name: string; url: string; size: number } | null>(
+	null,
+);
 let isProcessingImage = $state(false);
 let fileInput = $state<HTMLInputElement | null>(null);
 
@@ -185,10 +194,7 @@ function handleResizeKeydown(event: KeyboardEvent) {
 	if (event.key === "Home") setTextareaHeight(bounds.min);
 	else if (event.key === "End") setTextareaHeight(bounds.max);
 	else {
-		setTextareaHeight(
-			bounds.current +
-				(event.key === "ArrowUp" ? 16 : -16),
-		);
+		setTextareaHeight(bounds.current + (event.key === "ArrowUp" ? 16 : -16));
 	}
 }
 
@@ -318,7 +324,7 @@ function handlePaste(event: ClipboardEvent) {
 	for (const item of Array.from(items)) {
 		if (item.kind === "file") {
 			const file = item.getAsFile();
-			if (file && file.type.startsWith("image/")) {
+			if (file?.type.startsWith("image/")) {
 				event.preventDefault();
 				void handleImageFile(file);
 				return;
@@ -330,9 +336,7 @@ function handlePaste(event: ClipboardEvent) {
 function handleDrop(event: DragEvent) {
 	const files = event.dataTransfer?.files;
 	if (!files || files.length === 0) return;
-	const imageFile = Array.from(files).find((f) =>
-		f.type.startsWith("image/"),
-	);
+	const imageFile = Array.from(files).find((f) => f.type.startsWith("image/"));
 	if (!imageFile) return;
 	event.preventDefault();
 	void handleImageFile(imageFile);

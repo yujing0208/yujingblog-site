@@ -52,11 +52,7 @@ export function filterBooknav(
 }
 
 function matchesSearch(item: BooknavItem, term: string): boolean {
-	const searchable = [
-		item.name,
-		item.description ?? "",
-		...(item.tags ?? []),
-	]
+	const searchable = [item.name, item.description ?? "", ...(item.tags ?? [])]
 		.join(" ")
 		.toLowerCase();
 	return searchable.includes(term);
@@ -65,7 +61,9 @@ function matchesSearch(item: BooknavItem, term: string): boolean {
 /**
  * 统计每个分类的条目数量。
  */
-export function countCategoryItems(categories: BooknavCategory[]): Record<string, number> {
+export function countCategoryItems(
+	categories: BooknavCategory[],
+): Record<string, number> {
 	return Object.fromEntries(categories.map((c) => [c.id, c.items.length]));
 }
 

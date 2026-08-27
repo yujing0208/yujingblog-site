@@ -159,7 +159,8 @@ export const DEFAULT_SONG: Song = {
 	id: 0,
 };
 
-export const DEFAULT_METING_API ="https://www.bilibili.uno/api?server=:server&type=:type&id=:id&auth=:auth&r=:r";
+export const DEFAULT_METING_API =
+	"https://www.bilibili.uno/api?server=:server&type=:type&id=:id&auth=:auth&r=:r";
 export const DEFAULT_METING_ID = "14164869977";
 export const DEFAULT_METING_SERVER = "netease";
 export const DEFAULT_METING_TYPE = "playlist";
