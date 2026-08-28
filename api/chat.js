@@ -23,10 +23,17 @@ const MAX_TOTAL_CHARS = 12000;
 const MAX_COMPLETION_TOKENS = 320;
 
 function errorResponse(res, status, error, code) {
-  return res.status(status).json({
+  const payload = JSON.stringify({
     error,
     ...(code ? { code } : {}),
   });
+
+  // Vercel Node.js Serverless Function 使用 Node 的 ServerResponse，
+  // 没有 Express 的 res.status().json() API。
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(payload);
 }
 
 module.exports = async function handler(req, res) {
