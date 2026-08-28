@@ -1,6 +1,12 @@
 {
   "outputDirectory": "dist",
   "framework": "astro",
+  "rewrites": [
+    {
+      "source": "/pio/live2d-host.html",
+      "destination": "/pio/live2d-host"
+    }
+  ],
   "headers": [
     {
       "source": "/images/(.*)",
@@ -31,6 +37,19 @@
     },
     {
       "source": "/pio/live2d-host.html",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/pio/live2d-host",
       "headers": [
         {
           "key": "X-Frame-Options",
