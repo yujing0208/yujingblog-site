@@ -29,7 +29,7 @@ function errorResponse(res, status, error, code) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return errorResponse(res, 405, "Method not allowed", "METHOD_NOT_ALLOWED");
   }
@@ -98,7 +98,6 @@ export default async function handler(req, res) {
         messages: normalizedMessages,
         stream: true,
         max_completion_tokens: MAX_COMPLETION_TOKENS,
-        // 看板娘聊天不需要深度推理；关闭 thinking 可明显降低首字延迟。
         chat_template_kwargs: {
           enable_thinking: false,
         },
@@ -186,4 +185,4 @@ export default async function handler(req, res) {
 
     return errorResponse(res, 502, "AI proxy error", "PROXY_ERROR");
   }
-}
+};
