@@ -1,3 +1,4 @@
+<!-- Production build verification: this file must be present in dist/pio. -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,7 +103,7 @@
       var style = getComputedStyle(el);
       if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return;
       var paintsBox =
-        !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(style.backgroundColor) ||
+        !/^(transparent|rgba\\(0, 0, 0, 0\\))$/.test(style.backgroundColor) ||
         style.backgroundImage !== 'none' ||
         style.boxShadow !== 'none';
       if (!paintsBox) return;
