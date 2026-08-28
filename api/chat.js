@@ -6,6 +6,7 @@
  * - 模型固定为 Cloudflare Workers Free 可用的 GLM-4.7-Flash
  * - 不配置任何付费 fallback，额度用尽后直接返回 429
  * - API Token 只存在 Vercel 环境变量，不暴露给浏览器
+ * - 控制上下文与输出长度，优先降低首字响应延迟和免费额度消耗
  *
  * 环境变量：
  * - CLOUDFLARE_ACCOUNT_ID
@@ -13,10 +14,12 @@
  */
 
 const MODEL = "@cf/zai-org/glm-4.7-flash";
-const MAX_MESSAGES = 24;
-const MAX_MESSAGE_CHARS = 4000;
-const MAX_TOTAL_CHARS = 24000;
-const MAX_COMPLETION_TOKENS = 512;
+
+// 看板娘属于短对话场景：减少无意义历史，降低输入处理时间与 Neurons 消耗。
+const MAX_MESSAGES = 16;
+const MAX_MESSAGE_CHARS = 3000;
+const MAX_TOTAL_CHARS = 12000;
+const MAX_COMPLETION_TOKENS = 320;
 
 function errorResponse(res, status, error, code) {
   return res.status(status).json({
@@ -26,7 +29,6 @@ function errorResponse(res, status, error, code) {
 }
 
 export default async function handler(req, res) {
-  // 仅允许 POST
   if (req.method !== "POST") {
     return errorResponse(res, 405, "Method not allowed", "METHOD_NOT_ALLOWED");
   }
@@ -50,7 +52,6 @@ export default async function handler(req, res) {
       return errorResponse(res, 400, "messages array required", "INVALID_MESSAGES");
     }
 
-    // 防止公开 API 被超长上下文滥用，也控制 Workers AI 免费额度消耗。
     if (messages.length > MAX_MESSAGES) {
       return errorResponse(res, 400, "Too many messages", "MESSAGE_LIMIT");
     }
@@ -107,8 +108,7 @@ export default async function handler(req, res) {
     }
 
     if (!response.ok) {
-      // Cloudflare 429 / 3036 = 每日 10,000 Neurons 免费额度已用尽。
-      // 这里绝不 fallback 到任何付费模型，确保博客不会因为聊天产生意外费用。
+      // Free 额度耗尽时只停止 AI，不切换到任何付费 Provider。
       if (response.status === 429) {
         return errorResponse(
           res,
