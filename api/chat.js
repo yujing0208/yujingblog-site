@@ -16,7 +16,6 @@
 
 const MODEL = "@cf/zai-org/glm-4.7-flash";
 
-// 看板娘属于短对话场景：减少无意义历史，降低输入处理时间与 Neurons 消耗。
 const MAX_MESSAGES = 16;
 const MAX_MESSAGE_CHARS = 3000;
 const MAX_TOTAL_CHARS = 12000;
@@ -28,12 +27,48 @@ function errorResponse(res, status, error, code) {
     ...(code ? { code } : {}),
   });
 
-  // Vercel Node.js Serverless Function 使用 Node 的 ServerResponse，
-  // 没有 Express 的 res.status().json() API。
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(payload);
+}
+
+async function readRequestBody(req) {
+  // Vercel normally populates req.body for JSON requests. Keep this path first.
+  if (req.body !== undefined && req.body !== null) {
+    if (Buffer.isBuffer(req.body)) {
+      return req.body.toString("utf8");
+    }
+    if (typeof req.body === "string") {
+      return req.body;
+    }
+    return req.body;
+  }
+
+  // Some Astro/Vercel production combinations leave req.body empty even when
+  // the client sent JSON. Fall back to the raw Node request stream.
+  if (req.readableEnded) return null;
+
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  if (chunks.length === 0) return null;
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function normalizeRequestBody(rawBody) {
+  if (rawBody === null || rawBody === undefined || rawBody === "") return {};
+  if (typeof rawBody === "object" && !Buffer.isBuffer(rawBody)) return rawBody;
+  if (Buffer.isBuffer(rawBody)) rawBody = rawBody.toString("utf8");
+  if (typeof rawBody !== "string") return {};
+
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    throw new Error("Invalid JSON body");
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -54,7 +89,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body || {};
+    const rawBody = await readRequestBody(req);
+    const body = normalizeRequestBody(rawBody);
+    const { messages } = body || {};
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return errorResponse(res, 400, "messages array required", "INVALID_MESSAGES");
@@ -120,7 +157,6 @@ module.exports = async function handler(req, res) {
         data = { error: rawText || "Unknown Cloudflare AI response" };
       }
 
-      // Free 额度耗尽时只停止 AI，不切换到任何付费 Provider。
       if (response.status === 429) {
         return errorResponse(
           res,
@@ -147,7 +183,6 @@ module.exports = async function handler(req, res) {
       return errorResponse(res, 502, "AI stream unavailable", "AI_STREAM_UNAVAILABLE");
     }
 
-    // 直接透传 Cloudflare SSE，避免等待完整答案再返回。
     res.statusCode = 200;
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
@@ -171,6 +206,10 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     console.error("Chat proxy error:", err);
 
+    if (err instanceof Error && err.message === "Invalid JSON body") {
+      return errorResponse(res, 400, "Invalid JSON body", "INVALID_JSON");
+    }
+
     if (err instanceof Error && err.message === "Invalid message role") {
       return errorResponse(res, 400, "Invalid message role", "INVALID_MESSAGE");
     }
@@ -179,7 +218,6 @@ module.exports = async function handler(req, res) {
       return errorResponse(res, 400, "Message is empty or too long", "MESSAGE_LENGTH");
     }
 
-    // 如果响应已经开始流式输出，不能再发送 JSON 错误响应。
     if (res.headersSent) {
       try {
         res.write(`data: ${JSON.stringify({ error: "AI stream interrupted" })}\n\n`);
