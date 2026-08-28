@@ -1,48 +1,189 @@
 /**
- * Vercel Serverless Function — DeepSeek API 代理
- * 前端 POST /api/chat → 本函数 → DeepSeek API → 返回
- * 
- * 环境变量: DEEPSEEK_API_KEY (在 Vercel Dashboard 设置)
+ * Vercel Serverless Function — Cloudflare Workers AI 代理
+ * 前端 POST /api/chat → 本函数 → Cloudflare Workers AI → 流式返回
+ *
+ * 免费优先设计：
+ * - 模型固定为 Cloudflare Workers Free 可用的 GLM-4.7-Flash
+ * - 关闭 reasoning，优先低延迟聊天，不把输出额度耗在思考过程上
+ * - 不配置任何付费 fallback，额度用尽后直接返回 429
+ * - API Token 只存在 Vercel 环境变量，不暴露给浏览器
+ * - 控制上下文与输出长度，优先降低首字响应延迟和免费额度消耗
+ *
+ * 环境变量：
+ * - CLOUDFLARE_ACCOUNT_ID
+ * - CLOUDFLARE_API_TOKEN
  */
 
+const MODEL = "@cf/zai-org/glm-4.7-flash";
+
+// 看板娘属于短对话场景：减少无意义历史，降低输入处理时间与 Neurons 消耗。
+const MAX_MESSAGES = 16;
+const MAX_MESSAGE_CHARS = 3000;
+const MAX_TOTAL_CHARS = 12000;
+const MAX_COMPLETION_TOKENS = 320;
+
+function errorResponse(res, status, error, code) {
+  return res.status(status).json({
+    error,
+    ...(code ? { code } : {}),
+  });
+}
+
 export default async function handler(req, res) {
-  // 仅允许 POST
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return errorResponse(res, 405, "Method not allowed", "METHOD_NOT_ALLOWED");
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (!accountId || !apiToken) {
+    return errorResponse(
+      res,
+      500,
+      "Cloudflare AI is not configured",
+      "AI_NOT_CONFIGURED"
+    );
   }
 
   try {
-    const { messages } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "messages array required" });
+    const { messages } = req.body || {};
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return errorResponse(res, 400, "messages array required", "INVALID_MESSAGES");
     }
 
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
+    if (messages.length > MAX_MESSAGES) {
+      return errorResponse(res, 400, "Too many messages", "MESSAGE_LIMIT");
+    }
+
+    const normalizedMessages = messages.map((message) => {
+      if (!message || !["system", "user", "assistant"].includes(message.role)) {
+        throw new Error("Invalid message role");
+      }
+
+      const content = typeof message.content === "string" ? message.content : "";
+      if (!content || content.length > MAX_MESSAGE_CHARS) {
+        throw new Error("Invalid message content length");
+      }
+
+      return {
+        role: message.role,
+        content,
+      };
+    });
+
+    const totalChars = normalizedMessages.reduce(
+      (total, message) => total + message.content.length,
+      0
+    );
+
+    if (totalChars > MAX_TOTAL_CHARS) {
+      return errorResponse(res, 400, "Conversation is too long", "CONTEXT_LIMIT");
+    }
+
+    const endpoint =
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}` +
+      `/ai/v1/chat/completions`;
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
+        Accept: "text/event-stream",
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
-        messages,
-        stream: false,
+        model: MODEL,
+        messages: normalizedMessages,
+        stream: true,
+        max_completion_tokens: MAX_COMPLETION_TOKENS,
+        // 看板娘聊天不需要深度推理；关闭 thinking 可明显降低首字延迟。
+        chat_template_kwargs: {
+          enable_thinking: false,
+        },
       }),
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({ error: `DeepSeek API: ${errText}` });
+      const rawText = await response.text();
+      let data;
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { error: rawText || "Unknown Cloudflare AI response" };
+      }
+
+      // Free 额度耗尽时只停止 AI，不切换到任何付费 Provider。
+      if (response.status === 429) {
+        return errorResponse(
+          res,
+          429,
+          "今天的免费 AI 聊天额度已经用完啦，明天再来找诺瓦吧~ 🐾",
+          "FREE_QUOTA_EXCEEDED"
+        );
+      }
+
+      if (response.status === 403) {
+        return errorResponse(
+          res,
+          503,
+          "AI 服务当前不可用，请稍后再试~",
+          "AI_ACCESS_DENIED"
+        );
+      }
+
+      console.error("Cloudflare AI API error:", response.status, data);
+      return errorResponse(res, 502, "AI service error", "AI_PROVIDER_ERROR");
     }
 
-    const data = await response.json();
-    return res.status(200).json(data);
+    if (!response.body) {
+      return errorResponse(res, 502, "AI stream unavailable", "AI_STREAM_UNAVAILABLE");
+    }
+
+    // 直接透传 Cloudflare SSE，避免等待完整答案再返回。
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
+
+    const reader = response.body.getReader();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) res.write(Buffer.from(value));
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    res.end();
   } catch (err) {
-    return res.status(502).json({ error: `Proxy error: ${err.message}` });
+    console.error("Chat proxy error:", err);
+
+    if (err instanceof Error && err.message === "Invalid message role") {
+      return errorResponse(res, 400, "Invalid message role", "INVALID_MESSAGE");
+    }
+
+    if (err instanceof Error && err.message === "Invalid message content length") {
+      return errorResponse(res, 400, "Message is empty or too long", "MESSAGE_LENGTH");
+    }
+
+    // 如果响应已经开始流式输出，不能再发送 JSON 错误响应。
+    if (res.headersSent) {
+      try {
+        res.write(`data: ${JSON.stringify({ error: "AI stream interrupted" })}\n\n`);
+      } catch {}
+      try {
+        res.end();
+      } catch {}
+      return;
+    }
+
+    return errorResponse(res, 502, "AI proxy error", "PROXY_ERROR");
   }
 }
