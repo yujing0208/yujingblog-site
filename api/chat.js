@@ -1,6 +1,6 @@
 /**
  * Vercel Serverless Function — Cloudflare Workers AI 代理
- * 前端 POST /api/chat → 本函数 → Cloudflare Workers AI → 返回
+ * 前端 POST /api/chat → 本函数 → Cloudflare Workers AI → 流式返回
  *
  * 免费优先设计：
  * - 模型固定为 Cloudflare Workers Free 可用的 GLM-4.7-Flash
@@ -90,24 +90,25 @@ export default async function handler(req, res) {
       headers: {
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
+        Accept: "text/event-stream",
       },
       body: JSON.stringify({
         model: MODEL,
         messages: normalizedMessages,
-        stream: false,
+        stream: true,
         max_tokens: MAX_COMPLETION_TOKENS,
       }),
     });
 
-    const rawText = await response.text();
-    let data;
-    try {
-      data = rawText ? JSON.parse(rawText) : {};
-    } catch {
-      data = { error: rawText || "Unknown Cloudflare AI response" };
-    }
-
     if (!response.ok) {
+      const rawText = await response.text();
+      let data;
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { error: rawText || "Unknown Cloudflare AI response" };
+      }
+
       // Free 额度耗尽时只停止 AI，不切换到任何付费 Provider。
       if (response.status === 429) {
         return errorResponse(
@@ -131,7 +132,31 @@ export default async function handler(req, res) {
       return errorResponse(res, 502, "AI service error", "AI_PROVIDER_ERROR");
     }
 
-    return res.status(200).json(data);
+    if (!response.body) {
+      return errorResponse(res, 502, "AI stream unavailable", "AI_STREAM_UNAVAILABLE");
+    }
+
+    // 直接透传 Cloudflare SSE，避免等待完整答案再返回。
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
+
+    const reader = response.body.getReader();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) res.write(Buffer.from(value));
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    res.end();
   } catch (err) {
     console.error("Chat proxy error:", err);
 
@@ -141,6 +166,17 @@ export default async function handler(req, res) {
 
     if (err instanceof Error && err.message === "Invalid message content length") {
       return errorResponse(res, 400, "Message is empty or too long", "MESSAGE_LENGTH");
+    }
+
+    // 如果响应已经开始流式输出，不能再发送 JSON 错误响应。
+    if (res.headersSent) {
+      try {
+        res.write(`data: ${JSON.stringify({ error: "AI stream interrupted" })}\n\n`);
+      } catch {}
+      try {
+        res.end();
+      } catch {}
+      return;
     }
 
     return errorResponse(res, 502, "AI proxy error", "PROXY_ERROR");
