@@ -4,6 +4,7 @@
  *
  * 免费优先设计：
  * - 模型固定为 Cloudflare Workers Free 可用的 GLM-4.7-Flash
+ * - 关闭 reasoning，优先低延迟聊天，不把输出额度耗在思考过程上
  * - 不配置任何付费 fallback，额度用尽后直接返回 429
  * - API Token 只存在 Vercel 环境变量，不暴露给浏览器
  * - 控制上下文与输出长度，优先降低首字响应延迟和免费额度消耗
@@ -96,7 +97,11 @@ export default async function handler(req, res) {
         model: MODEL,
         messages: normalizedMessages,
         stream: true,
-        max_tokens: MAX_COMPLETION_TOKENS,
+        max_completion_tokens: MAX_COMPLETION_TOKENS,
+        // 看板娘聊天不需要深度推理；关闭 thinking 可明显降低首字延迟。
+        chat_template_kwargs: {
+          enable_thinking: false,
+        },
       }),
     });
 
