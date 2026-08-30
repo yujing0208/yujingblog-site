@@ -80,7 +80,15 @@ html:has(.music-visualizer-page) .floating-dock,
 html:has(.music-visualizer-page) #floating-lyrics-container {
 	display: none !important;
 }
-
+/* 竖屏音乐页面：直接隐藏底部竖屏导航栏（MobileDock），避免遮挡音乐控制栏。
+   锚定 html.music-fullscreen（MusicVisualizer onMount 实际添加的沉浸模式 class），
+   仅作用于竖屏移动端；页面离开时 onMount 移除 music-fullscreen，导航栏自动恢复。 */
+@media (max-width: 767px) and (orientation: portrait) {
+	html.music-fullscreen #mobile-dock,
+	html.music-fullscreen .mobile-dock__overlay {
+		display: none !important;
+	}
+}
 html.is-navigating-to-music #left-sidebar-wrapper,
 html.is-navigating-to-music #left-sidebar-dynamic,
 html.is-navigating-to-music #right-sidebar-static,
