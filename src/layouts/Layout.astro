@@ -3,7 +3,6 @@ import { Font } from "astro:assets";
 import { PageProgressBar } from "@components/control/PageProgressBar";
 import Pio from "@components/features/pio/Pio.astro";
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
-import GuestbookWidget from "@components/widgets/guestbook/GuestbookWidget.svelte";
 import MusicPlayer from "@components/widgets/music-player/MusicPlayer.svelte";
 import { pioConfig, profileConfig, siteConfig } from "@/config";
 
@@ -254,9 +253,6 @@ const bannerOffset =
 
 		<!-- Music Player - 核心始终加载（当enable=true），UI通过showFloatingPlayer控制 -->
 		<MusicPlayer client:idle />
-
-		<!-- Guestbook 留言板悬浮组件 - 全局可用（FAB 入口在 FloatingControls） -->
-		<GuestbookWidget client:idle />
 
 		<!-- Pio 看板娘组件 - 仅在进入视口时加载 -->
 		{pioConfig.enable && <Pio config={pioConfig} />}

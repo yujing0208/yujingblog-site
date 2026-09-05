@@ -14,21 +14,3 @@ const description = "在这里给我留言，畅所欲言～";
 		<GuestbookChat client:idle />
 	</div>
 </MainGridLayout>
-
-<style>
-	.guestbook-page {
-		height: calc(100dvh - 8.5rem);
-		min-height: 32rem;
-	}
-
-	.guestbook-page :global(.guestbook-chat) {
-		height: 100%;
-	}
-
-	@media (max-width: 768px) {
-		.guestbook-page {
-			height: calc(100dvh - 9rem);
-			min-height: 30rem;
-		}
-	}
-</style>

@@ -5,7 +5,6 @@ import { musicPlayerConfig, siteConfig } from "../../config";
 import FloatingTOC from "../features/toc/FloatingTOC.astro";
 import BackToHome from "./BackToHome.astro";
 import BackToTop from "./BackToTop.astro";
-import GuestbookFabButton from "./GuestbookFabButton.svelte";
 import MusicFabButton from "./MusicFabButton.svelte";
 
 interface Props {
@@ -25,9 +24,6 @@ const { headings = [] } = Astro.props;
 				</div>
 			)
 	}
-	<div class="floating-control-item" data-control-key="guestbook">
-		<GuestbookFabButton client:idle />
-	</div>
 	{
 		siteConfig.toc.enable && siteConfig.toc.floating && (
 			<div class="floating-control-item" data-control-key="toc">

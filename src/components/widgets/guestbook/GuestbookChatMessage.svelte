@@ -1,18 +1,44 @@
 <script lang="ts">
-import Icon from "@iconify/svelte";
-import type { GuestbookMessage } from "./lib/types";
-import { getInitials } from "./lib/utils";
+import {
+	Check,
+	Copy,
+	Laptop,
+	LoaderCircle,
+	MapPin,
+	Monitor,
+	Pencil,
+	Reply,
+	RotateCcw,
+	Trash2,
+	X,
+} from "lucide-svelte";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { GuestbookChatMessage } from "@/types/guestbook-chat";
+import { getGuestbookInitials } from "@/utils/guestbook-chat";
+import {
+	renderGuestbookMessage,
+	renderGuestbookQuotePreview,
+} from "@/utils/guestbook-chat-markup";
 
 interface Props {
-	message: GuestbookMessage;
-	referencedMessage?: GuestbookMessage;
+	message: GuestbookChatMessage;
+	referencedMessage?: GuestbookChatMessage;
 	timeLabel: string;
 	canManage: boolean;
-	onReply: (message: GuestbookMessage) => void;
-	onDelete: (message: GuestbookMessage) => void;
-	onJump: (message: GuestbookMessage) => void;
-	onRetry: (message: GuestbookMessage) => void;
-	onDiscard: (message: GuestbookMessage) => void;
+	isEditing: boolean;
+	isMutating: boolean;
+	editDraft: string;
+	actionError?: string;
+	onReply: (message: GuestbookChatMessage) => void;
+	onEdit: (message: GuestbookChatMessage) => void;
+	onEditDraftChange: (draft: string) => void;
+	onEditCancel: () => void;
+	onEditSave: (message: GuestbookChatMessage) => void;
+	onDelete: (message: GuestbookChatMessage) => void;
+	onJump: (message: GuestbookChatMessage) => void;
+	onRetry: (message: GuestbookChatMessage) => void;
+	onDiscard: (message: GuestbookChatMessage) => void;
 	onCopyError: (message: string) => void;
 }
 
@@ -21,7 +47,15 @@ let {
 	referencedMessage,
 	timeLabel,
 	canManage,
+	isEditing,
+	isMutating,
+	editDraft,
+	actionError,
 	onReply,
+	onEdit,
+	onEditDraftChange,
+	onEditCancel,
+	onEditSave,
 	onDelete,
 	onJump,
 	onRetry,
@@ -33,17 +67,18 @@ let copied = $state(false);
 
 const quotePreview = $derived(
 	referencedMessage
-		? referencedMessage.body.replace(/<[^>]*>/gu, " ").replace(/\s+/gu, " ").slice(0, 72)
-		: "原消息暂未加载",
+		? renderGuestbookQuotePreview(referencedMessage.body)
+		: i18n(I18nKey.gbQuoteNotLoaded),
 );
+const renderedBody = $derived(renderGuestbookMessage(message.body));
 
 async function copyMessage() {
 	try {
-		await navigator.clipboard.writeText(message.body.replace(/<[^>]*>/gu, ""));
+		await navigator.clipboard.writeText(message.body);
 		copied = true;
 		window.setTimeout(() => (copied = false), 1600);
 	} catch {
-		onCopyError("复制失败，请检查浏览器剪贴板权限");
+		onCopyError(i18n(I18nKey.gbCopyFailed));
 	}
 }
 </script>
@@ -55,8 +90,40 @@ async function copyMessage() {
 	class:is-sending={message.localState === "sending"}
 	class="guestbook-message"
 >
+	{#if message.replyToId}
+		<button
+			class="guestbook-message__quote"
+			type="button"
+			onclick={() => onJump(message)}
+			aria-label={i18n(I18nKey.gbJumpToQuoteAria).replace(
+				"{nick}",
+				message.replyToNick || i18n(I18nKey.gbVisitor),
+			)}
+			title={i18n(I18nKey.gbJumpToQuoteTitle)}
+		>
+			<span class="guestbook-message__quote-avatar" aria-hidden="true">
+				<span>{getGuestbookInitials(referencedMessage?.nick || message.replyToNick || i18n(I18nKey.gbVisitor))}</span>
+				{#if referencedMessage?.avatar}
+					<img
+						src={referencedMessage.avatar}
+						alt=""
+						loading="lazy"
+						referrerpolicy="no-referrer"
+						onerror={(event) =>
+							((event.currentTarget as HTMLImageElement).style.display = "none")}
+					/>
+				{/if}
+			</span>
+			<span class="guestbook-message__quote-copy">
+				<strong>@{message.replyToNick || i18n(I18nKey.gbVisitor)}</strong>
+				<small>{@html quotePreview}</small>
+			</span>
+		</button>
+	{/if}
+
+	<div class="guestbook-message__main">
 	<div class="guestbook-message__avatar" aria-hidden="true">
-		<span>{getInitials(message.nick)}</span>
+		<span>{getGuestbookInitials(message.nick)}</span>
 		{#if message.avatar}
 			<img
 				src={message.avatar}
@@ -78,7 +145,10 @@ async function copyMessage() {
 						href={message.link}
 						target="_blank"
 						rel="nofollow noopener noreferrer"
-						title={`访问 ${message.nick} 的网站`}
+						title={i18n(I18nKey.gbVisitSiteTitle).replace(
+							"{nick}",
+							message.nick,
+						)}
 					>
 						{message.nick}
 					</a>
@@ -87,69 +157,107 @@ async function copyMessage() {
 				{/if}
 			</span>
 			{#if message.isAdmin}
-				<span class="guestbook-message__badge guestbook-message__badge--admin">站长</span>
+				<span class="guestbook-message__badge guestbook-message__badge--admin">{i18n(I18nKey.gbAdmin)}</span>
 			{/if}
 			{#if message.label}
-				<span class="guestbook-message__badge guestbook-message__badge--waiting">{message.label}</span>
+				<span class="guestbook-message__badge">{message.label}</span>
 			{/if}
 			<time
 				class="guestbook-message__time"
 				datetime={new Date(message.createdAt).toISOString()}>{timeLabel}</time
 			>
+			{#if message.status === "waiting"}
+				<span class="guestbook-message__badge guestbook-message__badge--waiting">{i18n(I18nKey.gbPendingReview)}</span>
+			{/if}
 		</div>
 
 		<div class="guestbook-message__bubble-row">
 			<div class="guestbook-message__bubble">
-				{#if message.replyToId}
-					<button
-						class="guestbook-message__quote"
-						type="button"
-						onclick={() => onJump(message)}
-						title="跳转到原消息"
-					>
-						<Icon
-							icon="lucide:arrow-up-to-line"
-							class="guestbook-message__quote-jump"
-							width={15}
-							height={15}
-						/>
-						<span>@{message.replyToNick || "访客"}</span>
-						<small>{quotePreview}</small>
-					</button>
+				{#if isEditing}
+					<textarea
+						class="guestbook-message__edit-input"
+						value={editDraft}
+						oninput={(event) => onEditDraftChange(event.currentTarget.value)}
+						maxlength="300"
+						rows="4"
+						disabled={isMutating}
+						aria-label={i18n(I18nKey.gbEditMessageWithName).replace(
+							"{nick}",
+							message.nick,
+						)}
+					></textarea>
+					<div class="guestbook-message__edit-actions">
+						<span>{i18n(I18nKey.gbCharCount)
+							.replace("{count}", String(editDraft.length))
+							.replace("{max}", "300")}</span>
+						<button type="button" onclick={onEditCancel} disabled={isMutating}>
+							<X size={14} aria-hidden="true" />{i18n(I18nKey.cancel)}
+						</button>
+						<button
+							type="button"
+							onclick={() => onEditSave(message)}
+							disabled={isMutating}
+						>
+							{#if isMutating}
+								<LoaderCircle class="is-spinning" size={14} aria-hidden="true" />
+							{:else}
+								<Check size={14} aria-hidden="true" />
+							{/if}
+							{isMutating ? i18n(I18nKey.saving) : i18n(I18nKey.save)}
+						</button>
+					</div>
+				{:else}
+					<div class="guestbook-message__body">{@html renderedBody}</div>
 				{/if}
-				<div class="guestbook-message__body">{@html message.body}</div>
 			</div>
 
-			{#if !message.localState}
-				<div class="guestbook-message__tools" role="group" aria-label="消息操作">
+			{#if !message.localState && !isEditing}
+				<div class="guestbook-message__tools" role="group" aria-label={i18n(I18nKey.gbMessageActionsAria)}>
 					<button
 						type="button"
 						onclick={() => onReply(message)}
-						aria-label={`回复 ${message.nick}`}
-						title="引用回复"
+						aria-label={i18n(I18nKey.gbReplyAria).replace(
+							"{nick}",
+							message.nick,
+						)}
+						title={i18n(I18nKey.gbQuoteReply)}
 					>
-						<Icon icon="lucide:reply" width={15} height={15} />
+						<Reply size={15} aria-hidden="true" />
 					</button>
 					<button
 						type="button"
 						onclick={copyMessage}
-						aria-label={copied ? "已复制" : "复制消息"}
-						title={copied ? "已复制" : "复制消息"}
+						aria-label={copied
+							? i18n(I18nKey.gbCopied)
+							: i18n(I18nKey.gbCopyMessage)}
+						title={copied
+							? i18n(I18nKey.gbCopied)
+							: i18n(I18nKey.gbCopyMessage)}
 					>
-						<Icon
-							icon={copied ? "lucide:check" : "lucide:copy"}
-							width={15}
-							height={15}
-						/>
+						{#if copied}
+							<Check size={15} aria-hidden="true" />
+						{:else}
+							<Copy size={15} aria-hidden="true" />
+						{/if}
 					</button>
 					{#if canManage}
 						<button
 							type="button"
-							onclick={() => onDelete(message)}
-							aria-label="删除消息"
-							title="删除消息"
+							onclick={() => onEdit(message)}
+							aria-label={i18n(I18nKey.gbEditMessage)}
+							title={i18n(I18nKey.gbEditMessage)}
+							disabled={isMutating}
 						>
-							<Icon icon="lucide:trash-2" width={15} height={15} />
+							<Pencil size={15} aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							onclick={() => onDelete(message)}
+							aria-label={i18n(I18nKey.gbDeleteMessage)}
+							title={i18n(I18nKey.gbDeleteMessage)}
+							disabled={isMutating}
+						>
+							<Trash2 size={15} aria-hidden="true" />
 						</button>
 					{/if}
 				</div>
@@ -158,18 +266,16 @@ async function copyMessage() {
 
 		<div class="guestbook-message__meta">
 			{#if message.browser}
-				<span><Icon icon="lucide:monitor" width={14} height={14} />{message.browser}</span>
+				<span><Monitor size={14} aria-hidden="true" />{message.browser}</span>
 			{/if}
 			{#if message.os}
-				<span><Icon icon="lucide:laptop" width={14} height={14} />{message.os}</span>
+				<span><Laptop size={14} aria-hidden="true" />{message.os}</span>
 			{/if}
 			{#if message.addr}
-				<span><Icon icon="lucide:map-pin" width={14} height={14} />{message.addr}</span>
+				<span><MapPin size={14} aria-hidden="true" />{message.addr}</span>
 			{/if}
 			{#if message.localState === "sending"}
-				<span>
-					<Icon icon="lucide:loader-circle" class="is-spinning" width={14} height={14} />发送中
-				</span>
+				<span><LoaderCircle class="is-spinning" size={14} aria-hidden="true" />{i18n(I18nKey.sending)}</span>
 			{/if}
 		</div>
 
@@ -177,12 +283,17 @@ async function copyMessage() {
 			<div class="guestbook-message__failure" role="alert">
 				<span>{message.failureReason}</span>
 				<button type="button" onclick={() => onRetry(message)}>
-					<Icon icon="lucide:rotate-ccw" width={14} height={14} />重试
+					<RotateCcw size={14} aria-hidden="true" />{i18n(I18nKey.retry)}
 				</button>
 				<button type="button" onclick={() => onDiscard(message)}>
-					<Icon icon="lucide:trash-2" width={14} height={14} />删除
+					<Trash2 size={14} aria-hidden="true" />{i18n(I18nKey.deleteLabel)}
 				</button>
 			</div>
 		{/if}
+
+		{#if actionError}
+			<div class="guestbook-message__failure" role="alert">{actionError}</div>
+		{/if}
+	</div>
 	</div>
 </article>
