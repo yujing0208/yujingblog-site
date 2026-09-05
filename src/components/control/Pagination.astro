@@ -92,7 +92,7 @@ const getPageUrl = (p: number) => {
 			pages.map((p) => {
 				if (p == HIDDEN) {
 					return (
-						<Icon name="material-symbols:more-horiz" class="mx-1" />
+						<Icon name="material-symbols:more-horiz" is:inline class="mx-1" />
 					);
 				}
 				if (p == page.currentPage) {
@@ -126,7 +126,7 @@ const getPageUrl = (p: number) => {
 		]}
 	>
 		<Icon
-			name="material-symbols:chevron-right-rounded"
+			name="material-symbols:chevron-right-rounded" is:inline
 			class="text-[1.75rem]"
 		/>
 	</a>

@@ -47,10 +47,6 @@ function toggleMode() {
 	musicPlayerStore.toggleMode();
 }
 
-function setMode(mode: import("../music-player/types").PlayerMode) {
-	musicPlayerStore.setMode(mode);
-}
-
 function togglePlaylistView() {
 	showPlaylist = !showPlaylist;
 }
@@ -91,7 +87,7 @@ function setVolume(volume: number) {
 			onSetVolume={setVolume}
 		/>
 		<a
-			href="/music"
+			href="/music/"
 			class="fab-music-jump"
 			title="打开 3D 音乐可视化"
 			aria-label="打开 3D 音乐可视化"
@@ -123,10 +119,8 @@ function setVolume(volume: number) {
 		currentIndex={playerState.currentIndex}
 		isPlaying={playerState.isPlaying}
 		show={showPlaylist}
-		mode={playerState.mode}
 		onClose={togglePlaylistView}
 		onPlaySong={playIndex}
-		onModeChange={setMode}
 	/>
 </div>
 

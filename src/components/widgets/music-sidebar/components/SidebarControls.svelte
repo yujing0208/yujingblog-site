@@ -65,7 +65,7 @@ const modeActive = $derived(isShuffled || repeatMode > 0);
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.25rem;
-		margin-top: 0.75rem;
+		margin-top: 0.9rem;
 		padding-inline: 0.125rem;
 		flex-wrap: nowrap;
 	}

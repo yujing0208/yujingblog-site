@@ -119,7 +119,7 @@ const {
 					<Icon icon="material-symbols:queue-music" class="text-lg" />
 				</button>
 				<a
-					href="/music"
+					href="/music/"
 					class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
 					title="打开 3D 音乐可视化"
 					aria-label="打开 3D 音乐可视化"

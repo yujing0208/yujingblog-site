@@ -1,4 +1,4 @@
-// 友情链接数据配置
+﻿// 友情链接数据配置
 // 用于管理友情链接页面的数据
 import type { FriendItem } from "../types/friends";
 const friendsData: FriendItem[] = [
@@ -83,6 +83,7 @@ const friendsData: FriendItem[] = [
 		]
 	},
 	{
+		id: 23,
 		title: "fqzlr",
 		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=20447289&s=640",
 		desc: "躬身入局，心为主理，行有尺度，自持本心.",
@@ -92,6 +93,7 @@ const friendsData: FriendItem[] = [
 		]
 	},
 	{
+		id: 24,
 		title: "团子和蛋糕",
 		imgurl: "https://blog.tsh520.cn/assets/ziyuan/tx.webp",
 		desc: "如果你喜欢那么欢迎来到我的世界！",
@@ -129,6 +131,37 @@ const friendsData: FriendItem[] = [
 			"博客"
 		],
 		id: 19
+	},
+	{
+		title: "Innei",
+		imgurl: "https://avatars.githubusercontent.com/u/41265413?v=5",
+		desc: "Innei's personal blog on frontend and full-stack development — TypeScript, React, Next.js, AI engineering, indie hacking, travel and life.",
+		siteurl: "https://innei.in/",
+		tags: [
+			"博客",
+			"优质"
+		],
+		id: 20
+	},
+	{
+		title: "Meet Blog 博客星图 ",
+		imgurl: "https://a.favicon.im/meet-blog.buyixiao.xyz",
+		desc: "中文独立博客星系",
+		siteurl: "https://meet-blog.buyixiao.xyz/",
+		tags: [
+			"博客园"
+		],
+		id: 21
+	},
+	{
+		title: "MmzMing的知识库",
+		imgurl: "https://i.stardots.io/784774835/StarDots-2026052116374135506.jpg",
+		desc: "哈基米，南北绿豆",
+		siteurl: "https://tblog.mmzhiku.xyz",
+		tags: [
+			"博客"
+		],
+		id: 22
 	}
 ];
 export function getFriendsList(): FriendItem[] {

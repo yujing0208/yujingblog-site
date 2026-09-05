@@ -418,7 +418,7 @@
 		// 正文区（文章/关于）：Markdown 编辑 + 实时预览
 		if (s.format === "md-posts" || s.format === "md-file") {
 			var bodyWrap = el("div", "ef-field");
-			var bl = el("label", "ef-label", "正文（Markdown，右侧实时预览）");
+			var bl = el("label", "ef-label", "正文（Markdown）— 右侧实时预览渲染效果");
 			bodyWrap.appendChild(bl);
 			// 工具栏：上传图片到图床
 			var toolbar = el("div", "ef-toolbar");
@@ -432,17 +432,40 @@
 			});
 			toolbar.appendChild(imgBtn);
 			bodyWrap.appendChild(toolbar);
+			// 双栏标题条：编辑 / 预览
+			var colHead = el("div", "ef-body-head");
+			colHead.appendChild(el("span", "ef-col-tag ef-col-edit", "📝 编辑"));
+			colHead.appendChild(el("span", "ef-col-tag ef-col-prev", "👁 实时预览"));
+			bodyWrap.appendChild(colHead);
 			var bodyCols = el("div", "ef-body-cols");
 			var ta = document.createElement("textarea");
 			ta.className = "ef-input ef-textarea ef-body";
 			ta.id = "ef-body";
 			ta.rows = 18;
+			ta.placeholder = "# 在此输入 Markdown\n\n正文会实时渲染到右侧预览。";
 			ta.value = editing.body || "";
-			var preview = el("div", "ef-body-preview markdown-body");
+			var preview = el("div", "ef-body-preview custom-md");
 			preview.id = "ef-body-preview";
+			var _md = null;
+			function getMd() {
+				if (_md) return _md;
+				if (window.markdownit) {
+					_md = window.markdownit({ html: true, linkify: true, typographer: true, breaks: false });
+				}
+				return _md;
+			}
 			function renderPreview() {
 				editing.body = ta.value;
-				if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
+				var html;
+				var md = getMd();
+				if (md) {
+					html = md.render(ta.value || "");
+				} else if (window.EditorPreview) {
+					html = window.EditorPreview.render(ta.value || "");
+				} else {
+					html = "";
+				}
+				preview.innerHTML = html || '<div class="ef-preview-empty">在左侧输入 Markdown，这里实时预览渲染效果。</div>';
 			}
 			ta.addEventListener("input", renderPreview);
 			ta.addEventListener("change", function () { editing.body = ta.value; });
@@ -451,7 +474,7 @@
 			bodyWrap.appendChild(bodyCols);
 			panel.appendChild(bodyWrap);
 			// 初次渲染预览
-			if (window.EditorPreview) preview.innerHTML = window.EditorPreview.render(ta.value);
+			renderPreview();
 		}
 		// 公告 content 特殊编辑
 		if (s.format === "ts-object" && s.contentField) {
@@ -626,7 +649,29 @@
 				if (!target.endsWith("/")) return;
 				window.EditorUpload.pickForPath(target, function () { alert("已上传"); refreshImages(); });
 			});
-			acts.appendChild(upCover); acts.appendChild(addImg);
+			// 新增：直接上传到图床，并把 URL 写入 info.json 的 photos/cover
+			var upCoverBed = el("button", "ef-btn ef-btn-accent", "🖼 封面→图床");
+			upCoverBed.addEventListener("click", function () {
+				if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+				window.EditorImgBed.pickAndUpload(function (url) {
+					if (!cur.info) cur.info = {};
+					cur.info.cover = url;
+					alert("封面 URL 已写入（不占仓库）：" + url);
+					refreshImages();
+				});
+			});
+			var addImgBed = el("button", "ef-btn ef-btn-accent", "➕ 图片→图床");
+			addImgBed.addEventListener("click", function () {
+				if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+				window.EditorImgBed.pickAndUpload(function (url) {
+					if (!cur.info) cur.info = {};
+					if (!Array.isArray(cur.info.photos)) cur.info.photos = [];
+					cur.info.photos.push(url);
+					alert("图片 URL 已追加到相册：" + url);
+					refreshImages();
+				});
+			});
+			acts.appendChild(upCover); acts.appendChild(upCoverBed); acts.appendChild(addImg); acts.appendChild(addImgBed);
 			localBox.appendChild(acts);
 			var imgBox = el("div", "ed-images");
 			imgBox.id = "al-images-local";
@@ -764,7 +809,7 @@
 			var reader = new FileReader();
 			reader.onload = function () {
 				var raw = String(reader.result || "");
-				var parsed = window.EditorMd.parseFrontmatter(raw);
+				var parsed = window.EditorMd.parse(raw);
 				var data = parsed.data || {};
 				var body = parsed.body || "";
 				// 文件名：优先用标题 slug，否则用上传文件名
@@ -773,15 +818,15 @@
 				var today = new Date().toISOString().slice(0, 10);
 				var filename = today + "-" + slug + ".md";
 				// 重建 frontmatter（仅保留文章 schema 关注的字段，缺省补齐）
-				var fm = {
-					title: title,
-					published: data.published || today,
-					updated: data.updated || today,
-					draft: (typeof data.draft === "boolean") ? data.draft : true,
-					tags: Array.isArray(data.tags) ? data.tags : [],
-					category: typeof data.category === "string" ? data.category : "",
-					comment: (typeof data.comment === "boolean") ? data.comment : true
-				};
+				var fm = Object.assign({}, data);
+				if (!fm.title) fm.title = title;
+				if (!fm.published) fm.published = today;
+				if (!fm.updated) fm.updated = today;
+				if (typeof fm.draft !== "boolean") fm.draft = true;
+				if (!Array.isArray(fm.tags)) fm.tags = [];
+				if (typeof fm.category !== "string") fm.category = "";
+				if (typeof fm.comment !== "boolean") fm.comment = true;
+				delete fm.pubDate;
 				var fmStr = "---\n" + Object.keys(fm).map(function (k) {
 					var v = fm[k];
 					if (Array.isArray(v)) return k + ": [" + v.map(function (t) { return '"' + String(t).replace(/"/g, '\\"') + '"'; }).join(", ") + "]";
@@ -798,7 +843,7 @@
 				}
 				renderList();
 				// 直接打开刚上传的文章进入编辑
-				openItem({ name: filename, path: path, type: "file" });
+				selectItem(state.items.length - 1);
 			};
 			reader.readAsText(file);
 		});

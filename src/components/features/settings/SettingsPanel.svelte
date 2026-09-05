@@ -91,13 +91,15 @@ const isWallpaperModeSwitchable = $derived(
 		(fullscreenWallpaperConfig.switchable ?? false),
 );
 
+const showEditorEntry = true; // 编辑入口始终显示在面板底部
 const hasAnyContent = $derived(
 	showThemeColor ||
 		isWallpaperModeSwitchable ||
 		allowLayoutSwitch ||
 		hasOverlaySettings ||
 		hasBannerSettings ||
-		isSakuraSwitchable,
+		isSakuraSwitchable ||
+		showEditorEntry,
 );
 
 let hue = $state(getHue());
@@ -642,6 +644,19 @@ $effect(() => {
 			</div>
 		</div>
 	{/if}
+
+	<!-- 编辑入口：始终显示在面板最底部（与显示设置无关） -->
+	<div class="mt-2 mb-2 pt-2 border-t border-(--btn-regular-bg)">
+		<button
+			class="w-full btn-regular rounded-md py-2 px-3 flex items-center gap-3 text-left active:scale-95 transition-all relative overflow-hidden"
+			aria-label="进入编辑页面"
+			onclick={() => (window as any).EditorLogin?.start?.()}
+		>
+			<Icon icon="material-symbols:edit-outline" class="text-[1.25rem] shrink-0 text-(--primary)" />
+			<span class="text-sm flex-1 font-medium">进入编辑页面</span>
+			<Icon icon="material-symbols:chevron-right-rounded" class="text-[1rem] shrink-0 opacity-50" />
+		</button>
+	</div>
 </div>
 {/if}
 

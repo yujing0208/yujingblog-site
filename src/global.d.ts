@@ -88,7 +88,6 @@ declare global {
 
 		// Panel manager
 		panelManager?: unknown;
-
 	}
 
 	interface Fancybox {

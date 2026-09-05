@@ -129,10 +129,10 @@ function getThemeColors(accent?: string | null) {
 		base1: new THREE.Color(theme?.base1 ?? "#050810"),
 		base2: new THREE.Color(theme?.base2 ?? "#0a0f1a"),
 		coolCore: new THREE.Color(theme?.coolCore ?? "#3366cc"),
-			coolEdge: new THREE.Color(theme?.coolEdge ?? "#6699dd"),
-			warmCore: new THREE.Color(theme?.warmCore ?? "#2244cc"),
-			warmEdge: new THREE.Color(theme?.warmEdge ?? "#4477dd"),
-			rippleColor: new THREE.Color(theme?.rippleColor ?? "#33bbdd"),
+		coolEdge: new THREE.Color(theme?.coolEdge ?? "#6699dd"),
+		warmCore: new THREE.Color(theme?.warmCore ?? "#2244cc"),
+		warmEdge: new THREE.Color(theme?.warmEdge ?? "#4477dd"),
+		rippleColor: new THREE.Color(theme?.rippleColor ?? "#33bbdd"),
 		glowIntensity: theme?.glowIntensity ?? 1.2,
 	};
 }
@@ -541,8 +541,7 @@ function init() {
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.05;
 	controls.autoRotate = musicVisualizerConfig.autoRotate ?? true;
-	controls.autoRotateSpeed =
-		musicVisualizerConfig.autoRotateSpeed ?? 0.3;
+	controls.autoRotateSpeed = musicVisualizerConfig.autoRotateSpeed ?? 0.3;
 	controls.enablePan = false;
 	controls.minDistance = 10;
 	controls.maxDistance = 80;

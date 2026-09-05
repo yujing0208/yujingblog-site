@@ -403,16 +403,18 @@ export class TOCManager {
 
 	public bindClickEvents(): void {
 		this.unbindClickEvents();
-		this.boundClickHandler = this.handleClick.bind(this);
+		const handler = this.handleClick.bind(this);
+		this.boundClickHandler = handler;
 		this.tocItems.forEach((item) => {
-			item.addEventListener("click", this.boundClickHandler!);
+			item.addEventListener("click", handler);
 		});
 	}
 
 	private unbindClickEvents(): void {
-		if (this.boundClickHandler) {
+		const handler = this.boundClickHandler;
+		if (handler) {
 			this.tocItems.forEach((item) => {
-				item.removeEventListener("click", this.boundClickHandler!);
+				item.removeEventListener("click", handler);
 			});
 			this.boundClickHandler = null;
 		}

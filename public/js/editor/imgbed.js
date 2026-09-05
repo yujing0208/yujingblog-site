@@ -1,16 +1,17 @@
 /**
- * imgbed：上传图片到你自己的 CloudFlare-ImgBed 图床，返回可访问 URL。
- * 在文章编辑页用于「上传图片到图床」按钮，成功后把 URL 以 ![](url) 插入 Markdown。
+ * imgbed：上传图片到你的图床（Sanyue ImgHub），返回可访问 URL。
+ * 在文章/关于编辑页、各类图片字段、相册页用于「上传图片到图床」按钮。
  *
- * 安全说明：图床管理员 token 仅存于浏览器 localStorage（你自己用编辑器时填一次），
- * 绝不写进仓库代码 / 不出现在网络请求的静态资源里，避免 token 泄露。
+ * 注意：token 已直接写死在下面 CONFIG.token（按你的要求）。这意味着图床上传权限
+ * 对任何能打开本页面的人可见（查看网页源码即可拿到）。如担心滥用，请到图床后台
+ * 吊销此 token 并替换为新值。
  *
  * 如需调整图床接入参数，改下面 CONFIG 即可：
  *   base        图床域名
  *   uploadApi   上传接口路径
- *   authHeader  token 放置的 HTTP 头（CloudFlare-ImgBed 默认 Authorization: Bearer）
+ *   authHeader  token 放置的 HTTP 头
  *   tokenQuery  若图床用 query 参数传 token（如 ?token=），填此键名；否则留空
- *   urlField    返回 JSON 中图片 URL 的字段路径，支持点号嵌套，如 "data.url"
+ *   urlField    返回 JSON 中图片 URL 的字段路径，支持点号嵌套
  */
 (function () {
 	"use strict";
@@ -22,27 +23,17 @@
 		authScheme: "Bearer",                 // token 前缀
 		tokenQuery: "",                       // 非空则用 query 传 token（键名）
 		urlField: "0.src",                    // 返回 JSON 数组，首项 src 为相对路径 /file/xxx
-		lsKey: "editor_imgbed_token",         // localStorage 键（token 仅存本浏览器，不进仓库）
+		token: "imgbed_7d675d35eba290f15714416efc9aa60ece523272f067c7be58ab5afeb847704f",
 		maxSize: 2000,                        // 压缩后长边上限
 		quality: 0.85                         // webp 质量
 	};
 
-	function getToken() {
-		try { return localStorage.getItem(CONFIG.lsKey) || ""; } catch (e) { return ""; }
-	}
-	function setToken(t) {
-		try { localStorage.setItem(CONFIG.lsKey, t); } catch (e) {}
-	}
+	function getToken() { return CONFIG.token || ""; }
+	function setToken(t) { CONFIG.token = t; }
 
-	// 弹窗让用户输入 token（仅首次或 token 缺失时）
+	// 直接返回写死的 token（不再弹窗 / 不读 localStorage）
 	function ensureToken() {
-		var t = getToken();
-		if (t) return Promise.resolve(t);
-		return new Promise(function (resolve) {
-			var input = prompt("请输入你的图床 API Token（在图床后台 系统设置→API Token 获取，仅存于本浏览器）");
-			if (input && input.trim()) { setToken(input.trim()); resolve(input.trim()); }
-			else { resolve(""); }
-		});
+		return Promise.resolve(getToken());
 	}
 
 	// 从嵌套字段路径取值： "data.url" -> obj.data.url

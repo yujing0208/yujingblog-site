@@ -20,12 +20,8 @@ export const musicVisualizerConfig = {
 	},
 };
 
-// 音乐播放器配置
+// 音乐播放器配置（仅网易云 meting 模式，api.qijieya.cn 解灰直链）
 export const musicPlayerConfig = {
-	// 使用方式："meting" 使用 Meting API，"local" 使用本地音乐列表
-	// 默认使用 meting 模式，开箱即用（无需把音频文件放进 public）
-	mode: "meting",
-
 	// 默认音量 (0-1)
 	volume: 0.7,
 
@@ -38,7 +34,7 @@ export const musicPlayerConfig = {
 	// Meting API 配置（网易云歌单）
 	meting: {
 		// Meting API 地址
-		api: "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
+		api: "https://api.qijieya.cn/meting/?server=:server&type=:type&id=:id",
 		// 音乐平台：netease=网易云音乐
 		server: "netease",
 		// 类型：playlist=歌单
@@ -51,20 +47,6 @@ export const musicPlayerConfig = {
 		fallbackApis: [
 			"https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
 			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
-		],
-	},
-
-	// 本地音乐配置（当 mode 为 'local' 时使用）
-	// 把音频/封面/歌词放进 public/assets/music/ 后，将 mode 改为 "local" 即可
-	local: {
-		playlist: [
-			// {
-			// 	name: "歌曲名",
-			// 	artist: "艺术家",
-			// 	url: "/assets/music/song.mp3",
-			// 	cover: "/assets/music/cover.jpg",
-			// 	lrc: "/assets/music/song.lrc",
-			// },
 		],
 	},
 };

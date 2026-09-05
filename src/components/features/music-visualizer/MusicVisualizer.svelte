@@ -1,12 +1,13 @@
 <script lang="ts">
 import { onDestroy, onMount } from "svelte";
-import { musicPlayerStore } from "@/stores/musicPlayerStore";
 import { musicVisualizerConfig } from "@/config/fireflyMusic";
+import { musicPlayerStore } from "@/stores/musicPlayerStore";
 import { audioAnalyzer } from "./AudioAnalyzer";
 import { extractDominantColor } from "./colorExtractor";
 import LyricsOverlay from "./LyricsOverlay.svelte";
 import ThreeScene from "./ThreeScene.svelte";
 import VisualizerControls from "./VisualizerControls.svelte";
+
 let sceneReady = $state(false);
 let backgroundColor = $state(
 	musicVisualizerConfig.background?.dark ?? "#0a0a15",
@@ -91,14 +92,20 @@ onMount(() => {
 		document.documentElement.classList.add("dark");
 	}
 	window.addEventListener("storage", blockThemeSwitch);
-	const fullscreenThemeObserver = new MutationObserver(function (mutations) {
+	const fullscreenThemeObserver = new MutationObserver((mutations) => {
 		for (const m of mutations) {
-			if (m.attributeName === "class" && !document.documentElement.classList.contains("dark")) {
+			if (
+				m.attributeName === "class" &&
+				!document.documentElement.classList.contains("dark")
+			) {
 				document.documentElement.classList.add("dark");
 			}
 		}
 	});
-	fullscreenThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+	fullscreenThemeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["class"],
+	});
 
 	syncPageBackground();
 
@@ -133,7 +140,10 @@ onMount(() => {
 	};
 	document.addEventListener("click", handleFirstClick);
 
-	window.addEventListener("fm:color-mode-changed", onColorModeChange as EventListener);
+	window.addEventListener(
+		"fm:color-mode-changed",
+		onColorModeChange as EventListener,
+	);
 
 	// 导航栏自动隐藏：初始显示3秒后渐隐，鼠标移到顶部区域渐显
 	const navbar = document.querySelector(".music-navbar");
@@ -187,9 +197,13 @@ onMount(() => {
 		window.removeEventListener("storage", blockThemeSwitch);
 		document.documentElement.classList.remove("music-fullscreen");
 		if (!originalDark) document.documentElement.classList.remove("dark");
-		if (originalDataTheme) document.documentElement.setAttribute("data-theme", originalDataTheme);
+		if (originalDataTheme)
+			document.documentElement.setAttribute("data-theme", originalDataTheme);
 		document.removeEventListener("click", handleFirstClick);
-		window.removeEventListener("fm:color-mode-changed", onColorModeChange as EventListener);
+		window.removeEventListener(
+			"fm:color-mode-changed",
+			onColorModeChange as EventListener,
+		);
 		clearTimeout(hideTimer);
 		document.removeEventListener("mousemove", onMouseMove);
 	};

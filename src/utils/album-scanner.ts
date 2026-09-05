@@ -56,6 +56,21 @@ async function processAlbumFolder(
 	folderPath: string,
 	folderName: string,
 ): Promise<AlbumGroup | null> {
+	// 相册 info.json 的结构（宽松字段，均可选）
+	interface AlbumInfo {
+		mode?: string;
+		cover?: string;
+		photos?: Record<string, unknown>[];
+		hidden?: boolean;
+		title?: string;
+		description?: string;
+		date?: string;
+		location?: string;
+		tags?: string[];
+		password?: string;
+		passwordHint?: string;
+	}
+
 	// 检查必要文件
 	const infoPath = path.join(folderPath, "info.json");
 
@@ -69,19 +84,6 @@ async function processAlbumFolder(
 	let info: AlbumInfo;
 	try {
 		const infoContent = fs.readFileSync(infoPath, "utf-8");
-		interface AlbumInfo {
-			mode?: string;
-			cover?: string;
-			photos?: Record<string, unknown>[];
-			hidden?: boolean;
-			title?: string;
-			description?: string;
-			date?: string;
-			location?: string;
-			tags?: string[];
-			password?: string;
-			passwordHint?: string;
-		}
 		try {
 			info = JSON.parse(infoContent);
 		} catch {

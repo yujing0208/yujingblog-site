@@ -4,7 +4,6 @@ import { Icon } from "astro-icon/components";
 import { booknavConfig } from "../config/booknavConfig";
 
 // Static filtering for initial SSR state (empty search = all)
-const initialSearch = "";
 const allCategories = booknavConfig.categories;
 const categoryCounts: Record<string, number> = {};
 let totalCount = 0;
@@ -46,7 +45,7 @@ for (const c of allCategories) {
 			{
 				allCategories.map((category) => (
 					<button class="booknav-tab" data-category={category.id}>
-						<Icon name={category.icon} class="booknav-tab-icon" />
+						<Icon name={category.icon} is:inline class="booknav-tab-icon" />
 						<span>{category.name}</span>
 						<span class="booknav-tab-count" data-count={category.id}>
 							{categoryCounts[category.id]}
@@ -61,7 +60,7 @@ for (const c of allCategories) {
 				allCategories.map((category) => (
 					<section class="booknav-section" data-section={category.id}>
 						<h2 class="booknav-section-title">
-							<Icon name={category.icon} class="booknav-section-icon" />
+							<Icon name={category.icon} is:inline class="booknav-section-icon" />
 							<span>{category.name}</span>
 							<span class="booknav-section-desc">{category.description}</span>
 							<span class="booknav-section-count" data-section-count={category.id}>

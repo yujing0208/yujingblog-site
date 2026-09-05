@@ -1,0 +1,22 @@
+@media (max-width: 767px) and (orientation: portrait) {
+  .mobile-dock__article-tools { display: flex; align-items: stretch; gap: .35rem; min-height: 3.45rem; padding: .3rem .55rem .5rem; border-top: 1px solid var(--dock-divider); }
+  .mobile-dock__article-tools button { display: flex; flex: 1; align-items: center; justify-content: center; gap: .35rem; min-height: 2.85rem; border: 0; border-radius: .9rem; background: transparent; color: var(--dock-text); font-size: .78rem; font-weight: 650; cursor: pointer; }
+  .mobile-dock__article-tools button svg { width: 1.05rem; height: 1.05rem; color: var(--dock-text); }
+  .mobile-dock__article-tools button:active { background: var(--dock-hover); }
+  .mobile-dock__toc-view { padding: .45rem .8rem .8rem; }
+  .mobile-dock__toc-list { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+  .mobile-dock__toc-row { display: block; padding: .62rem .45rem; border-bottom: 1px solid var(--dock-divider); color: var(--dock-text); text-decoration: none; font-size: .88rem; line-height: 1.45; }
+  .mobile-dock__toc-row:hover { color: var(--primary); background: var(--dock-hover); }
+  .mobile-dock__toc-level-1 { font-weight: 700; }
+  .mobile-dock__toc-level-2 { padding-left: 1rem; }
+  .mobile-dock__toc-level-3 { padding-left: 1.8rem; color: var(--dock-muted); }
+  .mobile-dock__toc-level-4, .mobile-dock__toc-level-5, .mobile-dock__toc-level-6 { padding-left: 2.5rem; color: var(--dock-muted); font-size: .82rem; }
+  .mobile-dock__toc-empty { margin: 1rem .45rem; color: var(--dock-muted); text-align: center; font-size: .85rem; }
+
+  /* 竖屏文章页：底部 Dock 展开已内置目录，隐藏页面内浮动全局目录避免重复 */
+  .floating-toc-wrapper,
+  .floating-control-item[data-control-key="toc"],
+  #mobile-toc-panel,
+  #mobile-toc-switch { display: none !important; }
+}
+@media (orientation: landscape), (min-width: 768px) { .mobile-dock__article-tools { display: none !important; } }

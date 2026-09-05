@@ -179,10 +179,6 @@ function hideError() {
 	musicPlayerStore.hideError();
 }
 
-function setMode(mode: import("./types").PlayerMode) {
-	musicPlayerStore.setMode(mode);
-}
-
 function volumeBarRef(_node: HTMLElement) {}
 
 function canSkip(): boolean {
@@ -308,10 +304,8 @@ onDestroy(() => {
 			currentIndex={state.currentIndex}
 			isPlaying={state.isPlaying}
 			show={state.showPlaylist}
-			mode={state.mode}
 			onClose={togglePlaylist}
 			onPlaySong={playIndex}
-			onModeChange={setMode}
 		/>
 		</div>
 	{/if}

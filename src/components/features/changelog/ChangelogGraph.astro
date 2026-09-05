@@ -1,0 +1,557 @@
+---
+import {
+	buildChangelogLinks,
+	MODULE_META,
+	type ChangelogEntry,
+	type ChangelogType,
+} from "@utils/changelog";
+import "./changelog-graph.css";
+
+export interface Props {
+	entries: ChangelogEntry[];
+	limit?: number;
+}
+
+const { entries, limit = 30 } = Astro.props;
+
+const total = entries.length;
+const visibleEntries = entries.slice(0, limit);
+const hiddenEntryCount = total - visibleEntries.length;
+const links = buildChangelogLinks(visibleEntries);
+
+const typeLabels: Record<ChangelogType, string> = {
+	feat: "新功能",
+	fix: "修复",
+	style: "样式",
+	refactor: "重构",
+	chore: "维护",
+};
+
+const pageLabels = Object.fromEntries(
+	Object.entries(MODULE_META).map(([key, meta]) => [key, meta.label]),
+);
+---
+
+<div
+	class="changelog"
+	data-changelog
+	data-page-labels={JSON.stringify(pageLabels)}
+	data-shared-prefix="相关模块"
+>
+	<div class="changelog__heading">
+		<h2 class="changelog__section-title">更新日志</h2>
+		{
+			hiddenEntryCount > 0 && (
+				<span class="changelog__recent-limit">仅展示最近 {limit} 条更新</span>
+			)
+		}
+	</div>
+
+	<svg class="changelog__wires" data-changelog-wires aria-hidden="true">
+		<defs>
+			<marker
+				id="changelog-arrow"
+				viewBox="0 0 10 10"
+				refX="8"
+				refY="5"
+				markerWidth="6.5"
+				markerHeight="6.5"
+				orient="auto-start-reverse"
+			>
+				<path
+					d="M2 1L8 5L2 9"
+					fill="none"
+					stroke="context-stroke"
+					stroke-width="1.6"
+					stroke-linecap="round"
+					stroke-linejoin="round"></path>
+			</marker>
+		</defs>
+	</svg>
+
+	<ol class="changelog__grid" data-changelog-grid>
+		{
+			visibleEntries.map((entry, i) => {
+				const num = total - i;
+				const entryLinks = links.get(i) ?? [];
+				return (
+					<li
+						class="changelog-card"
+						data-changelog-card
+						data-index={i}
+						data-num={num}
+						data-type={entry.type}
+						data-links={JSON.stringify(
+							entryLinks.map((l) => ({ t: l.target, p: l.sharedPages })),
+						)}
+					>
+						<button
+							type="button"
+							class="changelog-card__inner"
+							data-changelog-open
+							aria-haspopup="dialog"
+						>
+							<span class="changelog-card__num" aria-hidden="true">
+								{String(num).padStart(2, "0")}
+							</span>
+							<span class="changelog-card__meta">
+								<span class="changelog-card__type">{typeLabels[entry.type]}</span>
+								<time class="changelog-card__date" datetime={entry.date}>
+									{entry.date}
+								</time>
+							</span>
+							<span class="changelog-card__title">{entry.title}</span>
+							<span class="changelog-card__summary">{entry.summary}</span>
+						</button>
+						<div class="changelog-card__detail" hidden>
+							<div class="changelog-card__detail-body">
+								{entry.detail
+									.split(/\n{2,}/)
+									.map((para) => para.trim())
+									.filter(Boolean)
+									.map((para) => (
+										<p class="changelog-card__detail-text">{para}</p>
+									))}
+							</div>
+							<div class="changelog-card__pages">
+								{entry.pages.map((page) => {
+									const meta = MODULE_META[page];
+									if (!meta) return <span class="changelog-card__page-chip">{page}</span>;
+									return meta.url ? (
+										<a class="changelog-card__page-chip" href={meta.url}>
+											{meta.label}
+										</a>
+									) : (
+										<span class="changelog-card__page-chip">{meta.label}</span>
+									);
+								})}
+							</div>
+						</div>
+					</li>
+				);
+			})
+		}
+	</ol>
+
+	<div class="changelog-dialog" data-changelog-dialog hidden>
+		<div class="changelog-dialog__overlay" data-changelog-close></div>
+		<div
+			class="changelog-dialog__panel"
+			role="dialog"
+			aria-modal="true"
+			aria-label="更新日志详情"
+		>
+			<button
+				type="button"
+				class="changelog-dialog__close"
+				data-changelog-close
+				aria-label="关闭"
+			>
+				&times;
+			</button>
+			<div class="changelog-dialog__meta">
+				<span class="changelog-dialog__num" data-dialog-num></span>
+				<span class="changelog-dialog__type" data-dialog-type></span>
+				<time class="changelog-dialog__date" data-dialog-date></time>
+			</div>
+			<h3 class="changelog-dialog__title" data-dialog-title></h3>
+			<div class="changelog-dialog__detail" data-dialog-detail></div>
+			<div class="changelog-dialog__section">
+				<span class="changelog-dialog__label">相关模块</span>
+				<div class="changelog-dialog__pages" data-dialog-pages></div>
+			</div>
+			<div class="changelog-dialog__section" data-dialog-related-section>
+				<span class="changelog-dialog__label">相关更新</span>
+				<ul class="changelog-dialog__related" data-dialog-related></ul>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function initChangelogGraph(root: HTMLElement) {
+		const existing = (root as any).__cleanup;
+		if (typeof existing === "function") existing();
+
+		const ac = new AbortController();
+		const { signal } = ac;
+		(root as any).__cleanup = () => ac.abort();
+
+		const NS = "http://www.w3.org/2000/svg";
+		const grid = root.querySelector<HTMLElement>("[data-changelog-grid]")!;
+		const wiresSvg = root.querySelector<SVGSVGElement>("[data-changelog-wires]")!;
+		const dialog = root.querySelector<HTMLElement>("[data-changelog-dialog]")!;
+		const pageLabels: Record<string, string> = JSON.parse(
+			root.dataset.pageLabels || "{}",
+		);
+		const sharedPrefix = root.dataset.sharedPrefix || "";
+
+		let activeCard: HTMLElement | null = null;
+		const wireAnims = new Set<() => void>();
+		const reducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+
+		function visibleCards(): HTMLElement[] {
+			return Array.from(
+				grid.querySelectorAll<HTMLElement>("[data-changelog-card]"),
+			);
+		}
+
+		function sizeSvg() {
+			wiresSvg.setAttribute(
+				"viewBox",
+				`0 0 ${root.scrollWidth} ${root.scrollHeight}`,
+			);
+		}
+
+		function rootRect() {
+			return root.getBoundingClientRect();
+		}
+
+		function cardCenter(card: HTMLElement) {
+			const r = card.getBoundingClientRect();
+			const rr = rootRect();
+			return {
+				x: r.left - rr.left + r.width / 2,
+				y: r.top - rr.top + r.height / 2,
+			};
+		}
+
+		function makePath(d: string, cls: string, marker = true) {
+			const p = document.createElementNS(NS, "path");
+			p.setAttribute("d", d);
+			p.setAttribute("class", cls);
+			if (marker) p.setAttribute("marker-end", "url(#changelog-arrow)");
+			return p;
+		}
+
+		function layout() {
+			const cards = visibleCards();
+			if (cards.length === 0) return;
+			const cols = Math.max(
+				1,
+				getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+			);
+			cards.forEach((card, i) => {
+				const row = Math.floor(i / cols);
+				const col = i % cols;
+				const visualCol = row % 2 === 0 ? col : cols - 1 - col;
+				card.style.order = String(row * cols + visualCol);
+			});
+			drawRowArrows(cards, cols);
+			clearHoverWires();
+		}
+
+		function drawRowArrows(cards: HTMLElement[], cols: number) {
+			sizeSvg();
+			wiresSvg
+				.querySelectorAll("[data-row-arrow]")
+				.forEach((n) => n.remove());
+			const rows = Math.ceil(cards.length / cols);
+			const rr = rootRect();
+			const rootW = rr.width;
+			for (let r = 0; r < rows - 1; r++) {
+				// 蛇形走向：上一行末张（较新）→ 下一行首张（较旧）。
+				// 箭头要求「由旧到新」：路径从下一行（旧）回绕到上一行（新），
+				// marker 落在较新的那一张上。
+				const newerCard = cards[r * cols + cols - 1];
+				const olderCard = cards[(r + 1) * cols];
+				if (!newerCard || !olderCard) continue;
+				const nrec = newerCard.getBoundingClientRect();
+				const orec = olderCard.getBoundingClientRect();
+				const ny = nrec.top - rr.top + nrec.height / 2;
+				const oy = orec.top - rr.top + orec.height / 2;
+				// 回环距离限制在容器可视宽度内（[8, rootW-8]），避免被两侧边缘裁切造成"遮挡"。
+				let d: string;
+				if (r % 2 === 0) {
+					const xNew = nrec.right - rr.left;
+					const xOld = orec.right - rr.left;
+					const out = Math.min(Math.max(xNew, xOld) + 16, rootW - 8);
+					d = `M ${xOld} ${oy} H ${out} V ${ny} H ${xNew}`;
+				} else {
+					const xNew = nrec.left - rr.left;
+					const xOld = orec.left - rr.left;
+					const out = Math.max(Math.min(xNew, xOld) - 16, 8);
+					d = `M ${xOld} ${oy} H ${out} V ${ny} H ${xNew}`;
+				}
+				const path = makePath(d, "changelog-wire changelog-wire--row");
+				path.setAttribute("data-row-arrow", "");
+				wiresSvg.appendChild(path);
+			}
+		}
+
+		function clearHoverWires() {
+			for (const cancel of wireAnims) cancel();
+			wireAnims.clear();
+			root
+				.querySelectorAll("[data-hover-wire]")
+				.forEach((n) => n.remove());
+			root.classList.remove("is-hovering");
+			root
+				.querySelectorAll(".is-active, .is-linked")
+				.forEach((c) => c.classList.remove("is-active", "is-linked"));
+		}
+
+		function drawHoverWire(
+			d: string,
+			mid: { x: number; y: number },
+			labelText: string,
+		) {
+			const path = makePath(d, "changelog-wire changelog-wire--hover", false);
+			path.setAttribute("data-hover-wire", "");
+			wiresSvg.appendChild(path);
+
+			const label = document.createElement("span");
+			label.className = "changelog-wire-label";
+			label.textContent = labelText;
+			label.setAttribute("data-hover-wire", "");
+			label.style.left = `${mid.x}px`;
+			label.style.top = `${mid.y}px`;
+			root.appendChild(label);
+
+			if (reducedMotion) {
+				path.classList.add("is-drawn");
+				path.setAttribute("marker-end", "url(#changelog-arrow)");
+				label.classList.add("is-in");
+				return;
+			}
+
+			const len = path.getTotalLength();
+			const dur = Math.min(0.75, Math.max(0.35, len / 700));
+			const DASH = 6;
+			const GAP = 5;
+
+			const revealDash = (drawn: number) => {
+				const segments: number[] = [];
+				let used = 0;
+				let isDash = true;
+				while (used < drawn) {
+					const take = Math.min(isDash ? DASH : GAP, drawn - used);
+					segments.push(take);
+					used += take;
+					isDash = !isDash;
+				}
+				if (segments.length === 0) segments.push(0);
+				if (segments.length % 2 === 0) segments.push(0);
+				segments.push(len + DASH + GAP);
+				path.style.strokeDasharray = segments.join(" ");
+			};
+
+			const arrow = document.createElementNS(NS, "polygon");
+			arrow.setAttribute("points", "-8.5,-4.5 0,0 -8.5,4.5");
+			arrow.setAttribute("class", "changelog-wire-arrow");
+			arrow.setAttribute("data-hover-wire", "");
+			wiresSvg.appendChild(arrow);
+
+			const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+			const start = performance.now();
+			let raf = 0;
+			const cancel = () => {
+				cancelAnimationFrame(raf);
+				arrow.remove();
+			};
+			wireAnims.add(cancel);
+
+			const tick = (now: number) => {
+				const t = Math.min(1, (now - start) / (dur * 1000));
+				const drawn = len * easeOutCubic(t);
+				revealDash(drawn);
+
+				const tip = path.getPointAtLength(drawn);
+				const back = path.getPointAtLength(Math.max(0, drawn - 1));
+				const fwd = path.getPointAtLength(Math.min(len, drawn + 1));
+				const deg =
+					(Math.atan2(fwd.y - back.y, fwd.x - back.x) * 180) / Math.PI;
+				arrow.setAttribute(
+					"transform",
+					`translate(${tip.x} ${tip.y}) rotate(${deg})`,
+				);
+
+				if (t < 1) {
+					raf = requestAnimationFrame(tick);
+					return;
+				}
+				wireAnims.delete(cancel);
+				path.style.strokeDasharray = "";
+				path.classList.add("is-drawn");
+				path.setAttribute("marker-end", "url(#changelog-arrow)");
+				arrow.remove();
+				label.classList.add("is-in");
+			};
+			raf = requestAnimationFrame(tick);
+		}
+
+		function onCardEnter(card: HTMLElement) {
+			clearHoverWires();
+			sizeSvg();
+			const links: { t: number; p: string[] }[] = JSON.parse(
+				card.dataset.links || "[]",
+			);
+			const cardIndex = Number(card.dataset.index);
+			const from = cardCenter(card);
+			root.classList.add("is-hovering");
+			card.classList.add("is-active");
+			for (const link of links) {
+				const target = root.querySelector<HTMLElement>(
+					`[data-changelog-card][data-index="${link.t}"]`,
+				);
+				if (!target) continue;
+				target.classList.add("is-linked");
+				const to = cardCenter(target);
+				const dx = to.x - from.x;
+				const dy = to.y - from.y;
+				const len = Math.hypot(dx, dy) || 1;
+				const off = Math.min(56, len * 0.12);
+				const cx = (from.x + to.x) / 2 - (dy / len) * off;
+				const cy = (from.y + to.y) / 2 + (dx / len) * off;
+				const mid = {
+					x: from.x * 0.25 + cx * 0.5 + to.x * 0.25,
+					y: from.y * 0.25 + cy * 0.5 + to.y * 0.25,
+				};
+				const labelText = link.p
+					.map((p) => pageLabels[p] || p)
+					.join("、");
+				const isNewer = link.t < cardIndex;
+				const start = isNewer ? from : to;
+				const end = isNewer ? to : from;
+				drawHoverWire(
+					`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`,
+					mid,
+					labelText,
+				);
+			}
+		}
+
+		function openDialog(card: HTMLElement) {
+			const q = <T extends HTMLElement>(sel: string) =>
+				dialog.querySelector<T>(sel)!;
+
+			q("[data-dialog-num]").textContent = `#${card.dataset.num}`;
+			const typeEl = q<HTMLElement>("[data-dialog-type]");
+			typeEl.textContent =
+				card.querySelector(".changelog-card__type")?.textContent || "";
+			typeEl.dataset.type = card.dataset.type || "";
+			const cardDate =
+				card.querySelector<HTMLTimeElement>(".changelog-card__date");
+			const dlgDate = q<HTMLTimeElement>("[data-dialog-date]");
+			dlgDate.textContent = cardDate?.textContent || "";
+			dlgDate.dateTime = cardDate?.dateTime || "";
+			q("[data-dialog-title]").textContent =
+				card.querySelector(".changelog-card__title")?.textContent || "";
+			q("[data-dialog-detail]").innerHTML =
+				card.querySelector(".changelog-card__detail-body")?.innerHTML || "";
+			q("[data-dialog-pages]").innerHTML =
+				card.querySelector(".changelog-card__pages")?.innerHTML || "";
+
+			const links: { t: number; p: string[] }[] = JSON.parse(
+				card.dataset.links || "[]",
+			);
+			const section = q<HTMLElement>("[data-dialog-related-section]");
+			const list = q<HTMLElement>("[data-dialog-related]");
+			list.innerHTML = "";
+			if (links.length === 0) {
+				section.hidden = true;
+			} else {
+				section.hidden = false;
+				for (const link of links) {
+					const target = root.querySelector<HTMLElement>(
+						`[data-changelog-card][data-index="${link.t}"]`,
+					);
+					if (!target) continue;
+					const li = document.createElement("li");
+					const btn = document.createElement("button");
+					btn.type = "button";
+					btn.className = "changelog-dialog__related-btn";
+					const numSpan = document.createElement("span");
+					numSpan.className = "changelog-dialog__related-num";
+					numSpan.textContent = `#${target.dataset.num}`;
+					const titleSpan = document.createElement("span");
+					titleSpan.className = "changelog-dialog__related-title";
+					titleSpan.textContent =
+						target.querySelector(".changelog-card__title")?.textContent || "";
+					const pagesSpan = document.createElement("span");
+					pagesSpan.className = "changelog-dialog__related-pages";
+					pagesSpan.textContent = `${sharedPrefix}：${link.p
+						.map((p) => pageLabels[p] || p)
+						.join("、")}`;
+					btn.appendChild(numSpan);
+					btn.appendChild(titleSpan);
+					btn.appendChild(pagesSpan);
+					btn.addEventListener("click", () => {
+						closeDialog();
+						target.scrollIntoView({ behavior: "smooth", block: "center" });
+						target.classList.add("is-flash");
+						setTimeout(() => target.classList.remove("is-flash"), 1300);
+					});
+					li.appendChild(btn);
+					list.appendChild(li);
+				}
+			}
+
+			dialog.hidden = false;
+			document.documentElement.classList.add("changelog-dialog-open");
+		}
+
+		function closeDialog() {
+			dialog.hidden = true;
+			document.documentElement.classList.remove("changelog-dialog-open");
+		}
+
+		grid.addEventListener(
+			"pointerover",
+			(e) => {
+				const card = (e.target as HTMLElement).closest?.(
+					"[data-changelog-card]",
+				) as HTMLElement | null;
+				if (!card || card === activeCard) return;
+				activeCard = card;
+				onCardEnter(card);
+			},
+			{ signal },
+		);
+		grid.addEventListener(
+			"pointerleave",
+			() => {
+				activeCard = null;
+				clearHoverWires();
+			},
+			{ signal },
+		);
+		grid.addEventListener(
+			"click",
+			(e) => {
+				const openBtn = (e.target as HTMLElement).closest?.(
+					"[data-changelog-open]",
+				);
+				if (!openBtn) return;
+				const card = openBtn.closest("[data-changelog-card]") as HTMLElement;
+				if (card) openDialog(card);
+			},
+			{ signal },
+		);
+		dialog
+			.querySelectorAll("[data-changelog-close]")
+			.forEach((el) => el.addEventListener("click", closeDialog, { signal }));
+		document.addEventListener(
+			"keydown",
+			(e) => {
+				if (e.key === "Escape" && !dialog.hidden) closeDialog();
+			},
+			{ signal },
+		);
+		window.addEventListener("resize", layout, { signal });
+
+		layout();
+	}
+
+	function mountAll() {
+		document.querySelectorAll<HTMLElement>("[data-changelog]").forEach(initChangelogGraph);
+	}
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", mountAll);
+	} else {
+		mountAll();
+	}
+</script>

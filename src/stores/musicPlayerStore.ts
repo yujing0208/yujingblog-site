@@ -3,12 +3,10 @@ import { i18n } from "@i18n/translation";
 
 import {
 	DEFAULT_SONG,
-	LOCAL_PLAYLIST,
 	SKIP_ERROR_DELAY,
 	STORAGE_KEY_VOLUME,
 } from "@/components/widgets/music-player/constants";
 import type {
-	PlayerMode,
 	RepeatMode,
 	Song,
 } from "@/components/widgets/music-player/types";
@@ -28,7 +26,6 @@ interface ResumeSnapshot {
 	lrc?: string;
 	currentTime: number;
 	isPlaying: boolean;
-	mode: PlayerMode;
 	cloudPlaylistId: string;
 }
 
@@ -51,14 +48,11 @@ export interface MusicPlayerState {
 	isHidden: boolean;
 	autoplayFailed: boolean;
 	willAutoPlay: boolean;
-	mode: PlayerMode;
 	cloudPlaylistId: string;
-	localPlaylist: Song[];
 	lyrics: LyricLine[];
 	currentLrcIndex: number;
 }
 
-const STORAGE_KEY_MODE = "music-player-mode";
 const STORAGE_KEY_CLOUD_PLAYLIST_ID = "music-player-cloud-playlist-id";
 const STORAGE_KEY_RESUME = "music-player-resume";
 
@@ -101,8 +95,7 @@ function parseLRC(lrc: string): LyricLine[] {
 					const m = Number.parseInt(match[1], 10);
 					const s = Number.parseInt(match[2], 10);
 					const ms = Number.parseInt(match[3], 10);
-					const time =
-						m * 60 + s + ms / (match[3].length === 3 ? 1000 : 100);
+					const time = m * 60 + s + ms / (match[3].length === 3 ? 1000 : 100);
 					result.push({ time, text });
 				}
 			}
@@ -128,12 +121,7 @@ class MusicPlayerStore {
 	}
 
 	private createInitialState(): MusicPlayerState {
-		// 默认本地歌单：不再读取 localStorage 里遗留的 music-player-mode，
-		// 避免老访客加载页面时仍触发网易云 API。在线模式仅能通过 3D 页
-		// "切换歌单"手动输入歌单 ID 进入（本次会话内生效，刷新后回本地默认）。
-		const configMode = musicPlayerConfig.mode ?? "local";
-		const initialMode: PlayerMode = configMode === "local" ? "local" : "online";
-
+		// 固定使用网易云歌单（api.qijieya.cn 解灰直链），不再支持本地歌单。
 		const defaultCloudId = musicPlayerConfig.id ?? "";
 		const savedCloudId =
 			typeof localStorage !== "undefined"
@@ -159,9 +147,7 @@ class MusicPlayerStore {
 			isHidden: false,
 			autoplayFailed: false,
 			willAutoPlay: false,
-			mode: initialMode,
 			cloudPlaylistId: savedCloudId || defaultCloudId,
-			localPlaylist: [...LOCAL_PLAYLIST],
 			lyrics: [],
 			currentLrcIndex: -1,
 		};
@@ -172,7 +158,6 @@ class MusicPlayerStore {
 			...this.state,
 			currentSong: { ...this.state.currentSong },
 			playlist: this.state.playlist.map((song) => ({ ...song })),
-			localPlaylist: this.state.localPlaylist.map((song) => ({ ...song })),
 			lyrics: [...this.state.lyrics],
 		};
 	}
@@ -218,10 +203,6 @@ class MusicPlayerStore {
 		this.audio.crossOrigin = "anonymous";
 		this.setupAudioListeners();
 		this.loadVolumeFromStorage();
-		// 清理遗留的 mode 记录：默认永远本地歌单；在线仅能通过 3D 页手动切换（刷新即回本地）
-		if (typeof localStorage !== "undefined") {
-			localStorage.removeItem(STORAGE_KEY_MODE);
-		}
 		this.registerInteractionHandler();
 		if (typeof window !== "undefined") {
 			window.addEventListener("beforeunload", this.persistOnUnload);
@@ -389,11 +370,7 @@ class MusicPlayerStore {
 	}
 
 	private async loadPlaylist(): Promise<void> {
-		if (this.state.mode === "local") {
-			this.loadLocalPlaylist();
-		} else {
-			await this.fetchCloudPlaylist(this.state.cloudPlaylistId);
-		}
+		await this.fetchCloudPlaylist(this.state.cloudPlaylistId);
 	}
 
 	private async fetchCloudPlaylist(id: string): Promise<boolean> {
@@ -445,12 +422,11 @@ class MusicPlayerStore {
 			}
 			this.broadcastState();
 			return true;
-		} else {
-			this.showError(i18n(Key.musicPlayerErrorPlaylist));
-			this.state.isLoading = false;
-			this.broadcastState();
-			return false;
 		}
+		this.showError(i18n(Key.musicPlayerErrorPlaylist));
+		this.state.isLoading = false;
+		this.broadcastState();
+		return false;
 	}
 
 	private convertMetingSong(song: Record<string, unknown>): Song {
@@ -486,17 +462,8 @@ class MusicPlayerStore {
 		};
 	}
 
-	private loadLocalPlaylist(): void {
-		this.state.playlist = [...this.state.localPlaylist];
-		if (this.state.playlist.length === 0) {
-			this.showError("本地播放列表为空");
-		} else {
-			this.loadSong(this.state.playlist[0], false);
-		}
-	}
-
 	private loadSong(song: Song, autoPlay = true): void {
-		if (!song || !song.url) {
+		if (!song?.url) {
 			return;
 		}
 		if (song.url !== this.state.currentSong.url) {
@@ -572,7 +539,7 @@ class MusicPlayerStore {
 			return;
 		}
 		const song = this.state.currentSong;
-		if (!song || !song.url) {
+		if (!song?.url) {
 			return;
 		}
 		const snapshot: ResumeSnapshot = {
@@ -584,7 +551,6 @@ class MusicPlayerStore {
 			lrc: song.lrc,
 			currentTime: this.audio ? this.audio.currentTime : this.state.currentTime,
 			isPlaying: this.state.isPlaying,
-			mode: this.state.mode,
 			cloudPlaylistId: this.state.cloudPlaylistId,
 		};
 		try {
@@ -608,7 +574,7 @@ class MusicPlayerStore {
 		} catch {
 			return;
 		}
-		if (!snap || !snap.url) {
+		if (!snap?.url) {
 			return;
 		}
 		if (this.state.playlist.length === 0) {
@@ -795,38 +761,6 @@ class MusicPlayerStore {
 		this.toggleRepeat();
 	}
 
-	async setMode(mode: PlayerMode): Promise<void> {
-		if (this.state.mode === mode) {
-			return;
-		}
-		const prevMode = this.state.mode;
-		this.state.mode = mode;
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(STORAGE_KEY_MODE, mode);
-		}
-
-		if (mode === "local") {
-			this.loadLocalPlaylist();
-		} else {
-			const targetId =
-				this.state.cloudPlaylistId || musicPlayerConfig.id || "";
-			const ok = await this.fetchCloudPlaylist(targetId);
-			// 切回在线但网易云接口拉取失败时，回滚到原模式并恢复原歌单，
-			// 避免“在线模式却仍是本地歌单”的割裂状态（即看起来“切不回去”）
-			if (!ok) {
-				this.state.mode = prevMode;
-				if (typeof localStorage !== "undefined") {
-					localStorage.setItem(STORAGE_KEY_MODE, prevMode);
-				}
-				this.showError("无法加载网易云歌单，已保持当前模式");
-				if (prevMode === "local") {
-					this.loadLocalPlaylist();
-				}
-			}
-		}
-		this.persistResume();
-	}
-
 	async switchCloudPlaylist(id: string): Promise<void> {
 		if (!id) {
 			return;
@@ -835,12 +769,7 @@ class MusicPlayerStore {
 		if (typeof localStorage !== "undefined") {
 			localStorage.setItem(STORAGE_KEY_CLOUD_PLAYLIST_ID, id);
 		}
-		// 输入歌单 ID 即代表使用网易云在线模式：直接切到 online 并拉取，
-		// 这样在本地模式下也能通过输入 ID 切换到在线歌单
-		this.state.mode = "online";
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(STORAGE_KEY_MODE, "online");
-		}
+		// 输入歌单 ID 即代表使用网易云在线歌单
 		await this.fetchCloudPlaylist(id);
 		this.persistResume();
 	}
@@ -851,10 +780,6 @@ class MusicPlayerStore {
 			localStorage.removeItem(STORAGE_KEY_CLOUD_PLAYLIST_ID);
 		}
 		this.state.cloudPlaylistId = defaultId;
-		this.state.mode = "online";
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(STORAGE_KEY_MODE, "online");
-		}
 		await this.fetchCloudPlaylist(defaultId);
 		this.persistResume();
 	}
@@ -906,7 +831,13 @@ class MusicPlayerStore {
 		const snapshot = this.createSnapshot();
 
 		for (const listener of this.listeners) {
-			listener(snapshot);
+			try {
+				listener(snapshot);
+			} catch (error) {
+				// 单个订阅者异常不应中断广播链（曾因 MobileDock2 引用未定义变量
+				// 导致 music-sidebar:state 事件丢失、播放器 UI 全部失效）
+				console.error("[musicPlayerStore] listener error:", error);
+			}
 		}
 
 		if (typeof window === "undefined") {

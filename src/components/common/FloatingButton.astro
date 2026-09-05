@@ -22,7 +22,7 @@ const { id, icon, ariaLabel, onclick, class: className = "" } = Astro.props;
 	onclick={onclick}
 >
 	<button aria-label={ariaLabel} class="h-full w-full rounded-2xl">
-		<Icon name={icon} class="mx-auto" />
+		<Icon name={icon} is:inline class="mx-auto" />
 	</button>
 </div>
 

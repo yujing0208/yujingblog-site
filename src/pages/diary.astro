@@ -1,15 +1,16 @@
 ---
-import MomentsCover from "@components/features/diary/MomentsCover.astro";
 import { MomentCard } from "@components/features/diary";
+import MomentsCover from "@components/features/diary/MomentsCover.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 
-import { profileConfig, siteConfig } from "../config";
+import { siteConfig } from "../config";
+import type { DiaryItem } from "../data/diary";
 import { getDiaryList } from "../data/diary";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 
 if (!siteConfig.featurePages.diary) {
-  return Astro.redirect("/404/");
+	return Astro.redirect("/404/");
 }
 
 const moments = getDiaryList();
@@ -18,8 +19,9 @@ const title = i18n(I18nKey.diary);
 const subtitle = i18n(I18nKey.diarySubtitle);
 
 // 置顶（兼容 DiaryItem 无 pinned 字段的情况）
-const pinnedMoments = moments.filter((m) => (m as any).pinned);
-const normalMoments = moments.filter((m) => !(m as any).pinned);
+type DiaryItemWithPinned = DiaryItem & { pinned?: boolean };
+const pinnedMoments = moments.filter((m) => (m as DiaryItemWithPinned).pinned);
+const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
 ---
 
 <MainGridLayout title={title} description={subtitle}>
@@ -178,7 +180,7 @@ const normalMoments = moments.filter((m) => !(m as any).pinned);
         });
       }
 
-      async function initEntry(container, diaryId) {
+      async function initEntry(_container, diaryId) {
         if (!diaryId || loadedEntries.has(diaryId)) return;
         try {
           await ensureScript();

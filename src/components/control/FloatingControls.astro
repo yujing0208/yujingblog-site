@@ -155,6 +155,17 @@ const { headings = [] } = Astro.props;
 		overflow: hidden !important;
 	}
 
+	@media (orientation: portrait) {
+		/* 竖屏仅保留目录导航小圆，其余右下角全局浮动按钮隐藏 */
+		.floating-controls-container .floating-control-item:not([data-control-key="toc"]) {
+			display: none !important;
+		}
+
+		.floating-controls-container .floating-control-item[data-control-key="toc"] {
+			margin-top: 0 !important;
+		}
+	}
+
 	@media (width < 1024px) {
 		:global(:root) {
 			--fab-group-right: 1rem;

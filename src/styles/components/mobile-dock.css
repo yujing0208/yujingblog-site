@@ -1,0 +1,126 @@
+/* 仅竖屏移动端使用；横屏与桌面导航完全不参与本组件样式。 */
+.mobile-dock,
+.mobile-dock__overlay { display: none; }
+
+@media (max-width: 767px) and (orientation: portrait) {
+	.mobile-dock {
+		--dock-surface: #e7e7e7;
+		--dock-text: #202124;
+		--dock-muted: #5f6368;
+		--dock-divider: rgb(0 0 0 / 12%);
+		--dock-hover: rgb(0 0 0 / 6%);
+		--dock-motion: cubic-bezier(0.22, 1, 0.36, 1);
+		position: fixed;
+		right: max(0.75rem, env(safe-area-inset-right, 0px));
+		bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+		z-index: 74;
+		display: flex;
+		flex-direction: column-reverse;
+		width: min(calc(100vw - 1.5rem), 28rem);
+		max-width: calc(100vw - 1.5rem);
+		max-height: 70dvh;
+		color: var(--dock-text);
+		background: var(--dock-surface);
+		border-radius: 1.825rem;
+		box-shadow: 0 0.65rem 1.8rem rgb(0 0 0 / 14%);
+		overflow: hidden;
+		transform-origin: bottom right;
+		transition: width 500ms var(--dock-motion), border-radius 500ms var(--dock-motion), transform 500ms var(--dock-motion), opacity 180ms ease;
+	}
+	:root.dark .mobile-dock {
+		--dock-surface: #202124;
+		--dock-text: #f5f7fa;
+		--dock-muted: #c9ced6;
+		--dock-divider: rgb(255 255 255 / 15%);
+		--dock-hover: rgb(255 255 255 / 10%);
+		box-shadow: 0 0.65rem 1.8rem rgb(0 0 0 / 42%);
+	}
+
+	.mobile-dock[data-state="bubble"] { width: 3.65rem; height: 3.65rem; min-height: 3.65rem; max-height: 3.65rem; border-radius: 50%; }
+	.mobile-dock[data-state="card"] { border-radius: 1.25rem; }
+	.mobile-dock__bar { display: flex; align-items: center; gap: 0.35rem; min-height: 3.25rem; padding: 0.2rem 0.35rem 0.2rem 0.65rem; }
+	.mobile-dock__context { display: flex; align-items: center; gap: 0.65rem; min-width: 0; min-height: 2.75rem; flex: 1; padding: 0 0.25rem; border-radius: 999px; overflow: hidden; }
+	.mobile-dock__context-action, .mobile-dock__menu-toggle, .mobile-dock__toolbar button, .mobile-dock__menu-row, .mobile-dock__submenu-row { border: 0; color: inherit; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+	.mobile-dock__context-action { display: flex; align-items: center; gap: 0.65rem; min-width: 0; min-height: 2.75rem; flex: 1; padding: 0 0.25rem; color: var(--dock-text); text-align: left; border-radius: 999px; overflow: hidden; }
+	.mobile-dock__context-action:active, .mobile-dock__menu-toggle:active, .mobile-dock__toolbar button:active { background: var(--dock-hover); }
+	.mobile-dock__site-mark { display: none; place-items: center; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; border-radius: 50%; color: inherit; overflow: hidden; }
+	.mobile-dock__site-mark img { display: block; width: 1.8rem; height: 1.8rem; object-fit: cover; border-radius: 50%; }
+	.mobile-dock__context-viewport { display: block; min-width: 0; flex: 1; overflow: hidden; }
+	.mobile-dock__site-title, .mobile-dock__view-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dock-text); font-size: 1rem; font-weight: 700; letter-spacing: 0.01em; }
+	.mobile-dock__view-title { display: none; }
+	.mobile-dock[data-state="pill"] .mobile-dock__site-mark, .mobile-dock[data-state="card"] .mobile-dock__site-mark { display: grid; }
+	.mobile-dock[data-state="card"].is-child-view .mobile-dock__site-mark, .mobile-dock[data-state="card"].is-child-view .mobile-dock__site-title { display: none; }
+	.mobile-dock[data-state="card"].is-child-view .mobile-dock__view-title, .mobile-dock[data-state="card"].is-child-view .mobile-dock__back-mark { display: grid; }
+	.mobile-dock__back-mark { display: none; place-items: center; width: 1.65rem; height: 1.65rem; color: var(--dock-text); font-size: 1.2rem; }
+	.mobile-dock__menu-toggle { position: relative; display: grid; place-items: center; width: 2.85rem; height: 2.85rem; flex: 0 0 2.85rem; border-radius: 999px; color: var(--dock-text); font-size: 1.5rem; }
+	.mobile-dock__menu-icon, .mobile-dock__close-icon { position: absolute; inset: 0; display: grid; place-items: center; transition: opacity 180ms ease, transform 260ms var(--dock-motion); }
+	.mobile-dock__close-icon { opacity: 0; transform: rotate(-90deg) scale(0.72); }
+	.mobile-dock[data-state="card"] .mobile-dock__menu-icon { opacity: 0; transform: rotate(90deg) scale(0.72); }
+	.mobile-dock[data-state="card"] .mobile-dock__close-icon { opacity: 1; transform: rotate(0) scale(1); }
+	.mobile-dock[data-state="bubble"] .mobile-dock__context { width: 0; flex: 0 0 0; padding: 0; opacity: 0; pointer-events: none; }
+	.mobile-dock[data-state="bubble"] .mobile-dock__bar { justify-content: center; width: 100%; height: 100%; min-height: 0; padding: 0.4rem; box-sizing: border-box; }
+
+	.mobile-dock__card { display: grid; grid-template-rows: 0fr; min-width: 0; min-height: 0; overflow: hidden; pointer-events: none; transition: grid-template-rows 500ms var(--dock-motion); }
+	.mobile-dock[data-state="card"] .mobile-dock__card { grid-template-rows: 1fr; pointer-events: auto; }
+	.mobile-dock__card-inner { display: flex; flex-direction: column; min-height: 0; max-height: calc(70dvh - 3.25rem); overflow: hidden; outline: none; }
+	.mobile-dock__views { min-height: 0; max-height: calc(70dvh - 7.3rem); padding-top: 0.75rem; overflow: hidden; opacity: 0; transform: translateY(0.65rem); transition: opacity 200ms ease, transform 280ms var(--dock-motion); }
+	.mobile-dock[data-state="card"] .mobile-dock__views { opacity: 1; transform: translateY(0); transition-delay: 150ms; }
+	.mobile-dock__view { display: none; flex-direction: column; min-height: 0; max-height: calc(70dvh - 7.3rem); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+	.mobile-dock__view.is-active { display: flex; animation: mobile-dock-view-in 220ms ease-out; }
+	.mobile-dock__view[hidden], .mobile-dock .is-hidden { display: none !important; }
+	.mobile-dock__menu, .mobile-dock__announcement-list { padding: 0.35rem 0.85rem 0.75rem; }
+	.mobile-dock__menu-row, .mobile-dock__submenu-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 3.25rem; padding: 0.65rem 0.4rem; color: var(--dock-text); text-decoration: none; font-size: 1rem; font-weight: 600; transition: color 160ms ease, background-color 160ms ease, padding 180ms ease; }
+	.mobile-dock__menu-row { border-bottom: 1px solid var(--dock-divider); }
+	.mobile-dock__menu-row-main { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+	.mobile-dock__menu-row-main > svg, .mobile-dock__submenu-row > svg:first-child { width: 1.15rem; height: 1.15rem; color: var(--dock-muted); opacity: 1; flex: 0 0 auto; }
+	.mobile-dock__menu-row:hover, .mobile-dock__submenu-row:hover { color: var(--primary); padding-left: 0.65rem; background: var(--dock-hover); }
+	.mobile-dock__external-icon { width: 0.72rem !important; height: 0.72rem !important; color: var(--dock-muted) !important; opacity: 1 !important; }
+	.mobile-dock__accordion-arrow { color: var(--dock-muted); opacity: 1; transition: transform 260ms var(--dock-motion); }
+	.mobile-dock__accordion.is-open .mobile-dock__accordion-arrow { transform: rotate(180deg); }
+	.mobile-dock__submenu { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 300ms var(--dock-motion), opacity 180ms ease; }
+	.mobile-dock__accordion.is-open .mobile-dock__submenu { grid-template-rows: 1fr; opacity: 1; }
+	.mobile-dock__submenu-inner { min-height: 0; overflow: hidden; }
+	.mobile-dock__submenu-row { justify-content: flex-start; min-height: 2.85rem; padding-left: 1.55rem; color: var(--dock-text); font-size: 0.92rem; font-weight: 550; }
+	.mobile-dock__submenu-row:hover { padding-left: 1.8rem; opacity: 1; }
+
+	.mobile-dock__calendar-view { padding: 0.25rem 0.55rem 0.75rem; }
+	.mobile-dock__calendar-view > * { width: 100%; }
+	.mobile-dock__announcement { border-bottom: 1px solid var(--dock-divider); }
+	.mobile-dock__announcement summary { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.5rem; padding: 0.7rem 0.4rem; color: var(--dock-text); cursor: pointer; list-style: none; }
+	.mobile-dock__announcement summary::-webkit-details-marker { display: none; }
+	.mobile-dock__announcement-main { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+	.mobile-dock__announcement-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dock-text); font-size: 0.95rem; }
+	.mobile-dock__announcement-tag { padding: 0.15rem 0.42rem; border-radius: 999px; background: var(--dock-hover); color: var(--primary); font-size: 0.68rem; font-weight: 700; }
+	.mobile-dock__announcement-content { padding: 0 0.4rem 0.85rem; color: var(--dock-muted); font-size: 0.86rem; line-height: 1.7; }
+	.mobile-dock__announcement-content p { margin: 0; }
+	.mobile-dock__announcement-content a { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+	.mobile-dock__toolbar { display: flex; align-items: stretch; gap: 0.35rem; min-height: 4.05rem; padding: 0.3rem 0.55rem; border-top: 1px solid var(--dock-divider); overflow-x: auto; scrollbar-width: none; opacity: 0; transform: translateY(0.65rem); transition: opacity 200ms ease, transform 280ms var(--dock-motion); }
+	.mobile-dock__toolbar::-webkit-scrollbar { display: none; }
+	.mobile-dock[data-state="card"] .mobile-dock__toolbar { opacity: 1; transform: translateY(0); transition-delay: 220ms; }
+	.mobile-dock__toolbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; min-width: 3.45rem; min-height: 3.25rem; padding: 0.3rem 0.45rem; border-radius: 1rem; color: var(--dock-text); font-size: 1.2rem; }
+	.mobile-dock__toolbar button svg { color: var(--dock-text); opacity: 1; }
+	.mobile-dock__toolbar button span { max-width: 3.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dock-text); font-size: 0.64rem; font-weight: 650; }
+	.mobile-dock__toolbar button.is-active { color: var(--primary); background: var(--dock-hover); }
+
+	.mobile-dock__overlay { position: fixed; inset: 0; z-index: 73; display: block; background: rgb(0 0 0 / 34%); opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+	.mobile-dock__overlay.is-open { opacity: 1; pointer-events: auto; }
+	#main-grid-wrapper { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+
+	/* 竖屏音乐视图：复用全局 FabMusicPanel，面板宽度撑满 Dock 视图 */
+	.mobile-dock__music-view { padding: 0.5rem 0.55rem 0.75rem; }
+	.mobile-dock__music-view .fab-music-panel { width: 100% !important; max-width: none !important; }
+	/* 竖屏下隐藏右下角全局 fab 音乐面板，仅保留 Dock 内 music 视图作为入口，避免重复弹出 */
+	.music-player-fab-anchor { display: none !important; }
+
+	@keyframes mobile-dock-view-in { from { transform: translateY(0.2rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+}
+
+/* 任何非竖屏环境都不启用移动 Dock，因此不会改变横屏导航。 */
+@media (orientation: landscape), (min-width: 768px) {
+	.mobile-dock, .mobile-dock__overlay { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.mobile-dock, .mobile-dock *, .mobile-dock__overlay { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

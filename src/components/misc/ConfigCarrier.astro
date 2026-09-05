@@ -5,6 +5,7 @@ import {
 	sakuraConfig,
 	siteConfig,
 } from "@/config";
+import MobileDock from "@components/organisms/navigation/MobileDock2.astro";
 ---
 
 <div
@@ -26,6 +27,13 @@ import {
 >
 </div>
 
+<MobileDock />
+
+<style is:global>
+	@import "../../styles/components/mobile-dock.css";
+	@import "../../styles/components/mobile-dock-article.css";
+</style>
+
 <script
 	is:inline
 	define:vars={{
@@ -40,6 +48,38 @@ import {
 		depth: tocDepth,
 		useJapaneseBadge: tocUseJapaneseBadge,
 	};
+
+	/* 竖屏 Dock 的滚动收缩：监听页面真正的滚动容器，避免 Astro/移动端滚动链导致 window.scroll 监听失效。 */
+	(() => {
+		let lastY = window.scrollY || document.documentElement.scrollTop || 0;
+		let ticking = false;
+		const getY = () => Math.max(0, window.scrollY || document.scrollingElement?.scrollTop || document.documentElement.scrollTop || 0);
+		const sync = () => {
+			ticking = false;
+			const dock = document.getElementById("mobile-dock");
+			if (!dock || !matchMedia("(max-width: 767px) and (orientation: portrait)").matches) return;
+			if (dock.dataset.state === "card") return;
+			const y = getY();
+			const delta = y - lastY;
+			if (delta > 4 && y > 48) {
+				dock.dataset.state = "bubble";
+				dock.querySelector("#mobile-dock-card")?.setAttribute("aria-hidden", "true");
+			} else if (delta < -4) {
+				dock.dataset.state = "pill";
+		}
+			lastY = y;
+		};
+		const onScroll = () => {
+			if (!ticking) {
+				ticking = true;
+				requestAnimationFrame(sync);
+			}
+		};
+		window.addEventListener("scroll", onScroll, { passive: true });
+		document.addEventListener("scroll", onScroll, { passive: true, capture: true });
+		window.addEventListener("touchstart", () => { lastY = getY(); }, { passive: true });
+		window.addEventListener("touchmove", onScroll, { passive: true });
+	})();
 
 	console.log("TOC Config:", window.siteConfig.toc);
 </script>

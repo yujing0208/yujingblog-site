@@ -34,7 +34,7 @@ const {
 				data-filter-value={tab.value}
 				data-filter-attr={dataAttr}
 			>
-				{tab.icon && <Icon name={tab.icon} class="text-base w-4 h-4" />}
+				{tab.icon && <Icon name={tab.icon} is:inline class="text-base w-4 h-4" />}
 				<span>{tab.label}</span>
 				{tab.count !== undefined && (
 					<span class="filter-tabs-count">({tab.count})</span>

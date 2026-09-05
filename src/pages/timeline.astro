@@ -119,4 +119,50 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
 		background: var(--line-divider);
 		border-radius: 1px;
 	}
+
+
+	/* 修复：电脑端一行四个卡片 */
+	@media (min-width: 768px) {
+		#timeline-list {
+			display: grid !important;
+			grid-template-columns: repeat(4, 1fr) !important;
+			gap: 1.5rem !important;
+			max-width: 1200px !important;
+			margin: 0 auto !important;
+			padding: 0 1rem !important;
+		}
+		#timeline-list::before {
+			display: none !important;
+		}
+		.timeline-entry {
+			padding-left: 0 !important;
+			padding-bottom: 0 !important;
+		}
+		.timeline-node {
+			display: none !important;
+		}
+		.timeline-card {
+			height: 100% !important;
+		}
+	}
+
+	/* 修复：详情页居中 */
+	.modal-backdrop,
+	[data-modal-backdrop] {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+
+	.modal-dialog,
+	[data-modal-dialog] {
+		position: relative !important;
+		margin: auto !important;
+		max-width: 90vw !important;
+		max-height: 90vh !important;
+		top: auto !important;
+		left: auto !important;
+		transform: none !important;
+	}
+
 </style>

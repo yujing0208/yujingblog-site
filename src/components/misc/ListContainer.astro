@@ -15,7 +15,7 @@ const { title, badge, icon, class: className } = Astro.props;
 	<div
 		class="flex items-center gap-2 pb-3 mb-1 border-b border-dashed border-(--line-divider)"
 	>
-		{icon && <Icon name={icon} class="text-xl text-(--primary)" />}
+		{icon && <Icon name={icon} is:inline class="text-xl text-(--primary)" />}
 		<span
 			class="text-base font-bold text-black/75 dark:text-white/75 transition"
 		>

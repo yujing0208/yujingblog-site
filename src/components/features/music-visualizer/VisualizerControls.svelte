@@ -1,10 +1,10 @@
 <script lang="ts">
-import Icon from "./Icon.svelte";
 import { onDestroy, onMount } from "svelte";
-import type { MusicPlayerState } from "@/stores/musicPlayerStore";
-import { musicPlayerStore } from "@/stores/musicPlayerStore";
 import { getAssetPath } from "@/components/widgets/music-player/hooks/useKeyboardShortcuts";
 import type { Song } from "@/components/widgets/music-player/types";
+import type { MusicPlayerState } from "@/stores/musicPlayerStore";
+import { musicPlayerStore } from "@/stores/musicPlayerStore";
+import Icon from "./Icon.svelte";
 
 interface Track {
 	name: string;
@@ -136,9 +136,9 @@ function closePlaylist() {
 	isPlaylistOpen = false;
 }
 
-	function openSwitchDialog() {
-		showSwitchDialog = true;
-	}
+function openSwitchDialog() {
+	showSwitchDialog = true;
+}
 
 function closeSwitchDialog() {
 	showSwitchDialog = false;
@@ -164,18 +164,6 @@ function onSwitchKeydown(e: KeyboardEvent) {
 		handleSwitchPlaylist();
 	} else if (e.key === "Escape") {
 		closeSwitchDialog();
-	}
-}
-
-async function handleSwitchToLocal() {
-	isSwitching = true;
-	try {
-		await musicPlayerStore.setMode("local");
-		closeSwitchDialog();
-	} catch (e) {
-		console.warn("[VisualizerControls] setMode local failed:", e);
-	} finally {
-		isSwitching = false;
 	}
 }
 
@@ -429,14 +417,6 @@ onDestroy(() => {
 				</button>
 			</div>
 			<div class="music-switch-body">
-				<button
-					class="music-switch-local"
-					class:music-switch-local--active={playerState.mode === "local"}
-					onclick={handleSwitchToLocal}
-					disabled={isSwitching}
-				>
-					本地歌单（默认）
-				</button>
 				<div class="music-switch-cloud">
 					<div class="music-switch-cloud-title">网易云歌单 · 输入歌单ID</div>
 					<input

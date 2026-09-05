@@ -17,12 +17,10 @@ if (!siteConfig.featurePages.albums) {
 
 export const getStaticPaths = async () => {
 	const albumsData = await scanAlbums();
-	return albumsData
-		.filter(Boolean)
-		.map((album) => ({
-			params: { id: album.id },
-			props: { album },
-		}));
+	return albumsData.filter(Boolean).map((album) => ({
+		params: { id: album.id },
+		props: { album },
+	}));
 };
 
 interface Props {
@@ -122,6 +120,7 @@ if (isEncrypted) {
 							<span class="inline-flex items-center gap-1">
 								<Icon
 									name="material-symbols:photo-library"
+									is:inline
 									class="text-sm"
 								/>
 								{album.photos.length}{" "}
@@ -204,6 +203,7 @@ if (isEncrypted) {
 					<div class="flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500">
 						<Icon
 							name="material-symbols:photo-library"
+							is:inline
 							class="text-6xl mb-4 opacity-50"
 						/>
 						<p class="text-lg">{i18n(I18nKey.albumsEmpty)}</p>

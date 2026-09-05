@@ -57,7 +57,7 @@ const sizeClasses = getSizeClasses(size);
 					<div
 						class={`rounded-lg flex items-center justify-center bg-(--primary)/12 text-(--primary) ${sizeClasses.iconContainer}`}
 					>
-						<Icon name={icon} class={sizeClasses.icon} />
+						<Icon name={icon} is:inline class={sizeClasses.icon} />
 					</div>
 				)
 			}
@@ -73,6 +73,7 @@ const sizeClasses = getSizeClasses(size);
 									? "material-symbols:trending-up"
 									: "material-symbols:trending-down"
 							}
+							is:inline
 							class="text-sm"
 						/>
 						<span class="text-xs font-medium">

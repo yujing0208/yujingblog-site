@@ -15,7 +15,7 @@ export const navBarConfig: NavBarConfig = {
 
 		// 自定义一级下拉菜单示例：外部链接集合
 		{
-			name: "Links",
+			name: "链接",
 			url: "/links/",
 			icon: "material-symbols:link",
 			children: [
@@ -30,12 +30,14 @@ export const navBarConfig: NavBarConfig = {
 					external: true,
 					icon: "simple-icons:tiktok",
 				},
-				{	name: "Deepseek",
+				{
+					name: "Deepseek",
 					url: "https://chat.deepseek.com/",
 					external: true,
 					icon: "simple-icons:deepseek",
-				},	
-				{	name: "GitHub",
+				},
+				{
+					name: "GitHub",
 					url: "https://github.com",
 					external: true,
 					icon: "fa7-brands:github",
@@ -52,13 +54,12 @@ export const navBarConfig: NavBarConfig = {
 					external: true,
 					icon: "bitcoin-icons:cloud-outline",
 				},
-				
 			],
 		},
 
 		// 自定义一级下拉菜单示例：个人内容页面
 		{
-			name: "My",
+			name: "我的",
 			url: "/content/",
 			icon: "material-symbols:person",
 			children: [
@@ -70,7 +71,7 @@ export const navBarConfig: NavBarConfig = {
 				LinkPreset.Anime,
 				LinkPreset.Albums,
 				{
-					name: "Devices",
+					name: "设备",
 					url: "/devices/",
 					icon: "material-symbols:devices",
 				},
@@ -84,12 +85,12 @@ export const navBarConfig: NavBarConfig = {
 
 		// 自定义一级下拉菜单示例：关于相关
 		{
-			name: "About",
+			name: "关于",
 			url: "/content/",
 			icon: "material-symbols:info",
 			children: [
 				{
-					name: "About",
+					name: "关于",
 					url: "/about/",
 					icon: "material-symbols:person",
 				},
@@ -99,7 +100,7 @@ export const navBarConfig: NavBarConfig = {
 					icon: "material-symbols:group",
 				},
 				{
-					name: "Timeline",
+					name: "时间线",
 					url: "/timeline/",
 					icon: "material-symbols:timeline",
 				},
@@ -113,10 +114,16 @@ export const navBarConfig: NavBarConfig = {
 
 		// 自定义一级下拉菜单示例：其他页面
 		{
-			name: "Others",
+			name: "其他",
 			url: "#",
 			icon: "material-symbols:more-horiz",
 			children: [
+				{
+					name: "3D 主页",
+					url: "https://home.yujingblog.top",
+					external: true,
+					icon: "material-symbols:home",
+				},
 				{
 					name: "项目",
 					url: "/projects/",

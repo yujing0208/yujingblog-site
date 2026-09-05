@@ -1,12 +1,11 @@
 /**
- * Mizuki AI Chat — 看板娘 DeepSeek 聊天模块
+ * Mizuki AI Chat — 看板娘 Cloudflare AI 聊天模块
  * 借鉴 live2d-widget-AIChat 架构，适配 Mizuki Astro 博客
  */
 
 (function () {
   "use strict";
 
-  // ========== 默认配置（兜底，正常会被 waifu-chat.json 覆盖）==========
   const DEFAULT_CONFIG = {
     apiUrl: "/api/chat",
     title: "和诺瓦说说话吧~",
@@ -16,7 +15,6 @@
     storageKey: "mizuki_chat_history",
     maxHistory: 20,
     pageContextMaxLen: 2000,
-    // RAG 选择器：Mizuki 文章正文
     pageContextSelector: ".markdown-content, article, main",
     welcomeMsg: "🐾 （猫耳轻轻抖动）啊……有、有客人来了喵！欢迎光临主人的博客~我是看板娘诺瓦！",
     systemPrompt: [
@@ -34,7 +32,6 @@
     ],
   };
 
-  // 由 person 结构化配置拼接 systemPrompt
   function buildSystemPrompt(person) {
     if (!person) return "";
     const lines = [];
@@ -54,10 +51,8 @@
     return lines.join("\n");
   }
 
-  // ========== Chat 类 ==========
   class MizukiChat {
     constructor(config) {
-      // 合并配置：person 结构化人设 → 若无 systemPrompt 则自动拼接
       let merged = Object.assign({}, DEFAULT_CONFIG, config || {});
       if (merged.person && !merged.systemPrompt) {
         merged.systemPrompt = buildSystemPrompt(merged.person);
@@ -71,7 +66,6 @@
       this._init();
     }
 
-    // 异步加载 /pio/waifu-chat.json 用户配置（加时间戳强制绕过浏览器缓存）
     static async loadConfig() {
       try {
         const res = await fetch("/pio/waifu-chat.json?v=" + Date.now());
@@ -89,8 +83,23 @@
       }
     }
 
-    // ---- UI 创建 ----
     _createUI() {
+      // swup 切页会重新执行本模块所在页面的脚本：若已有聊天框 DOM 则复用，
+      // 避免多次切页后多个 #mizuki-chat-box 叠加（旧的在 main 容器外不被清除），
+      // 否则点 ✕ 只会关掉最上层那个，下面叠着的还得再点一次。
+      const existing = document.getElementById("mizuki-chat-box");
+      if (existing) {
+        // 清理历史遗留的多余聊天框（旧版本 swup 切页叠加的残留）
+        document.querySelectorAll("#mizuki-chat-box").forEach((el) => {
+          if (el !== existing) el.remove();
+        });
+        this.chatBox = existing;
+        this.msgContainer = existing.querySelector("#mizuki-chat-msgs");
+        this.inputEl = existing.querySelector("#mizuki-chat-input");
+        this._renderQuickActions();
+        this._renderHistory();
+        return;
+      }
       const box = document.createElement("div");
       box.id = "mizuki-chat-box";
       box.className = "hidden";
@@ -129,10 +138,10 @@
         .join("");
     }
 
-    // ---- 事件绑定 ----
     _bindEvents() {
       this.chatBox.querySelector("#mizuki-chat-close").onclick = () => this.hide();
       this.chatBox.querySelector("#mizuki-chat-clear").onclick = () => {
+        if (this.isLoading) return;
         this.history = [];
         this._saveHistory();
         this._renderHistory();
@@ -150,31 +159,39 @@
       });
     }
 
-    // ---- 显示/隐藏 ----
+    // 同步聊天框开关状态给看板娘 iframe（切换 💬/✕ 按钮）
+    _notifyState() {
+      const frame = document.getElementById("l2d-iframe");
+      if (!frame || !frame.contentWindow) return;
+      frame.contentWindow.postMessage(
+        { type: "l2d-chat-state", open: !this.chatBox.classList.contains("hidden") },
+        "*"
+      );
+    }
+
     show() {
       this.chatBox.classList.remove("hidden");
       this.inputEl.focus();
       this._scrollBottom();
+      this._notifyState();
     }
     hide() {
       this.chatBox.classList.add("hidden");
+      this._notifyState();
     }
     toggle() {
       this.chatBox.classList.contains("hidden") ? this.show() : this.hide();
     }
 
-    // ---- 发送消息 ----
     async _doSend(text) {
       const msg = text || this.inputEl.value.trim();
       if (!msg || this.isLoading) return;
       this.inputEl.value = "";
 
-      // 添加用户消息
       this._addMessage("user", msg);
       this._renderHistory();
       this._scrollBottom();
 
-      // 加载状态
       this.isLoading = true;
       this._addMessage("assistant", "", true);
       this._renderHistory();
@@ -199,25 +216,38 @@
 
         const res = await fetch(this.cfg.apiUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
           body: JSON.stringify({ messages }),
         });
 
-        if (!res.ok) throw new Error(`API ${res.status}`);
+        if (!res.ok) {
+          let errorMessage = this.cfg.errorMsg;
+          try {
+            const errorData = await res.json();
+            if (errorData?.error) errorMessage = errorData.error;
+          } catch (e) {}
+          throw new Error(errorMessage);
+        }
 
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || this.cfg.errorMsg;
+        if (!res.body) throw new Error(this.cfg.errorMsg);
 
-        // 移除临时消息，添加真实回复
         this.history = this.history.filter((m) => !m._typing);
-        this._addMessage("assistant", reply);
+        const assistantMessage = { role: "assistant", content: "" };
+        this.history.push(assistantMessage);
+        this._renderHistory();
 
-        // 打字动画（只更新最后一个 bubble，不重建 DOM）
-        await this._typeAnimation(reply);
+        await this._consumeStream(res.body, assistantMessage);
+        this._saveHistory();
+
+        if (!assistantMessage.content) {
+          assistantMessage.content = this.cfg.errorMsg;
+          this._renderHistory();
+          this._saveHistory();
+        }
       } catch (err) {
         console.error("Chat error:", err);
         this.history = this.history.filter((m) => !m._typing);
-        this._addMessage("assistant", this.cfg.errorMsg);
+        this._addMessage("assistant", err instanceof Error && err.message ? err.message : this.cfg.errorMsg);
         this._renderHistory();
       } finally {
         this.isLoading = false;
@@ -225,31 +255,75 @@
       }
     }
 
-    // ---- 打字动画（增量更新，不重建 DOM）----
-    async _typeAnimation(fullText) {
-      const lastMsg = this.history[this.history.length - 1];
-      if (!lastMsg) return;
-      const lastBubbleEl = this.msgContainer.querySelector(
-        ".mizuki-chat-msg.assistant:last-child"
-      );
-      if (!lastBubbleEl) {
-        this._renderHistory();
-        return;
-      }
-      // 逐字增加内容
-      const CHUNK = 2; // 每帧增加 2 字符，减少渲染次数
-      const STEP_DELAY = this.cfg.typingSpeed;
-      let idx = 0;
-      while (idx < fullText.length) {
-        idx = Math.min(idx + CHUNK, fullText.length);
-        lastMsg.content = fullText.substring(0, idx);
-        lastBubbleEl.innerHTML = this._simpleMd(lastMsg.content);
-        this._scrollBottom();
-        await new Promise((r) => setTimeout(r, STEP_DELAY));
+    async _consumeStream(body, message) {
+      const reader = body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      let doneReceived = false;
+
+      try {
+        while (!doneReceived) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload) continue;
+            if (payload === "[DONE]") {
+              doneReceived = true;
+              break;
+            }
+
+            let data;
+            try {
+              data = JSON.parse(payload);
+            } catch (e) {
+              continue;
+            }
+
+            if (data?.error) {
+              throw new Error(typeof data.error === "string" ? data.error : this.cfg.errorMsg);
+            }
+
+            const delta = data?.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta) {
+              message.content += delta;
+              this._updateLastAssistantBubble(message.content);
+              this._scrollBottom();
+            }
+          }
+        }
+
+        buffer += decoder.decode();
+        if (!doneReceived && buffer.trim().startsWith("data:")) {
+          const payload = buffer.trim().slice(5).trim();
+          if (payload && payload !== "[DONE]") {
+            try {
+              const data = JSON.parse(payload);
+              const delta = data?.choices?.[0]?.delta?.content;
+              if (typeof delta === "string" && delta) {
+                message.content += delta;
+                this._updateLastAssistantBubble(message.content);
+              }
+            } catch (e) {}
+          }
+        }
+      } finally {
+        reader.releaseLock();
       }
     }
 
-    // ---- RAG: 页面上下文 ----
+    _updateLastAssistantBubble(content) {
+      const bubbles = this.msgContainer.querySelectorAll(".mizuki-chat-msg.assistant");
+      const bubble = bubbles[bubbles.length - 1];
+      if (bubble) bubble.innerHTML = this._simpleMd(content);
+    }
+
     _getPageContext() {
       try {
         const selectors = this.cfg.pageContextSelector.split(",").map((s) => s.trim());
@@ -278,7 +352,6 @@
       }
     }
 
-    // ---- 消息管理 ----
     _addMessage(role, content, isTyping) {
       this.history.push({ role, content, _typing: !!isTyping });
       if (this.history.length > this.cfg.maxHistory * 2) {
@@ -305,7 +378,6 @@
       } catch (e) {}
     }
 
-    // ---- 渲染（仅在新增/删除消息时调用）----
     _renderHistory() {
       if (!this.msgContainer) return;
       let html = "";
@@ -325,7 +397,6 @@
     _showWelcome() {
       this.history.push({ role: "assistant", content: this.cfg.welcomeMsg, _typing: false });
       this._renderHistory();
-      // 打字动画
       const lastMsg = this.history[this.history.length - 1];
       const lastBubbleEl = this.msgContainer.querySelector(
         ".mizuki-chat-msg.assistant:last-child"
@@ -352,7 +423,6 @@
       }
     }
 
-    // ---- 工具 ----
     _escHtml(s) {
       const d = document.createElement("div");
       d.textContent = s;
@@ -374,16 +444,10 @@
     }
   }
 
-  // ========== 页面元素悬停介绍（纯自定义句子，多份随机）==========
-  // 规则：
-  //   1. 鼠标悬停可点击元素 → waifu-tips.json 里匹配 selector 的 text 数组随机弹
-  //   2. 页面切换（SPA 跳转）→ pageTransition 句子数组随机弹
-  //   3. 原博客 touch 句子（"你在干什么呀？"等）由点击看板娘触发（iframe 内）
-  //   4. 气泡统一用 iframe 内看板娘原生气泡（postMessage l2d-show-tip）
   class PageElementTips {
     constructor() {
       this.tips = null;
-      this.transitionTips = []; // 页面切换时的自定义句子
+      this.transitionTips = [];
       this.currentEl = null;
       this.debounceTimer = 0;
       this.lastTransition = 0;
@@ -405,7 +469,6 @@
     }
 
     _bindEvents() {
-      // 悬停 500ms 后触发，避免快速扫过时频繁弹气泡
       document.body.addEventListener("mouseover", (e) => {
         clearTimeout(this.debounceTimer);
         const el = e.target;
@@ -425,7 +488,6 @@
       window.addEventListener("scroll", () => this._hide(), { passive: true });
     }
 
-    // 支持 {text} 占位符：替换成悬停元素的文本（如文章标题）
     _formatText(template, el) {
       if (!template || template.indexOf("{text}") === -1) return template;
       let txt = "";
@@ -436,7 +498,6 @@
       return template.replace(/\{text\}/g, txt);
     }
 
-    // ---- 页面切换后：从自定义句子数组随机弹一条 ----
     _setupPageTransition() {
       const setup = () => {
         const swup = window.swup;
@@ -445,7 +506,6 @@
         this._transitionBound = true;
         swup.hooks.on("visit:end", () => {
           const now = Date.now();
-          // 3 秒冷却，防止连点导航刷屏
           if (now - this.lastTransition < 3000) return;
           this.lastTransition = now;
           this._transitionTimer = setTimeout(() => {
@@ -462,7 +522,6 @@
       }
     }
 
-    // 命中自定义文案的条目
     _findMatch(el) {
       if (!el || !this.tips) return null;
       for (let i = 0; i < this.tips.length; i++) {
@@ -476,7 +535,6 @@
       return null;
     }
 
-    // 显示气泡（发消息给 iframe，用看板娘原生气泡）
     _show(text) {
       if (!text) return;
       const frame = document.getElementById("l2d-iframe");
@@ -494,7 +552,6 @@
     }
   }
 
-  // ========== 暴露 ==========
   window.MizukiChat = MizukiChat;
   window.MizukiPageTips = PageElementTips;
 })();

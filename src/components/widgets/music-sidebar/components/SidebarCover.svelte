@@ -6,15 +6,21 @@ interface Props {
 	currentSong: Song;
 	isPlaying: boolean;
 	isLoading: boolean;
+	size?: "mini" | "expanded";
 }
 
-const { currentSong, isPlaying, isLoading }: Props = $props();
+const {
+	currentSong,
+	isPlaying,
+	isLoading,
+	size = "expanded",
+}: Props = $props();
 </script>
 
 <CoverImage
 	cover={currentSong.cover}
 	{isPlaying}
 	{isLoading}
-	size="expanded"
+	{size}
 	interactive={false}
 />

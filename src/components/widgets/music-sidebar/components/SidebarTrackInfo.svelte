@@ -129,13 +129,14 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 
 <style>
 	.title-row {
-		margin-bottom: 0.06rem;
+		margin-bottom: 0.1rem;
 	}
 
 	.title-text {
 		font-weight: 600;
 		color: var(--content-main);
-		line-height: 1.1;
+		line-height: 1.25;
+		font-size: 0.9375rem;
 	}
 
 	:global(.dark) .title-text {
@@ -149,7 +150,7 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 	}
 
 	.artist-row {
-		margin-bottom: 0.36rem;
+		margin-bottom: 0.5rem;
 	}
 
 	.meta-row {

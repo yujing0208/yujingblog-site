@@ -9,15 +9,11 @@
 //   - 加载时自动拉取一句
 //   - 点击「换一句」可刷新
 //   - API 失败时显示兜底文案
-// 自定义：修改下方 CATEGORIES / SHOW_FROM 即可调整分类或隐藏出处
+// 自定义：修改 API 请求的分类参数即可调整一言分类或隐藏出处
 // ============================================================
 import { Icon } from "astro-icon/components";
 
 import WidgetLayout from "../common/WidgetLayout.astro";
-
-// 可选分类：a动画 b漫画 c游戏 d文学 e原创 f网络 g其他 h影视 i诗词 j网易云 k哲学 l抖机灵
-const CATEGORIES = "c=d&c=i&c=k"; // 文学 / 诗词 / 哲学，偏文艺
-const SHOW_FROM = true;
 
 interface Props {
 	class?: string;

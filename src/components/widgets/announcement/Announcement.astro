@@ -38,7 +38,6 @@ import WidgetLayout from "../common/WidgetLayout.astro";
 const config = announcementConfig;
 
 // ---------- 归一化 ----------
-type ItemInput = string | { content: string; link?: unknown };
 type AnnouncementLink = {
 	enable?: boolean;
 	text: string;
@@ -50,41 +49,46 @@ const rawItems = Array.isArray(config.content)
 	? config.content
 	: [config.content];
 
-const items = rawItems.map((it, i): {
-	id: number;
-	content: string;
-	link?: AnnouncementLink;
-	linkJson?: string;
-} => {
-	const isObj = typeof it === "object" && it !== null;
-	const content = isObj ? (it as { content: string }).content : (it as string);
-	const itemLink = isObj ? (it as { link?: AnnouncementLink }).link : undefined;
-	// 每则链接 = 该则独立链接 ?? 全局默认链接
-	const link = itemLink ?? config.link;
-	return {
-		id: i,
-		content,
-		link,
-		linkJson:
-			link && link.enable !== false
-				? JSON.stringify({
-						text: link.text,
-						url: link.url,
-						external: !!link.external,
-				  })
-				: undefined,
-	};
-});
+const items = rawItems.map(
+	(
+		it,
+		i,
+	): {
+		id: number;
+		content: string;
+		link?: AnnouncementLink;
+		linkJson?: string;
+	} => {
+		const isObj = typeof it === "object" && it !== null;
+		const content = isObj
+			? (it as { content: string }).content
+			: (it as string);
+		const itemLink = isObj
+			? (it as { link?: AnnouncementLink }).link
+			: undefined;
+		// 每则链接 = 该则独立链接 ?? 全局默认链接
+		const link = itemLink ?? config.link;
+		return {
+			id: i,
+			content,
+			link,
+			linkJson:
+				link && link.enable !== false
+					? JSON.stringify({
+							text: link.text,
+							url: link.url,
+							external: !!link.external,
+						})
+					: undefined,
+		};
+	},
+);
 
 const multi = items.length > 1;
 const interval = config.interval ?? 4000;
 // 是否存在至少一则带链接的公告（决定是否渲染链接按钮占位）
 const hasAnyLink = items.some((it) => it.linkJson);
 
-interface Props {
-	class?: string;
-	style?: string;
-}
 const className = Astro.props.class;
 const style = Astro.props.style;
 ---
@@ -402,7 +406,7 @@ const style = Astro.props.style;
 					const h = c.scrollHeight;
 					if (h > maxH) maxH = h;
 				});
-				viewport.style.height = maxH + "px";
+				viewport!.style.height = maxH + "px";
 			}
 
 			// ---- 链接跟随当前卡片 ----
@@ -423,14 +427,14 @@ const style = Astro.props.style;
 				linkEl.href = l.url;
 				linkEl.textContent = l.text;
 				linkEl.target = l.external ? "_blank" : "_self";
-				linkEl.rel = l.external ? "noopener noreferrer" : undefined;
+				linkEl.rel = l.external ? "noopener noreferrer" : "";
 			}
 
 			// ---- 切换 ----
 			function goTo(index: number) {
 				const total = cards.length;
 				current = ((index % total) + total) % total;
-				track.style.transform = `translateX(-${current * 100}%)`;
+				track!.style.transform = `translateX(-${current * 100}%)`;
 				dots.forEach((d, i) => {
 					d.classList.toggle("active", i === current);
 				});

@@ -208,6 +208,7 @@ export interface NavBarLink {
 	name: string;
 	url: string;
 	external?: boolean;
+	action?: string; // 自定义行为标识（如 "search" / "guestbook"）
 	icon?: string; // 菜单项图标
 	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
 }
@@ -267,28 +268,9 @@ export interface PermalinkConfig {
 
 export interface CommentConfig {
 	enable: boolean; // 是否启用评论功能
-	system?: "waline" | "twikoo" | "giscus"; // 评论系统选择
-	waline?: WalineConfig;
+	system?: "twikoo" | "giscus"; // 评论系统选择
 	twikoo?: TwikooConfig;
 	giscus?: GiscusConfig;
-}
-
-export interface WalineConfig {
-	serverURL: string;
-	lang?: string;
-	locale?: Record<string, string>;
-	emoji?: string[] | boolean;
-	meta?: string[];
-	requiredMeta?: string[];
-	login?: string;
-	wordLimit?: number | [number, number];
-	pageSize?: number;
-	visitorCount?: boolean;
-	highlighter?: boolean | ((text: string, lang: string) => string);
-	imageUploader?: boolean | ((file: File) => Promise<string>);
-	texRenderer?: boolean | ((text: string) => string);
-	search?: boolean;
-	reaction?: boolean | string[];
 }
 
 export interface GiscusConfig {
@@ -369,7 +351,6 @@ export interface MusicPlayerConfig {
 	enable: boolean; // 是否启用音乐播放器功能
 	showFloatingPlayer: boolean; // 是否显示悬浮播放器 UI
 	floatingEntryMode?: "default" | "fab"; // 悬浮入口模式：默认独立播放器或集成到 FAB 组
-	mode: "meting" | "local"; // 音乐播放器模式
 	meting_api: string; // Meting API 地址
 	id: string; // 歌单ID
 	server: string; // 音乐源服务器

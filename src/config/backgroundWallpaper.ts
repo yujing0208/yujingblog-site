@@ -3,12 +3,8 @@ import type { FullscreenWallpaperConfig } from "../types/config";
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true,
 	src: {
-		desktop: [
-			"/assets/banner/city-sunset.jpg",
-		],
-		mobile: [
-			"/assets/banner/city-sunset-mobile.webp",
-		],
+		desktop: ["/assets/banner/city-sunset.jpg"],
+		mobile: ["/assets/banner/city-sunset-mobile.webp"],
 	},
 	position: "center",
 	carousel: {

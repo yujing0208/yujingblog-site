@@ -85,11 +85,11 @@ const homeContent = getPostHomeContent(
 			}
 			<Icon
 				class="inline text-[2rem] text-(--primary) md:hidden translate-y-0.5 absolute"
-				name="material-symbols:chevron-right-rounded"
+				name="material-symbols:chevron-right-rounded" is:inline
 			/>
 			<Icon
 				class="text-(--primary) text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0"
-				name="material-symbols:chevron-right-rounded"
+				name="material-symbols:chevron-right-rounded" is:inline
 			/>
 		</a>
 
@@ -155,7 +155,7 @@ const homeContent = getPostHomeContent(
 				<div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition" />
 				<div class="absolute pointer-events-none z-20 w-full h-full flex items-center justify-center ">
 					<Icon
-						name="material-symbols:chevron-right-rounded"
+						name="material-symbols:chevron-right-rounded" is:inline
 						class="transition opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 text-white text-5xl"
 					/>
 				</div>
@@ -166,10 +166,8 @@ const homeContent = getPostHomeContent(
 					class="w-full h-full"
 					widths={[200, 400, 800]}
 					sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-					// LCP 优化：首页第一张封面图立即加载 + 高优先级预取
 					loading={index === 0 ? "eager" : "lazy"}
 					fetchpriority={index === 0 ? "high" : "auto"}
-					// 封面缩略图不需要高质量，65% 足够视觉清晰且节省 ~40%
 					quality={index === 0 ? 65 : undefined}
 				/>
 			</a>
@@ -187,7 +185,7 @@ const homeContent = getPostHomeContent(
         "
 			>
 				<Icon
-					name="material-symbols:chevron-right-rounded"
+					name="material-symbols:chevron-right-rounded" is:inline
 					class="transition text-(--primary) text-4xl mx-auto"
 				/>
 			</a>

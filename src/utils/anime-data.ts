@@ -26,9 +26,9 @@ export interface AnimeItem {
 	link: string;
 	status: string;
 	category: string;
-	rating: number;
-	progress: number;
-	totalEpisodes: number;
+	rating?: number;
+	progress?: number | string;
+	totalEpisodes?: number | string;
 	description: string;
 	year: string;
 	studio: string;

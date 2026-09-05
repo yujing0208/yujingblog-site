@@ -16,22 +16,17 @@ const tipsData: Record<string, unknown> = {};
 if (config.tips) {
 	if (config.tips.welcomeMessage)
 		tipsData.welcomeMessage = config.tips.welcomeMessage;
-	// 禁用自动循环提示（"你在干什么呀？"等改为点击看板娘时才触发）
 	tipsData.messages = config.tips.messages ?? [];
 	if (config.tips.duration) tipsData.duration = config.tips.duration;
-	// interval 设为极大值，l2d-widget 的定时循环几乎永不触发
 	tipsData.interval = config.tips.interval ?? 2147483647;
 } else if (config.dialog?.welcome || config.dialog?.touch) {
 	const welcome = config.dialog.welcome;
 	if (welcome)
 		tipsData.welcomeMessage = Array.isArray(welcome) ? welcome : [welcome];
-	// 不把 touch 句子放进自动循环，改由点击看板娘触发（见 _touchMessages）
 	tipsData.messages = [];
 	tipsData.interval = 2147483647;
 }
 
-// 气泡位置偏移：默认 bottom: calc(100% + 10px)（顶部上方留 10px 空隙）
-// y 设为负值可下移气泡，让它更贴近看板娘
 if (config.tips?.offset) {
 	tipsData.offset = config.tips.offset;
 } else {
@@ -57,11 +52,9 @@ if (config.menus?.items && config.menus.items.length > 0) {
 		...(config.menus.align && { align: config.menus.align }),
 	};
 } else {
-	// 未自定义菜单时，用 extraItems 追加 💬 聊天 + ✏️ 编辑按钮到默认菜单（休眠/About）
 	widgetConfig.menus = {
 		extraItems: [
 			{ icon: "mdi:message-text-outline", label: "聊天", action: "chat" },
-			{ icon: "mdi:pencil-outline", label: "编辑", action: "edit" },
 		],
 	};
 }
@@ -72,17 +65,15 @@ if (Object.keys(tipsData).length > 0) {
 	}
 }
 
-// 悬停介绍
 if (config.hoverIntro) {
 	widgetConfig._hoverIntro = config.hoverIntro;
 }
 
-// 触摸/点击看板娘时显示的句子（"你在干什么呀？"等），传给 iframe 随机触发
 const touchMsgs = config.dialog?.touch
 	? Array.isArray(config.dialog.touch)
 		? config.dialog.touch
 		: [config.dialog.touch]
-	: config.tips?.messages ?? [];
+	: (config.tips?.messages ?? []);
 if (touchMsgs.length > 0) {
 	widgetConfig._touchMessages = touchMsgs;
 }
@@ -90,11 +81,13 @@ if (touchMsgs.length > 0) {
 const widgetWidth = config.width ?? 280;
 const hiddenOnMobile = config.hiddenOnMobile ?? true;
 const isRight = config.position === "right";
+// 构建时间戳：强制聊天模块新版本生效，避免浏览器缓存旧 waifu-chat.js
+const assetVer = Date.now();
 ---
 
 <iframe
 	id="l2d-iframe"
-	src="/pio/live2d-host.html?v=2"
+	src="/pio/live2d-host?v=2"
 	allowtransparency="true"
 	style={"position: fixed; z-index: 999; pointer-events: none; border: none; bottom: 0;"
 		+ (isRight ? " right: 0;" : " left: 0;")
@@ -106,49 +99,34 @@ const isRight = config.position === "right";
 	data-width={widgetWidth}
 ></iframe>
 
-<!-- AI 聊天样式和脚本 -->
-<link rel="stylesheet" href="/pio/waifu-chat.css" is:inline />
-<script src="/pio/waifu-chat.js" is:inline></script>
-
-<!-- 💬 聊天按钮已注入到 iframe 内的 l2d-widget 菜单中，无需独立按钮 -->
+<link rel="stylesheet" href={"/pio/waifu-chat.css?v=" + assetVer} />
+<script src={"/pio/waifu-chat.js?v=" + assetVer} is:inline></script>
 
 <script>
 	(function () {
 		const PIO_MOBILE_BREAKPOINT = 768;
-
 		const frames = document.querySelectorAll<HTMLIFrameElement>("#l2d-iframe");
 		const el = frames[0] ?? null;
 		if (!el) return;
-
 		for (let i = 1; i < frames.length; i++) frames[i].remove();
 
 		const config = JSON.parse(el.dataset.config || "{}");
 		const hiddenOnMobile = el.dataset.hiddenOnMobile === "true";
 
-		// ===== AI 聊天初始化 =====
 		async function initChat() {
 			const MizukiChat = (window as any).MizukiChat;
 			if (!MizukiChat) return;
-
-			// 先加载 /pio/waifu-chat.json 人设配置（异步），再创建聊天
+			// swup 切页会重新执行本脚本：只初始化一次，避免多个聊天框实例叠加、
+			// message 监听重复绑定（否则每个实例都 toggle，关闭时要点多次）
+			if ((window as any).__mizukiChatBound) return;
+			(window as any).__mizukiChatBound = true;
 			const userCfg = await MizukiChat.loadConfig();
 			const chat = new MizukiChat(userCfg || {});
-
-			// 监听 iframe 内的 💬/✕ 按钮点击
 			window.addEventListener("message", (e) => {
-				if (e.data?.type === "l2d-chat-toggle") {
-					chat.toggle();
-					// 回发聊天框状态，让 iframe 切换 💬/✕ 按钮
-					const open = !chat.chatBox.classList.contains("hidden");
-					el?.contentWindow?.postMessage(
-						{ type: "l2d-chat-state", open },
-						"*",
-					);
-				}
+				if (e.data?.type === "l2d-chat-toggle") chat.toggle();
 			});
 		}
 
-		// ===== 页面元素悬停介绍 =====
 		function initPageTips() {
 			const PageTips = (window as any).MizukiPageTips;
 			if (!PageTips) return;
@@ -159,15 +137,12 @@ const isRight = config.position === "right";
 			initChat();
 			initPageTips();
 		} else {
-			window.addEventListener("load", () => {
-				setTimeout(() => {
-					initChat();
-					initPageTips();
-				}, 200);
-			});
+			window.addEventListener("load", () => setTimeout(() => {
+				initChat();
+				initPageTips();
+			}, 200));
 		}
 
-		// ===== Pio Controller =====
 		const win = window as Window & {
 			__mizukiPioController?: {
 				update: (el: HTMLIFrameElement, config: Record<string, unknown>, hiddenOnMobile: boolean) => void;
@@ -178,9 +153,7 @@ const isRight = config.position === "right";
 			const menuActions: Record<string, () => void> = {
 				home: () => (window.location.href = "/"),
 				scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
-				edit: () => (window as any).EditorLogin?.start?.(),
 			};
-
 			let currentEl: HTMLIFrameElement | null = null;
 			let currentConfig: Record<string, unknown> = {};
 			let currentHiddenOnMobile = true;
@@ -192,20 +165,14 @@ const isRight = config.position === "right";
 
 			function applyVisibility() {
 				if (!currentEl) return;
-				if (currentHiddenOnMobile && window.innerWidth <= PIO_MOBILE_BREAKPOINT) {
-					currentEl.style.display = "none";
-				} else {
-					currentEl.style.display = "";
-				}
+				if (currentHiddenOnMobile && window.innerWidth <= PIO_MOBILE_BREAKPOINT) currentEl.style.display = "none";
+				else currentEl.style.display = "";
 			}
 
 			function postInit() {
 				if (!currentEl || initSent || isTransitioning) return;
 				if (currentHiddenOnMobile && window.innerWidth <= PIO_MOBILE_BREAKPOINT) return;
-				currentEl.contentWindow?.postMessage(
-					{ type: "l2d-init", config: currentConfig },
-					"*",
-				);
+				currentEl.contentWindow?.postMessage({ type: "l2d-init", config: currentConfig }, "*");
 				initSent = true;
 			}
 
@@ -222,9 +189,7 @@ const isRight = config.position === "right";
 					currentEl.style.opacity = "1";
 					currentEl.style.pointerEvents = "auto";
 				}
-				if (e.data.type === "l2d-action") {
-					menuActions[e.data.action]?.();
-				}
+				if (e.data.type === "l2d-action") menuActions[e.data.action]?.();
 			}
 
 			function setupSwupHooks() {
@@ -236,16 +201,9 @@ const isRight = config.position === "right";
 			}
 
 			window.addEventListener("message", handleMessage);
-			window.addEventListener("resize", () => {
-				applyVisibility();
-				scheduleInit();
-			});
-
-			if ((window as any).swup) {
-				setupSwupHooks();
-			} else {
-				document.addEventListener("swup:enable", setupSwupHooks, { once: true });
-			}
+			window.addEventListener("resize", () => { applyVisibility(); scheduleInit(); });
+			if ((window as any).swup) setupSwupHooks();
+			else document.addEventListener("swup:enable", setupSwupHooks, { once: true });
 
 			win.__mizukiPioController = {
 				update(nextEl, nextConfig, nextHiddenOnMobile) {
@@ -258,9 +216,7 @@ const isRight = config.position === "right";
 						initSent = false;
 						currentConfigKey = nextConfigKey;
 					}
-					if (isNewFrame) {
-						nextEl.addEventListener("load", () => { initSent = false; scheduleInit(); });
-					}
+					if (isNewFrame) nextEl.addEventListener("load", () => { initSent = false; scheduleInit(); });
 					applyVisibility();
 					if (nextEl.contentDocument?.readyState === "complete") scheduleInit();
 				},

@@ -53,7 +53,7 @@ function handleKeyDown(event: KeyboardEvent) {
 
 <style>
 	.sidebar-progress-wrapper {
-		margin-top: 0.15rem;
+		margin-top: 0.35rem;
 	}
 
 	.sidebar-progress-bar {

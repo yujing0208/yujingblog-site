@@ -3,7 +3,7 @@ export interface AnimeItem {
 	title: string;
 	status: "watching" | "completed" | "planned" | "onhold" | "dropped";
 	category: "anime" | "novel" | "game";
-	rating: number;
+	rating?: number;
 	cover: string;
 	description: string;
 	episodes: string;
@@ -11,8 +11,8 @@ export interface AnimeItem {
 	genre: string[];
 	studio: string;
 	link: string;
-	progress: number;
-	totalEpisodes: number;
+	progress?: number | string;
+	totalEpisodes?: number | string;
 }
 
 const localAnimeList: AnimeItem[] = [
@@ -398,7 +398,7 @@ const localAnimeList: AnimeItem[] = [
 		title: "和平精英",
 		status: "onhold",
 		category: "game",
-		rating: undefined,
+		rating: 0,
 		cover: "https://tse2-mm.cn.bing.net/th/id/OIP-C.iMXnlHI7l1uaC7tZ4efMuwAAAA?w=153&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
 		description: "",
 		episodes: "",
@@ -406,8 +406,8 @@ const localAnimeList: AnimeItem[] = [
 		genre: [],
 		studio: "",
 		link: "https://gp.qq.com/main.shtml",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "名侦探柯南",
@@ -426,8 +426,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "青山刚昌",
 		link: "https://www.bilibili.com/bangumi/media/md28228775",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "怪盗基德1412",
@@ -464,8 +464,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "WIT STUDIO×CloverWorks",
 		link: "https://www.bilibili.com/bangumi/media/md21086686",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "紫罗兰永恒花园 ",
@@ -484,8 +484,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "京都アニメーション",
 		link: "https://www.bilibili.com/bangumi/media/md8892",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "冰菓 ",
@@ -504,8 +504,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "京都动画",
 		link: "https://www.bilibili.com/bangumi/media/md3398",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "辉夜大小姐想让我告白 ",
@@ -524,8 +524,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "A-1 Pictures",
 		link: "https://www.bilibili.com/bangumi/media/md28237120",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "青春猪头少年不会梦到兔女郎学姐",
@@ -544,8 +544,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "A-1 Pictures",
 		link: "https://www.bilibili.com/bangumi/media/md134932",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "我在精神病院学斩神",
@@ -563,8 +563,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "三九音域",
 		link: "",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "葬送的芙莉莲 ",
@@ -583,8 +583,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "MADHOUSE",
 		link: "https://www.bilibili.com/bangumi/media/md21087073",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "十日终焉",
@@ -603,8 +603,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "杀虫队队员",
 		link: "",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "三角洲行动",
@@ -618,8 +618,8 @@ const localAnimeList: AnimeItem[] = [
 		genre: [],
 		studio: "",
 		link: "https://df.qq.com/",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	},
 	{
 		title: "玉子市场",
@@ -638,8 +638,8 @@ const localAnimeList: AnimeItem[] = [
 		],
 		studio: "京都アニメーション",
 		link: "https://www.bilibili.com/bangumi/media/md116772",
-		progress: "",
-		totalEpisodes: ""
+		progress: 0,
+		totalEpisodes: 0
 	}
 ];
 

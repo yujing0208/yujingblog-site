@@ -68,7 +68,7 @@ import TypewriterText from "../../atoms/typewriter-text/TypewriterText.astro";
 							target="_blank"
 							class="btn-regular rounded-lg h-10 w-10 active:scale-90"
 						>
-							<Icon name={item.icon} class="text-[1.5rem]" />
+							<Icon name={item.icon} is:inline class="text-[1.5rem]" />
 						</a>
 					))
 			}
@@ -83,6 +83,7 @@ import TypewriterText from "../../atoms/typewriter-text/TypewriterText.astro";
 					>
 						<Icon
 							name={profileConfig.links[0].icon}
+							is:inline
 							class="text-[1.5rem]"
 						/>
 						{profileConfig.links[0].name}

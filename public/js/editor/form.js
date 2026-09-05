@@ -272,9 +272,30 @@
 			case "select":
 				ctl = selectControl(field, target);
 				break;
-			case "tags":
-				ctl = tagsControl(field, target);
+			case "tags": {
+				var tagsWrap = el("div", "ef-tags-wrap");
+				var tagsInp = tagsControl(field, target);
+				tagsWrap.appendChild(tagsInp);
+				// 图片类 tags（images/photos/cover/images-array 等）：加「上传到图床」按钮
+				var isImgTags = /(^|_)(images|photos|image|urls|pics)$/.test(field.key || "");
+				if (isImgTags) {
+					var tBtn = el("button", "ef-btn ef-btn-sm ef-btn-accent", "上传到图床");
+					tBtn.title = "选图 → 上传图床 → 自动追加到该列表";
+					tBtn.addEventListener("click", function () {
+						if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+						window.EditorImgBed.pickAndUpload(function (url) {
+							var arr = Array.isArray(target[field.key]) ? target[field.key].slice() : [];
+							arr.push(url);
+							target[field.key] = arr;
+							tagsInp.value = arr.join(", ");
+							if (onChange) onChange();
+						});
+					});
+					tagsWrap.appendChild(tBtn);
+				}
+				ctl = tagsWrap;
 				break;
+			}
 			case "image": {
 				var imgWrap = el("div", "ef-image");
 				var inp = document.createElement("input");
@@ -284,8 +305,20 @@
 				inp.placeholder = field.placeholder || "https:// 外链";
 				inp.addEventListener("change", function () { target[field.key] = inp.value; if (onChange) onChange(); });
 				var upBtn = el("button", "ef-btn ef-btn-sm", "上传到仓库");
+				upBtn.title = "压缩后上传到内容仓库 images/uploads";
 				upBtn.addEventListener("click", function () {
 					if (window.EditorUpload) window.EditorUpload.pickAndUpload(function (url) {
+						inp.value = url;
+						target[field.key] = url;
+						if (onChange) onChange();
+					});
+				});
+				// 新增：上传到你自己的图床（CF-ImgBed / Sanyue ImgHub）
+				var imgbedBtn = el("button", "ef-btn ef-btn-sm ef-btn-accent", "上传到图床");
+				imgbedBtn.title = "直接上传到你的图床（推荐）";
+				imgbedBtn.addEventListener("click", function () {
+					if (!window.EditorImgBed) { alert("图床模块未加载"); return; }
+					window.EditorImgBed.pickAndUpload(function (url) {
 						inp.value = url;
 						target[field.key] = url;
 						if (onChange) onChange();
@@ -300,6 +333,21 @@
 				});
 				imgWrap.appendChild(inp);
 				imgWrap.appendChild(upBtn);
+				imgWrap.appendChild(imgbedBtn);
+				// 缩略图预览
+				var prev = el("div", "ef-image-prev");
+				function refreshPrev() {
+					prev.innerHTML = "";
+					if (inp.value) {
+						var im = document.createElement("img");
+						im.src = inp.value;
+						im.onerror = function () { prev.innerHTML = ""; };
+						prev.appendChild(im);
+					}
+				}
+				inp.addEventListener("input", refreshPrev);
+				refreshPrev();
+				imgWrap.appendChild(prev);
 				ctl = imgWrap;
 				break;
 			}

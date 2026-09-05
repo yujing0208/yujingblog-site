@@ -185,25 +185,11 @@
 		verify: verifyToken,
 	};
 
-	// ---------- 入口一：logo 点击（capture 阶段抢在 Swup 前） ----------
-	// 只用 #site-logo（Navbar.astro 中 logo 的唯一 id），避免误伤导航栏
-	// 其他带 btn-plain class 的一级菜单链接（首页/归档等）
-	function onLogoClick(e) {
-		var t = e.target;
-		var logo = t && t.closest && t.closest("#site-logo");
-		if (!logo) return;
-		var edit = document.body.getAttribute("data-edit");
-		if (!edit || EDIT_PAGES.indexOf(edit) === -1) return; // 非编辑页：正常导航
-		e.preventDefault();
-		e.stopPropagation();
-		if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-		doEnter(edit);
-	}
+	// 入口一（导航栏 logo）已移除：点击 logo 直接走默认 <a href="/"> 回首页。
+	// 编辑入口仅保留：① 设置面板底部的「进入编辑页面」按钮 ② window.EditorLogin.start() 供其他调用。
 
 	function init() {
 		injectStyles();
-		document.addEventListener("click", onLogoClick, true);
-		document.addEventListener("click", onLogoClick, false);
 	}
 
 	if (document.readyState === "loading") {

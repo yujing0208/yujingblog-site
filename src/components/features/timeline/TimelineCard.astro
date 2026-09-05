@@ -90,7 +90,7 @@ const hasLinks = item.links && item.links.length > 0;
 	data-type={item.type}
 >
 	<div class="timeline-node" style={`background-color: ${nodeColor};`}>
-		<Icon name={icon} class="w-2.5 h-2.5" style="color: white;" />
+		<Icon name={icon} is:inline class="w-2.5 h-2.5" style="color: white;" />
 	</div>
 
 	<div
@@ -103,6 +103,7 @@ const hasLinks = item.links && item.links.length > 0;
 				>
 					<Icon
 						name={icon}
+						is:inline
 						class="text-lg"
 						style={`color: ${item.color || "var(--primary)"};`}
 					/>
@@ -231,6 +232,7 @@ const hasLinks = item.links && item.links.length > 0;
 							>
 								<Icon
 									name={getLinkIcon(link.type)}
+									is:inline
 									class="text-xs w-3.5 h-3.5"
 								/>
 								{link.name}

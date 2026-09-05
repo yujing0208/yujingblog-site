@@ -1,7 +1,6 @@
 <script lang="ts">
 import AccordionDrawer from "../../common/AccordionDrawer.svelte";
-import ModeToggle from "../../music-player/molecules/ModeToggle.svelte";
-import type { PlayerMode, Song } from "../../music-player/types";
+import type { Song } from "../../music-player/types";
 import TrackListItem from "./TrackListItem.svelte";
 
 interface Props {
@@ -9,10 +8,8 @@ interface Props {
 	currentIndex: number;
 	isPlaying: boolean;
 	show: boolean;
-	mode: PlayerMode;
 	onClose: () => void;
 	onPlaySong: (index: number) => void;
-	onModeChange: (mode: PlayerMode) => void;
 }
 
 const {
@@ -20,18 +17,13 @@ const {
 	currentIndex,
 	isPlaying,
 	show,
-	mode,
 	onClose,
 	onPlaySong,
-	onModeChange,
 }: Props = $props();
 </script>
 
 <AccordionDrawer {show} class="playlist-drawer">
 	<div class="playlist-shell">
-		<div class="playlist-mode-bar">
-			<ModeToggle {mode} onChange={onModeChange} />
-		</div>
 		<div
 			class="playlist-content"
 			role="listbox"
@@ -60,10 +52,6 @@ const {
 		padding-top: 0.5rem;
 		border-top: 1px solid
 			color-mix(in srgb, var(--content-meta) 12%, transparent 88%);
-	}
-
-	.playlist-mode-bar {
-		margin-bottom: 0.5rem;
 	}
 
 	.playlist-content {

@@ -8,9 +8,9 @@ interface Props {
 		link: string;
 		status: string;
 		category: string;
-		rating: number;
-		progress: number;
-		totalEpisodes: number;
+		rating?: number;
+		progress?: number | string;
+		totalEpisodes?: number | string;
 		description: string;
 		episodes?: string;
 		year: string;
@@ -27,15 +27,18 @@ interface Props {
 	episodesLabel: string;
 }
 
-const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } = Astro.props;
+const { anime, statusInfo, yearLabel, studioLabel, episodesLabel } =
+	Astro.props;
 
 // Normalize episodes: prefer numeric totalEpisodes, fallback to parsing "12 episodes"
-const parsedEpisodes = parseInt(anime.episodes ?? "", 10);
-const totalEpisodes =
-	anime.totalEpisodes > 0 ? anime.totalEpisodes : parsedEpisodes || 0;
+const parsedEpisodes = Number.parseInt(anime.episodes ?? "", 10);
+const totalEpisodesNum =
+	Number(anime.totalEpisodes) > 0 ? Number(anime.totalEpisodes) : parsedEpisodes || 0;
+const totalEpisodes = totalEpisodesNum;
+const progressNum = Number(anime.progress);
 
 const progressPercent =
-	totalEpisodes > 0 ? (anime.progress / totalEpisodes) * 100 : 0;
+	totalEpisodes > 0 ? (progressNum / totalEpisodes) * 100 : 0;
 
 // Show meta info (year/studio/genre/episodes) for all categories when the data exists
 const showMeta =

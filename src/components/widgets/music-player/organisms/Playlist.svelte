@@ -4,20 +4,17 @@ import { slide } from "svelte/transition";
 
 import Key from "../../../../i18n/i18nKey";
 import { i18n } from "../../../../i18n/translation";
-import type { PlayerMode, Song } from "../types";
-
-import ModeToggle from "../molecules/ModeToggle.svelte";
 import PlaylistItem from "../atoms/PlaylistItem.svelte";
+
+import type { Song } from "../types";
 
 interface Props {
 	playlist: Song[];
 	currentIndex: number;
 	isPlaying: boolean;
 	show: boolean;
-	mode: PlayerMode;
 	onClose: () => void;
 	onPlaySong: (index: number) => void;
-	onModeChange: (mode: PlayerMode) => void;
 }
 
 const {
@@ -25,10 +22,8 @@ const {
 	currentIndex,
 	isPlaying,
 	show,
-	mode,
 	onClose,
 	onPlaySong,
-	onModeChange,
 }: Props = $props();
 </script>
 
@@ -46,9 +41,6 @@ const {
 			<button class="btn-plain w-8 h-8 rounded-lg" onclick={onClose}>
 				<Icon icon="material-symbols:close" class="text-lg" />
 			</button>
-		</div>
-		<div class="playlist-mode-bar">
-			<ModeToggle {mode} onChange={onModeChange} />
 		</div>
 		<div
 			class="playlist-content overflow-y-auto max-h-80 hide-scrollbar"
@@ -80,12 +72,6 @@ const {
 				) +
 				6.75rem
 		);
-	}
-
-	.playlist-mode-bar {
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid
-			color-mix(in srgb, var(--line-divider) 50%, transparent);
 	}
 
 	@media (width < 768px) {

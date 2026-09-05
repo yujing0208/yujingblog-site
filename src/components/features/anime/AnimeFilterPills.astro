@@ -12,7 +12,12 @@ interface Props {
 	containerClass?: string;
 }
 
-const { filters, activeFilter, dataAttr = "data-status", containerClass = "" } = Astro.props;
+const {
+	filters,
+	activeFilter,
+	dataAttr = "data-status",
+	containerClass = "",
+} = Astro.props;
 ---
 
 <div class={`bangumi-filter-pills ${containerClass}`} data-filter-container>

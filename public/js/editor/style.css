@@ -103,34 +103,37 @@ html, body { margin: 0; padding: 0; background: #0f1115; color: #e6e6e6; font-fa
 /* 正文工具栏（上传图片到图床等） */
 .ef-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
 .ef-btn-sm { padding: 6px 12px; font-size: 13px; }
+/* 强调色按钮（图床等推荐操作） */
+.ef-btn-accent { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+.ef-btn-accent:hover { background: #3b5bd4; border-color: #3b5bd4; }
+/* tags 控件 wrap（图片 tags 上传按钮） */
+.ef-tags-wrap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ef-tags-wrap .ef-input { flex: 1 1 240px; min-width: 0; }
+/* image 控件：缩略图预览 */
+.ef-image { display: flex; flex-direction: column; gap: 6px; }
+.ef-image-prev { min-height: 28px; }
+.ef-image-prev img { max-height: 120px; max-width: 240px; border-radius: 6px; border: 1px solid #2c323d; object-fit: cover; }
 
 /* 正文：编辑 + 实时预览双栏 */
+.ef-body-head { display: flex; gap: 14px; margin: 2px 0 4px; }
+.ef-col-tag { flex: 1 1 50%; text-align: center; font-size: 13px; font-weight: 600; padding: 5px 0; border-radius: 6px; }
+.ef-col-edit { background: rgba(76,110,245,.12); color: #9bb0ff; }
+.ef-col-prev { background: rgba(34,197,94,.12); color: #86efac; }
 .ef-body-cols { display: flex; gap: 14px; align-items: stretch; }
 .ef-body-cols .ef-body { flex: 1 1 50%; min-height: 440px; width: 100%; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 13px; }
 .ef-body-preview {
 	flex: 1 1 50%; min-height: 440px; overflow: auto;
 	padding: 14px 18px; border: 1px solid #2c323d; border-radius: 8px;
-	background: #0f1115; color: #c5cdd9; line-height: 1.75; font-size: 14px;
+	background: var(--card-bg, #0f1115); color: var(--text-color, #c5cdd9);
+	font-size: 15px;
 }
-.ef-body-preview h1, .ef-body-preview h2, .ef-body-preview h3,
-.ef-body-preview h4, .ef-body-preview h5, .ef-body-preview h6 { margin: .6em 0 .4em; line-height: 1.3; color: #e6e6e6; }
-.ef-body-preview h1 { font-size: 1.6em; border-bottom: 1px solid #2c323d; padding-bottom: .25em; }
-.ef-body-preview h2 { font-size: 1.35em; border-bottom: 1px solid #2c323d; padding-bottom: .25em; }
-.ef-body-preview p { margin: .55em 0; }
-.ef-body-preview ul, .ef-body-preview ol { margin: .55em 0; padding-left: 1.6em; }
-.ef-body-preview li { margin: .2em 0; }
-.ef-body-preview blockquote {
-	margin: .7em 0; padding: .4em 1em; border-left: 4px solid #4c6ef5;
-	background: rgba(76, 110, 245, .08); color: #aab2c0;
+.ef-preview-empty { color: var(--text-muted, #6b7280); font-style: italic; text-align: center; margin-top: 2em; }
+/* markdown-it 输出的代码块无 expressive-code 高亮，给予基础等宽可读样式 */
+.ef-body-preview pre {
+	background: var(--codeblock-bg, #0b0d12); color: #e2e8f0;
+	padding: 12px 14px; border-radius: 8px; overflow: auto;
 }
-.ef-body-preview code { background: rgba(255,255,255,.08); padding: .1em .35em; border-radius: 4px; font-size: .9em; }
-.ef-body-preview pre { background: #0b0d12; color: #e2e8f0; padding: 12px 14px; border-radius: 8px; overflow: auto; }
 .ef-body-preview pre code { background: none; padding: 0; }
-.ef-body-preview a { color: #4c6ef5; text-decoration: underline; }
-.ef-body-preview img { max-width: 100%; border-radius: 6px; margin: .4em 0; }
-.ef-body-preview hr { border: none; border-top: 1px solid #2c323d; margin: 1em 0; }
-.ef-body-preview table { border-collapse: collapse; margin: .6em 0; }
-.ef-body-preview th, .ef-body-preview td { border: 1px solid #2c323d; padding: 6px 10px; }
 @media (max-width: 860px) {
 	.ef-body-cols { flex-direction: column; }
 	.ef-body-cols .ef-body, .ef-body-preview { min-height: 280px; }

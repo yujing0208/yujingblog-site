@@ -8,8 +8,6 @@ export interface Song {
 	lrc?: string;
 }
 
-export type PlayerMode = "online" | "local";
-
 export type RepeatMode = 0 | 1 | 2;
 
 export interface PlayerState {
@@ -31,9 +29,7 @@ export interface PlayerState {
 	currentIndex: number;
 	autoplayFailed: boolean;
 	willAutoPlay: boolean;
-	mode: PlayerMode;
 	cloudPlaylistId: string;
-	localPlaylist: Song[];
 	lyrics: { time: number; text: string }[];
 	currentLrcIndex: number;
 }

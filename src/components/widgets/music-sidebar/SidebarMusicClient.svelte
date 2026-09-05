@@ -1,6 +1,6 @@
 <script lang="ts">
-import { onDestroy, onMount } from "svelte";
 import Icon from "@iconify/svelte";
+import { onDestroy, onMount } from "svelte";
 
 import type { MusicPlayerState } from "@/stores/musicPlayerStore";
 import { musicPlayerStore } from "@/stores/musicPlayerStore";
@@ -47,10 +47,6 @@ function toggleMode() {
 	musicPlayerStore.toggleMode();
 }
 
-function setMode(mode: import("../music-player/types").PlayerMode) {
-	musicPlayerStore.setMode(mode);
-}
-
 function togglePlaylistView() {
 	showPlaylist = !showPlaylist;
 }
@@ -73,11 +69,12 @@ function setVolume(volume: number) {
 </script>
 
 <div class="music-sidebar-widget">
-	<div class="flex items-center gap-3 mb-2.5">
+	<div class="music-sidebar-header">
 		<SidebarCover
 			currentSong={playerState.currentSong}
 			isPlaying={playerState.isPlaying}
 			isLoading={playerState.isLoading}
+			size="mini"
 		/>
 		<SidebarTrackInfo
 			currentSong={playerState.currentSong}
@@ -88,6 +85,15 @@ function setVolume(volume: number) {
 			onToggleMute={toggleMute}
 			onSetVolume={setVolume}
 		/>
+		<a
+			class="sidebar-music-jump"
+			href="/music/"
+			title="打开 3D 音乐可视化"
+			aria-label="打开 3D 音乐可视化"
+			data-swup-ignore
+		>
+			<Icon icon="material-symbols:view-in-ar" class="text-lg" />
+		</a>
 	</div>
 
 	<SidebarProgress
@@ -107,57 +113,42 @@ function setVolume(volume: number) {
 		onTogglePlaylist={togglePlaylistView}
 	/>
 
-	<a
-		class="sidebar-music-jump"
-		href="/music"
-		title="进入 3D 音乐可视化"
-		aria-label="进入 3D 音乐可视化"
-		data-swup-ignore
-	>
-		<Icon icon="material-symbols:cube-rounded" class="text-lg" />
-		<span>3D 音乐可视化</span>
-		<Icon icon="material-symbols:arrow-outward-rounded" class="text-base" />
-	</a>
-
 	<SidebarPlaylist
 		playlist={playerState.playlist}
 		currentIndex={playerState.currentIndex}
 		isPlaying={playerState.isPlaying}
 		show={showPlaylist}
-		mode={playerState.mode}
 		onClose={togglePlaylistView}
 		onPlaySong={playIndex}
-		onModeChange={setMode}
 	/>
 </div>
 
 <style>
+	.music-sidebar-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+	}
+
 	.sidebar-music-jump {
+		margin-left: auto;
+		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.4rem;
-		margin-top: 0.65rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.7rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
-		color: var(--primary);
-		font-size: 0.82rem;
-		font-weight: 600;
-		text-decoration: none;
-		cursor: pointer;
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 0.6rem;
+		color: var(--content-meta);
 		transition:
-			background 0.2s ease,
-			transform 0.15s ease;
+			color 0.2s ease,
+			background-color 0.2s ease;
 	}
 
 	.sidebar-music-jump:hover {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
-	}
-
-	.sidebar-music-jump:active {
-		transform: scale(0.98);
+		color: var(--primary);
+		background-color: color-mix(in srgb, var(--primary) 8%, transparent);
 	}
 
 	@media (width < 520px) {
@@ -165,9 +156,9 @@ function setVolume(volume: number) {
 			min-width: 0;
 		}
 
-		.music-sidebar-widget > :global(div:first-child) {
-			gap: 0.75rem;
-			margin-bottom: 0.5rem;
+		.music-sidebar-header {
+			gap: 0.65rem;
+			margin-bottom: 0.6rem;
 		}
 	}
 </style>
