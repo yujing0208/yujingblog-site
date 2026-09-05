@@ -54,7 +54,7 @@
 		"markdown-it": "^14.3.0",
 		"marked": "^18.0.7",
 		"node-html-parser": "^8.0.4",
-		"oddmisc": "^1.2.8",
+		"oddmisc": "1.2.8",
 		"overlayscrollbars": "^2.16.0",
 		"pagefind": "^1.5.2",
 		"qrcode": "^1.5.4",
