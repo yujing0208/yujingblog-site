@@ -161,7 +161,7 @@ const allTags = [...new Set(items.flatMap((item) => item.tags || []))].sort();
 	</div>
 
 	<!-- 评论区 -->
-	<Comment path="/friends/" />
+	<Comment path="/friends" />
 
 	<script slot="head" is:inline>
 		if (!customElements.get("friend-filter")) {
