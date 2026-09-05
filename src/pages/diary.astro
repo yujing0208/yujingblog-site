@@ -1,6 +1,7 @@
 ---
 import { MomentCard } from "@components/features/diary";
 import MomentsCover from "@components/features/diary/MomentsCover.astro";
+import Waline from "@components/comment/Waline.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 import { siteConfig } from "../config";
@@ -104,10 +105,10 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
           <div class="wx-feed-item">
             <MomentCard moment={moment} />
             <div
-              class="twikoo-entry-comments mt-3 hidden"
+              class="waline-entry-comments mt-3 hidden"
               data-diary-id={moment.id}
             >
-              <div id={`tcomment-${moment.id}`}></div>
+              <Waline path={`/diary/${moment.id}`} elId={`waline-${moment.id}`} />
             </div>
           </div>
         ))
@@ -137,23 +138,27 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     }
   </div>
 
-  <!-- ═══════ 评论按钮（twikoo，保留现有行为） ═══════ -->
+  <!-- ═══════ 评论按钮（Waline，点击后懒加载） ═══════ -->
   <script is:inline>
     (function () {
-      const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js?v=1.7.14";
-      const COMMENT_CONFIG = {
-        envId: "https://twikoo.yujingblog.top",
-        lang: "zh-CN",
-      };
+      const WALINE_CSS_URL = "https://unpkg.com/@waline/client@3.15.2/dist/waline.css";
+      const WALINE_SCRIPT_URL = "https://unpkg.com/@waline/client@3.15.2/dist/waline.js";
+      const WALINE_SCRIPT_FALLBACK = "https://cdn.jsdelivr.net/npm/@waline/client@3.15.2/dist/waline.js";
 
       let scriptLoading = false;
       let scriptLoaded = false;
       const loadedEntries = new Set();
 
       async function ensureScript() {
-        if (scriptLoaded || document.getElementById("twikoo-diary-script")) {
-          return;
+        if (scriptLoaded) return;
+        if (!document.getElementById("waline-diary-css")) {
+          const link = document.createElement("link");
+          link.id = "waline-diary-css";
+          link.rel = "stylesheet";
+          link.href = WALINE_CSS_URL;
+          document.head.appendChild(link);
         }
+        if (document.getElementById("waline-diary-script")) return;
         if (scriptLoading) {
           await new Promise((resolve) => {
             const check = setInterval(() => {
@@ -168,31 +173,62 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
         scriptLoading = true;
         return new Promise((resolve, reject) => {
           const script = document.createElement("script");
-          script.id = "twikoo-diary-script";
-          script.src = TWIKOO_SCRIPT_URL;
+          script.id = "waline-diary-script";
+          script.src = WALINE_SCRIPT_URL;
           script.async = true;
           script.onload = () => {
             scriptLoaded = true;
             resolve();
           };
-          script.onerror = reject;
+          script.onerror = () => {
+            const fallback = document.createElement("script");
+            fallback.src = WALINE_SCRIPT_FALLBACK;
+            fallback.async = true;
+            fallback.onload = () => {
+              scriptLoaded = true;
+              resolve();
+            };
+            fallback.onerror = reject;
+            document.head.appendChild(fallback);
+          };
           document.head.appendChild(script);
         });
       }
 
-      async function initEntry(_container, diaryId) {
+      async function initEntry(diaryId) {
         if (!diaryId || loadedEntries.has(diaryId)) return;
+        const el = document.getElementById("waline-" + diaryId);
+        if (!el) return;
         try {
           await ensureScript();
-          if (typeof twikoo === "undefined") return;
+          if (typeof Waline === "undefined") return;
           loadedEntries.add(diaryId);
-          await twikoo.init({
-            ...COMMENT_CONFIG,
-            el: "#tcomment-" + diaryId,
+          Waline.init({
+            el: "#waline-" + diaryId,
             path: "/diary/" + diaryId,
+            dark: "html.dark",
+            serverURL: "https://waline.yujingblog.top",
+            lang: "zh-CN",
+            locale: { placeholder: "欢迎留言交流～" },
+            emoji: [
+              "https://unpkg.com/@waline/emojis@1.4.0/weibo",
+              "https://unpkg.com/@waline/emojis@1.4.0/bilibili",
+              "https://unpkg.com/@waline/emojis@1.4.0/bmoji",
+            ],
+            meta: ["nick", "mail", "link"],
+            requiredMeta: [],
+            login: "enable",
+            wordLimit: [0, 2000],
+            pageSize: 10,
+            visitorCount: false,
+            highlighter: false,
+            imageUploader: false,
+            texRenderer: false,
+            search: false,
+            reaction: false,
           });
         } catch (e) {
-          console.error("[Twikoo Diary] 初始化失败:", diaryId, e);
+          console.error("[Waline Diary] 初始化失败:", diaryId, e);
         }
       }
 
@@ -200,8 +236,8 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
         const diaryId = btn.dataset.diaryId;
         const wrapper = btn.closest(".wx-feed-item") || btn.closest(".diary-entry-wrapper");
         if (!wrapper || !diaryId) return;
-        const comments = wrapper.querySelector(".twikoo-entry-comments");
-        const text = btn.querySelector(".twikoo-toggle-text");
+        const comments = wrapper.querySelector(".waline-entry-comments");
+        const text = btn.querySelector(".waline-toggle-text");
         if (!comments) return;
         const isOpen = !comments.classList.contains("hidden");
         if (isOpen) {
@@ -211,15 +247,15 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
           comments.classList.remove("hidden");
           if (text) text.textContent = "收起";
           if (!loadedEntries.has(diaryId)) {
-            initEntry(comments, diaryId);
+            initEntry(diaryId);
           }
         }
       }
 
       function bindButtons() {
-        document.querySelectorAll(".twikoo-toggle-btn").forEach((btn) => {
-          if (btn.dataset.twikooBound) return;
-          btn.dataset.twikooBound = "1";
+        document.querySelectorAll(".waline-toggle-btn").forEach((btn) => {
+          if (btn.dataset.walineBound) return;
+          btn.dataset.walineBound = "1";
           btn.addEventListener("click", () => handleToggle(btn));
         });
       }

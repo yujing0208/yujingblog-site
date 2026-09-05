@@ -8,12 +8,14 @@ import { commentConfig } from "@/config";
 
 interface Props {
 	path: string;
+	elId?: string;
 }
 
-const { path } = Astro.props as Props;
+const { path, elId } = Astro.props as Props;
+const elementId = elId ?? "waline";
 
 const config = {
-	el: "#waline",
+	el: "#" + elementId,
 	path,
 	dark: "html.dark",
 	...(commentConfig.waline ?? {}),
@@ -22,7 +24,7 @@ const config = {
 ---
 
 <div class="relative w-full">
-	<div id="waline"></div>
+	<div id={elementId}></div>
 	<link
 		rel="stylesheet"
 		href="https://unpkg.com/@waline/client@3.15.2/dist/waline.css"
