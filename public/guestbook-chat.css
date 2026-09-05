@@ -1,7 +1,7 @@
 /* ===== Guestbook 主题令牌(移植自 my-blog variables.styl,自足值,不依赖站点主题) ===== */
 :root {
-	--guestbook-panel: transparent;
-	--guestbook-surface: transparent;
+	--guestbook-panel: #F1F5F9;
+	--guestbook-surface: #F8FAFC;
 	--guestbook-editor-bg: #F7F7F7;
 	--guestbook-editor-text: #171717;
 	--guestbook-editor-muted: #666666;
@@ -30,8 +30,8 @@
 	--guestbook-mobile-dock-clearance: 6.25rem;
 }
 :root.dark, html.dark, [data-theme="dark"] {
-	--guestbook-panel: transparent;
-	--guestbook-surface: transparent;
+	--guestbook-panel: #242424;
+	--guestbook-surface: #1A1A1A;
 	--guestbook-editor-bg: #2D2D2D;
 	--guestbook-editor-text: #FFFFFF;
 	--guestbook-editor-muted: #B8B8B8;
@@ -267,7 +267,7 @@ html:has(.guestbook-page) #category-bar-wrapper {
 .guestbook-chat__workspace {
 	position: relative;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) var(--guestbook-sidebar-width);
+	grid-template-columns: minmax(0, 1fr);
 	min-height: 0;
 	overflow: hidden;
 }
@@ -354,7 +354,7 @@ html:has(.guestbook-page) #category-bar-wrapper {
 }
 
 .guestbook-chat__sidebar {
-	display: flex;
+	display: none;
 	flex-direction: column;
 	min-width: 0;
 	min-height: 0;
@@ -2017,6 +2017,7 @@ html:has(.guestbook-page) #category-bar-wrapper {
 		right: 0;
 		bottom: 0;
 		z-index: 7;
+		display: flex;
 		width: min(20rem, 88vw);
 		border-left: 1px solid var(--guestbook-line);
 		background: var(--page-bg);
