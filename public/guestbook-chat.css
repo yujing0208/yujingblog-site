@@ -65,6 +65,23 @@ html:has(.guestbook-page) #category-bar-wrapper {
 	display: none;
 }
 
+/* 留言板 = 全宽应用式页面：隐藏博客侧栏，让聊天卡片占满内容区（对齐数据驱动的一栏布局思路） */
+html:has(.guestbook-page) #main-grid {
+	grid-template-columns: minmax(0, 1fr) !important;
+}
+html:has(.guestbook-page) #swup-container {
+	grid-column: 1 / -1 !important;
+}
+html:has(.guestbook-page) #left-sidebar-wrapper,
+html:has(.guestbook-page) #left-sidebar-dynamic,
+html:has(.guestbook-page) #right-sidebar-static,
+html:has(.guestbook-page) #right-sidebar-dynamic,
+html:has(.guestbook-page) .right-sidebar-container,
+html:has(.guestbook-page) #mobile-bottom-sidebar,
+html:has(.guestbook-page) .footer {
+	display: none !important;
+}
+
 .guestbook-page .guestbook-chat {
 	width: min(100%, var(--guestbook-chat-max-width));
 	height: 100%;
