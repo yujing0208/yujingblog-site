@@ -1,0 +1,15 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+const title = "笔记本";
+const subtitle = "三本随手记下的小书";
+---
+
+<MainGridLayout title={title} description={subtitle}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-6 sm:px-9 py-8 relative w-full">
+			<h1 class="text-3xl font-bold mb-4">我的<span class="text-(--primary)">笔记本</span></h1>
+			<p class="text-black/60 dark:text-white/60">测试页面 - 检查构建</p>
+		</div>
+	</div>
+</MainGridLayout>
