@@ -68,11 +68,6 @@ export const navBarConfig: NavBarConfig = {
 					url: "/diary/",
 					icon: "material-symbols:chat",
 				},
-				{
-					name: "笔记本",
-					url: "/notebooks/",
-					icon: "material-symbols:menu-book",
-				},
 				LinkPreset.Anime,
 				LinkPreset.Albums,
 				{
