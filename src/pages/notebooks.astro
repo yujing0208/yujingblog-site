@@ -8,8 +8,430 @@ const subtitle = "三本随手记下的小书";
 <MainGridLayout title={title} description={subtitle}>
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-6 sm:px-9 py-8 relative w-full">
-			<h1 class="text-3xl font-bold mb-4">我的<span class="text-(--primary)">笔记本</span></h1>
-			<p class="text-black/60 dark:text-white/60">测试页面 - 检查构建</p>
+			<h1 class="nb-h1">我的<span class="nb-em">笔记本</span></h1>
+			<p class="nb-sub">三本随手记下的小书 · 🔒 带锁的需密码 · 点开任意一本开始读</p>
+			<main class="shelf" id="shelf"></main>
 		</div>
 	</div>
+
+	<!-- 密码弹窗 -->
+	<div class="overlay" id="pwOverlay">
+		<div class="pw-card" id="pwCard">
+			<div class="pw-emoji">🔐</div>
+			<h3 id="pwTitle">需要密码</h3>
+			<p>今日密码：<b id="pwHint"></b>（当天日期 6 位，如 260906）</p>
+			<input class="pw-input" id="pwInput" type="password" placeholder="请输入密码" autocomplete="off" />
+			<button class="pw-btn" id="pwSubmit">解 锁</button>
+			<div class="pw-err" id="pwErr"></div>
+		</div>
+	</div>
+
+	<!-- 双开书本 -->
+	<div class="overlay reader-overlay" id="readerOverlay">
+		<div class="book-modal" id="bookModal"></div>
+	</div>
+
+	<div class="toast" id="toast"></div>
+
+	<style is:global>
+		:root {
+			--nb-primary: var(--primary, #7aa585);
+			--nb-primary-soft: color-mix(in srgb, var(--nb-primary) 14%, transparent);
+			--nb-primary-line: color-mix(in srgb, var(--nb-primary) 35%, transparent);
+			--nb-bg: #f5f4f1;
+			--nb-bg2: #eceae5;
+			--nb-card: #fffdf9;
+			--nb-ink: #2c2a26;
+			--nb-muted: #8a857c;
+			--nb-line: rgba(40, 36, 30, 0.1);
+			--nb-shadow: 0 18px 44px -20px rgba(40, 36, 30, 0.38);
+			--nb-radius: 18px;
+			--nb-font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+			--nb-serif: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+		}
+		:root.dark {
+			--nb-bg: #16161a;
+			--nb-bg2: #1c1c22;
+			--nb-card: #23232b;
+			--nb-ink: #ece9e3;
+			--nb-muted: #9a958c;
+			--nb-line: rgba(255, 255, 255, 0.1);
+			--nb-shadow: 0 24px 56px -22px rgba(0, 0, 0, 0.62);
+		}
+
+		.nb-h1 {
+			font-size: clamp(26px, 4vw, 38px);
+			font-weight: 600;
+			letter-spacing: 5px;
+			font-family: var(--nb-serif);
+			color: var(--nb-ink);
+		}
+		.nb-em { font-style: normal; color: var(--nb-primary); }
+		.nb-sub { margin-top: 8px; color: var(--nb-muted); font-size: 14px; letter-spacing: 0.4px; }
+
+		.shelf {
+			margin: 28px auto 30px;
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+			gap: 34px 30px;
+			justify-items: center;
+		}
+		.book {
+			--accent: var(--nb-primary);
+			position: relative;
+			width: 200px;
+			height: 290px;
+			cursor: pointer;
+			perspective: 1100px;
+			transform-style: preserve-3d;
+			transition: transform 0.5s cubic-bezier(0.18, 0.7, 0.2, 1);
+			filter: drop-shadow(0 16px 22px rgba(40, 36, 30, 0.22));
+		}
+		.book::after {
+			content: "";
+			position: absolute;
+			left: 8%; right: 8%; bottom: -14px; height: 20px;
+			background: radial-gradient(closest-side, rgba(40, 36, 30, 0.3), transparent);
+			filter: blur(4px);
+			transform: translateZ(-1px);
+			transition: opacity 0.4s;
+			opacity: 0.7;
+		}
+		.book:hover { transform: translateY(-10px); }
+		.book:hover .cover {
+			transform: rotateY(-6deg) translateZ(10px);
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), inset -10px 0 22px rgba(0, 0, 0, 0.18), -16px 10px 28px rgba(40, 36, 30, 0.28);
+		}
+		.book:hover::after { opacity: 0.4; }
+		.book .spine {
+			position: absolute; left: 0; top: 0; bottom: 0; width: 14px;
+			border-radius: 4px 0 0 4px;
+			background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 80%, #000 30%), var(--accent));
+			box-shadow: inset -3px 0 5px rgba(0, 0, 0, 0.28);
+		}
+		.book .pages {
+			position: absolute; left: 14px; right: 0; top: 6px; bottom: 6px;
+			border-radius: 5px 9px 9px 5px;
+			background: repeating-linear-gradient(180deg, #fffdf7, #fffdf7 26px, #efece3 27px, #efece3 28px);
+			box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 2px 0 6px rgba(0, 0, 0, 0.1);
+		}
+		.book .cover {
+			position: absolute; inset: 0; left: 14px;
+			border-radius: 5px 9px 9px 5px;
+			transform-origin: left center;
+			transition: transform 0.55s cubic-bezier(0.18, 0.7, 0.2, 1);
+			background: linear-gradient(155deg, color-mix(in srgb, var(--accent) 78%, #fff 6%), var(--accent) 60%, color-mix(in srgb, var(--accent) 70%, #000 22%));
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset -10px 0 22px rgba(0, 0, 0, 0.18);
+			overflow: hidden; color: #fff;
+			display: flex; flex-direction: column;
+		}
+		.book .cover::before {
+			content: ""; position: absolute; inset: 0;
+			background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1.6px);
+			background-size: 5px 5px; opacity: 0.6; pointer-events: none;
+		}
+		.cf-top { position: relative; display: flex; justify-content: space-between; padding: 13px 14px 0; font-size: 9px; letter-spacing: 2px; opacity: 0.85; }
+		.cf-main { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+		.cf-cn { writing-mode: vertical-rl; font-family: var(--nb-serif); font-weight: 600; font-size: 25px; letter-spacing: 4px; line-height: 1.18; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); }
+		.cf-author { writing-mode: vertical-rl; font-size: 10px; letter-spacing: 3px; opacity: 0.9; align-self: flex-end; margin-bottom: 6px; }
+		.cf-band { position: relative; margin: 8px -6px 12px; height: 34px; background: rgba(255, 255, 255, 0.92); transform: skew(0, -2.5deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+		.cf-band span { color: var(--accent); font-size: 11.5px; letter-spacing: 1.5px; font-weight: 600; transform: skew(0, 2.5deg); }
+		.cf-foot { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 13px; font-size: 9px; letter-spacing: 1px; opacity: 0.92; }
+		.cf-press b { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(255, 255, 255, 0.9); color: var(--accent); font-size: 9px; }
+		.cf-lock { width: 20px; height: 20px; border-radius: 50%; background: rgba(0, 0, 0, 0.22); display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4); }
+		.cf-lock.open { background: rgba(255, 255, 255, 0.25); }
+		.cf-lock svg { width: 11px; height: 11px; }
+
+		.overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(20, 18, 15, 0.42); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+		.overlay.show { opacity: 1; pointer-events: auto; }
+		.pw-card { width: 300px; padding: 26px 24px 22px; border-radius: var(--nb-radius); background: var(--nb-card); box-shadow: var(--nb-shadow); text-align: center; transform: scale(0.94); transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+		.overlay.show .pw-card { transform: scale(1); }
+		.pw-emoji { font-size: 30px; }
+		.pw-card h3 { margin: 8px 0 4px; font-size: 17px; letter-spacing: 1px; }
+		.pw-card p { color: var(--nb-muted); font-size: 12.5px; margin-bottom: 16px; }
+		.pw-input { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1.5px solid var(--nb-line); font-size: 14px; outline: none; background: transparent; color: var(--nb-ink); transition: border-color 0.2s; }
+		.pw-input:focus { border-color: var(--nb-primary); }
+		.pw-btn { width: 100%; margin-top: 12px; padding: 11px; border: none; border-radius: 11px; cursor: pointer; background: var(--nb-primary); color: #fff; font-size: 14px; letter-spacing: 2px; font-weight: 600; transition: filter 0.2s, transform 0.1s; }
+		.pw-btn:hover { filter: brightness(1.06); }
+		.pw-btn:active { transform: scale(0.98); }
+		.pw-err { color: #d9756b; font-size: 12px; min-height: 16px; margin-top: 8px; }
+		@keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-7px)} 40%,60%{transform:translateX(7px)} }
+		.shake { animation: shake 0.5s; }
+
+		.reader-overlay { background: rgba(20, 18, 15, 0.5); }
+		.book-modal { position: relative; width: min(960px, 94vw); height: min(640px, 86vh); display: flex; border-radius: 14px 16px 16px 14px; overflow: hidden; background: var(--nb-card); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.6); transform: scale(0.95); opacity: 0; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease; }
+		.reader-overlay.show .book-modal { transform: scale(1); opacity: 1; }
+		.book-modal .left-page, .book-modal .right-page { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+		.book-modal .left-page { border-right: 1px solid var(--nb-line); }
+		.book-modal .spine-shadow { width: 26px; flex: none; background: linear-gradient(90deg, rgba(0,0,0,0.1), rgba(0,0,0,0) 40%), linear-gradient(270deg, rgba(0,0,0,0.12), rgba(0,0,0,0) 40%), linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.06)); }
+		.page-pad { padding: 24px 22px; display: flex; flex-direction: column; min-height: 0; }
+		.pg-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+		.pg-head h2 { font-size: 16px; letter-spacing: 2px; font-family: var(--nb-serif); }
+		.pg-head .meta { font-size: 11px; color: var(--nb-muted); }
+		.btn-soft { border: 1.5px solid var(--nb-line); background: transparent; color: var(--nb-ink); border-radius: 10px; padding: 6px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: border-color 0.2s, background 0.2s; }
+		.btn-soft:hover { border-color: var(--nb-primary); color: var(--nb-primary); }
+		.btn-soft.active { background: var(--nb-primary-soft); border-color: var(--nb-primary-line); color: var(--nb-primary); }
+
+		.toc { flex: 1; overflow-y: auto; padding-right: 4px; }
+		.toc-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13.5px; color: var(--nb-ink); display: flex; gap: 8px; align-items: baseline; transition: background 0.18s; margin-bottom: 2px; }
+		.toc-item:hover { background: var(--nb-primary-soft); }
+		.toc-item.active { background: var(--nb-primary-soft); color: var(--nb-primary); font-weight: 600; box-shadow: inset 2px 0 0 var(--nb-primary); }
+		.toc-item .idx { font-size: 11px; color: var(--nb-muted); min-width: 18px; }
+		.toc-item .lead { color: var(--nb-muted); font-size: 12px; }
+
+		.stat-num { font-size: 40px; font-weight: 700; letter-spacing: 1px; color: var(--nb-primary); line-height: 1; font-family: var(--nb-serif); }
+		.stat-sub { font-size: 12.5px; color: var(--nb-muted); margin-top: 6px; }
+		.progress { height: 7px; border-radius: 6px; background: var(--nb-line); overflow: hidden; margin-top: 12px; }
+		.progress > i { display: block; height: 100%; background: var(--nb-primary); border-radius: 6px; }
+
+		.content { flex: 1; overflow-y: auto; padding-right: 6px; line-height: 1.85; font-size: 15px; }
+		.recorded { font-size: 12.5px; color: var(--nb-primary); background: var(--nb-primary-soft); border: 1px solid var(--nb-line); border-radius: 10px; padding: 7px 12px; margin-bottom: 10px; }
+		.art-nav { display: flex; gap: 8px; margin: 0 0 10px; }
+		.art-nav .btn-soft { flex: 1; justify-content: center; }
+		.nb-hr { border: none; border-top: 1px solid var(--nb-line); margin: 18px 0; }
+		.content h2 { font-size: 19px; margin: 6px 0 12px; font-family: var(--nb-serif); scroll-margin-top: 10px; }
+		.content h3 { font-size: 16px; margin: 18px 0 8px; }
+		.content p { margin: 10px 0; color: var(--nb-ink); }
+		.content blockquote { border-left: 3px solid var(--nb-primary); padding: 4px 14px; margin: 12px 0; color: var(--nb-muted); background: var(--nb-primary-soft); border-radius: 0 8px 8px 0; }
+		.content code { background: var(--nb-line); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+		.content ul, .content ol { padding-left: 22px; margin: 10px 0; }
+		.content li { margin: 5px 0; }
+		.content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+		.content th, .content td { border: 1px solid var(--nb-line); padding: 7px 10px; text-align: left; }
+		.content th { background: var(--nb-primary-soft); }
+
+		.run-card { border: 1px solid var(--nb-line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; transition: border-color 0.2s, transform 0.15s; }
+		.run-card:hover { border-color: var(--nb-primary-line); transform: translateY(-2px); }
+		.run-top { display: flex; align-items: baseline; justify-content: space-between; }
+		.run-date { font-weight: 600; font-size: 14px; }
+		.run-dist { color: var(--nb-primary); font-weight: 700; font-size: 15px; }
+		.run-grid { display: flex; gap: 18px; margin-top: 8px; font-size: 12.5px; color: var(--nb-muted); flex-wrap: wrap; }
+		.run-grid b { color: var(--nb-ink); font-weight: 600; }
+		.pace-tag { margin-left: auto; background: var(--nb-primary-soft); color: var(--nb-primary); padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+		.run-summary { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: var(--nb-primary-soft); border: 1px solid var(--nb-line); }
+		.rs-head { font-size: 13px; font-weight: 600; color: var(--nb-primary); margin-bottom: 10px; }
+		.rs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 10px 8px; }
+		.rs-grid > div { display: flex; flex-direction: column; gap: 3px; }
+		.rs-grid span { font-size: 11px; color: var(--nb-muted); }
+		.rs-grid b { font-size: 15px; color: var(--nb-ink); font-weight: 600; }
+
+		.close-x { position: absolute; top: 14px; right: 16px; z-index: 10; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--nb-line); background: var(--nb-card); color: var(--nb-ink); cursor: pointer; font-size: 18px; display: grid; place-items: center; transition: background 0.2s, transform 0.15s; }
+		.close-x:hover { background: var(--nb-primary-soft); color: var(--nb-primary); transform: rotate(90deg); }
+
+		.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 1200; background: var(--nb-ink); color: var(--nb-card); padding: 10px 18px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
+		.toast.show { opacity: 0.94; transform: translateX(-50%) translateY(0); }
+
+		@media (max-width: 768px) {
+			.book-modal { flex-direction: column; width: 94vw; height: 88vh; }
+			.book-modal .spine-shadow { display: none; }
+			.book-modal .left-page { border-right: none; border-bottom: 1px solid var(--nb-line); }
+			.content, .toc { max-height: 38vh; }
+		}
+	</style>
+
+	<script>
+		function initNotebooks() {
+			const shelf = document.getElementById("shelf");
+			if (!shelf || shelf.dataset.nb === "1") return;
+			shelf.dataset.nb = "1";
+
+			const NOTEBOOKS = [
+				{
+					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", locked: true, type: "markdown",
+					articles: [
+						{ h: "2025-09-01", body: `# 2025-09-01\n\n那天操场上的风很大，主席台上的横幅被吹得猎猎作响。校长讲的话有一半被风刮走了，但"新起点"三个字我还是听清了。\n\n> 站在队伍里，忽然觉得时间过得好快。\n\n- 领了新课本，油墨味很重\n- 同桌换成了前排的男生\n- 操场边的梧桐又黄了几分` },
+						{ h: "2025-10-18", body: `# 2025-10-18\n\n4x100米接力我们班拿了第一，最后一棒冲线的时候全班都站起来了。\n\n**最燃的一刻**是交接棒差点掉，还好接住了。\n\n| 项目 | 名次 |\n| --- | --- |\n| 4x100接力 | 1 |\n| 跳远 | 3 |\n| 拔河 | 2 |` },
+						{ h: "2026-03-22", body: `# 2026-03-22\n\n植物园里的樱花开了，粉白一片铺在石板路两侧。我们席地而坐分零食，有人带了吉他，胡乱弹了几首。\n\n阳光很好，风也很轻，那种"什么都不用想"的下午，以后大概很难再有了。` },
+						{ h: "2026-02-28", body: `# 2026-02-28\n\n横幅上的签名密密麻麻，轮到我时手有点抖。一百天，说长不长，说短不短。\n\n- 倒计时牌挂上了\n- 模拟考排名又变了\n- 同桌说"一起加油"\n\n> 不想留遗憾。` }
+					]
+				},
+				{
+					id: "run", title: "自律日记", accent: "#e0996b", band: "跑过的路，一步都不白费", author: "余京◎著", locked: false, type: "runs",
+					totalKm: 41.4, monthCheckins: 4, termGoal: 300,
+					runs: [
+						{ date: "2026-09-05", distance: 5.2, duration: "28:30", heartRate: 152 },
+						{ date: "2026-09-04", distance: 3.0, duration: "18:10", heartRate: null },
+						{ date: "2026-09-02", distance: 6.5, duration: "35:40", heartRate: 148 },
+						{ date: "2026-08-30", distance: 4.0, duration: "22:05", heartRate: 156 },
+						{ date: "2026-08-28", distance: 8.0, duration: "44:12", heartRate: 150 },
+						{ date: "2026-08-25", distance: 3.7, duration: "20:48", heartRate: null },
+						{ date: "2026-08-21", distance: 11.0, duration: "61:30", heartRate: 145 }
+					]
+				},
+				{
+					id: "daily", title: "每日碎碎念", accent: "#7d93c4", band: "今天也在认真碎碎念", author: "余京◎著", locked: false, type: "texts",
+					texts: [
+						{ date: "2026-09-06", content: "今天下雨了，没带伞，在图书馆门口等了半小时。后来干脆走进雨里跑回去，凉快。" },
+						{ date: "2026-09-05", content: "食堂二楼的麻辣烫居然加了花生酱，味道很怪，但莫名上头。" },
+						{ date: "2026-09-04", content: "晚上绕操场走了一圈，路灯把影子拉得很长，心里忽然静下来。" },
+						{ date: "2026-09-03", content: "物理又没听懂，但同桌讲了一遍我居然懂了，朋友真有用。" },
+						{ date: "2026-09-02", content: "买到了很久以前想看的那本书，翻了两页，纸质很好。" },
+						{ date: "2026-09-01", content: "开学第一天，课表排得满满的，但比想象中轻松一点。" },
+						{ date: "2026-08-31", content: "把房间收拾了一遍，扔掉好多没用的东西，清爽。" },
+						{ date: "2026-08-30", content: "深夜睡不着，听了一首很老的歌，想起一些事。" }
+					]
+				}
+			];
+
+			function md(src) {
+				const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+				const inline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*([^*]+)\*/g, "<i>$1</i>");
+				const lines = src.split("\n");
+				let h = "", i = 0;
+				while (i < lines.length) {
+					const l = lines[i];
+					if (l.startsWith("# ")) { h += `<h2>${inline(l.slice(2))}</h2>`; i++; }
+					else if (l.startsWith("## ")) { h += `<h3>${inline(l.slice(3))}</h3>`; i++; }
+					else if (l.startsWith("> ")) { let t = l.slice(2), j = i + 1; while (lines[j] && lines[j].startsWith("> ")) { t += "<br>" + lines[j].slice(2); j++; } h += `<blockquote>${inline(t)}</blockquote>`; i = j; }
+					else if (l.startsWith("|")) {
+						const rows = []; let j = i; while (lines[j] && lines[j].startsWith("|")) { rows.push(lines[j]); j++; }
+						let tbl = "<table>"; rows.forEach((r, k) => { const cells = r.split("|").slice(1, -1); if (k === 1 && /^[-: ]+$/.test(cells.map((c) => c.trim()).join(""))) return; tbl += `<tr>${cells.map((c) => `<${k === 0 ? "th" : "td"}>${inline(c.trim())}</${k === 0 ? "th" : "td"}>`).join("")}</tr>`; }); tbl += "</table>"; h += tbl; i = j;
+					}
+					else if (l.startsWith("- ")) { let t = "<ul>", j = i; while (lines[j] && lines[j].startsWith("- ")) { t += `<li>${inline(lines[j].slice(2))}</li>`; j++; } t += "</ul>"; h += t; i = j; }
+					else if (/^\d+\.\s/.test(l)) { let t = "<ol>", j = i; while (lines[j] && /^\d+\.\s/.test(lines[j])) { t += `<li>${inline(lines[j].replace(/^\d+\.\s/, ""))}</li>`; j++; } t += "</ol>"; h += t; i = j; }
+					else if (l.trim() === "") { i++; }
+					else { let t = "", j = i; while (j < lines.length && lines[j].trim() !== "" && !lines[j].startsWith("#") && !lines[j].startsWith("|") && !lines[j].startsWith("- ")) { t += (t ? " " : "") + lines[j]; j++; } h += `<p>${inline(t)}</p>`; i = j; }
+				}
+				return h;
+			}
+
+			const $ = (s, r = document) => r.querySelector(s);
+			function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 1600); }
+			function pace(dur, dist) { const [m, s] = dur.split(":").map(Number); const sec = m * 60 + s; const p = sec / dist; const mm = Math.floor(p / 60); const ss = Math.round(p % 60); return `${mm}'${String(ss).padStart(2, "0")}"`; }
+
+			function renderShelf() {
+				shelf.innerHTML = NOTEBOOKS.map((b) => `
+					<div class="book" data-id="${b.id}" style="--accent:${b.accent}">
+						<div class="spine"></div>
+						<div class="pages"></div>
+						<div class="cover">
+							<div class="cf-top"><span>YuJing Library</span><span>${b.locked ? "🔒" : "📖"}</span></div>
+							<div class="cf-main">
+								<div class="cf-cn">${b.title}</div>
+								<div class="cf-author">${b.author}</div>
+							</div>
+							<div class="cf-band"><span>${b.band}</span></div>
+							<div class="cf-foot">
+								<span class="cf-press"><b>Y</b> 自印 · 2026</span>
+								<span class="cf-lock ${b.locked ? "" : "open"}">${b.locked ? '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2.5" stroke="#fff" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#fff" stroke-width="2"/></svg>' : '<svg viewBox="0 0 24 24" fill="none"><path d="M5 11V7a4 4 0 0 1 8 0v4" stroke="#fff" stroke-width="2"/><path d="M18.5 3.5l2.5 2.5-5 5H11v-5l5-5z" fill="#fff"/></svg>'}</span>
+							</div>
+						</div>
+					</div>`).join("");
+				shelf.querySelectorAll(".book").forEach((el) => el.addEventListener("click", () => openNotebook(el.dataset.id)));
+			}
+
+			let pending = null, currentBook = null;
+			function openNotebook(id) { const b = NOTEBOOKS.find((x) => x.id === id); if (b.locked) { pending = b; showPw(b); } else openReader(b); }
+			function todayPw() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return p(d.getFullYear() % 100) + p(d.getMonth() + 1) + p(d.getDate()); }
+			function showPw(b) { $("#pwTitle").textContent = `《${b.title}》`; $("#pwHint").textContent = todayPw(); $("#pwInput").value = ""; $("#pwErr").textContent = ""; $("#pwOverlay").classList.add("show"); setTimeout(() => $("#pwInput").focus(), 200); }
+			function tryUnlock() { if ($("#pwInput").value === todayPw()) { $("#pwOverlay").classList.remove("show"); openReader(pending); } else { $("#pwErr").textContent = "密码不对，再试试～"; const c = $("#pwCard"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); } }
+
+			function openReader(b) { currentBook = b; const m = $("#bookModal"); m.innerHTML = b.type === "markdown" ? readerMarkdown(b) : b.type === "runs" ? readerRuns(b) : readerTexts(b); m.querySelector(".close-x").addEventListener("click", closeReader); $("#readerOverlay").classList.add("show"); }
+			function closeReader() { $("#readerOverlay").classList.remove("show"); }
+
+			function readerMarkdown(b) {
+				const order = b._order || "old";
+				const list = () => { const a = [...b.articles]; return order === "new" ? a.reverse() : a; };
+				const dates = [...b.articles].map((a) => a.h).sort();
+				const days = Math.round((new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000);
+				const arts = list();
+				b._orderList = arts.map((a) => b.articles.indexOf(a));
+				b._cur = 0;
+				const toc = arts.map((a, i) => `<div class="toc-item" data-i="${b.articles.indexOf(a)}"><span class="idx">${String(i + 1).padStart(2, "0")}</span><span>${a.h}</span></div>`).join("");
+				const body = arts.map((a) => `<div id="art-${b.articles.indexOf(a)}"><h2>${a.h}</h2>${md(a.body)}</div><hr class="nb-hr">`).join("");
+				return `<button class="close-x" title="关闭">✕</button>
+					<section class="left-page"><div class="page-pad">
+						<div class="pg-head"><h2>目录</h2><button class="btn-soft" id="sortBtn">⇅ ${b._order === "new" ? "倒序" : "正序"}</button></div>
+						<div class="recorded">📅 已记录 ${days} 天 · 共 ${b.articles.length} 篇</div>
+						<button class="btn-soft" id="fishBtn" style="margin-bottom:10px;width:100%;justify-content:center">🎣 随机一篇</button>
+						<div class="toc" id="toc">${toc}</div>
+					</div></section>
+					<div class="spine-shadow"></div>
+					<section class="right-page"><div class="page-pad">
+						<div class="pg-head"><h2>校园杂记</h2><span class="meta">余京 · 共 ${b.articles.length} 篇</span></div>
+						<div class="art-nav"><button class="btn-soft" id="prevArt">← 上一篇</button><button class="btn-soft" id="nextArt">下一篇 →</button></div>
+						<div class="content" id="content">${body}</div>
+					</div></section>`;
+			}
+
+			function readerRuns(b) {
+				const pct = Math.min(100, Math.round((b.totalKm / b.termGoal) * 100));
+				const totalDist = b.runs.reduce((s, r) => s + r.distance, 0);
+				const totalSec = b.runs.reduce((s, r) => { const [m, x] = r.duration.split(":").map(Number); return s + m * 60 + x; }, 0);
+				const validHr = b.runs.filter((r) => r.heartRate != null);
+				const avgHr = validHr.length ? Math.round(validHr.reduce((s, r) => s + r.heartRate, 0) / validHr.length) : "--";
+				const avgPace = pace(`${Math.floor(totalSec / 60)}:${String(Math.round(totalSec % 60)).padStart(2, "0")}`, totalDist);
+				const cards = b.runs.map((r) => `<div class="run-card"><div class="run-top"><span class="run-date">${r.date}</span><span class="run-dist">${r.distance} km</span></div><div class="run-grid"><span>用时 <b>${r.duration}</b></span><span>心率 <b>${r.heartRate ?? "--"}</b></span><span class="pace-tag">配速 ${pace(r.duration, r.distance)}/km</span></div></div>`).join("");
+				const summary = `<div class="run-summary"><div class="rs-head">📊 本学期小结</div><div class="rs-grid"><div><span>总里程</span><b>${totalDist.toFixed(1)} km</b></div><div><span>打卡</span><b>${b.runs.length} 次</b></div><div><span>总用时</span><b>${Math.floor(totalSec / 60)}:${String(Math.round(totalSec % 60)).padStart(2, "0")}</b></div><div><span>平均配速</span><b>${avgPace}/km</b></div><div><span>平均心率</span><b>${avgHr}</b></div></div></div>`;
+				return `<button class="close-x" title="关闭">✕</button>
+					<section class="left-page"><div class="page-pad">
+						<div class="pg-head"><h2>自律日记</h2></div>
+						<div class="stat-num">${b.totalKm}<span style="font-size:18px;color:var(--nb-muted)"> km</span></div>
+						<div class="stat-sub">本月打卡 ${b.monthCheckins} 次 · 学期目标 ${b.termGoal} km</div>
+						<div class="progress"><i style="width:${pct}%"></i></div>
+						<div class="stat-sub" style="margin-top:8px">已完成学期目标 ${pct}%</div>
+					</div></section>
+					<div class="spine-shadow"></div>
+					<section class="right-page"><div class="page-pad">
+						<div class="pg-head"><h2>跑步记录</h2><span class="meta">${b.runs.length} 条 · 上下滑动</span></div>
+						<div class="content" id="content">${cards}${summary}</div>
+					</div></section>`;
+			}
+
+			function readerTexts(b) {
+				const items = [...b.texts].sort((a, c) => c.date.localeCompare(a.date));
+				const toc = items.map((t, i) => `<div class="toc-item" data-i="${i}"><span class="idx">${t.date.slice(5)}</span><span class="lead">${t.content.slice(0, 12)}…</span></div>`).join("");
+				const body = items.map((t, i) => `<div id="art-${i}"><div class="pg-head" style="margin:0 0 6px"><span class="run-date">${t.date}</span></div><p style="margin-top:0">${t.content}</p><hr class="nb-hr"></div>`).join("");
+				return `<button class="close-x" title="关闭">✕</button>
+					<section class="left-page"><div class="page-pad">
+						<div class="pg-head"><h2>目录</h2></div>
+						<div class="stat-sub" style="margin-bottom:10px">共 ${b.texts.length} 条思绪</div>
+						<button class="btn-soft" id="fishBtn" style="margin-bottom:10px;width:100%;justify-content:center">🎣 随机一条</button>
+						<div class="toc" id="toc">${toc}</div>
+					</div></section>
+					<div class="spine-shadow"></div>
+					<section class="right-page"><div class="page-pad">
+						<div class="pg-head"><h2>每日碎碎念</h2><span class="meta">余京</span></div>
+						<div class="content" id="content">${body}</div>
+					</div></section>`;
+			}
+
+			function gotoCur(b) {
+				const el = document.getElementById(`art-${b._orderList[b._cur]}`);
+				if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+				const m = $("#bookModal");
+				m.querySelectorAll(".toc-item").forEach((x) => x.classList.remove("active"));
+				const cur = m.querySelector(`.toc-item[data-i="${b._orderList[b._cur]}"]`);
+				if (cur) cur.classList.add("active");
+			}
+
+			$("#bookModal").addEventListener("click", (e) => {
+				const t = e.target.closest("#sortBtn,#fishBtn,#prevArt,#nextArt,.toc-item");
+				if (!t) return;
+				const b = currentBook;
+				if (!b) return;
+				if (t.id === "sortBtn") { b._order = b._order === "new" ? "old" : "new"; $("#bookModal").innerHTML = readerMarkdown(b); $("#bookModal").querySelector(".close-x").addEventListener("click", closeReader); }
+				else if (t.id === "fishBtn") {
+					if (b.type === "markdown") { b._cur = Math.floor(Math.random() * b._orderList.length); gotoCur(b); }
+					else if (b.type === "texts") { const items = [...$("#bookModal").querySelectorAll(".toc-item")]; if (!items.length) return; const pick = items[Math.floor(Math.random() * items.length)]; const target = document.getElementById(`art-${pick.dataset.i}`); if (target) target.scrollIntoView({ behavior: "smooth", block: "start" }); items.forEach((x) => x.classList.remove("active")); pick.classList.add("active"); }
+					toast("🎣 给你钓了一篇");
+				} else if (t.id === "prevArt") { if (b._cur > 0) { b._cur--; gotoCur(b); } }
+				else if (t.id === "nextArt") { if (b._cur < b._orderList.length - 1) { b._cur++; gotoCur(b); } }
+				else if (t.classList.contains("toc-item")) { b._cur = b._orderList.indexOf(parseInt(t.dataset.i, 10)); gotoCur(b); }
+			});
+
+			$("#pwSubmit").addEventListener("click", tryUnlock);
+			$("#pwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+			$("#pwOverlay").addEventListener("click", (e) => { if (e.target.id === "pwOverlay") $("#pwOverlay").classList.remove("show"); });
+			$("#readerOverlay").addEventListener("click", (e) => { if (e.target.id === "readerOverlay") closeReader(); });
+			document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeReader(); $("#pwOverlay").classList.remove("show"); } });
+
+			renderShelf();
+		}
+
+		if (document.readyState !== "loading") initNotebooks();
+		else document.addEventListener("DOMContentLoaded", initNotebooks);
+		document.addEventListener("swup:page:view", initNotebooks);
+		if (window.swup && window.swup.hooks) { window.swup.hooks.on("page:view", initNotebooks); }
+	</script>
 </MainGridLayout>
