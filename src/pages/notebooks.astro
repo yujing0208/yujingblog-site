@@ -171,6 +171,7 @@ const subtitle = "三本随手记下的小书";
 		.btn-soft { border: 1.5px solid var(--nb-line); background: transparent; color: var(--nb-ink); border-radius: 10px; padding: 6px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: border-color 0.2s, background 0.2s; }
 		.btn-soft:hover { border-color: var(--nb-primary); color: var(--nb-primary); }
 		.btn-soft.active { background: var(--nb-primary-soft); border-color: var(--nb-primary-line); color: var(--nb-primary); }
+		.btn-soft:disabled { opacity: .4; cursor: not-allowed; }
 
 		.toc { flex: 1; overflow-y: auto; padding-right: 4px; }
 		.toc-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13.5px; color: var(--nb-ink); display: flex; gap: 8px; align-items: baseline; transition: background 0.18s; margin-bottom: 2px; }
@@ -196,6 +197,8 @@ const subtitle = "三本随手记下的小书";
 		.content blockquote { border-left: 3px solid var(--nb-primary); padding: 4px 14px; margin: 12px 0; color: var(--nb-muted); background: var(--nb-primary-soft); border-radius: 0 8px 8px 0; }
 		.content code { background: var(--nb-line); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
 		.content ul, .content ol { padding-left: 22px; margin: 10px 0; }
+		.content ul { list-style: disc; }
+		.content ol { list-style: decimal; }
 		.content li { margin: 5px 0; }
 		.content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
 		.content th, .content td { border: 1px solid var(--nb-line); padding: 7px 10px; text-align: left; }
@@ -350,10 +353,12 @@ const subtitle = "三本随手记下的小书";
 				const dates = [...b.articles].map((a) => a.h).sort();
 				const days = Math.round((new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000);
 				const arts = list();
-				b._orderList = arts.map((a) => b.articles.indexOf(a));
-				b._cur = 0;
-				const toc = arts.map((a, i) => `<div class="toc-item" data-i="${b.articles.indexOf(a)}"><span class="idx">${String(i + 1).padStart(2, "0")}</span><span>${a.h}</span></div>`).join("");
-				const body = arts.map((a) => `<div id="art-${b.articles.indexOf(a)}"><h2>${a.h}</h2>${md(a.body)}</div><hr class="nb-hr">`).join("");
+			b._orderList = arts.map((a) => b.articles.indexOf(a));
+			b._arts = arts;
+			b._cur = 0;
+			const toc = arts.map((a, i) => `<div class="toc-item" data-i="${b.articles.indexOf(a)}"><span class="idx">${String(i + 1).padStart(2, "0")}</span><span>${a.h}</span></div>`).join("");
+			const singleArt = (cur) => { const a = b._arts[cur]; return `<div class="art-single"><h2>${a.h}</h2>${md(a.body)}</div>`; };
+			const body = singleArt(0);
 				return `<button class="close-x" title="关闭">✕</button>
 					<section class="left-page"><div class="page-pad">
 						<div class="pg-head"><h2>目录</h2><button class="btn-soft" id="sortBtn">⇅ ${b._order === "new" ? "倒序" : "正序"}</button></div>
@@ -363,7 +368,7 @@ const subtitle = "三本随手记下的小书";
 					</div></section>
 					<div class="spine-shadow"></div>
 					<section class="right-page"><div class="page-pad">
-						<div class="pg-head"><h2>校园杂记</h2><span class="meta">余京 · 共 ${b.articles.length} 篇</span></div>
+						<div class="pg-head"><h2>校园杂记</h2><span class="meta" id="artMeta">余京 · 第 1 / ${b.articles.length} 篇</span></div>
 						<div class="art-nav"><button class="btn-soft" id="prevArt">← 上一篇</button><button class="btn-soft" id="nextArt">下一篇 →</button></div>
 						<div class="content" id="content">${body}</div>
 					</div></section>`;
@@ -412,12 +417,18 @@ const subtitle = "三本随手记下的小书";
 			}
 
 			function gotoCur(b) {
-				const el = document.getElementById(`art-${b._orderList[b._cur]}`);
-				if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+				const a = b._arts[b._cur];
+				const c = $("#content");
+				if (c) { c.innerHTML = `<div class="art-single"><h2>${a.h}</h2>${md(a.body)}</div>`; c.scrollTop = 0; }
 				const m = $("#bookModal");
 				m.querySelectorAll(".toc-item").forEach((x) => x.classList.remove("active"));
 				const cur = m.querySelector(`.toc-item[data-i="${b._orderList[b._cur]}"]`);
 				if (cur) cur.classList.add("active");
+				const prev = $("#prevArt"), next = $("#nextArt");
+				if (prev) prev.disabled = b._cur <= 0;
+				if (next) next.disabled = b._cur >= b._orderList.length - 1;
+				const meta = $("#artMeta");
+				if (meta) meta.textContent = `余京 · 第 ${b._cur + 1} / ${b._orderList.length} 篇`;
 			}
 
 			$("#bookModal").addEventListener("click", (e) => {
