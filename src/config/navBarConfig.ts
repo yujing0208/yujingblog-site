@@ -1,1 +1,156 @@
-aW1wb3J0IHR5cGUgeyBOYXZCYXJDb25maWcgfSBmcm9tICIuLi90eXBlcy9jb25maWciOwppbXBvcnQgeyBMaW5rUHJlc2V0IH0gZnJvbSAiLi4vdHlwZXMvY29uZmlnIjsKZXhwb3J0IGNvbnN0IG5hdkJhckNvbmZpZzogTmF2QmFyQ29uZmlnID0gewoJbGlua3M6IFsKCQl7CgkJCW5hbWU6ICLpppbpobUiLAoJCQl1cmw6ICIvIiwKCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6aG9tZSIsCgkJfSwKCQl7CgkJCW5hbWU6ICLlvZLmoaMiLAoJCQl1cmw6ICIvYXJjaGl2ZS8iLAoJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczphcmNoaXZlIiwKCQl9LAoKCQkvLyDoh6rlrprkuYnkuIDnuqfkuIvmi4noj5zljZXnpLrkvovvvJrlpJbpg6jpk77mjqXpm4blkIgKCQl7CgkJCW5hbWU6ICLpk77mjqUiLAoJCQl1cmw6ICIvbGlua3MvIiwKCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6bGluayIsCgkJCWNoaWxkcmVuOiBbCgkJCQl7CgkJCQkJbmFtZTogIue9keermSIsCgkJCQkJdXJsOiAiL3dlYnNpdGVzLyIsCgkJCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6cHVibGljIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIuaKlumfsyIsCgkJCQkJdXJsOiAiaHR0cHM6Ly92LmRvdXlpbi5jb20iLAoJCQkJCWV4dGVybmFsOiB0cnVlLAoJCQkJCWljb246ICJzaW1wbGUtaWNvbnM6dGlrdG9rIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIkRlZXBzZWVrIiwKCQkJCQl1cmw6ICJodHRwczovL2NoYXQuZGVlcHNlZWsuY29tLyIsCgkJCQkJZXh0ZXJuYWw6IHRydWUsCgkJCQkJaWNvbjogInNpbXBsZS1pY29uczpkZWVwc2VlayIsCgkJCQl9LAoJCQkJewoJCQkJCW5hbWU6ICJHaXRIdWIiLAoJCQkJCXVybDogImh0dHBzOi8vZ2l0aHViLmNvbSIsCgkJCQkJZXh0ZXJuYWw6IHRydWUsCgkJCQkJaWNvbjogImZhNy1icmFuZHM6Z2l0aHViIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIlZlcmNlbCIsCgkJCQkJdXJsOiAiaHR0cHM6Ly92ZXJjZWwuY29tL3l1amluZyIsCgkJCQkJZXh0ZXJuYWw6IHRydWUsCgkJCQkJaWNvbjogImdnOnZlcmNlbCIsCgkJCQl9LAoJCQkJewoJCQkJCW5hbWU6ICJVbWFtaS4iLAoJCQkJCXVybDogImh0dHBzOi8vY2xvdWQudW1hbWkuaXMvYW5hbHl0aWNzL3VzL3dlYnNpdGVzIiwKCQkJCQlleHRlcm5hbDogdHJ1ZSwKCQkJCQlpY29uOiAiYml0Y29pbi1pY29uczpjbG91ZC1vdXRsaW5lIiwKCQkJCX0sCgkJCV0sCgkJfSwKCgkJLy8g6Ieq5a6a5LmJ5LiA57qn5LiL5ouJ6I+c5Y2V56S65L6L77ya5Liq5Lq65YaF5a656aG16Z2iCgkJewoJCQluYW1lOiAi5oiR55qEIiwKCQkJdXJsOiAiL2NvbnRlbnQvIiwKCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6cGVyc29uIiwKCQkJY2hpbGRyZW46IFsKCQkJCXsKCQkJCQluYW1lOiAi5Yqo5oCBIiwKCQkJCQl1cmw6ICIvZGlhcnkvIiwKCQkJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczpjaGF0IiwKCQkJCX0sCgkJCQlMaW5rUHJlc2V0LkFuaW1lLAoJCQkJTGlua1ByZXNldC5BbGJ1bXMsCgkJCQl7CgkJCQkJbmFtZTogIuiuvuWkhyIsCgkJCQkJdXJsOiAiL2RldmljZXMvIiwKCQkJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczpkZXZpY2VzIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIui2s+i/uSIsCgkJCQkJdXJsOiAiL2Zvb3RwcmludC8iLAoJCQkJCWljb246ICJtYXRlcmlhbC1zeW1ib2xzOm1hcCIsCgkJCQl9LAoJCQkJewoJCQkJCW5hbWU6ICLnrJTorrDmnKwiLAoJCQkJCXVybDogIi9ub3RlYm9va3MvIiwKCQkJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczptZW51LWJvb2siLAoJCQkJfSwKCQkJXSwKCQl9LAoKCQkvLyDoh6rlrprkuYnkuIDnuqfkuIvmi4noj5zljZXnpLrkvovvvJrlhbPkuo7nm7jlhbMKCQl7CgkJCW5hbWU6ICLlhbPkuo4iLAoJCQl1cmw6ICIvY29udGVudC8iLAoJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczppbmZvIiwKCQkJY2hpbGRyZW46IFsKCQkJCXsKCQkJCQluYW1lOiAi5YWz5LqOIiwKCQkJCQl1cmw6ICIvYWJvdXQvIiwKCQkJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczpwZXJzb24iLAoJCQkJfSwKCQkJCXsKCQkJCQluYW1lOiAi5Y+L6ZO+IiwKCQkJCQl1cmw6ICIvZnJpZW5kcy8iLAoJCQkJCWljb246ICJtYXRlcmlhbC1zeW1ib2xzOmdyb3VwIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIuaXtumXtOe6vyIsCgkJCQkJdXJsOiAiL3RpbWVsaW5lLyIsCgkJCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6dGltZWxpbmUiLAoJCQkJfSwKCQkJCXsKCQkJCQluYW1lOiAi5pu05paw5pel5b+XIiwKCQkJCQl1cmw6ICIvY2hhbmdlbG9nLyIsCgkJCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6aGlzdG9yeSIsCgkJCQl9LAoJCQldLAoJCX0sCgoJCS8vIOiHquWumuS5ieS4gOe6p+S4i+aLieiPnOWNleekuuS+i++8muWFtuS7lumhtemdogoJCXsKCQkJbmFtZTogIuWFtuS7liIsCgkJCXVybDogIiMiLAoJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczptb3JlLWhvcml6IiwKCQkJY2hpbGRyZW46IFsKCQkJCXsKCQkJCQluYW1lOiAiM0Qg5Li76aG1IiwKCQkJCQl1cmw6ICJodHRwczovL2hvbWUueXVqaW5nYmxvZy50b3AiLAoJCQkJCWV4dGVybmFsOiB0cnVlLAoJCQkJCWljb246ICJtYXRlcmlhbC1zeW1ib2xzOmhvbWUiLAoJCQkJfSwKCQkJCXsKCQkJCQluYW1lOiAi6aG555uuIiwKCQkJCQl1cmw6ICIvcHJvamVjdHMvIiwKCQkJCQlpY29uOiAibWF0ZXJpYWwtc3ltYm9sczp3b3JrIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIuS+v+etvuWimSIsCgkJCQkJdXJsOiAiaHR0cHM6Ly9ub3Rlcy55dWppbmdibG9nLnRvcC8iLAoJCQkJCWV4dGVybmFsOiB0cnVlLAoJCQkJCWljb246ICJtYXRlcmlhbC1zeW1ib2xzOnN0aWNreS1ub3RlIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIueVmeiogOadvyIsCgkJCQkJdXJsOiAiL2d1ZXN0Ym9vay8iLAoJCQkJCWljb246ICJtYXRlcmlhbC1zeW1ib2xzOmNoYXQtYnViYmxlIiwKCQkJCX0sCgkJCQl7CgkJCQkJbmFtZTogIumfs+S5kCIsCgkJCQkJdXJsOiAiL211c2ljLyIsCgkJCQkJaWNvbjogIm1hdGVyaWFsLXN5bWJvbHM6bXVzaWMtbm90ZSIsCgkJCQl9LAoJCQldLAoJCX0sCgldLAp9Owo=
+import type { NavBarConfig } from "../types/config";
+import { LinkPreset } from "../types/config";
+export const navBarConfig: NavBarConfig = {
+	links: [
+		{
+			name: "首页",
+			url: "/",
+			icon: "material-symbols:home",
+		},
+		{
+			name: "归档",
+			url: "/archive/",
+			icon: "material-symbols:archive",
+		},
+
+		// 自定义一级下拉菜单示例：外部链接集合
+		{
+			name: "链接",
+			url: "/links/",
+			icon: "material-symbols:link",
+			children: [
+				{
+					name: "网站",
+					url: "/websites/",
+					icon: "material-symbols:public",
+				},
+				{
+					name: "抖音",
+					url: "https://v.douyin.com",
+					external: true,
+					icon: "simple-icons:tiktok",
+				},
+				{
+					name: "Deepseek",
+					url: "https://chat.deepseek.com/",
+					external: true,
+					icon: "simple-icons:deepseek",
+				},
+				{
+					name: "GitHub",
+					url: "https://github.com",
+					external: true,
+					icon: "fa7-brands:github",
+				},
+				{
+					name: "Vercel",
+					url: "https://vercel.com/yujing",
+					external: true,
+					icon: "gg:vercel",
+				},
+				{
+					name: "Umami.",
+					url: "https://cloud.umami.is/analytics/us/websites",
+					external: true,
+					icon: "bitcoin-icons:cloud-outline",
+				},
+			],
+		},
+
+		// 自定义一级下拉菜单示例：个人内容页面
+		{
+			name: "我的",
+			url: "/content/",
+			icon: "material-symbols:person",
+			children: [
+				{
+					name: "动态",
+					url: "/diary/",
+					icon: "material-symbols:chat",
+				},
+				LinkPreset.Anime,
+				LinkPreset.Albums,
+				{
+					name: "设备",
+					url: "/devices/",
+					icon: "material-symbols:devices",
+				},
+				{
+					name: "足迹",
+					url: "/footprint/",
+					icon: "material-symbols:map",
+				},
+				{
+					name: "笔记本",
+					url: "/notebooks/",
+					icon: "material-symbols:menu-book",
+				},
+			],
+		},
+
+		// 自定义一级下拉菜单示例：关于相关
+		{
+			name: "关于",
+			url: "/content/",
+			icon: "material-symbols:info",
+			children: [
+				{
+					name: "关于",
+					url: "/about/",
+					icon: "material-symbols:person",
+				},
+				{
+					name: "友链",
+					url: "/friends/",
+					icon: "material-symbols:group",
+				},
+				{
+					name: "时间线",
+					url: "/timeline/",
+					icon: "material-symbols:timeline",
+				},
+				{
+					name: "更新日志",
+					url: "/changelog/",
+					icon: "material-symbols:history",
+				},
+			],
+		},
+
+		// 自定义一级下拉菜单示例：其他页面
+		{
+			name: "其他",
+			url: "#",
+			icon: "material-symbols:more-horiz",
+			children: [
+				{
+					name: "3D 主页",
+					url: "https://home.yujingblog.top",
+					external: true,
+					icon: "material-symbols:home",
+				},
+				{
+					name: "项目",
+					url: "/projects/",
+					icon: "material-symbols:work",
+				},
+				{
+					name: "便签墙",
+					url: "https://notes.yujingblog.top/",
+					external: true,
+					icon: "material-symbols:sticky-note",
+				},
+				{
+					name: "留言板",
+					url: "/guestbook/",
+					icon: "material-symbols:chat-bubble",
+				},
+				{
+					name: "音乐",
+					url: "/music/",
+					icon: "material-symbols:music-note",
+				},
+			],
+		},
+	],
+};
