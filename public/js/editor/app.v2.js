@@ -259,6 +259,11 @@
 			});
 		} else {
 			addBtn.addEventListener("click", function () { addItem(); });
+			if (s.batchMd) {
+				var batchBtn = el("button", "ef-btn ef-btn-block", "⬆ 批量上传 .md 文档");
+				batchBtn.addEventListener("click", function () { uploadMdBatch(); });
+				list.appendChild(batchBtn);
+			}
 		}
 		list.appendChild(addBtn);
 		state.items.forEach(function (it, i) {
@@ -846,6 +851,45 @@
 				selectItem(state.items.length - 1);
 			};
 			reader.readAsText(file);
+		});
+		input.click();
+	}
+
+		// 批量上传 .md 文档（笔记本专用）：文件名取日期，正文作为 Markdown 写入数组
+	function uploadMdBatch() {
+		var s = state.schema;
+		if (!s || s.format !== "ts-array" || !s.batchMd) return;
+		var input = document.createElement("input");
+		input.type = "file";
+		input.multiple = true;
+		input.accept = ".md,.markdown,text/markdown,text/plain";
+		input.addEventListener("change", function () {
+			var files = input.files ? Array.prototype.slice.call(input.files) : [];
+			if (!files.length) return;
+			var total = files.length, done = 0, added = 0, skipped = 0;
+			files.forEach(function (file) {
+				var reader = new FileReader();
+				reader.onload = function () {
+					var raw = String(reader.result || "");
+					// 日期：文件名中的 YYYY-MM-DD，否则今天
+					var fname = file.name.replace(/\.(md|markdown)$/i, "");
+					var d = (fname.match(/(\d{4}-\d{2}-\d{2})/) || [])[1];
+					var h = d || new Date().toISOString().slice(0, 10);
+					if (state.items.some(function (it) { return it && it.h === h; })) { skipped++; finish(); return; }
+					state.items.push({ h: h, body: raw.replace(/^\n+/, "") });
+					added++; finish();
+				};
+				reader.onerror = function () { finish(); };
+				reader.readAsText(file);
+			});
+			function finish() {
+				done++;
+				if (done >= total) {
+					state.items.sort(function (a, b) { return String(a.h || "").localeCompare(String(b.h || "")); });
+					renderList();
+					toast("已加入 " + added + " 篇，跳过重复 " + skipped + " 篇（点「保存」后统一推送）");
+				}
+			}
 		});
 		input.click();
 	}
