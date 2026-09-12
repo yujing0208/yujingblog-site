@@ -235,6 +235,12 @@ const subtitle = "三本随手记下的小书";
 			if (!shelf || shelf.dataset.nb === "1") return;
 			shelf.dataset.nb = "1";
 
+			// 把弹窗移到 body 下，脱离 MainGridLayout 的层叠上下文
+			for (const id of ["pwOverlay", "readerOverlay", "toast"]) {
+				const el = document.getElementById(id);
+				if (el && el.parentNode !== document.body) document.body.appendChild(el);
+			}
+
 			const NOTEBOOKS = [
 				{
 					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", locked: true, type: "markdown",
