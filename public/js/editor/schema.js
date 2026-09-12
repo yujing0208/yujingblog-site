@@ -295,6 +295,20 @@
 				{ key: "passwordHint", label: "密码提示", type: "string", optional: true },
 			],
 		},
+
+		notebooks: {
+			label: "校园杂记",
+			format: "ts-array",
+			...CONTENT,
+			path: "data/notebooks.ts",
+			varName: "campusNotebook",
+			itemLabel: "h",
+			batchMd: true,
+			fields: [
+				{ key: "h", label: "日期", type: "date", required: true },
+				{ key: "body", label: "正文（Markdown）", type: "text", required: true },
+			],
+		},
 	};
 
 	/** 取 schema（兼容 xxx-edit 后缀 + 单复数别名） */
