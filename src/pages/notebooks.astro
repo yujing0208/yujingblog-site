@@ -306,37 +306,104 @@ const subtitle = "三本随手记下的小书";
 			function gcCard(repo) {
 				const id = "GC" + (++_gcId);
 				const [owner, reponame] = repo.split("/");
-				return `<a id="${id}-card" class="card-github fetch-waiting no-styling" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
-					<div class="gc-titlebar">
-						<div class="gc-titlebar-left">
-							<div class="gc-owner"><div id="${id}-avatar" class="gc-avatar"></div><div class="gc-user">${esc(owner)}</div></div>
-							<div class="gc-divider">/</div>
-							<div class="gc-repo">${esc(reponame)}</div>
-						</div>
-						<div class="github-logo"></div>
-					</div>
-					<div id="${id}-description" class="gc-description">Waiting for api.github.com...</div>
-					<div class="gc-infobar">
-						<div id="${id}-stars" class="gc-stars">00K</div>
-						<div id="${id}-forks" class="gc-forks">0K</div>
-						<div id="${id}-license" class="gc-license">0K</div>
-						<span id="${id}-language" class="gc-language">Waiting...</span>
-					</div>
-					<script>
-					fetch('https://api.github.com/repos/${repo}', { referrerPolicy: "no-referrer" }).then(r => r.json()).then(d => {
-						var desc = d.description ? d.description.replace(/:[a-zA-Z0-9_]+:/g,'') : "Description not set";
-						document.getElementById('${id}-description').innerText = desc;
-						document.getElementById('${id}-language').innerText = d.language || '';
-						document.getElementById('${id}-forks').innerText = Intl.NumberFormat('en-us',{notation:"compact",maximumFractionDigits:1}).format(d.forks).replaceAll(' ','');
-						document.getElementById('${id}-stars').innerText = Intl.NumberFormat('en-us',{notation:"compact",maximumFractionDigits:1}).format(d.stargazers_count).replaceAll(' ','');
-						var av = document.getElementById('${id}-avatar');
-						av.style.backgroundImage = 'url('+d.owner.avatar_url+')';
-						av.style.backgroundColor = 'transparent';
-						document.getElementById('${id}-license').innerText = d.license ? d.license.spdx_id : 'no-license';
-						document.getElementById('${id}-card').classList.remove('fetch-waiting');
-					}).catch(function(){ document.getElementById('${id}-card').classList.add('fetch-error'); });
-					</script>
-				</` + `a>`;
+				// 用 DOM API 构建，避免 Astro 解析器把模板里的 </ 当成标签
+				const card = document.createElement("a");
+				card.id = id + "-card";
+				card.className = "card-github fetch-waiting no-styling";
+				card.href = "https://github.com/" + repo;
+				card.target = "_blank";
+				card.rel = "noopener noreferrer";
+
+				const titlebar = document.createElement("div");
+				titlebar.className = "gc-titlebar";
+
+				const titleLeft = document.createElement("div");
+				titleLeft.className = "gc-titlebar-left";
+
+				const ownerEl = document.createElement("div");
+				ownerEl.className = "gc-owner";
+				const avatar = document.createElement("div");
+				avatar.id = id + "-avatar";
+				avatar.className = "gc-avatar";
+				const user = document.createElement("div");
+				user.className = "gc-user";
+				user.textContent = owner;
+				ownerEl.appendChild(avatar);
+				ownerEl.appendChild(user);
+
+				const divider = document.createElement("div");
+				divider.className = "gc-divider";
+				divider.textContent = "/";
+
+				const repoEl = document.createElement("div");
+				repoEl.className = "gc-repo";
+				repoEl.textContent = reponame;
+
+				titleLeft.appendChild(ownerEl);
+				titleLeft.appendChild(divider);
+				titleLeft.appendChild(repoEl);
+
+				const logo = document.createElement("div");
+				logo.className = "github-logo";
+
+				titlebar.appendChild(titleLeft);
+				titlebar.appendChild(logo);
+
+				const desc = document.createElement("div");
+				desc.id = id + "-description";
+				desc.className = "gc-description";
+				desc.textContent = "Waiting for api.github.com...";
+
+				const infobar = document.createElement("div");
+				infobar.className = "gc-infobar";
+
+				const stars = document.createElement("div");
+				stars.id = id + "-stars";
+				stars.className = "gc-stars";
+				stars.textContent = "00K";
+
+				const forks = document.createElement("div");
+				forks.id = id + "-forks";
+				forks.className = "gc-forks";
+				forks.textContent = "0K";
+
+				const license = document.createElement("div");
+				license.id = id + "-license";
+				license.className = "gc-license";
+				license.textContent = "0K";
+
+				const lang = document.createElement("span");
+				lang.id = id + "-language";
+				lang.className = "gc-language";
+				lang.textContent = "Waiting...";
+
+				infobar.appendChild(stars);
+				infobar.appendChild(forks);
+				infobar.appendChild(license);
+				infobar.appendChild(lang);
+
+				card.appendChild(titlebar);
+				card.appendChild(desc);
+				card.appendChild(infobar);
+				document.body.appendChild(card);
+
+				fetch("https://api.github.com/repos/" + repo, { referrerPolicy: "no-referrer" })
+					.then((r) => r.json())
+					.then((d) => {
+						desc.textContent = (d.description || "").replace(/:[a-zA-Z0-9_]+:/g, "") || "Description not set";
+						lang.textContent = d.language || "";
+						forks.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.forks).replaceAll(" ", "");
+						stars.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.stargazers_count).replaceAll(" ", "");
+						avatar.style.backgroundImage = "url(" + d.owner.avatar_url + ")";
+						avatar.style.backgroundColor = "transparent";
+						license.textContent = d.license ? d.license.spdx_id : "no-license";
+						card.classList.remove("fetch-waiting");
+					})
+					.catch(function () {
+						card.classList.add("fetch-error");
+					});
+
+				return card.outerHTML;
 			}
 			function md(src) {
 				const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
