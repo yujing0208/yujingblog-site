@@ -434,7 +434,7 @@ const subtitle = "三本随手记下的小书";
 				else if (/^\d+\.\s/.test(l)) { let t = "<ol>", j = i; while (lines[j] && /^\d+\.\s/.test(lines[j])) { t += `<li>${inline(lines[j].replace(/^\d+\.\s/, ""))}</li>`; j++; } t += "</ol>"; h += t; i = j; }
 				else if (l.trim() === "") { i++; }
 				else {
-					const gc = l.match(/^::github\{repo="([^"]+)"\}/);
+					const gc = l.match(/^::github\{[^}]*repo\s*=\s*[\x22\u201C\u201D]([^\x22\u201C\u201D}]+)[\x22\u201C\u201D\}]/);
 					if (gc) { h += gcCard(gc[1]); i++; }
 					else { let t = "", j = i; while (j < lines.length && lines[j].trim() !== "" && !/^#{1,6}\s/.test(lines[j]) && !lines[j].startsWith("|") && !lines[j].trim().startsWith("- ") && !/^::github\{/.test(lines[j])) { t += (t ? " " : "") + lines[j]; j++; } h += `<p>${inline(t)}</p>`; i = j; }
 				}
