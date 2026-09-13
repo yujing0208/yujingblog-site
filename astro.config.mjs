@@ -30,6 +30,7 @@ import { rehypeImageWidth } from "./src/plugins/rehype-image-width.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypeWrapTable } from "./src/plugins/rehype-wrap-table.mjs";
 import { remarkContent } from "./src/plugins/remark-content.mjs";
+import { remarkGithubCard } from "./src/plugins/remark-github-card.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-colons.mjs";
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
@@ -198,11 +199,12 @@ export default defineConfig({
 	],
 	markdown: {
 		processor: unified({
-			remarkPlugins: [
-				remarkMath,
-				remarkContent,
-				remarkFixGithubAdmonitions,
-				remarkDirective,
+		remarkPlugins: [
+			remarkMath,
+			remarkContent,
+			remarkFixGithubAdmonitions,
+			remarkGithubCard,
+			remarkDirective,
 				remarkEscapeNumericColons,
 				remarkSectionize,
 				parseDirectiveNode,
