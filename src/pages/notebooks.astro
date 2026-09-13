@@ -201,6 +201,27 @@ const subtitle = "三本随手记下的小书";
 		.content ol { list-style: decimal; }
 		.content li { margin: 5px 0; }
 		.content li::marker { color: currentColor; }
+
+		/* GitHub Card */
+		.card-github { display: block; text-decoration: none !important; color: var(--nb-ink) !important; border: 1.5px solid var(--nb-line); border-radius: 14px; padding: 16px 18px; margin: 14px 0; background: var(--nb-card); transition: border-color 0.2s, transform 0.15s; }
+		.card-github:hover { border-color: var(--nb-primary); transform: translateY(-2px); }
+		.card-github.no-styling { all: unset; display: block; }
+		.gc-titlebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+		.gc-titlebar-left { display: flex; align-items: center; gap: 9px; }
+		.gc-owner { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+		.gc-avatar { width: 22px; height: 22px; border-radius: 50%; background-size: cover; background-position: center; background-color: var(--nb-line); flex-shrink: 0; }
+		.gc-user { color: var(--nb-ink); }
+		.gc-divider { color: var(--nb-muted); font-size: 13px; }
+		.gc-repo { color: var(--nb-primary); }
+		.github-logo { width: 20px; height: 20px; background: var(--nb-ink); mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z'/%3E%3C/svg%3E") center/contain no-repeat; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z'/%3E%3C/svg%3E") center/contain no-repeat; opacity: 0.7; flex-shrink: 0; }
+		.gc-description { font-size: 13px; color: var(--nb-muted); margin-bottom: 10px; min-height: 18px; }
+		.gc-infobar { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--nb-muted); flex-wrap: wrap; }
+		.gc-infobar > div, .gc-infobar > span { min-height: 14px; }
+		.gc-infobar b { color: var(--nb-ink); font-weight: 600; }
+		.card-github.fetch-waiting .gc-description, .card-github.fetch-waiting .gc-infobar { opacity: 0.6; }
+		.card-github.fetch-error .gc-description::after { content: "（加载失败）"; color: #d9756b; }
+		.card-github.fetch-error { border-color: #d9756b; }
+
 		.content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
 		.content th, .content td { border: 1px solid var(--nb-line); padding: 7px 10px; text-align: left; }
 		.content th { background: var(--nb-primary-soft); }
@@ -281,9 +302,45 @@ const subtitle = "三本随手记下的小书";
 				}
 			];
 
+			let _gcId = 0;
+			function gcCard(repo) {
+				const id = "GC" + (++_gcId);
+				const [owner, reponame] = repo.split("/");
+				return `<a id="${id}-card" class="card-github fetch-waiting no-styling" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
+					<div class="gc-titlebar">
+						<div class="gc-titlebar-left">
+							<div class="gc-owner"><div id="${id}-avatar" class="gc-avatar"></div><div class="gc-user">${esc(owner)}</div></div>
+							<div class="gc-divider">/</div>
+							<div class="gc-repo">${esc(reponame)}</div>
+						</div>
+						<div class="github-logo"></div>
+					</div>
+					<div id="${id}-description" class="gc-description">Waiting for api.github.com...</div>
+					<div class="gc-infobar">
+						<div id="${id}-stars" class="gc-stars">00K</div>
+						<div id="${id}-forks" class="gc-forks">0K</div>
+						<div id="${id}-license" class="gc-license">0K</div>
+						<span id="${id}-language" class="gc-language">Waiting...</span>
+					</div>
+					<script>
+					fetch('https://api.github.com/repos/${repo}', { referrerPolicy: "no-referrer" }).then(r => r.json()).then(d => {
+						var desc = d.description ? d.description.replace(/:[a-zA-Z0-9_]+:/g,'') : "Description not set";
+						document.getElementById('${id}-description').innerText = desc;
+						document.getElementById('${id}-language').innerText = d.language || '';
+						document.getElementById('${id}-forks').innerText = Intl.NumberFormat('en-us',{notation:"compact",maximumFractionDigits:1}).format(d.forks).replaceAll(' ','');
+						document.getElementById('${id}-stars').innerText = Intl.NumberFormat('en-us',{notation:"compact",maximumFractionDigits:1}).format(d.stargazers_count).replaceAll(' ','');
+						var av = document.getElementById('${id}-avatar');
+						av.style.backgroundImage = 'url('+d.owner.avatar_url+')';
+						av.style.backgroundColor = 'transparent';
+						document.getElementById('${id}-license').innerText = d.license ? d.license.spdx_id : 'no-license';
+						document.getElementById('${id}-card').classList.remove('fetch-waiting');
+					}).catch(function(){ document.getElementById('${id}-card').classList.add('fetch-error'); });
+					</script>
+				</a>`;
+			}
 			function md(src) {
 				const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-									const inline = (s) => esc(s)
+				const inline = (s) => esc(s)
 						.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, url) => {
 							const parts = (alt || "").split("|");
 							const a = parts[0] || "";
@@ -306,10 +363,14 @@ const subtitle = "三本随手记下的小书";
 						const rows = []; let j = i; while (lines[j] && lines[j].startsWith("|")) { rows.push(lines[j]); j++; }
 						let tbl = "<table>"; rows.forEach((r, k) => { const cells = r.split("|").slice(1, -1); if (k === 1 && /^[-: ]+$/.test(cells.map((c) => c.trim()).join(""))) return; tbl += `<tr>${cells.map((c) => `<${k === 0 ? "th" : "td"}>${inline(c.trim())}</${k === 0 ? "th" : "td"}>`).join("")}</tr>`; }); tbl += "</table>"; h += tbl; i = j;
 					}
-					else if (l.startsWith("- ")) { let t = "<ul>", j = i; while (lines[j] && lines[j].startsWith("- ")) { t += `<li>${inline(lines[j].slice(2))}</li>`; j++; } t += "</ul>"; h += t; i = j; }
-					else if (/^\d+\.\s/.test(l)) { let t = "<ol>", j = i; while (lines[j] && /^\d+\.\s/.test(lines[j])) { t += `<li>${inline(lines[j].replace(/^\d+\.\s/, ""))}</li>`; j++; } t += "</ol>"; h += t; i = j; }
-					else if (l.trim() === "") { i++; }
-					else { let t = "", j = i; while (j < lines.length && lines[j].trim() !== "" && !/^#{1,6}\s/.test(lines[j]) && !lines[j].startsWith("|") && !lines[j].startsWith("- ")) { t += (t ? " " : "") + lines[j]; j++; } h += `<p>${inline(t)}</p>`; i = j; }
+				else if (l.trim().startsWith("- ")) { let t = "<ul>", j = i; while (lines[j] && lines[j].trim().startsWith("- ")) { t += `<li>${inline(lines[j].trim().slice(2))}</li>`; j++; } t += "</ul>"; h += t; i = j; }
+				else if (/^\d+\.\s/.test(l)) { let t = "<ol>", j = i; while (lines[j] && /^\d+\.\s/.test(lines[j])) { t += `<li>${inline(lines[j].replace(/^\d+\.\s/, ""))}</li>`; j++; } t += "</ol>"; h += t; i = j; }
+				else if (l.trim() === "") { i++; }
+				else {
+					const gc = l.match(/^::github\{repo="([^"]+)"\}/);
+					if (gc) { h += gcCard(gc[1]); i++; }
+					else { let t = "", j = i; while (j < lines.length && lines[j].trim() !== "" && !/^#{1,6}\s/.test(lines[j]) && !lines[j].startsWith("|") && !lines[j].trim().startsWith("- ") && !/^::github\{/.test(lines[j])) { t += (t ? " " : "") + lines[j]; j++; } h += `<p>${inline(t)}</p>`; i = j; }
+				}
 				}
 				return h;
 			}
