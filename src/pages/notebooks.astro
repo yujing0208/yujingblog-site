@@ -304,106 +304,104 @@ const subtitle = "三本随手记下的小书";
 
 			let _gcId = 0;
 			function gcCard(repo) {
+				// 用自闭合 input 占位，避免 Astro 解析 </ 结束标签
 				const id = "GC" + (++_gcId);
-				const [owner, reponame] = repo.split("/");
-				// 用 DOM API 构建，避免 Astro 解析器把模板里的 </ 当成标签
-				const card = document.createElement("a");
-				card.id = id + "-card";
-				card.className = "card-github fetch-waiting no-styling";
-				card.href = "https://github.com/" + repo;
-				card.target = "_blank";
-				card.rel = "noopener noreferrer";
+				return '<input type="hidden" class="gc-card-placeholder" data-repo="' + repo + '" data-gcid="' + id + '">';
+			}
+			function replaceGitHubCards(root) {
+				const scope = root || document;
+				const placeholders = scope.querySelectorAll("input.gc-card-placeholder[data-repo]");
+				placeholders.forEach(function(placeholder) {
+					const repo = placeholder.dataset.repo;
+					if (!repo || !repo.includes("/")) return;
+					const id = placeholder.dataset.gcid || ("GC" + (++_gcId));
+					const [owner, reponame] = repo.split("/");
 
-				const titlebar = document.createElement("div");
-				titlebar.className = "gc-titlebar";
+					const card = document.createElement("a");
+					card.id = id + "-card";
+					card.className = "card-github fetch-waiting no-styling";
+					card.href = "https://github.com/" + repo;
+					card.target = "_blank";
+					card.rel = "noopener noreferrer";
 
-				const titleLeft = document.createElement("div");
-				titleLeft.className = "gc-titlebar-left";
+					const titlebar = document.createElement("div");
+					titlebar.className = "gc-titlebar";
+					const titleLeft = document.createElement("div");
+					titleLeft.className = "gc-titlebar-left";
+					const ownerEl = document.createElement("div");
+					ownerEl.className = "gc-owner";
+					const avatar = document.createElement("div");
+					avatar.id = id + "-avatar";
+					avatar.className = "gc-avatar";
+					const user = document.createElement("div");
+					user.className = "gc-user";
+					user.textContent = owner;
+					ownerEl.appendChild(avatar);
+					ownerEl.appendChild(user);
+					const divider = document.createElement("div");
+					divider.className = "gc-divider";
+					divider.textContent = "/";
+					const repoEl = document.createElement("div");
+					repoEl.className = "gc-repo";
+					repoEl.textContent = reponame;
+					titleLeft.appendChild(ownerEl);
+					titleLeft.appendChild(divider);
+					titleLeft.appendChild(repoEl);
+					const logo = document.createElement("div");
+					logo.className = "github-logo";
+					titlebar.appendChild(titleLeft);
+					titlebar.appendChild(logo);
 
-				const ownerEl = document.createElement("div");
-				ownerEl.className = "gc-owner";
-				const avatar = document.createElement("div");
-				avatar.id = id + "-avatar";
-				avatar.className = "gc-avatar";
-				const user = document.createElement("div");
-				user.className = "gc-user";
-				user.textContent = owner;
-				ownerEl.appendChild(avatar);
-				ownerEl.appendChild(user);
+					const desc = document.createElement("div");
+					desc.id = id + "-description";
+					desc.className = "gc-description";
+					desc.textContent = "Waiting for api.github.com...";
 
-				const divider = document.createElement("div");
-				divider.className = "gc-divider";
-				divider.textContent = "/";
+					const infobar = document.createElement("div");
+					infobar.className = "gc-infobar";
+					const stars = document.createElement("div");
+					stars.id = id + "-stars";
+					stars.className = "gc-stars";
+					stars.textContent = "00K";
+					const forks = document.createElement("div");
+					forks.id = id + "-forks";
+					forks.className = "gc-forks";
+					forks.textContent = "0K";
+					const license = document.createElement("div");
+					license.id = id + "-license";
+					license.className = "gc-license";
+					license.textContent = "0K";
+					const lang = document.createElement("span");
+					lang.id = id + "-language";
+					lang.className = "gc-language";
+					lang.textContent = "Waiting...";
+					infobar.appendChild(stars);
+					infobar.appendChild(forks);
+					infobar.appendChild(license);
+					infobar.appendChild(lang);
 
-				const repoEl = document.createElement("div");
-				repoEl.className = "gc-repo";
-				repoEl.textContent = reponame;
+					card.appendChild(titlebar);
+					card.appendChild(desc);
+					card.appendChild(infobar);
 
-				titleLeft.appendChild(ownerEl);
-				titleLeft.appendChild(divider);
-				titleLeft.appendChild(repoEl);
+					placeholder.parentNode.replaceChild(card, placeholder);
 
-				const logo = document.createElement("div");
-				logo.className = "github-logo";
-
-				titlebar.appendChild(titleLeft);
-				titlebar.appendChild(logo);
-
-				const desc = document.createElement("div");
-				desc.id = id + "-description";
-				desc.className = "gc-description";
-				desc.textContent = "Waiting for api.github.com...";
-
-				const infobar = document.createElement("div");
-				infobar.className = "gc-infobar";
-
-				const stars = document.createElement("div");
-				stars.id = id + "-stars";
-				stars.className = "gc-stars";
-				stars.textContent = "00K";
-
-				const forks = document.createElement("div");
-				forks.id = id + "-forks";
-				forks.className = "gc-forks";
-				forks.textContent = "0K";
-
-				const license = document.createElement("div");
-				license.id = id + "-license";
-				license.className = "gc-license";
-				license.textContent = "0K";
-
-				const lang = document.createElement("span");
-				lang.id = id + "-language";
-				lang.className = "gc-language";
-				lang.textContent = "Waiting...";
-
-				infobar.appendChild(stars);
-				infobar.appendChild(forks);
-				infobar.appendChild(license);
-				infobar.appendChild(lang);
-
-				card.appendChild(titlebar);
-				card.appendChild(desc);
-				card.appendChild(infobar);
-				document.body.appendChild(card);
-
-				fetch("https://api.github.com/repos/" + repo, { referrerPolicy: "no-referrer" })
-					.then((r) => r.json())
-					.then((d) => {
-						desc.textContent = (d.description || "").replace(/:[a-zA-Z0-9_]+:/g, "") || "Description not set";
-						lang.textContent = d.language || "";
-						forks.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.forks).replaceAll(" ", "");
-						stars.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.stargazers_count).replaceAll(" ", "");
-						avatar.style.backgroundImage = "url(" + d.owner.avatar_url + ")";
-						avatar.style.backgroundColor = "transparent";
-						license.textContent = d.license ? d.license.spdx_id : "no-license";
-						card.classList.remove("fetch-waiting");
-					})
-					.catch(function () {
-						card.classList.add("fetch-error");
-					});
-
-				return card.outerHTML;
+					fetch("https://api.github.com/repos/" + repo, { referrerPolicy: "no-referrer" })
+						.then(r => r.json())
+						.then(d => {
+							desc.textContent = (d.description || "").replace(/:[a-zA-Z0-9_]+:/g, "") || "Description not set";
+							lang.textContent = d.language || "";
+							forks.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.forks || 0).replaceAll(" ", "");
+							stars.textContent = Intl.NumberFormat("en-us", { notation: "compact", maximumFractionDigits: 1 }).format(d.stargazers_count || 0).replaceAll(" ", "");
+							avatar.style.backgroundImage = "url(" + (d.owner ? d.owner.avatar_url : "") + ")";
+							avatar.style.backgroundColor = "transparent";
+							license.textContent = d.license ? d.license.spdx_id : "no-license";
+							card.classList.remove("fetch-waiting");
+						})
+						.catch(function() {
+							card.classList.add("fetch-error");
+						});
+				});
 			}
 			function md(src) {
 				const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -473,7 +471,7 @@ const subtitle = "三本随手记下的小书";
 			function showPw(b) { $("#pwTitle").textContent = `《${b.title}》`; $("#pwHint").textContent = todayPw(); $("#pwInput").value = ""; $("#pwErr").textContent = ""; $("#pwOverlay").classList.add("show"); setTimeout(() => $("#pwInput").focus(), 200); }
 			function tryUnlock() { if ($("#pwInput").value === todayPw()) { $("#pwOverlay").classList.remove("show"); openReader(pending); } else { $("#pwErr").textContent = "密码不对，再试试～"; const c = $("#pwCard"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); } }
 
-			function openReader(b) { currentBook = b; const m = $("#bookModal"); m.innerHTML = b.type === "markdown" ? readerMarkdown(b) : b.type === "runs" ? readerRuns(b) : readerTexts(b); m.querySelector(".close-x").addEventListener("click", closeReader); $("#readerOverlay").classList.add("show"); }
+			function openReader(b) { currentBook = b; const m = $("#bookModal"); m.innerHTML = b.type === "markdown" ? readerMarkdown(b) : b.type === "runs" ? readerRuns(b) : readerTexts(b); m.querySelector(".close-x").addEventListener("click", closeReader); $("#readerOverlay").classList.add("show"); replaceGitHubCards(m); }
 			function closeReader() { $("#readerOverlay").classList.remove("show"); }
 
 			function readerMarkdown(b) {
@@ -558,6 +556,7 @@ const subtitle = "三本随手记下的小书";
 				if (next) next.disabled = b._cur >= b._orderList.length - 1;
 				const meta = $("#artMeta");
 				if (meta) meta.textContent = `余京 · 第 ${b._cur + 1} / ${b._orderList.length} 篇`;
+				replaceGitHubCards(c);
 			}
 
 			$("#bookModal").addEventListener("click", (e) => {
