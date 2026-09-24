@@ -14,6 +14,18 @@ const subtitle = "三本随手记下的小书";
 		</div>
 	</div>
 
+	<!-- 密码弹窗 -->
+	<div class="overlay" id="pwOverlay">
+		<div class="pw-card" id="pwCard">
+			<div class="pw-emoji">🔐</div>
+			<h3 id="pwTitle">需要密码</h3>
+			<p class="pw-tip">这本书是私密的</p>
+			<input class="pw-input" id="pwInput" type="password" placeholder="请输入密码" autocomplete="off" />
+			<button class="pw-btn" id="pwSubmit">解 锁</button>
+			<div class="pw-err" id="pwErr"></div>
+		</div>
+	</div>
+
 	<!-- 双开书本 -->
 	<div class="overlay reader-overlay" id="readerOverlay">
 		<div class="book-modal" id="bookModal"></div>
@@ -132,6 +144,19 @@ const subtitle = "三本随手记下的小书";
 
 		.overlay { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; background: rgba(20, 18, 15, 0.42); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
 		.overlay.show { opacity: 1; pointer-events: auto; }
+		.pw-card { width: 300px; padding: 26px 24px 22px; border-radius: var(--nb-radius); background: var(--nb-card); box-shadow: var(--nb-shadow); text-align: center; transform: scale(0.94); transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+		.overlay.show .pw-card { transform: scale(1); }
+		.pw-emoji { font-size: 30px; }
+		.pw-card h3 { margin: 8px 0 4px; font-size: 17px; letter-spacing: 1px; color: var(--nb-ink); }
+		.pw-tip { color: var(--nb-muted); font-size: 12.5px; margin-bottom: 16px; }
+		.pw-input { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1.5px solid var(--nb-line); font-size: 14px; outline: none; background: transparent; color: var(--nb-ink); transition: border-color 0.2s; }
+		.pw-input:focus { border-color: var(--nb-primary); }
+		.pw-btn { width: 100%; margin-top: 12px; padding: 11px; border: none; border-radius: 11px; cursor: pointer; background: var(--nb-primary); color: #fff; font-size: 14px; letter-spacing: 2px; font-weight: 600; transition: filter 0.2s, transform 0.1s; }
+		.pw-btn:hover { filter: brightness(1.06); }
+		.pw-btn:active { transform: scale(0.98); }
+		.pw-err { color: #d9756b; font-size: 12px; min-height: 16px; margin-top: 8px; }
+		@keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-7px)} 40%,60%{transform:translateX(7px)} }
+		.shake { animation: shake 0.5s; }
 
 		.reader-overlay { background: rgba(20, 18, 15, 0.5); }
 		.book-modal { position: relative; width: min(960px, 94vw); height: min(640px, 86vh); display: flex; border-radius: 14px 16px 16px 14px; overflow: hidden; background: var(--nb-card); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.6); transform: scale(0.95); opacity: 0; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease; }
@@ -239,14 +264,14 @@ const subtitle = "三本随手记下的小书";
 			shelf.dataset.nb = "1";
 
 			// 把弹窗移到 body 下，脱离 MainGridLayout 的层叠上下文
-			for (const id of ["readerOverlay", "toast"]) {
+			for (const id of ["pwOverlay", "readerOverlay", "toast"]) {
 				const el = document.getElementById(id);
 				if (el && el.parentNode !== document.body) document.body.appendChild(el);
 			}
 
 			const NOTEBOOKS = [
 				{
-					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", type: "markdown",
+					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", locked: true, type: "markdown",
 					articles: campusNotebook
 				},
 				{
@@ -425,7 +450,7 @@ const subtitle = "三本随手记下的小书";
 						<div class="spine"></div>
 						<div class="pages"></div>
 						<div class="cover">
-							<div class="cf-top"><span>YuJing Library</span><span>📖</span></div>
+							<div class="cf-top"><span>YuJing Library</span><span>${b.locked ? "🔒" : "📖"}</span></div>
 							<div class="cf-main">
 								<div class="cf-cn">${b.title}</div>
 								<div class="cf-author">${b.author}</div>
@@ -433,15 +458,18 @@ const subtitle = "三本随手记下的小书";
 							<div class="cf-band"><span>${b.band}</span></div>
 							<div class="cf-foot">
 								<span class="cf-press"><b>Y</b> 自印 · 2026</span>
-								<span class="cf-lock open"><svg viewBox="0 0 24 24" fill="none"><path d="M5 11V7a4 4 0 0 1 8 0v4" stroke="#fff" stroke-width="2"/><path d="M18.5 3.5l2.5 2.5-5 5H11v-5l5-5z" fill="#fff"/></svg></span>
+								<span class="cf-lock ${b.locked ? "" : "open"}">${b.locked ? '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2.5" stroke="#fff" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="#fff" stroke-width="2"/></svg>' : '<svg viewBox="0 0 24 24" fill="none"><path d="M5 11V7a4 4 0 0 1 8 0v4" stroke="#fff" stroke-width="2"/><path d="M18.5 3.5l2.5 2.5-5 5H11v-5l5-5z" fill="#fff"/></svg>'}</span>
 							</div>
 						</div>
 					</div>`).join("");
 				shelf.querySelectorAll(".book").forEach((el) => el.addEventListener("click", () => openNotebook(el.dataset.id)));
 			}
 
-			let currentBook = null;
-			function openNotebook(id) { const b = NOTEBOOKS.find((x) => x.id === id); openReader(b); }
+			let pending = null, currentBook = null;
+			function openNotebook(id) { const b = NOTEBOOKS.find((x) => x.id === id); if (b.locked) { pending = b; showPw(b); } else openReader(b); }
+			function todayPw() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return p(d.getFullYear() % 100) + p(d.getMonth() + 1) + p(d.getDate()); }
+			function showPw(b) { $("#pwTitle").textContent = `《${b.title}》`; $("#pwInput").value = ""; $("#pwErr").textContent = ""; $("#pwOverlay").classList.add("show"); setTimeout(() => $("#pwInput").focus(), 200); }
+			function tryUnlock() { if ($("#pwInput").value === todayPw()) { $("#pwOverlay").classList.remove("show"); openReader(pending); } else { $("#pwErr").textContent = "密码不对，再试试～"; const c = $("#pwCard"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); } }
 
 			function openReader(b) { currentBook = b; const m = $("#bookModal"); m.innerHTML = b.type === "markdown" ? readerMarkdown(b) : b.type === "runs" ? readerRuns(b) : readerTexts(b); m.querySelector(".close-x").addEventListener("click", closeReader); $("#readerOverlay").classList.add("show"); replaceGitHubCards(m); }
 			function closeReader() { $("#readerOverlay").classList.remove("show"); }
@@ -546,8 +574,11 @@ const subtitle = "三本随手记下的小书";
 				else if (t.classList.contains("toc-item")) { b._cur = b._orderList.indexOf(parseInt(t.dataset.i, 10)); gotoCur(b); }
 			});
 
+			$("#pwSubmit").addEventListener("click", tryUnlock);
+			$("#pwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+			$("#pwOverlay").addEventListener("click", (e) => { if (e.target.id === "pwOverlay") $("#pwOverlay").classList.remove("show"); });
 			$("#readerOverlay").addEventListener("click", (e) => { if (e.target.id === "readerOverlay") closeReader(); });
-			document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeReader(); });
+			document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeReader(); $("#pwOverlay").classList.remove("show"); } });
 
 			renderShelf();
 		}
