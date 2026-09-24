@@ -1,14 +1,20 @@
 /**
  * yujingblog 页面内编辑器 · 全局入口 v2
- * 入口一：导航栏 logo 点击（capture 阶段，抢在 Swup 前）
- * 入口二：看板娘菜单「编辑」项（EditorLogin.start()）
- * 流程：弹 PAT 输入 → 验证（GET /user）→ 存 sessionStorage → 跳 /admin/xxx-edit
+ * 入口：设置面板底部的「进入编辑页面」按钮 / window.EditorLogin.start()（看板娘菜单等）
+ *
+ * v2（密码登录版）流程：
+ *   点入口 → GET /api/editor-auth 查会话
+ *     ├ 已登录 → 直接开 /admin/xxx-edit
+ *     └ 未登录 → 弹「输入编辑密码」→ POST /api/editor-auth
+ *                → 服务端下发 HttpOnly 签名 Cookie（30 天）→ 开 /admin/xxx-edit
+ *
+ * 浏览器不再保存 GitHub Token，URL 里也不再带 token（旧的 #pat= 机制已废弃）。
  */
 (function () {
 	"use strict";
 
-	var PAT_KEY = "yuj_editor_pat";
 	var FROM_KEY = "yuj_editor_from";
+	var AUTH_URL = "/api/editor-auth";
 	var EDIT_PAGES = [
 		"projects", "friends", "websites", "about", "timeline", "diary",
 		"devices", "anime", "announcement", "footprints", "albums", "post",
@@ -19,22 +25,43 @@
 		announcement: "公告", footprints: "足迹", albums: "相册", post: "文章",
 	};
 
-	function getPat() { try { return sessionStorage.getItem(PAT_KEY) || ""; } catch (e) { return ""; } }
-	function setPat(p) { try { sessionStorage.setItem(PAT_KEY, p); } catch (e) { } }
 	function getFrom() { try { return sessionStorage.getItem(FROM_KEY) || "/"; } catch (e) { return "/"; } }
 	function setFrom(u) { try { sessionStorage.setItem(FROM_KEY, u); } catch (e) { } }
 
-	function verifyToken(pat) {
-		return fetch("https://api.github.com/user", {
-			headers: {
-				"Authorization": "Bearer " + pat,
-				"Accept": "application/vnd.github+json",
-				"User-Agent": "yujing-blog-editor",
-			},
+	/** 查询登录状态 → Promise<boolean> */
+	function checkAuth() {
+		return fetch(AUTH_URL, {
+			method: "GET",
+			credentials: "same-origin",
+			cache: "no-store",
 		}).then(function (r) {
-			if (!r.ok) return null;
-			return r.json().then(function (u) { return u.login || null; });
-		}).catch(function () { return null; });
+			if (!r.ok) return false;
+			return r.json().then(function (j) { return !!(j && j.ok); });
+		}).catch(function () { return false; });
+	}
+
+	/** 提交密码 → Promise<{ok, error?}> */
+	function login(password) {
+		return fetch(AUTH_URL, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: password }),
+		}).then(function (r) {
+			return r.json().catch(function () { return {}; }).then(function (j) {
+				if (!r.ok || !j || !j.ok) {
+					return { ok: false, error: (j && j.error) || "密码错误" };
+				}
+				return { ok: true, login: j.login || "" };
+			});
+		}).catch(function () {
+			return { ok: false, error: "网络异常，请稍后重试" };
+		});
+	}
+
+	/** 退出登录（清除服务端 Cookie） */
+	function logout() {
+		return fetch(AUTH_URL, { method: "DELETE", credentials: "same-origin" }).catch(function () { });
 	}
 
 	function overlay() {
@@ -61,8 +88,8 @@
 			".yuj-editor-hint a{color:#4c6ef5}" +
 			".yuj-editor-btn{background:#222936;border:1px solid #333c4d;color:#dde2ea;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px}" +
 			".yuj-editor-btn:hover{background:#2a3342}" +
-			".yuj-editor-btn-primary{background:#4c6ef5;border-color:#4c6ef5;color:#fff}" +
-			".yuj-editor-btn-primary:hover{background:#3b5bdb}" +
+			".yuj-editor-btn-primary{background:var(--primary,#4c6ef5);border-color:var(--primary,#4c6ef5);color:#fff}" +
+			".yuj-editor-btn-primary:hover{filter:brightness(.92)}" +
 			".yuj-editor-btn-block{width:100%;margin-bottom:8px}" +
 			".yuj-pick-list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;margin-top:8px}" +
 			".yuj-pick{text-align:left}" +
@@ -70,20 +97,21 @@
 		document.head.appendChild(s);
 	}
 
-	function showPatModal() {
+	/** 密码弹窗 → resolve(true) 已登录 / resolve(false) 取消 */
+	function showPasswordModal() {
 		return new Promise(function (resolve) {
 			var ov = overlay();
 			ov.innerHTML =
 				'<div class="yuj-editor-modal" role="dialog" aria-label="编辑登录">' +
 				'<h3>进入编辑模式</h3>' +
-				'<p class="yuj-editor-desc">输入 GitHub Personal Access Token（需 <code>repo</code> 权限）。<br>Token 仅保存在本浏览器会话中，关闭页面即清除。</p>' +
-				'<input type="password" class="yuj-editor-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">' +
+				'<p class="yuj-editor-desc">输入编辑密码即可进入。登录状态保持 30 天，期间无需重复输入。</p>' +
+				'<input type="password" class="yuj-editor-input" placeholder="编辑密码" autocomplete="current-password" spellcheck="false">' +
 				'<p class="yuj-editor-err" style="display:none;color:#e5484d"></p>' +
 				'<div class="yuj-editor-actions">' +
 				'<button class="yuj-editor-btn" data-act="cancel">取消</button>' +
-				'<button class="yuj-editor-btn yuj-editor-btn-primary" data-act="ok">验证并进入</button>' +
+				'<button class="yuj-editor-btn yuj-editor-btn-primary" data-act="ok">进入</button>' +
 				'</div>' +
-				'<p class="yuj-editor-hint">还没有 Token？<a href="https://github.com/settings/tokens" target="_blank" rel="noopener">去 GitHub 生成</a></p>' +
+				'<p class="yuj-editor-hint">密码由站点环境变量 EDITOR_PASSWORD 设置，不保存在浏览器里。</p>' +
 				'</div>';
 			var input = ov.querySelector(".yuj-editor-input");
 			var errEl = ov.querySelector(".yuj-editor-err");
@@ -93,28 +121,30 @@
 
 			function doOk() {
 				if (busy) return;
-				var pat = input.value.trim();
-				if (!pat) { errEl.textContent = "请输入 Token"; errEl.style.display = "block"; return; }
+				var pwd = input.value;
+				if (!pwd) { errEl.textContent = "请输入密码"; errEl.style.display = "block"; return; }
 				busy = true;
 				okBtn.disabled = true;
 				okBtn.textContent = "验证中…";
-				verifyToken(pat).then(function (login) {
+				login(pwd).then(function (res) {
 					busy = false;
 					okBtn.disabled = false;
-					okBtn.textContent = "验证并进入";
-					if (login) {
+					okBtn.textContent = "进入";
+					if (res.ok) {
 						document.body.removeChild(ov);
-						resolve(pat);
+						resolve(true);
 					} else {
-						errEl.textContent = "Token 无效或无权限，请检查后重试";
+						errEl.textContent = res.error || "密码错误";
 						errEl.style.display = "block";
+						input.select();
 					}
 				});
 			}
+
 			okBtn.addEventListener("click", doOk);
-			cancelBtn.addEventListener("click", function () { document.body.removeChild(ov); resolve(null); });
+			cancelBtn.addEventListener("click", function () { document.body.removeChild(ov); resolve(false); });
 			input.addEventListener("keydown", function (e) { if (e.key === "Enter") doOk(); });
-			ov.addEventListener("click", function (e) { if (e.target === ov) { document.body.removeChild(ov); resolve(null); } });
+			ov.addEventListener("click", function (e) { if (e.target === ov) { document.body.removeChild(ov); resolve(false); } });
 			document.body.appendChild(ov);
 			setTimeout(function () { input.focus(); }, 50);
 		});
@@ -149,24 +179,19 @@
 		});
 	}
 
+	function openEditor(edit) {
+		setFrom(location.href);
+		window.open("/admin/" + edit + "-edit", "_blank", "noopener");
+	}
+
+	/** 已登录直接开；未登录先弹密码，成功后开 */
 	function doEnter(edit) {
-		var url = "/admin/" + edit + "-edit";
-		var pat = getPat();
-		function openEditor(token) {
-			var hash = token ? "#pat=" + encodeURIComponent(token) : "";
-			window.open(url + hash, "_blank", "noopener");
-		}
-		if (!pat) {
-			showPatModal().then(function (p) {
-				if (!p) return;
-				setPat(p);
-				setFrom(location.href);
-				openEditor(p);
+		checkAuth().then(function (ok) {
+			if (ok) { openEditor(edit); return; }
+			showPasswordModal().then(function (done) {
+				if (done) openEditor(edit);
 			});
-		} else {
-			setFrom(location.href);
-			openEditor(pat);
-		}
+		});
 	}
 
 	/** 全局入口：看板娘菜单等调用。无参时优先当前页 data-edit，否则弹页面选择器 */
@@ -182,7 +207,11 @@
 			}
 			doEnter(target);
 		},
-		verify: verifyToken,
+		// 兼容旧调用名：以前是 verify(pat)，现在是查询登录态
+		verify: checkAuth,
+		check: checkAuth,
+		login: login,
+		logout: logout,
 	};
 
 	// 入口一（导航栏 logo）已移除：点击 logo 直接走默认 <a href="/"> 回首页。

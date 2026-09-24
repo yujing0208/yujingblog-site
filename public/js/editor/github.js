@@ -1,19 +1,38 @@
 /**
  * GitHub REST API 封装（编辑器运行时）
  * 全部走 Contents API；批量操作走 Git Data API。
+ *
+ * v2（密码登录版）：浏览器不再持有 GitHub Token。
+ * 所有请求都转发给 /api/editor-github，由服务端带上 GH_TOKEN 去调 GitHub，
+ * 浏览器侧只依赖 /api/editor-auth 下发的 HttpOnly Cookie。
  */
 (function () {
 	"use strict";
 
 	var API = "https://api.github.com";
+	var PROXY = "/api/editor-github";
 
-	function getPat() {
-		try { return sessionStorage.getItem("yuj_editor_pat") || ""; } catch (e) { return ""; }
+	/** 请求包装：把 https://api.github.com/xxx 转成 /api/editor-github?path=/xxx */
+	function gfetch(url, opts) {
+		opts = opts || {};
+		var ghPath = String(url).replace(/^https:\/\/api\.github\.com/, "");
+		var proxied = PROXY + "?path=" + encodeURIComponent(ghPath);
+		return fetch(proxied, {
+			method: opts.method || "GET",
+			headers: opts.headers || headers(),
+			body: opts.body,
+			credentials: "same-origin",
+		}).then(function (r) {
+			// Cookie 过期：通知页面重新登录，而不是让用户看到 401 报错
+			if (r.status === 401 && window.EditorAuthGate && window.EditorAuthGate.require) {
+				window.EditorAuthGate.require();
+			}
+			return r;
+		});
 	}
 
 	function headers(extra) {
 		var h = {
-			"Authorization": "Bearer " + getPat(),
 			"Accept": "application/vnd.github+json",
 			"User-Agent": "yujing-blog-editor",
 		};
@@ -38,7 +57,7 @@
 	/** 读取文件 → { sha, content }，content 为 UTF-8 文本（保留 BOM），404 返回 null */
 	function getFile(owner, repo, path, branch) {
 		var url = API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path) + (branch ? "?ref=" + branch : "");
-		return fetch(url, { headers: headers() }).then(function (r) {
+		return gfetch(url).then(function (r) {
 			if (r.status === 404) return null;
 			return handle(r, path).then(function (j) {
 				var text = "";
@@ -69,7 +88,7 @@
 				content: toBase64(content),
 			};
 			if (old && old.sha) payload.sha = old.sha;
-			return fetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
+			return gfetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
 				method: "PUT",
 				headers: headers({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
@@ -82,7 +101,7 @@
 		return getFile(owner, repo, path, branch).then(function (old) {
 			if (!old) return null;
 			var payload = { message: message || "chore: delete via online editor", branch: branch || "master", sha: old.sha };
-			return fetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
+			return gfetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
 				method: "DELETE",
 				headers: headers({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
@@ -93,7 +112,7 @@
 	/** 列出目录 → [{name,type,path,sha}] */
 	function listDir(owner, repo, path, branch) {
 		var url = API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path) + (branch ? "?ref=" + branch : "");
-		return fetch(url, { headers: headers() }).then(function (r) {
+		return gfetch(url).then(function (r) {
 			if (r.status === 404) return [];
 			return handle(r, path).then(function (arr) {
 				if (!Array.isArray(arr)) return [];
@@ -111,7 +130,7 @@
 				content: base64,
 			};
 			if (old && old.sha) payload.sha = old.sha;
-			return fetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
+			return gfetch(API + "/repos/" + owner + "/" + repo + "/contents/" + enc(path), {
 				method: "PUT",
 				headers: headers({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
@@ -129,10 +148,10 @@
 		//      更新引用（PATCH）端点必须用复数 /git/refs/heads/{branch}，否则返回 404 Not Found (ref-update)
 		var refUrl = API + "/repos/" + owner + "/" + repo + "/git/ref/heads/" + branch;
 		var refUpdateUrl = API + "/repos/" + owner + "/" + repo + "/git/refs/heads/" + branch;
-		return fetch(refUrl, { headers: headers() })
+		return gfetch(refUrl)
 			.then(function (r) { return handle(r, "ref"); })
 			.then(function (ref) {
-				return fetch(API + "/repos/" + owner + "/" + repo + "/git/commits/" + ref.object.sha, { headers: headers() })
+				return gfetch(API + "/repos/" + owner + "/" + repo + "/git/commits/" + ref.object.sha)
 					.then(function (r) { return handle(r, "commit"); })
 					.then(function (commit) {
 						var baseTreeSha = commit.tree.sha;
@@ -141,7 +160,7 @@
 						var blobReqs = changes.map(function (c) {
 							if (c.delete) return Promise.resolve(null);
 							var content = c.base64 || toBase64(c.content);
-							return fetch(API + "/repos/" + owner + "/" + repo + "/git/blobs", {
+							return gfetch(API + "/repos/" + owner + "/" + repo + "/git/blobs", {
 								method: "POST",
 								headers: headers({ "Content-Type": "application/json" }),
 								body: JSON.stringify({ content: content, encoding: "base64" }),
@@ -151,7 +170,7 @@
 						return Promise.all(blobReqs).then(function (newItems) {
 							var items = newItems.filter(Boolean);
 							// 2. 取当前完整树，保留未变更文件、剔除被删除文件
-							return fetch(API + "/repos/" + owner + "/" + repo + "/git/trees/" + baseTreeSha + "?recursive=1", { headers: headers() })
+							return gfetch(API + "/repos/" + owner + "/" + repo + "/git/trees/" + baseTreeSha + "?recursive=1")
 								.then(function (r) { return handle(r, "tree"); })
 								.then(function (tree) {
 									var keep = (tree.tree || []).filter(function (t) {
@@ -164,7 +183,7 @@
 									});
 									var finalTree = keep.concat(items);
 									// 3. 建新 tree
-									return fetch(API + "/repos/" + owner + "/" + repo + "/git/trees", {
+									return gfetch(API + "/repos/" + owner + "/" + repo + "/git/trees", {
 										method: "POST",
 										headers: headers({ "Content-Type": "application/json" }),
 										body: JSON.stringify({ base_tree: baseTreeSha, tree: finalTree }),
@@ -172,14 +191,14 @@
 								});
 						}).then(function (newTree) {
 							// 4. 建 commit
-							return fetch(API + "/repos/" + owner + "/" + repo + "/git/commits", {
+							return gfetch(API + "/repos/" + owner + "/" + repo + "/git/commits", {
 								method: "POST",
 								headers: headers({ "Content-Type": "application/json" }),
 								body: JSON.stringify({ message: message || "chore: batch update via online editor", tree: newTree.sha, parents: [parentSha] }),
 							}).then(function (r) { return handle(r, "commit-create"); });
 						}).then(function (newCommit) {
 							// 5. 更新 ref（PATCH 端点为 /git/refs/ 复数）
-							return fetch(refUpdateUrl, {
+							return gfetch(refUpdateUrl, {
 								method: "PATCH",
 								headers: headers({ "Content-Type": "application/json" }),
 								body: JSON.stringify({ sha: newCommit.sha, force: false }),

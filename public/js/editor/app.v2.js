@@ -1,7 +1,8 @@
 /**
  * app：编辑器主应用
  * 入口：/admin/<page>-edit
- * 流程：解析 schema → 校验 PAT → 拉数据 → 列表+表单 → 保存（diff 预览）→ PUT
+ * 流程：解析 schema → 校验登录态 → 拉数据 → 列表+表单 → 保存（diff 预览）→ PUT
+ * v2（密码登录版）：GitHub Token 已移到服务端（/api/editor-github），浏览器只带 HttpOnly Cookie
  */
 (function () {
 	"use strict";
@@ -18,8 +19,7 @@
 		});
 	}
 
-	function getPat() { try { return sessionStorage.getItem("yuj_editor_pat") || ""; } catch (e) { return ""; } }
-	function setPat(p) { try { sessionStorage.setItem("yuj_editor_pat", p); } catch (e) { } }
+	// v2（密码登录版）：GitHub Token 已移到服务端，浏览器侧不再读写任何 token。
 	function getFrom() { try { return sessionStorage.getItem("yuj_editor_from") || "/"; } catch (e) { return "/"; } }
 
 	// 在 textarea 光标处插入文本（替换选区），并将光标移到插入内容之后
@@ -34,17 +34,11 @@
 		textarea.focus();
 	}
 
-	function consumeHashPat() {
-		var h = location.hash;
-		if (!h) return;
-		var m = h.match(/^#pat=([^&]+)/);
-		if (!m) return;
-		try {
-			setPat(decodeURIComponent(m[1]));
-			history.replaceState(null, "", location.pathname + location.search);
-		} catch (e) { }
-	}
-	consumeHashPat();
+	// 兼容旧链接：历史遗留的 #pat=xxx 只做清理，不再读取 token
+	(function stripLegacyPatHash() {
+		if (location.hash.indexOf("#pat=") !== 0) return;
+		try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { }
+	})();
 
 	function goBack() {
 		window.location.href = getFrom();
@@ -181,12 +175,19 @@
 		if (pushBtn) pushBtn.addEventListener("click", pushAll);
 		updatePushBtn();
 		$("#ed-logout").addEventListener("click", function () {
-			sessionStorage.removeItem("yuj_editor_pat");
-			goBack();
+			// 先清掉服务端登录 Cookie，再回站点；网络异常也不能卡住退出
+			var done = false;
+			var go = function () { if (done) return; done = true; goBack(); };
+			var timer = setTimeout(go, 1200);
+			try {
+				fetch("/api/editor-auth", { method: "DELETE", credentials: "same-origin" })
+					.then(function () { clearTimeout(timer); go(); })
+					.catch(function () { clearTimeout(timer); go(); });
+			} catch (e) { clearTimeout(timer); go(); }
 		});
 		try {
-			fetch("https://api.github.com/user", {
-				headers: { "Authorization": "Bearer " + getPat(), "Accept": "application/vnd.github+json", "User-Agent": "yujing-blog-editor" },
+			fetch("/api/editor-github?path=" + encodeURIComponent("/user"), {
+				credentials: "same-origin",
 			}).then(function (r) { return r.json(); }).then(function (u) {
 				if (u && u.login) $("#ed-user").textContent = "👤 " + u.login;
 			}).catch(function () { });

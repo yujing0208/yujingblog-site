@@ -49,7 +49,9 @@ const hue = siteConfig.themeColor.hue;
 	<div id="ed-pages" class="ed-pages"></div>
 	<div id="editor-root"></div>
 
-	<script is:inline src="/js/editor/github.js?v=3"></script>
+	<!-- 登录闸门：必须在编辑器脚本之前，避免未登录时先渲染出编辑界面 -->
+	<script is:inline src="/js/editor/auth-gate.js?v=1"></script>
+	<script is:inline src="/js/editor/github.js?v=4"></script>
 	<script is:inline src="/js/editor/ts-io.js?v=3"></script>
 	<script is:inline src="/js/editor/md.js?v=3"></script>
 	<script is:inline src="/js/editor/markdown-it.min.js?v=1"></script>
@@ -57,6 +59,6 @@ const hue = siteConfig.themeColor.hue;
 	<script is:inline src="/js/editor/form.js?v=3"></script>
 	<script is:inline src="/js/editor/upload.js?v=3"></script>
 	<script is:inline src="/js/editor/imgbed.js?v=2"></script>
-	<script is:inline src="/js/editor/app.v2.js?v=9"></script>
+	<script is:inline src="/js/editor/app.v2.js?v=10"></script>
 </body>
 </html>
