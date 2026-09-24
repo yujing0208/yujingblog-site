@@ -172,6 +172,10 @@ const subtitle = "三本随手记下的小书";
 		.btn-soft:hover { border-color: var(--nb-primary); color: var(--nb-primary); }
 		.btn-soft.active { background: var(--nb-primary-soft); border-color: var(--nb-primary-line); color: var(--nb-primary); }
 		.btn-soft:disabled { opacity: .4; cursor: not-allowed; }
+		.nb-empty { padding: 44px 14px; text-align: center; color: var(--nb-muted); display: flex; flex-direction: column; align-items: center; gap: 7px; letter-spacing: 0.5px; }
+		.nb-empty-ico { font-size: 26px; opacity: 0.75; }
+		.nb-empty b { font-size: 14px; font-weight: 600; color: var(--nb-ink); }
+		.nb-empty span:last-child { font-size: 12.5px; }
 
 		.toc { flex: 1; overflow-y: auto; padding-right: 4px; }
 		.toc-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13.5px; color: var(--nb-ink); display: flex; gap: 8px; align-items: baseline; transition: background 0.18s; margin-bottom: 2px; }
@@ -276,29 +280,12 @@ const subtitle = "三本随手记下的小书";
 				},
 				{
 					id: "run", title: "自律日记", accent: "#e0996b", band: "跑过的路，一步都不白费", author: "余京◎著", type: "runs",
-					totalKm: 41.4, monthCheckins: 4, termGoal: 300,
-					runs: [
-						{ date: "2026-09-05", distance: 5.2, duration: "28:30", heartRate: 152 },
-						{ date: "2026-09-04", distance: 3.0, duration: "18:10", heartRate: null },
-						{ date: "2026-09-02", distance: 6.5, duration: "35:40", heartRate: 148 },
-						{ date: "2026-08-30", distance: 4.0, duration: "22:05", heartRate: 156 },
-						{ date: "2026-08-28", distance: 8.0, duration: "44:12", heartRate: 150 },
-						{ date: "2026-08-25", distance: 3.7, duration: "20:48", heartRate: null },
-						{ date: "2026-08-21", distance: 11.0, duration: "61:30", heartRate: 145 }
-					]
+					totalKm: 0, monthCheckins: 0, termGoal: 300,
+					runs: []
 				},
 				{
 					id: "daily", title: "每日碎碎念", accent: "#7d93c4", band: "今天也在认真碎碎念", author: "余京◎著", type: "texts",
-					texts: [
-						{ date: "2026-09-06", content: "今天下雨了，没带伞，在图书馆门口等了半小时。后来干脆走进雨里跑回去，凉快。" },
-						{ date: "2026-09-05", content: "食堂二楼的麻辣烫居然加了花生酱，味道很怪，但莫名上头。" },
-						{ date: "2026-09-04", content: "晚上绕操场走了一圈，路灯把影子拉得很长，心里忽然静下来。" },
-						{ date: "2026-09-03", content: "物理又没听懂，但同桌讲了一遍我居然懂了，朋友真有用。" },
-						{ date: "2026-09-02", content: "买到了很久以前想看的那本书，翻了两页，纸质很好。" },
-						{ date: "2026-09-01", content: "开学第一天，课表排得满满的，但比想象中轻松一点。" },
-						{ date: "2026-08-31", content: "把房间收拾了一遍，扔掉好多没用的东西，清爽。" },
-						{ date: "2026-08-30", content: "深夜睡不着，听了一首很老的歌，想起一些事。" }
-					]
+					texts: []
 				}
 			];
 
@@ -442,7 +429,8 @@ const subtitle = "三本随手记下的小书";
 
 			const $ = (s, r = document) => r.querySelector(s);
 			function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 1600); }
-			function pace(dur, dist) { const [m, s] = dur.split(":").map(Number); const sec = m * 60 + s; const p = sec / dist; const mm = Math.floor(p / 60); const ss = Math.round(p % 60); return `${mm}'${String(ss).padStart(2, "0")}"`; }
+			function pace(dur, dist) { if (!dist) return "--"; const [m, s] = dur.split(":").map(Number); const sec = m * 60 + s; const p = sec / dist; const mm = Math.floor(p / 60); const ss = Math.round(p % 60); return `${mm}'${String(ss).padStart(2, "0")}"`; }
+			function nbEmpty(ico, title, sub) { return `<div class="nb-empty"><span class="nb-empty-ico">${ico}</span><b>${title}</b><span>${sub}</span></div>`; }
 
 			function renderShelf() {
 				shelf.innerHTML = NOTEBOOKS.map((b) => `
@@ -508,8 +496,8 @@ const subtitle = "三本随手记下的小书";
 				const validHr = b.runs.filter((r) => r.heartRate != null);
 				const avgHr = validHr.length ? Math.round(validHr.reduce((s, r) => s + r.heartRate, 0) / validHr.length) : "--";
 				const avgPace = pace(`${Math.floor(totalSec / 60)}:${String(Math.round(totalSec % 60)).padStart(2, "0")}`, totalDist);
-				const cards = b.runs.map((r) => `<div class="run-card"><div class="run-top"><span class="run-date">${r.date}</span><span class="run-dist">${r.distance} km</span></div><div class="run-grid"><span>用时 <b>${r.duration}</b></span><span>心率 <b>${r.heartRate ?? "--"}</b></span><span class="pace-tag">配速 ${pace(r.duration, r.distance)}/km</span></div></div>`).join("");
-				const summary = `<div class="run-summary"><div class="rs-head">📊 本学期小结</div><div class="rs-grid"><div><span>总里程</span><b>${totalDist.toFixed(1)} km</b></div><div><span>打卡</span><b>${b.runs.length} 次</b></div><div><span>总用时</span><b>${Math.floor(totalSec / 60)}:${String(Math.round(totalSec % 60)).padStart(2, "0")}</b></div><div><span>平均配速</span><b>${avgPace}/km</b></div><div><span>平均心率</span><b>${avgHr}</b></div></div></div>`;
+				const cards = b.runs.length ? b.runs.map((r) => `<div class="run-card"><div class="run-top"><span class="run-date">${r.date}</span><span class="run-dist">${r.distance} km</span></div><div class="run-grid"><span>用时 <b>${r.duration}</b></span><span>心率 <b>${r.heartRate ?? "--"}</b></span><span class="pace-tag">配速 ${pace(r.duration, r.distance)}/km</span></div></div>`).join("") : nbEmpty("🏃", "还没有跑步记录", "跑完第一圈，就来记一笔");
+				const summary = b.runs.length ? `<div class="run-summary"><div class="rs-head">📊 本学期小结</div><div class="rs-grid"><div><span>总里程</span><b>${totalDist.toFixed(1)} km</b></div><div><span>打卡</span><b>${b.runs.length} 次</b></div><div><span>总用时</span><b>${Math.floor(totalSec / 60)}:${String(Math.round(totalSec % 60)).padStart(2, "0")}</b></div><div><span>平均配速</span><b>${avgPace}/km</b></div><div><span>平均心率</span><b>${avgHr}</b></div></div></div>` : "";
 				return `<button class="close-x" title="关闭">✕</button>
 					<section class="left-page"><div class="page-pad">
 						<div class="pg-head"><h2>自律日记</h2></div>
@@ -520,7 +508,7 @@ const subtitle = "三本随手记下的小书";
 					</div></section>
 					<div class="spine-shadow"></div>
 					<section class="right-page"><div class="page-pad">
-						<div class="pg-head"><h2>跑步记录</h2><span class="meta">${b.runs.length} 条 · 上下滑动</span></div>
+						<div class="pg-head"><h2>跑步记录</h2><span class="meta">${b.runs.length ? b.runs.length + " 条 · 上下滑动" : "还没有记录"}</span></div>
 						<div class="content" id="content">${cards}${summary}</div>
 					</div></section>`;
 			}
@@ -528,12 +516,12 @@ const subtitle = "三本随手记下的小书";
 			function readerTexts(b) {
 				const items = [...b.texts].sort((a, c) => c.date.localeCompare(a.date));
 				const toc = items.map((t, i) => `<div class="toc-item" data-i="${i}"><span class="idx">${t.date.slice(5)}</span><span class="lead">${t.content.slice(0, 12)}…</span></div>`).join("");
-				const body = items.map((t, i) => `<div id="art-${i}"><div class="pg-head" style="margin:0 0 6px"><span class="run-date">${t.date}</span></div><p style="margin-top:0">${t.content}</p><hr class="nb-hr"></div>`).join("");
+				const body = items.length ? items.map((t, i) => `<div id="art-${i}"><div class="pg-head" style="margin:0 0 6px"><span class="run-date">${t.date}</span></div><p style="margin-top:0">${t.content}</p><hr class="nb-hr"></div>`).join("") : nbEmpty("📝", "还没有碎碎念", "想到什么，随手记下");
 				return `<button class="close-x" title="关闭">✕</button>
 					<section class="left-page"><div class="page-pad">
 						<div class="pg-head"><h2>目录</h2></div>
-						<div class="stat-sub" style="margin-bottom:10px">共 ${b.texts.length} 条思绪</div>
-						<button class="btn-soft" id="fishBtn" style="margin-bottom:10px;width:100%;justify-content:center">🎣 随机一条</button>
+						<div class="stat-sub" style="margin-bottom:10px">${b.texts.length ? "共 " + b.texts.length + " 条思绪" : "还空着"}</div>
+						<button class="btn-soft" id="fishBtn" ${b.texts.length ? "" : "disabled"} style="margin-bottom:10px;width:100%;justify-content:center">🎣 随机一条</button>
 						<div class="toc" id="toc">${toc}</div>
 					</div></section>
 					<div class="spine-shadow"></div>
