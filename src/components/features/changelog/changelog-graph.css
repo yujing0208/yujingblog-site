@@ -27,7 +27,7 @@
 	align-items: center;
 	gap: 0.625rem;
 	margin: 0;
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 1.5rem;
 	font-weight: 700;
 	line-height: 1.3;
@@ -187,7 +187,7 @@
 	position: absolute;
 	right: 0.625rem;
 	bottom: -0.625rem;
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 2.75rem;
 	font-weight: 800;
 	line-height: 1;
@@ -250,7 +250,7 @@
 }
 
 .changelog-card__title {
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.9375rem;
 	font-weight: 700;
 	line-height: 1.4;
@@ -372,7 +372,7 @@ html.changelog-dialog-open {
 
 .changelog-dialog__close:hover {
 	background: var(--btn-plain-bg-hover);
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .changelog-dialog__meta {
@@ -419,7 +419,7 @@ html.changelog-dialog-open {
 .changelog-dialog__title {
 	margin: 0 0 0.625rem;
 	padding-right: 2.5rem;
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 1.25rem;
 	font-weight: 800;
 	line-height: 1.35;
@@ -427,7 +427,7 @@ html.changelog-dialog-open {
 
 .changelog-dialog__detail {
 	margin: 0 0 1.25rem;
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.9375rem;
 	line-height: 1.7;
 }
@@ -466,7 +466,7 @@ html.changelog-dialog-open {
 	padding: 0.3125rem 0.75rem;
 	border-radius: 999px;
 	background: var(--btn-plain-bg-hover);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.8125rem;
 	font-weight: 700;
 	text-decoration: none;
@@ -477,7 +477,7 @@ html.changelog-dialog-open {
 
 a.changelog-card__page-chip:hover {
 	background: var(--primary);
-	color: #fff;
+	color: var(--deep-text);
 }
 
 .changelog-dialog__related {
@@ -515,7 +515,7 @@ a.changelog-card__page-chip:hover {
 }
 
 .changelog-dialog__related-title {
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.875rem;
 	font-weight: 700;
 	line-height: 1.4;
