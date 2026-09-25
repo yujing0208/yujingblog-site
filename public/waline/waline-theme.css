@@ -1,0 +1,65 @@
+/**
+ * Waline 评论区主题：让配色跟随博客的 MD3 设计变量
+ *
+ * 加载时机：由 Waline.astro 在评论区进入视口时注入，紧跟在官方 waline.css 之后。
+ *
+ * 为什么选择器写成 :root:root / :root:root.dark：
+ *   Waline 官方 CSS 用单 :root 定义整套 --waline-* 变量（特异性 0,1,0）。
+ *   本文件如果因为任何原因比它先加载，同特异性就会被官方值覆盖。
+ *   双写 :root 把特异性提到 (0,2,0) / (0,3,0)，与加载顺序无关，稳定生效。
+ *
+ * 为什么不用为暗色单独写一套颜色：
+ *   博客的 --primary / --card-bg / --text-color 等都在 variables.styl 里
+ *   用 :root / :root.dark 成对定义。这里只做「映射」，不写死色值，
+ *   所以亮色和暗色会自动跟随，换主题色相（--hue）也会一起变。
+ */
+
+:root:root {
+	/* ── 强调色 ───────────────────────────────── */
+	--waline-theme-color: var(--primary); /* 链接、主按钮底色、各种激活态 */
+	--waline-active-color: var(--btn-content); /* hover / active 用同色系更深一档 */
+	--waline-badge-color: var(--primary); /* 博主 / 状态徽标 */
+
+	/* ── 文字 ─────────────────────────────────── */
+	--waline-color: var(--text-color); /* 正文 */
+	--waline-light-grey: var(--text-muted); /* 次要信息（时间、计数） */
+	--waline-dark-grey: var(--text-color); /* 引用块文字 */
+	--waline-info-color: var(--text-muted); /* 输入区统计字数等 */
+
+	/* ── 背景 ─────────────────────────────────── */
+	--waline-bg-color: var(--card-bg); /* 评论面板 */
+	--waline-bg-color-light: var(--btn-regular-bg); /* 输入框聚焦底、代码块 */
+	--waline-bg-color-hover: var(--btn-regular-bg-hover); /* hover 底 */
+	--waline-info-bg-color: var(--btn-regular-bg); /* 信息条底 */
+	--waline-bq-color: var(--btn-regular-bg); /* 引用条 */
+	--waline-disable-bg-color: var(--btn-regular-bg); /* 禁用态 */
+	--waline-disable-color: var(--text-muted);
+	--waline-code-bg-color: var(--codeblock-bg);
+
+	/* ── 边框与阴影 ───────────────────────────── */
+	--waline-border-color: var(--line-color);
+	--waline-border: 1px solid var(--waline-border-color);
+	--waline-box-shadow: none;
+
+	/* 主按钮上的文字：用卡片底色而不是纯白/纯黑，
+	   这样在 --primary 底上亮色、暗色两种模式都能保证对比度。 */
+	--waline-white: var(--card-bg);
+}
+
+/* ── 形状对齐：面板 / 输入框 / 按钮统一到博客的卡片圆角 ───────── */
+/* 加 [data-waline] 前缀是为了压过官方 .wl-panel 之类的单类选择器 */
+[data-waline] .wl-panel {
+	border-radius: var(--radius-large);
+}
+
+[data-waline] .wl-header {
+	border-top-left-radius: var(--radius-large);
+	border-top-right-radius: var(--radius-large);
+	/* 官方是 2px 虚线分割，和博客的细实线风格不搭 */
+	border-bottom: 1px solid var(--waline-border-color);
+}
+
+[data-waline] .wl-editor,
+[data-waline] .wl-btn {
+	border-radius: 0.75rem;
+}
