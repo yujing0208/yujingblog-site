@@ -1,0 +1,62 @@
+name: Waline keep-warm
+
+# 目的：让 waline.yujingblog.top 这个 Vercel Serverless 实例别凉下来。
+#
+# 为什么需要它：实测首字节 —— 冷实例 2.9~4.3s，热实例 1.35s。实例闲置几分钟
+# 就被回收，于是"第一个访客"永远在付冷启动的钱（留言板要转好几秒）。
+# 每 5 分钟打一次只取 1 条评论的轻量请求，就能把实例一直焐着。
+#
+# 为什么不直接在页面里做：页面的预热（guestbook.astro / Waline.astro 里那段）
+# 只有在有人访问时才起作用，而"没人访问"恰恰就是实例变冷的原因，得靠外部心跳。
+#
+# 为什么不用系统计划任务：那要求主机常开，博主电脑平时是关机的。
+#
+# 为什么是"每 4 小时一次 + 任务内循环"而不是直接 cron 每 5 分钟：
+# cron 最小粒度就是 5 分钟，那样一天会产生 288 条 workflow 记录，把 Actions
+# 列表刷满。改成每 4 小时起一个 job、job 内部自己每 5 分钟 ping 一次，一天只有
+# 6 条记录，保温效果完全一样。本仓库是 public，标准 runner 分钟数不计费。
+#
+# 注意：GitHub 的 schedule 触发可能有几分钟延迟；仓库超过 60 天无活动会暂停
+# 定时任务（本站每天都有 changelog 自动提交，不会触发这条）。
+
+on:
+  schedule:
+    # 每 4 小时一次（UTC）。job 内部循环约 3.5 小时，留 30 分钟缓冲不重叠。
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: waline-keepwarm
+  cancel-in-progress: false
+
+jobs:
+  keepwarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Ping Waline API every 5 minutes for ~3.5h
+        run: |
+          set -uo pipefail
+
+          url="https://waline.yujingblog.top/api/comment?path=%2Fguestbook%2F&pageSize=1&page=1&lang=zh-CN&sortBy=insertedAt_desc"
+          interval=300
+          deadline=$(( $(date +%s) + 3 * 3600 + 30 * 60 ))
+          n=0
+          fails=0
+
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            n=$((n + 1))
+            out=$(curl -sS -o /dev/null -w '%{http_code} %{time_total}s' --max-time 25 "$url" 2>&1) || out="curl-error"
+            code=$(echo "$out" | awk '{print $1}')
+            echo "$(date -u +%FT%TZ)  ping #$n  $out"
+            if [ "$code" != "200" ]; then
+              fails=$((fails + 1))
+            fi
+            sleep "$interval"
+          done
+
+          echo "----"
+          echo "共 $n 次，非 200 的 $fails 次"
+          if [ "$fails" -gt "$((n / 4))" ]; then
+            echo "::warning::超过 1/4 的预热请求没有返回 200，Waline 服务端可能有问题"
+          fi
