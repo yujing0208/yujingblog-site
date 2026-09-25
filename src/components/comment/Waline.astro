@@ -62,10 +62,14 @@ const warmupPath = waline.serverURL
 		const LOCAL_BASE = "/waline/";
 		const CDN_BASE =
 			"https://cdn.jsdelivr.net/npm/@waline/client@" + WALINE_VERSION + "/dist/";
+		// 主题 CSS 的 URL 要带版本号：public/ 下静态资源的缓存是
+		// max-age=14400（4 小时），改了内容却不动 URL 的话，回访用户
+		// 最长 4 小时内拿到的还是旧主题。改主题 CSS 时把这里 +1。
+		const THEME_VERSION = "2";
 		// 主题 CSS 必须排在官方 CSS 之后
 		const LOCAL_CSS = [
 			LOCAL_BASE + "waline-" + WALINE_VERSION + ".css",
-			LOCAL_BASE + "waline-theme.css",
+			LOCAL_BASE + "waline-theme.css?v=" + THEME_VERSION,
 		];
 
 		function addStyle(href) {
