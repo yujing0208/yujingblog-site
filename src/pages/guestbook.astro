@@ -1,15 +1,35 @@
 ---
-import MainGridLayout from "@layouts/MainGridLayout.astro";
 import GuestbookChat from "@components/widgets/guestbook/GuestbookChat.svelte";
+import { commentConfig } from "@/config";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 export const prerender = true;
 
 const title = "留言板";
 const description = "在这里给我留言，畅所欲言～";
+
+// 预热 Waline 服务端：线上 Serverless 冷启动实测首字节 4.34s，
+// 是留言板"转圈半天"的最大头。在页面 HTML 解析到这里时就发一个只取 1 条的
+// 轻量请求把实例唤醒，等 GuestbookChat hydration 后正式取数时已经是热实例了。
+// （preconnect 已由 Layout.astro 全局提供，这里不重复声明。）
+const serverURL = String(commentConfig.waline?.serverURL ?? "").replace(/\/+$/, "");
+const warmupPath = serverURL
+	? `${serverURL}/api/comment?path=${encodeURIComponent("/guestbook/")}&pageSize=1&page=1&lang=zh-CN&sortBy=insertedAt_desc`
+	: "";
 ---
 
 <MainGridLayout title={title} description={description}>
 	<link slot="head" rel="stylesheet" href="/guestbook-chat-v10.css" />
+	<script is:inline define:vars={{ warmupPath }}>
+		// 只为唤醒 Serverless 实例，结果丢弃；CORS 失败也不影响唤醒效果
+		if (warmupPath) {
+			fetch(warmupPath, {
+				mode: "cors",
+				credentials: "omit",
+				priority: "low",
+			}).catch(() => {});
+		}
+	</script>
 	<div class="guestbook-page">
 		<GuestbookChat client:idle />
 	</div>
