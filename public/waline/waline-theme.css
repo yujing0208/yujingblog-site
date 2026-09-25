@@ -36,6 +36,18 @@
 	--waline-disable-color: var(--text-muted);
 	--waline-code-bg-color: var(--codeblock-bg);
 
+	/* ── 警告提示 ─────────────────────────────── */
+	/* 「评论功能已关闭 / 登录已过期」这类状态条用的就是这两个变量。
+	   官方默认文字是 #915930（深棕），亮色下没问题，但暗色下压在深色卡片上
+	   等于看不见。文字改绑主题的强文字色；底色取博客 admonition 的警告色
+	   只调浓度，这样亮/暗两套里都能读出「这是警告」而不牺牲可读性。 */
+	--waline-warning-color: var(--text-strong);
+	--waline-warning-bg-color: color-mix(
+		in srgb,
+		var(--admonitions-color-warning) 16%,
+		transparent
+	);
+
 	/* ── 边框与阴影 ───────────────────────────── */
 	--waline-border-color: var(--line-color);
 	--waline-border: 1px solid var(--waline-border-color);
