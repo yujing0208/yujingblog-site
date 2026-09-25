@@ -1,8 +1,25 @@
 ---
 /**
  * Waline 评论区组件
- * 基于 @waline/client v3（函数式 init API），运行时经 CDN 双源动态加载，
- * 与 my-blog 仓库已验证的实现保持一致。
+ * 基于 @waline/client v3（函数式 init API）。
+ *
+ * 资源与加载策略（2026-09-25 改造）：
+ *
+ * 1) 官方 CSS/JS 自托管到 /waline/，不再从 unpkg 取。
+ *    之前的问题是：unpkg 的 waline.css 用 <link> 直接写死加载，它是**渲染阻塞资源**
+ *    （本机实测 TTFB 1.77s），等于整个文章页首屏都要替评论区等第三方 CDN；
+ *    而 JS 用的还是「先试 unpkg、失败才退 jsDelivr」的串行逻辑，
+ *    unpkg 一旦慢，用户盯着空的评论区要等好几秒。
+ *
+ * 2) 评论区进入视口附近才真正加载（IntersectionObserver + rootMargin 400px）。
+ *    首屏不再为评论区付出任何代价，滚动到附近才开始取资源。
+ *
+ * 3) 加载的同时**并行预热** Waline 服务端。
+ *    线上 Serverless（waline.yujingblog.top）冷启动实测首字节 4.34s，
+ *    是评论区"转圈半天"的最大头。提前发一个只取 1 条的轻量请求把它唤醒，
+ *    等 init 后正式取数时实例已经是热的（请求结果直接丢弃，只为唤醒）。
+ *
+ * 4) 自托管资源异常时回退 jsDelivr。
  */
 import { commentConfig } from "@/config";
 
@@ -14,40 +31,110 @@ interface Props {
 const { path, elId } = Astro.props as Props;
 const elementId = elId ?? "waline";
 
+const waline = commentConfig.waline ?? {};
+const WALINE_VERSION = "3.15.2";
+
 const config = {
 	el: "#" + elementId,
 	path,
 	dark: "html.dark",
-	...(commentConfig.waline ?? {}),
-	...(commentConfig.waline?.visitorCount ? { pageview: true } : {}),
+	...waline,
+	...(waline.visitorCount ? { pageview: true } : {}),
 };
+
+// 预热地址：只取 1 条，纯粹为了让 Serverless 实例先冷启动起来
+const warmupPath = waline.serverURL
+	? `${String(waline.serverURL).replace(/\/+$/, "")}/api/comment?path=${encodeURIComponent(
+			path,
+		)}&pageSize=1&page=1&lang=${encodeURIComponent(
+			String(waline.lang ?? "zh-CN"),
+		)}&sortBy=insertedAt_desc`
+	: "";
 ---
 
 <div class="relative w-full">
 	<div id={elementId}></div>
-	<link
-		rel="stylesheet"
-		href="https://unpkg.com/@waline/client@3.15.2/dist/waline.css"
-	/>
-	<script type="module" is:inline define:vars={{ config }}>
-		const cdnUrls = [
-			"https://unpkg.com/@waline/client@3.15.2/dist/waline.js",
-			"https://cdn.jsdelivr.net/npm/@waline/client@3.15.2/dist/waline.js",
+	<script
+		type="module"
+		is:inline
+		define:vars={{ config, warmupPath, WALINE_VERSION }}
+	>
+		const LOCAL_BASE = "/waline/";
+		const CDN_BASE =
+			"https://cdn.jsdelivr.net/npm/@waline/client@" + WALINE_VERSION + "/dist/";
+		// 主题 CSS 必须排在官方 CSS 之后
+		const LOCAL_CSS = [
+			LOCAL_BASE + "waline-" + WALINE_VERSION + ".css",
+			LOCAL_BASE + "waline-theme.css",
 		];
 
-		async function loadWaline(urls) {
-			for (const url of urls) {
-				try {
-					const { init } = await import(url);
-					init(config);
-					return;
-				} catch (error) {
-					console.warn(`Failed to load Waline from ${url}:`, error);
-				}
-			}
-			console.error("Failed to load Waline from all CDN sources");
+		function addStyle(href) {
+			// 同一份样式重复注入没有意义（Swup 导航回来时会再跑一遍）
+			if (document.querySelector('link[data-waline-css="' + href + '"]')) return;
+			const link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.href = href;
+			link.setAttribute("data-waline-css", href);
+			document.head.appendChild(link);
 		}
 
-		loadWaline(cdnUrls);
+		// 只为唤醒 Serverless 实例，结果丢弃；CORS 失败也无所谓（请求已经打到服务端）
+		function warmup() {
+			if (!warmupPath) return;
+			fetch(warmupPath, {
+				mode: "cors",
+				credentials: "omit",
+				priority: "low",
+			}).catch(() => {});
+		}
+
+		async function boot(container) {
+			// 同一个容器只初始化一次
+			if (container.dataset.walineBooted) return;
+			container.dataset.walineBooted = "1";
+
+			for (const href of LOCAL_CSS) addStyle(href);
+			warmup();
+
+			try {
+				const { init } = await import(
+					LOCAL_BASE + "waline-" + WALINE_VERSION + ".js"
+				);
+				init(config);
+				return;
+			} catch (error) {
+				console.warn("[waline] 自托管资源加载失败，回退 jsDelivr：", error);
+			}
+
+			try {
+				addStyle(CDN_BASE + "waline.css");
+				const { init } = await import(CDN_BASE + "waline.js");
+				init(config);
+			} catch (error) {
+				console.error("[waline] jsDelivr 回退同样失败：", error);
+			}
+		}
+
+		function mount() {
+			const container = document.getElementById(elementId);
+			if (!container || container.dataset.walineBooted) return;
+
+			if (!("IntersectionObserver" in window)) {
+				boot(container);
+				return;
+			}
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (!entries.some((entry) => entry.isIntersecting)) return;
+					observer.disconnect();
+					boot(container);
+				},
+				{ rootMargin: "400px 0px" },
+			);
+			observer.observe(container);
+		}
+
+		mount();
 	</script>
 </div>
