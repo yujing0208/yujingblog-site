@@ -1,4 +1,4 @@
-﻿name: Deploy Site
+name: Deploy Site
 
 # 站点部署主链路（唯一部署入口）
 # 触发：push 到 main 分支（方案 A：统一在 main 开发与推送）；或内容仓库通过 repository_dispatch 触发（type: deploy-site）
@@ -15,6 +15,12 @@
 #   - 各步骤显式失败即中断；构建/部署失败会标记 workflow 失败（Actions 页面可见）
 #   - 失败时若配置了 NOTIFY_URL 则发送 webhook 通知，便于排查
 #   - 在构建前记录被同步的内容仓库 commit，便于事后核对"内容是否真的进来了"
+#
+# serverless 函数打包（2026-09-24）：
+#   --prebuilt 模式不会自动发现仓库根部的 api/ 目录，必须显式拷进 .vercel/output/functions/。
+#   原先只硬编码打包了 api/chat.js，导致新增的 /api/editor-auth、/api/editor-github
+#   虽然推到了 main，构建产物里却没有它们，线上访问一律 404。
+#   现改为通配扫描 api/*.js，以后新增函数无需再改本文件。
 
 on:
   push:
@@ -74,10 +80,26 @@ jobs:
           mkdir -p .vercel/output/static
           cp -r dist/. .vercel/output/static/
           printf '{"version":3}' > .vercel/output/config.json
-          # 保留 /api/chat 这个 serverless 函数（DeepSeek 代理），避免 AI 聊天功能失效
-          mkdir -p .vercel/output/functions/api/chat.func
-          cp api/chat.js .vercel/output/functions/api/chat.func/index.js
-          printf '{"runtime":"nodejs22.x","handler":"index.js","launcherType":"Nodejs"}' > .vercel/output/functions/api/chat.func/.vc-config.json
+          # 打包 api/*.js 为 serverless 函数：
+          #   /api/chat          —— DeepSeek 代理（看板娘聊天）
+          #   /api/editor-auth   —— 编辑器密码登录（下发签名 Cookie）
+          #   /api/editor-github —— 编辑器 GitHub 代理（服务端持有 GH_TOKEN）
+          # 通配扫描而非逐个硬编码，新增 api/*.js 时无需再改本文件。
+          shopt -s nullglob
+          packaged=0
+          for f in api/*.js; do
+            name="$(basename "$f" .js)"
+            dir=".vercel/output/functions/api/${name}.func"
+            mkdir -p "$dir"
+            cp "$f" "$dir/index.js"
+            printf '{"runtime":"nodejs22.x","handler":"index.js","launcherType":"Nodejs"}' > "$dir/.vc-config.json"
+            echo "packed function: /api/${name}"
+            packaged=$((packaged + 1))
+          done
+          if [ "$packaged" -eq 0 ]; then
+            echo "::error::api/ 下没有匹配到任何 *.js 函数，构建产物会缺失 serverless 函数"
+            exit 1
+          fi
 
       # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
       - name: Link & Deploy to Vercel
