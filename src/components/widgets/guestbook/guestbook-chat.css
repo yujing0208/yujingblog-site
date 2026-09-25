@@ -100,7 +100,7 @@ html:has(.guestbook-page) .footer {
 	border: 1px solid var(--guestbook-line);
 	border-radius: var(--radius-large);
 	background: var(--guestbook-surface);
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-chat button {
@@ -247,7 +247,7 @@ html:has(.guestbook-page) .footer {
 	border: 1px solid var(--guestbook-line);
 	border-radius: var(--radius-medium);
 	background: transparent;
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-chat__refresh {
@@ -343,7 +343,7 @@ html:has(.guestbook-page) .footer {
 	border: 0;
 	border-radius: var(--radius-small);
 	background: transparent;
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.82rem;
 	font-weight: 700;
 	line-height: 1.4;
@@ -405,7 +405,7 @@ html:has(.guestbook-page) .footer {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.82rem;
 	font-weight: 700;
 }
@@ -455,7 +455,7 @@ html:has(.guestbook-page) .footer {
 	min-height: var(--control-size);
 	padding: var(--space-1) var(--space-2);
 	border-radius: var(--radius-small);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.8rem;
 	text-decoration: none;
 }
@@ -555,7 +555,7 @@ html:has(.guestbook-page) .footer {
 }
 
 .guestbook-chat__history button:hover {
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-chat__history span {
@@ -593,7 +593,7 @@ html:has(.guestbook-page) .footer {
 .guestbook-chat__empty h3,
 .guestbook-chat__state h3 {
 	margin: var(--space-4) 0 var(--space-1);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 1rem;
 }
 
@@ -616,9 +616,9 @@ html:has(.guestbook-page) .footer {
 	min-height: var(--control-size);
 	margin-top: var(--space-4);
 	padding: 0 var(--space-4);
-	border: 1px solid var(--deep-text);
+	border: 1px solid var(--text-strong);
 	border-radius: var(--radius-medium);
-	background: var(--deep-text);
+	background: var(--text-strong);
 	color: var(--page-bg);
 }
 
@@ -953,7 +953,7 @@ html:has(.guestbook-page) .footer {
 }
 
 .guestbook-message__heading strong {
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.88rem;
 }
 
@@ -1122,7 +1122,7 @@ html:has(.guestbook-page) .footer {
 .guestbook-message__quote:hover,
 .guestbook-message__quote:focus-visible {
 	background: color-mix(in srgb, var(--guestbook-panel) 72%, transparent);
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-message__quote:focus-visible {
@@ -1695,7 +1695,7 @@ html:has(.guestbook-page) .footer {
 	border: 1px solid var(--guestbook-editor-line);
 	border-radius: var(--radius-medium);
 	background: transparent;
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-composer__file-input {
@@ -1802,7 +1802,7 @@ html:has(.guestbook-page) .footer {
 	border: 1px solid color-mix(in srgb, #ca8a04 35%, transparent);
 	border-radius: var(--radius-small);
 	background: color-mix(in srgb, #facc15 10%, transparent);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.72rem;
 }
 
@@ -1858,7 +1858,7 @@ html:has(.guestbook-page) .footer {
 	padding: var(--space-3);
 	border-left: 3px solid var(--guestbook-muted);
 	background: var(--guestbook-panel);
-	color: var(--deep-text);
+	color: var(--text-strong);
 	font-size: 0.85rem;
 	white-space: pre-wrap;
 }
@@ -1883,7 +1883,7 @@ html:has(.guestbook-page) .footer {
 .guestbook-delete-modal__cancel {
 	border: 1px solid var(--guestbook-line);
 	background: transparent;
-	color: var(--deep-text);
+	color: var(--text-strong);
 }
 
 .guestbook-delete-modal__confirm {
