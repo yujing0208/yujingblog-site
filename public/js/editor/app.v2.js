@@ -140,9 +140,21 @@
 
 	function loadPosts() {
 		var s = state.schema;
-		return window.EditorGit.listDir(s.owner, s.repo, s.path, s.branch).then(function (files) {
-			return files.filter(function (f) { return /\.md$/.test(f.name); }).map(function (f) { return f; });
-		}).then(function (list) {
+		// 递归收集 posts/ 下所有层级的 .md（支持按分类分文件夹储存）
+		function collect(dirPath) {
+			return window.EditorGit.listDir(s.owner, s.repo, dirPath, s.branch).then(function (entries) {
+				var files = [];
+				var dirs = [];
+				entries.forEach(function (e) {
+					if (e.type === "dir") dirs.push(e);
+					else if (e.type === "file" && /\.md$/.test(e.name)) files.push(e);
+				});
+				return Promise.all(dirs.map(function (d) {
+					return collect(d.path).then(function (sub) { files.push.apply(files, sub); });
+				})).then(function () { return files; });
+			});
+		}
+		return collect(s.path).then(function (list) {
 			state.items = list;
 		});
 	}
@@ -279,7 +291,12 @@
 		if (typeof s.itemLabel === "function") return s.itemLabel(it);
 		var v = it[s.itemLabel];
 		if (v !== undefined && v !== null && v !== "") return String(v);
-		if (s.format === "md-posts") return it.name;
+		if (s.format === "md-posts") {
+			var _dp = it.path || it.name || "";
+			var _pre = s.path + "/";
+			if (_dp.indexOf(_pre) === 0) _dp = _dp.slice(_pre.length);
+			return _dp;
+		}
 		if (s.format === "album") return it.name;
 		return "#" + (i + 1);
 	}
@@ -795,11 +812,14 @@
 		var today = new Date().toISOString().slice(0, 10);
 		var s = state.schema;
 		var filename = today + "-" + slug + ".md";
-		var content = "---\ntitle: \"" + title.replace(/"/g, '\\"') + "\"\npublished: " + today + "\ndraft: true\ntags: []\ncategory: \"\"\ncomment: true\n---\n\n# " + title + "\n";
+		var content = "---\ntitle: \"" + title.replace(/"/g, '\\"') + "\"\npublished: " + today + "\ndraft: true\ntags: []\ncategory: \"\"\npermalink: \"\ncomment: true\n---\n\n# " + title + "\n";
 		var path = s.path + "/" + filename;
 		stagePut(path, content, "chore: new post " + filename);
 		state.items.push({ name: filename, path: path, type: "file" });
 		renderList();
+		// 本地直接打开新文章（无需先推送即可编辑 / 设置分类）
+		state.current = { file: state.items[state.items.length - 1], data: window.EditorMd.parse(content).data, body: window.EditorMd.parse(content).body, raw: content };
+		renderForm();
 	}
 
 	// 上传 .md 文档：读取本地文件 → 解析 frontmatter/body → 新建文章并进入编辑器
@@ -831,7 +851,8 @@
 				if (typeof fm.draft !== "boolean") fm.draft = true;
 				if (!Array.isArray(fm.tags)) fm.tags = [];
 				if (typeof fm.category !== "string") fm.category = "";
-				if (typeof fm.comment !== "boolean") fm.comment = true;
+		if (typeof fm.comment !== "boolean") fm.comment = true;
+		if (typeof fm.permalink !== "string" || !fm.permalink) fm.permalink = today + "-" + slug;
 				delete fm.pubDate;
 				var fmStr = "---\n" + Object.keys(fm).map(function (k) {
 					var v = fm[k];
@@ -841,15 +862,19 @@
 				}).join("\n") + "\n---\n";
 				var content = fmStr + (body ? body.replace(/^\n+/, "\n") : "\n");
 				var path = s.path + "/" + filename;
-				var existing = state.items.find(function (it) { return it.name === filename; });
-				if (existing) { alert("已存在同名文件：" + filename); }
-				else {
-					stagePut(path, content, "chore: upload post " + filename);
-					state.items.push({ name: filename, path: path, type: "file" });
-				}
-				renderList();
-				// 直接打开刚上传的文章进入编辑
-				selectItem(state.items.length - 1);
+		var cat = String(fm.category || "").replace(/[\/\\:*?"<>|]/g, "").trim();
+		var path = cat ? (s.path + "/" + cat + "/" + filename) : (s.path + "/" + filename);
+		var existing = state.items.find(function (it) { return it.path === path; });
+		if (existing) { alert("已存在同名文件：" + path); }
+		else {
+			stagePut(path, content, "chore: upload post " + filename);
+			var item = { name: filename, path: path, type: "file" };
+			state.items.push(item);
+			// 本地直接打开（无需先推送到 GitHub 才能编辑）
+			state.current = { file: item, data: parsed.data, body: parsed.body, raw: content };
+			renderForm();
+		}
+		renderList();
 			};
 			reader.readAsText(file);
 		});
@@ -934,6 +959,9 @@ if (s.format === "ts-array") state.items.push(it);
 				// 保留内部字段
 				(s.preserveFields || []).forEach(function (k) { if (state.current.data[k] === undefined) { /* 无则不写 */ } });
 				newSource = window.EditorMd.stringify(d, state.current.body);
+				// 锁定 permalink，确保文章 URL 不受分类文件夹影响
+				var _base = (state.current.file.path.split("/").pop() || "").replace(/\.md$/, "");
+				if (typeof d.permalink !== "string" || !d.permalink) d.permalink = _base;
 			} else if (s.format === "md-file") {
 				var body = state.current && typeof state.current.body === "string" ? state.current.body : state.body;
 				newSource = window.EditorMd.stringify(state.data, body);
@@ -950,11 +978,33 @@ if (s.format === "ts-array") state.items.push(it);
 				// BOM 处理
 				if (s.bom && newSource.charAt(0) !== "\uFEFF") newSource = "\uFEFF" + newSource;
 			}
-			showDiff(state.rawSource, newSource, function () {
-				var path = s.format === "md-posts" ? state.current.file.path : s.path;
-				state.rawSource = newSource;
-				stagePut(path, newSource, "chore(editor): update " + path);
-			});
+		showDiff(state.rawSource, newSource, function () {
+			var curPath = s.format === "md-posts" ? state.current.file.path : s.path;
+			// 按当前分类计算目标落盘路径（无分类则平铺根目录）
+			var targetPath = curPath;
+			if (s.format === "md-posts") {
+				var _cat = String(state.current.data.category || "").replace(/[\/\\:*?"<>|]/g, "").trim();
+				var _fname = curPath.split("/").pop();
+				targetPath = _cat ? (s.path + "/" + _cat + "/" + _fname) : (s.path + "/" + _fname);
+			}
+			state.rawSource = newSource;
+			if (targetPath !== curPath) {
+				if (state.current.sha) {
+					// 已存在 GitHub：删除旧路径 + 写入新路径（移动）
+					stageDelete(curPath, "chore(editor): move post to " + targetPath);
+					stagePut(targetPath, newSource, "chore(editor): move post to " + targetPath);
+				} else {
+					// 本地新建尚未推送：直接改落盘路径，撤销旧暂存避免删除不存在的文件
+					delete state.staged[curPath];
+					stagePut(targetPath, newSource, "chore(editor): new post to " + targetPath);
+				}
+				state.current.file.path = targetPath;
+				state.current.file.name = targetPath.split("/").pop();
+			} else {
+				stagePut(targetPath, newSource, "chore(editor): update " + targetPath);
+			}
+			renderList();
+		});
 		} catch (e) {
 			alert("保存前校验失败：" + e.message);
 		}
