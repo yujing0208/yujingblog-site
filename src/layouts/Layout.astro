@@ -190,6 +190,10 @@ const bannerOffset =
 		<!-- 可视化编辑器全局入口：点导航栏 logo 进入编辑（v2：capture 阶段抢事件，绕开 Swup） -->
 		<script is:inline src="/js/editor-core.v2.js?v=3"></script>
 
+		<!-- GitHub 仓库卡片水合：正文里的 .card-github 骨架由 remark 插件编译产出，
+		     靠这个脚本填数据并摘掉 fetch-waiting（数据走 /api/github-card 代理，不直连 api.github.com） -->
+		<script is:inline defer src="/js/github-card.js?v=1"></script>
+
 		<!-- 第三方分析脚本 -->
 		<AnalyticsScripts
 			thirdPartyAnalytics={siteConfig.thirdPartyAnalytics}
