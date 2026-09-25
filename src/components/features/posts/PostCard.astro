@@ -31,7 +31,7 @@ const {
 
 const url = getPostUrl(entry);
 const hasCover = image !== undefined && image !== null && image !== "";
-const coverWidth = "28%";
+const coverWidth = "30%";
 
 const { remarkPluginFrontmatter } = await render(entry);
 const homeContent = getPostHomeContent(
@@ -147,8 +147,8 @@ const homeContent = getPostHomeContent(
 				aria-label={title}
 				class:list={[
 					"group",
-					"max-h-[20vh] md:max-h-none mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
-					"md:w-(--coverWidth) relative md:absolute md:top-3 md:bottom-3 md:right-3 rounded-xl overflow-hidden active:scale-95",
+					"aspect-video mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
+					"md:w-(--coverWidth) relative md:absolute md:top-1/2 md:-translate-y-1/2 md:right-3 rounded-xl overflow-hidden active:scale-95",
 					{ "lcp-candidate": index === 0 }, // 标记 LCP 候选元素
 				]}
 			>
