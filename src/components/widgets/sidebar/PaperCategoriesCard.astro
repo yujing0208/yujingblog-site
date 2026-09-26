@@ -1,0 +1,44 @@
+---
+/**
+ * PaperCategoriesCard —— 手账风分类卡片（右侧栏）
+ * 1:1 移植 flatpaper：layout/_partial/sidebar-right.ejs 的 categories-card 段
+ *                   + source/css/_partials/_components/categories-sidebar.styl
+ *
+ * 原版结构（严格照搬）：
+ *   section.side-card.categories-card
+ *     h2                                ← 图标 + 「分类」
+ *     a × N（最多 6 个）
+ *       span.dot.dot-{index % 4}        ← 四色圆点
+ *       strong                          ← 分类名
+ *       em                              ← 文章数
+ */
+import { Icon } from "astro-icon/components";
+
+import { getCategoryList } from "../../../utils/content-utils";
+
+interface Props {
+	/** 最多显示几个分类（原版 slice(0, 6)） */
+	limit?: number;
+}
+
+const { limit = 6 } = Astro.props;
+
+// 复用本博客已有的分类汇总工具
+const categories = (await getCategoryList()).slice(0, limit);
+---
+
+<section class="side-card categories-card">
+	<h2>
+		<Icon name="material-symbols:folder-outline" class="side-card-icon" />
+		分类
+	</h2>
+	{
+		categories.map((category, index) => (
+			<a href={category.url}>
+				<span class={`dot dot-${index % 4}`} />
+				<strong>{category.name}</strong>
+				<em>{category.count}</em>
+			</a>
+		))
+	}
+</section>

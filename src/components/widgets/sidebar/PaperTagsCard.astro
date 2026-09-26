@@ -1,0 +1,56 @@
+---
+/**
+ * PaperTagsCard —— 手账风标签云卡片（右侧栏）
+ * 1:1 移植 flatpaper：layout/_partial/sidebar-right.ejs 的 tag-card 段
+ *                   + source/css/_partials/_components/tags.styl
+ *
+ * 原版结构（严格照搬）：
+ *   section.side-card.tag-card
+ *     header.tag-card__head
+ *       h2                                ← 图标 + 「热门标签」
+ *       a.tag-card__more                  ← 「查看全部」+ 箭头
+ *     div.tag-cloud
+ *       a.tag-chip.tag-chip-{index % 6}   ← 纸胶带胶囊，六色轮换 + 各自微倾角
+ *
+ * 原版排序：tags.sort((a, b) => b.length - a.length).slice(0, 12)
+ */
+import { Icon } from "astro-icon/components";
+
+import { getTagList } from "../../../utils/content-utils";
+import { getTagUrl } from "../../../utils/url-utils";
+
+interface Props {
+	/** 最多显示几个标签（原版 slice(0, 12)） */
+	limit?: number;
+}
+
+const { limit = 12 } = Astro.props;
+
+// 照搬原版：按文章数降序，取前 limit 个
+const tags = (await getTagList())
+	.slice()
+	.sort((a, b) => b.count - a.count)
+	.slice(0, limit);
+---
+
+<section class="side-card tag-card">
+	<header class="tag-card__head">
+		<h2>
+			<Icon name="material-symbols:local-fire-department" class="side-card-icon" />
+			热门标签
+		</h2>
+		<a class="tag-card__more" href="/tags/">
+			<span>查看全部</span>
+			<Icon name="material-symbols:arrow-forward-rounded" class="tag-card__more-icon" />
+		</a>
+	</header>
+	<div class="tag-cloud">
+		{
+			tags.map((tag, index) => (
+				<a class={`tag-chip tag-chip-${index % 6}`} href={getTagUrl(tag.name)}>
+					{tag.name}
+				</a>
+			))
+		}
+	</div>
+</section>

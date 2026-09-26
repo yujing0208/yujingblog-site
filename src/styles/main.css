@@ -16,6 +16,10 @@
 @import "./paper-post-list.css";
 /* 手账首屏（照搬 flatpaper home-hero；由 PaperHomeLayout 使用） */
 @import "./paper-hero.css";
+/* 手账侧边栏（照搬 flatpaper welcome.styl + shell.styl 的 side-card） */
+@import "./paper-sidebar.css";
+/* 手账右侧栏：个人名片 / 分类 / 标签（照搬 profile + categories-sidebar + tags） */
+@import "./paper-sidebar-right.css";
 /* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 @plugin "@tailwindcss/typography";

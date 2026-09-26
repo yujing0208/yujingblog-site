@@ -1,0 +1,343 @@
+/* ============================================================================
+ *  手账左侧栏 —— welcome-card 欢迎卡
+ *  1:1 移植 flatpaper source/css/_partials/_components/welcome.styl (206 行)
+ *
+ *  要点：
+ *    · .welcome-card  padding:18px
+ *    · .welcome-thumb 无图：110px 渐变 + 撕纸边；有图：拍立得（白框 + rotate(7deg)
+ *      + 两个角贴胶带 ::before/::after）
+ *    · .welcome-card h1::after  黄色荧光笔下划线（rgba(241,193,84,.4)）
+ *    · .welcome-cta 纸片按钮（::before 铺纸 + 内描边 + 撕纸边 + 悬停变强调色）
+ *    · .side-card::before  右上角黄胶带（paper-theme.css 已定义，这里不重复）
+ * ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+ * 1. 卡片容器（照搬 .welcome-card）
+ * ------------------------------------------------------------------------ */
+.welcome-card {
+	padding: 18px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. 缩略图 —— 无图：手绘风景 + 撕纸边（照搬 .welcome-thumb）
+ * ------------------------------------------------------------------------ */
+.welcome-thumb {
+	position: relative;
+	height: 110px;
+	margin-bottom: 18px;
+	border-radius: 4px;
+	overflow: hidden;
+	background: linear-gradient(180deg, #d5e7d4 0%, #ecf3d8 100%);
+	filter: url(#paper-edge);
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. 缩略图 —— 有图：拍立得（照搬 .welcome-thumb--image）
+ *    白框 + 底部留白 + rotate(7deg) + 两个角贴胶带
+ * ------------------------------------------------------------------------ */
+.welcome-thumb--image {
+	position: relative;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	padding: 6px 6px 18px 6px;
+	background: #ffffff;
+	margin: -16px -8px 6px -6px;
+	border-radius: 2px;
+	box-shadow: 2px 4px 16px rgba(82, 64, 38, 0.15);
+	transform: rotate(7deg);
+	overflow: visible;
+	filter: none;
+}
+
+:root.dark .welcome-thumb--image {
+	background: var(--card-bg);
+	box-shadow: 1px 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-thumb--image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	border-radius: 1px;
+}
+
+/* 两个角贴胶带（照搬 ::before 牛皮纸 -25deg / ::after 黄胶带 15deg） */
+.welcome-thumb--image::before,
+.welcome-thumb--image::after {
+	content: "";
+	position: absolute;
+	top: -10px;
+	z-index: 2;
+	width: 32px;
+	height: 14px;
+	background-image: var(--tape-stripes);
+	opacity: 0.85;
+	box-shadow: 0 2px 4px rgba(82, 64, 38, 0.15);
+	border-radius: var(--radius-handdrawn);
+	pointer-events: none;
+}
+
+.welcome-thumb--image::before {
+	left: -8px;
+	background-color: var(--tape-brown);
+	transform: rotate(-25deg);
+}
+
+.welcome-thumb--image::after {
+	right: -8px;
+	top: -8px;
+	background-color: var(--tape-yellow);
+	transform: rotate(15deg);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. 手绘风景元素（照搬 .sun / .cloud / .mountain）
+ * ------------------------------------------------------------------------ */
+.welcome-thumb .sun {
+	position: absolute;
+	top: 16px;
+	left: 26%;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--tape-yellow);
+	box-shadow: 0 2px 0 rgba(180, 130, 40, 0.12);
+}
+
+.welcome-thumb .mountain {
+	position: absolute;
+	bottom: -2px;
+	background: linear-gradient(
+		135deg,
+		rgba(95, 158, 110, 0.95),
+		rgba(125, 188, 132, 0.75)
+	);
+	clip-path: polygon(0 100%, 52% 0, 100% 100%);
+}
+
+.welcome-thumb .mountain-a {
+	left: -8%;
+	width: 70%;
+	height: 70%;
+}
+
+.welcome-thumb .mountain-b {
+	right: -6%;
+	width: 60%;
+	height: 55%;
+}
+
+.welcome-thumb .cloud {
+	position: absolute;
+	width: 46px;
+	height: 18px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.86);
+	transform: scale(0.55);
+}
+
+.welcome-thumb .cloud::before,
+.welcome-thumb .cloud::after {
+	content: "";
+	position: absolute;
+	border-radius: 50%;
+	background: inherit;
+}
+
+.welcome-thumb .cloud::before {
+	width: 20px;
+	height: 20px;
+	left: 8px;
+	bottom: 6px;
+}
+
+.welcome-thumb .cloud::after {
+	width: 28px;
+	height: 28px;
+	right: 6px;
+	bottom: 4px;
+}
+
+.welcome-thumb .cloud-a {
+	right: 12%;
+	top: 14px;
+}
+
+.welcome-thumb .cloud-b {
+	left: 8%;
+	top: 36px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. 文案（照搬 .hello / h1 / .welcome-text）
+ * ------------------------------------------------------------------------ */
+.welcome-card .hello {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 8px;
+	padding: 0 4px;
+	color: oklch(0.55 0.12 var(--hue));
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.welcome-card h1 {
+	position: relative;
+	display: inline;
+	margin: 0;
+	padding: 0 4px;
+	font-size: 20px;
+	font-weight: 800;
+	line-height: 1.5;
+	letter-spacing: 0;
+	color: var(--deep-text);
+}
+
+/* 黄色荧光笔下划线（照搬） */
+.welcome-card h1::after {
+	content: "";
+	position: absolute;
+	left: 4px;
+	right: 4px;
+	bottom: 1px;
+	z-index: -1;
+	height: 8px;
+	background: rgba(241, 193, 84, 0.4);
+}
+
+:root.dark .welcome-card h1 {
+	color: var(--text-strong);
+}
+
+.welcome-card .welcome-text {
+	margin: 12px 4px 16px;
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+/* ---------------------------------------------------------------------------
+ * 6. CTA 纸片按钮（照搬 .welcome-cta，与 .pager-link 同一套纸片手法）
+ * ------------------------------------------------------------------------ */
+.welcome-cta {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: fit-content;
+	margin: 0 4px 0 auto;
+	padding: 8px 18px;
+	color: var(--ink-soft, #4a5751);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	transition:
+		color 0.2s ease,
+		transform 0.2s ease;
+	z-index: 1;
+}
+
+.welcome-cta::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--paper-warm, #f8f2e2);
+	z-index: -1;
+	border-radius: 4px;
+	box-shadow: inset 0 0 0 1px var(--paper-dash, rgba(89, 62, 30, 0.24));
+	filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(82, 64, 38, 0.14));
+	transition:
+		background 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+:root.dark .welcome-cta::before {
+	box-shadow: none;
+}
+
+.welcome-cta:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	transform: translateY(-1px);
+}
+
+.welcome-cta:hover::before {
+	background: oklch(0.9 0.05 var(--hue));
+	box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.welcome-cta-icon {
+	width: 14px;
+	height: 14px;
+	transition: transform 0.2s ease;
+}
+
+.welcome-cta:hover .welcome-cta-icon {
+	transform: translateX(2px);
+}
+
+/* ---------------------------------------------------------------------------
+ * 7. 侧栏其余卡片统一为纸片（照搬 shell.styl 的 .side-card 处理）
+ *    本博客原有 profile / announcement / tags / toc / hitokoto 等 widget
+ *    继续保留，只套上纸片外观。
+ * ------------------------------------------------------------------------ */
+.side-card {
+	position: relative;
+	z-index: 1;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+	transition: transform 0.22s ease;
+}
+
+/* 纸面层：铺纸 + 撕纸边（照搬 .side-card::before 的铺纸手法） */
+.side-card::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--card-bg);
+	z-index: -1;
+	border-radius: 4px;
+	filter: url(#paper-edge);
+	pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.side-card:hover {
+		transform: translateY(-3px);
+	}
+}
+
+.side-card h2 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 16px;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--deep-text);
+}
+
+:root.dark .side-card h2 {
+	color: var(--text-strong);
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. 无障碍
+ * ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+	.side-card,
+	.side-card:hover,
+	.welcome-cta,
+	.welcome-cta:hover,
+	.welcome-cta-icon {
+		transition: none;
+		transform: none;
+	}
+}

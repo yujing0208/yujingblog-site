@@ -1,0 +1,596 @@
+/* ============================================================================
+ *  手账右侧栏 —— 个人名片 / 分类 / 标签
+ *  直接移植 flatpaper 源码（保持原样，仅做两处必要改写）：
+ *    source/css/_partials/_components/profile.styl            (328 行)
+ *    source/css/_partials/_components/categories-sidebar.styl (78 行)
+ *    source/css/_partials/_components/tags.styl               (152 行)
+ *    source/css/_partials/_layout/shell.styl 的 .side-card 段
+ *
+ *  仅两处改写：
+ *    1. .dark-mode            → :root.dark   （本博客的暗色类名）
+ *    2. --color-accent*       → --primary / oklch(0.55 0.12 var(--hue)) 等
+ *       （本博客用 --hue 驱动强调色，语义一一对应）
+ *  其余选择器、数值、动画、断点全部保持原样。
+ * ========================================================================= */
+
+/* ==========================================================================
+ * 一、.side-card 基座（照搬 shell.styl）
+ * ========================================================================== */
+.side-card {
+	position: relative;
+	z-index: 1;
+	padding: 20px 22px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+	transition:
+		transform 0.22s ease,
+		box-shadow 0.22s ease;
+}
+
+/* 铺纸层 + 撕纸边（照搬 shell.styl 的 ::before 铺纸手法） */
+.side-card::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--card-bg);
+	z-index: -1;
+	border-radius: 4px;
+	filter: url(#paper-edge);
+	pointer-events: none;
+}
+
+/* 悬停上浮 + 纸影（照搬） */
+.side-card:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 18px 38px rgba(82, 64, 38, 0.13);
+}
+
+:root.dark .side-card:hover {
+	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+
+/* 卡片标题（照搬 .side-card h2） */
+.side-card h2 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 16px;
+	font-size: 16px;
+	font-weight: 700;
+}
+
+/* 标题图标（照搬 .side-card h2 > .lucide） */
+.side-card-icon {
+	width: 16px;
+	height: 16px;
+	color: var(--primary);
+	flex-shrink: 0;
+}
+
+:root.dark .side-card-icon {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+/* 右上角黄胶带（照搬 tape.styl 的 .side-card::before） */
+.side-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	right: 18px;
+	z-index: 2;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.9);
+	transform: rotate(6deg);
+	pointer-events: none;
+}
+
+/* ==========================================================================
+ * 二、个人名片（照搬 profile.styl）
+ * ========================================================================== */
+
+/* --- 左上角蓝胶带 45°（照搬 .profile-card::before） --- */
+.profile-card::before {
+	top: 6px;
+	left: -14px;
+	right: auto;
+	width: 56px;
+	height: 18px;
+	background-color: var(--tape-blue);
+	transform: rotate(-45deg);
+}
+
+.profile-card {
+	text-align: center;
+	padding: 24px 20px 22px;
+}
+
+/* --- 头像 --- */
+.avatar {
+	position: relative;
+	width: 84px;
+	height: 84px;
+	margin: 0 auto 14px;
+	border-radius: 50%;
+	background: linear-gradient(180deg, #f4f9ff 0%, #e6f4f3 100%);
+	overflow: visible;
+}
+
+/* 图片头像：虚线方框（照搬 .avatar--image） */
+.avatar--image {
+	background: var(--paper-warm, #f8f2e2);
+	border: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.avatar--image::before,
+.avatar--image::after {
+	content: none;
+}
+
+.avatar--image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.avatar--image.avatar--circle {
+	border-radius: 50%;
+}
+
+:root.dark .avatar {
+	background: linear-gradient(180deg, #2a3640 0%, #1f3030 100%);
+}
+
+/* --- 名字 / 身份 / 签名 --- */
+.profile-card h3 {
+	margin: 4px 0 2px;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.profile-role {
+	margin: 0 0 8px;
+	color: var(--text-muted);
+	font-size: 12px;
+}
+
+.profile-card p:last-of-type {
+	margin: 0 auto 10px;
+	max-width: 220px;
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+/* --- 站点统计三列（照搬 .site-info） --- */
+.site-info {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+	gap: 4px;
+	margin: 0 auto 12px;
+	max-width: 220px;
+	padding: 0;
+}
+
+.site-info__item {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+	padding: 2px;
+	border-radius: 6px;
+	color: inherit;
+	text-decoration: none;
+	transition: transform 0.2s ease;
+}
+
+.site-info__item strong {
+	color: var(--deep-text);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 1.2;
+}
+
+:root.dark .site-info__item strong {
+	color: var(--text-strong);
+}
+
+.site-info__item span {
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+a.site-info__item:hover {
+	transform: translateY(-1px);
+}
+
+a.site-info__item:focus-visible {
+	outline: 1px dashed var(--primary);
+	outline-offset: 2px;
+	transform: translateY(-1px);
+}
+
+a.site-info__item:hover strong,
+a.site-info__item:focus-visible strong {
+	color: oklch(0.55 0.12 var(--hue));
+}
+
+/* --- 社交虚线圆按钮（照搬 .socials a） --- */
+.socials {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px 14px;
+	max-width: 216px;
+	margin: 0 auto;
+}
+
+.socials a {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	background: transparent;
+	color: var(--text-muted);
+	transition:
+		color 0.2s ease,
+		border-color 0.2s ease,
+		background 0.2s ease,
+		transform 0.2s ease;
+	z-index: 1;
+}
+
+.socials-icon {
+	width: 15px;
+	height: 15px;
+}
+
+.socials a:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	border-color: var(--primary);
+	background: oklch(0.9 0.05 var(--hue));
+	transform: translateY(-1px);
+}
+
+/* tooltip（照搬 .socials a[data-tooltip]） */
+.socials a[data-tooltip]::before,
+.socials a[data-tooltip]::after {
+	position: absolute;
+	left: 50%;
+	pointer-events: none;
+	opacity: 0;
+	transition:
+		opacity 0.16s ease,
+		transform 0.16s ease;
+	z-index: 5;
+}
+
+.socials a[data-tooltip]::before {
+	content: attr(data-tooltip);
+	bottom: calc(100% + 9px);
+	max-width: min(220px, 68vw);
+	padding: 5px 9px;
+	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	border-radius: var(--radius-handdrawn-wide, 255px 18px 225px 18px / 18px 225px 18px 255px);
+	background: var(--card-bg);
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
+	color: var(--deep-text);
+	font-size: 12px;
+	line-height: 1.4;
+	white-space: nowrap;
+	transform: translateX(-50%) translateY(4px) rotate(-1deg);
+}
+
+.socials a[data-tooltip]::after {
+	content: "";
+	bottom: calc(100% + 4px);
+	width: 8px;
+	height: 8px;
+	border-right: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	border-bottom: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	background: var(--card-bg);
+	transform: translateX(-50%) translateY(4px) rotate(45deg);
+}
+
+.socials a[data-tooltip]:hover::before,
+.socials a[data-tooltip]:hover::after,
+.socials a[data-tooltip]:focus-visible::before,
+.socials a[data-tooltip]:focus-visible::after {
+	opacity: 1;
+}
+
+.socials a[data-tooltip]:hover::before,
+.socials a[data-tooltip]:focus-visible::before {
+	transform: translateX(-50%) translateY(0) rotate(-1deg);
+}
+
+.socials a[data-tooltip]:hover::after,
+.socials a[data-tooltip]:focus-visible::after {
+	transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
+/* ==========================================================================
+ * 三、分类（照搬 categories-sidebar.styl）
+ * ========================================================================== */
+
+/* 顶部居中蓝胶带（照搬 .categories-card::before） */
+.categories-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	right: auto;
+	z-index: 2;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-blue);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.9);
+	transform: translateX(-50%);
+}
+
+.categories-card a {
+	display: grid;
+	grid-template-columns: 12px 1fr auto;
+	gap: 10px;
+	align-items: center;
+	padding: 9px 0;
+	border-bottom: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	font-size: 14px;
+	text-decoration: none;
+	transition:
+		color 0.18s ease,
+		transform 0.18s ease;
+}
+
+.categories-card a:last-child {
+	border-bottom: 0;
+}
+
+.categories-card strong {
+	font-weight: 600;
+	transition: color 0.18s ease;
+}
+
+.categories-card em {
+	color: var(--text-muted);
+	font-style: normal;
+	font-size: 13px;
+}
+
+/* 四色圆点（照搬 .dot + .dot-0..3） */
+.dot {
+	width: 9px;
+	height: 9px;
+	border-radius: var(--radius-handdrawn);
+	background: var(--primary);
+	transform: rotate(-10deg);
+	transition:
+		transform 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.dot-0 {
+	background: var(--primary);
+}
+.dot-1 {
+	background: #6fa9d9;
+}
+.dot-2 {
+	background: #ec9b5b;
+}
+.dot-3 {
+	background: #9c8feb;
+}
+
+.categories-card a:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	transform: translateX(3px);
+}
+
+.categories-card a:hover em {
+	color: oklch(0.55 0.12 var(--hue));
+}
+
+.categories-card a:hover .dot {
+	transform: rotate(5deg) scale(1.24);
+	box-shadow: 0 0 0 4px rgba(111, 166, 124, 0.14);
+}
+
+:root.dark .categories-card a:hover {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+:root.dark .categories-card a:hover em {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+/* ==========================================================================
+ * 四、标签云（照搬 tags.styl）
+ * ========================================================================== */
+.tag-card {
+	overflow: visible;
+}
+
+.tag-card__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.tag-card__head h2 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+}
+
+.tag-card__more {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--text-muted);
+	font-size: 12px;
+	text-decoration: none;
+	transition: color 0.15s ease;
+}
+
+.tag-card__more-icon {
+	width: 12px;
+	height: 12px;
+}
+
+.tag-card__more:hover {
+	color: oklch(0.55 0.12 var(--hue));
+}
+
+:root.dark .tag-card__more:hover {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+/* 右上角粉胶带（照搬 .tag-card::before） */
+.tag-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	right: 18px;
+	left: auto;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-pink);
+	background-image: var(--tape-stripes);
+	transform: rotate(6deg);
+	z-index: 2;
+}
+
+.tag-cloud {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+/* 纸胶带标签胶囊（照搬 .tag-chip） */
+.tag-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 26px;
+	padding: 0 13px;
+	border-radius: var(--radius-handdrawn);
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-soft, #4a5751);
+	background-color: var(--tape-green);
+	background-image: var(--tape-stripes);
+	box-shadow: 0 2px 5px rgba(82, 64, 38, 0.08);
+	text-decoration: none;
+	transition:
+		transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+		box-shadow 0.25s ease,
+		color 0.2s ease,
+		filter 0.2s ease;
+}
+
+.tag-chip:hover {
+	transform: translateY(-3px) scale(1.03) rotate(0deg);
+	box-shadow:
+		0 10px 20px -6px rgba(82, 64, 38, 0.22),
+		0 4px 8px -2px rgba(82, 64, 38, 0.12);
+	filter: saturate(1.1);
+}
+
+.tag-chip:active {
+	transform: translateY(-1px) scale(1.01);
+	transition-duration: 0.1s;
+}
+
+:root.dark .tag-chip {
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+:root.dark .tag-chip:hover {
+	box-shadow:
+		0 10px 22px -6px rgba(0, 0, 0, 0.5),
+		0 4px 10px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* 六色轮换 + 各自微倾角（照搬 .tag-chip-0..5） */
+.tag-chip-0 {
+	background-color: var(--tape-green);
+	color: #2f6649;
+	transform: rotate(-1deg);
+}
+.tag-chip-1 {
+	background-color: var(--tape-blue);
+	color: #1f4e83;
+	transform: rotate(1.2deg);
+}
+.tag-chip-2 {
+	background-color: var(--tape-yellow);
+	color: #6f4d0e;
+	transform: rotate(-0.6deg);
+}
+.tag-chip-3 {
+	background-color: var(--tape-green);
+	color: #2e5e3a;
+	transform: rotate(0.8deg);
+}
+.tag-chip-4 {
+	background-color: rgba(156, 143, 235, 0.45);
+	color: #443289;
+	transform: rotate(-1.2deg);
+}
+.tag-chip-5 {
+	background-color: var(--tape-pink);
+	color: #893f30;
+	transform: rotate(1deg);
+}
+
+:root.dark .tag-chip-0 {
+	color: #d9e8d5;
+}
+:root.dark .tag-chip-1 {
+	color: #c2d4ec;
+}
+:root.dark .tag-chip-2 {
+	color: #f1d9a8;
+}
+:root.dark .tag-chip-3 {
+	color: #d4e1cf;
+}
+:root.dark .tag-chip-4 {
+	background-color: rgba(156, 143, 235, 0.32);
+	color: #dad2f0;
+}
+:root.dark .tag-chip-5 {
+	color: #f0cabb;
+}
+
+/* ==========================================================================
+ * 五、无障碍
+ * ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+	.side-card,
+	.side-card:hover,
+	.socials a,
+	.categories-card a,
+	.tag-chip,
+	.tag-chip:hover {
+		transition: none;
+		transform: none;
+	}
+}

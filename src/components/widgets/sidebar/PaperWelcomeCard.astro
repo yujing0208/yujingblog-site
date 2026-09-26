@@ -1,0 +1,82 @@
+---
+/**
+ * PaperWelcomeCard —— 手账风欢迎卡（左侧栏首张）
+ * 1:1 移植 flatpaper：layout/_partial/sidebar-left.ejs 的 welcome-card 段
+ *                   + source/css/_partials/_components/welcome.styl (206行)
+ *
+ * 原版结构：
+ *   section.welcome-card
+ *     .welcome-thumb[--image]        ← 缩略图：有图=拍立得照片(7deg)；无图=手绘风景
+ *     p.hello > .green-dot            ← Hello! + 绿点
+ *     h1                              ← 标题（带黄色荧光笔下划线）
+ *     p.welcome-text                  ← 说明文字
+ *     a.welcome-cta                   ← 纸片按钮（撕纸边 + 箭头）
+ *
+ * 内容取本博客现有配置：profileConfig.avatar / siteConfig.title / profileConfig.bio
+ */
+import { Icon } from "astro-icon/components";
+
+import { profileConfig, siteConfig } from "../../../config";
+
+interface Props {
+	/** 缩略图：留空则渲染手绘风景（照搬原版无图分支） */
+	image?: string;
+	/** 问候语 */
+	label?: string;
+	/** 标题 */
+	title?: string;
+	/** 说明文字 */
+	text?: string;
+	/** CTA 文案 */
+	ctaText?: string;
+	/** CTA 链接 */
+	ctaLink?: string;
+}
+
+const {
+	image = profileConfig.avatar ?? "",
+	label = "Hello!",
+	title = siteConfig.title,
+	text = profileConfig.bio ?? "",
+	ctaText = "开始阅读",
+	ctaLink = "/archive/",
+} = Astro.props;
+
+const hasImage = typeof image === "string" && image.length > 0;
+---
+
+<section class="welcome-card side-card">
+	<!-- 缩略图：有图走拍立得（--image），无图走手绘风景 -->
+	<div
+		class:list={["welcome-thumb", hasImage && "welcome-thumb--image"]}
+		aria-hidden="true"
+	>
+		{
+			hasImage ? (
+				<img
+					src={image}
+					alt=""
+					loading="lazy"
+					referrerpolicy="no-referrer"
+				/>
+			) : (
+				<>
+					<div class="sun"></div>
+					<div class="cloud cloud-a"></div>
+					<div class="cloud cloud-b"></div>
+					<div class="mountain mountain-a"></div>
+					<div class="mountain mountain-b"></div>
+				</>
+			)
+		}
+	</div>
+
+	<p class="hello"><span class="green-dot"></span>{label}</p>
+	<h1>{title}</h1>
+	{text && <p class="welcome-text">{text}</p>}
+
+	<a class="welcome-cta" href={ctaLink}>
+		<span>{ctaText}</span>
+		<Icon name="material-symbols:arrow-forward-rounded" class="welcome-cta-icon" />
+	</a>
+</section>

@@ -1,0 +1,126 @@
+---
+/**
+ * PaperProfileCard —— 手账风个人名片（右侧栏）
+ * 1:1 移植 flatpaper：layout/_partial/sidebar-right.ejs 的 profile-card 段
+ *                   + source/css/_partials/_components/profile.styl (328行)
+ *
+ * 原版结构：
+ *   section.side-card.profile-card
+ *     .avatar[--image][--circle]     ← 头像：有图=虚线框圆角10px；无图=手绘娃娃
+ *     h3                             ← 名字
+ *     p.profile-role                 ← 身份（可选）
+ *     p                              ← 签名
+ *     .site-info                     ← 统计三列（文章/分类/标签，可跳转）
+ *     .socials                       ← 虚线圆社交按钮 + 悬停 tooltip
+ *
+ * 内容取本博客现有配置：profileConfig + 站点统计
+ */
+import { Icon } from "astro-icon/components";
+
+import { profileConfig } from "../../../config";
+
+interface Props {
+	/** 头像形状："square"（默认，虚线圆角框）/ "circle"（圆形） */
+	avatarShape?: "square" | "circle";
+	/** 文章数 */
+	postCount?: number;
+	/** 分类数 */
+	categoryCount?: number;
+	/** 标签数 */
+	tagCount?: number;
+	/** 是否显示站点统计 */
+	showSiteInfo?: boolean;
+}
+
+const {
+	avatarShape = "square",
+	postCount = 0,
+	categoryCount = 0,
+	tagCount = 0,
+	showSiteInfo = true,
+} = Astro.props;
+
+const avatar = profileConfig.avatar ?? "";
+const hasAvatar = typeof avatar === "string" && avatar.length > 0;
+
+// 社交链接：只保留 icon 为合法 "prefix:name" 的条目
+// （astro-icon 要求静态可解析的名字，缺失冒号会回退 local 图标集导致构建中断）
+const socials = (profileConfig.links ?? []).filter(
+	(l) =>
+		!!l.url &&
+		typeof l.icon === "string" &&
+		l.icon.includes(":") &&
+		l.icon.split(":")[0].length > 0 &&
+		l.icon.split(":")[1].length > 0,
+);
+
+const siteInfoItems = [
+	{ href: "/archive/", value: postCount, label: "文章" },
+	{ href: "/categories/", value: categoryCount, label: "分类" },
+	{ href: "/tags/", value: tagCount, label: "标签" },
+].filter((it) => it.value > 0);
+---
+
+<section class="side-card profile-card">
+	{
+		hasAvatar ? (
+			<div
+				class:list={[
+					"avatar",
+					"avatar--image",
+					avatarShape === "circle" && "avatar--circle",
+				]}
+			>
+				<img
+					src={avatar}
+					alt={profileConfig.name ?? ""}
+					loading="lazy"
+					referrerpolicy="no-referrer"
+				/>
+			</div>
+		) : (
+			<div class="avatar" aria-hidden="true">
+				<span></span>
+				<i></i>
+				<em></em>
+				<b></b>
+			</div>
+		)
+	}
+
+	<h3>{profileConfig.name}</h3>
+	{profileConfig.bio && <p>{profileConfig.bio}</p>}
+
+	{
+		showSiteInfo && siteInfoItems.length > 0 && (
+			<div class="site-info" aria-label="站点统计">
+				{siteInfoItems.map((item) => (
+					<a class="site-info__item" href={item.href}>
+						<strong>{item.value}</strong>
+						<span>{item.label}</span>
+					</a>
+				))}
+			</div>
+		)
+	}
+
+	{
+		socials.length > 0 && (
+			<div class="socials">
+				{socials.map((link) => (
+					<a
+						href={link.url}
+						target={link.url.startsWith("http") ? "_blank" : undefined}
+						rel={link.url.startsWith("http")
+							? "noopener noreferrer"
+							: undefined}
+						aria-label={link.name}
+						data-tooltip={link.name}
+					>
+						<Icon name={link.icon} class="socials-icon" />
+					</a>
+				))}
+			</div>
+		)
+	}
+</section>
