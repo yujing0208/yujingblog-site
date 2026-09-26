@@ -1,0 +1,154 @@
+---
+/**
+ * PaperHomeLayout —— 手账风首页独立布局
+ *
+ * 为什么要独立布局（根因说明）：
+ *   原有 MainGridLayout 是「全屏壁纸 + Banner 偏移 + 主内容 absolute 叠加」体系：
+ *     · FullscreenWallpaper 固定层
+ *     · finalMainPanelTop = 按 BANNER_HEIGHT 计算的偏移
+ *     · 主内容 div 用 position:absolute; top:<offset> 压在 banner 之上
+ *   而 FlatPaper 的结构是「hero 在最前 → 导航 → 内容正常文档流」。
+ *   把 hero 塞进前者会出现：首屏被 absolute 层挤压塌缩、资料卡不可见、大段空白。
+ *   所以这里照搬 flatpaper layout.ejs 的结构，给首页一套干净的文档流布局。
+ *
+ * 结构对照（flatpaper layout.ejs）：
+ *   <home-hero>                        → PaperHero
+ *   partial('_partial/header')         → Navbar
+ *   <main class="paper-shell">         → .paper-shell 三栏
+ *     sidebar-right (TOC)              → 右侧栏
+ *     <section class="paper-main">     → 主栏
+ *       body (index.ejs)               → section-head + post-list + pager
+ *     sidebar-left                     → 左侧栏
+ *   footer                             → Footer
+ */
+import FloatingControls from "@components/control/FloatingControls.astro";
+import { SidebarTOC } from "@components/features/toc";
+import PaperHero from "@components/layout/PaperHero.astro";
+import RightSideBar from "@components/layout/RightSideBar.astro";
+import IconifyLoader from "@components/misc/IconifyLoader.astro";
+import Footer from "@components/organisms/footer/Footer.astro";
+import Navbar from "@components/organisms/navigation/Navbar.astro";
+import SideBar from "@components/widgets/sidebar/SideBar.astro";
+import type { MarkdownHeading } from "astro";
+
+import { siteConfig } from "../config";
+import { formatDateToYYYYMMDD } from "../utils/date-utils";
+import Layout from "./Layout.astro";
+import GridScripts from "./partials/GridScripts.astro";
+
+interface Props {
+	title?: string;
+	description?: string;
+	headings?: MarkdownHeading[];
+}
+
+const { title, description, headings = [] } = Astro.props;
+
+const paperHeroConfig = siteConfig.paperHero ?? {};
+const paperHeroImages = (paperHeroConfig.images ?? []).filter(
+	(src): src is string => typeof src === "string" && src.length > 0,
+);
+---
+
+<Layout title={title} description={description}>
+	<GridScripts
+		navbarTransparentMode="none"
+		defaultWallpaperMode="none"
+		defaultPostListLayout={siteConfig.postListLayout?.defaultMode || "list"}
+		BANNER_HEIGHT={0}
+		BANNER_HEIGHT_FULLSCREEN={0}
+		pageScaling={siteConfig.pageScaling}
+		wavesEnabled={false}
+		bannerTitleEnabled={false}
+		wallpaperEnabled={false}
+		postListLayoutEnabled={siteConfig.postListLayout?.enable ?? true}
+	/>
+
+	<!-- 全局图标加载器 -->
+	<IconifyLoader />
+
+	<!-- 首屏（照搬 flatpaper：hero 在最前） -->
+	<PaperHero
+		image={paperHeroImages[0] ?? ""}
+		mobileImage={paperHeroConfig.mobileImage ?? false}
+		imageOverlay={paperHeroConfig.imageOverlay ?? [0.2, 0.2]}
+		noteText={paperHeroConfig.noteText ?? "今天也要\n好好生活"}
+		stickers={paperHeroConfig.stickers ?? []}
+		stickersDraggable={paperHeroConfig.stickersDraggable ?? true}
+		ctaText={paperHeroConfig.ctaText ?? "开始阅读"}
+		ctaTarget="paper-home-content"
+	/>
+
+	<!-- 导航（照搬 header） -->
+	<div id="top-row" class="z-50 pointer-events-none relative px-0 md:px-4 mx-auto max-w-(--page-width)">
+		<div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
+			<Navbar />
+		</div>
+	</div>
+
+	<!-- 主内容（照搬 main.paper-shell：正常文档流，不再 absolute 叠加） -->
+	<div id="paper-home-content" class="relative w-full z-30">
+		<div class="relative max-w-(--page-width) mx-auto px-2 md:px-4">
+			<div
+				id="main-grid"
+				class="paper-shell w-full left-0 right-0 grid grid-cols-1 md:grid-cols-[17.5rem_minmax(0,1fr)] lg:grid-cols-[17.5rem_minmax(0,1fr)_17.5rem] grid-rows-none md:grid-rows-[auto] mx-auto gap-4"
+				data-layout-mode="grid"
+			>
+				<!-- 左侧栏 -->
+				<div class="order-2 md:order-1 lg:order-1">
+					<SideBar headings={headings} />
+				</div>
+
+				<!-- 主栏 -->
+				<main
+					id="swup-container"
+					class="order-1 md:order-2 lg:order-2 min-w-0 transition-main"
+				>
+					<div id="content-wrapper" class="onload-animation transition-leaving">
+						<div
+							id="page-overlay-data"
+							data-title={title || ""}
+							data-date={formatDateToYYYYMMDD(new Date())}
+							data-is-home="true"
+							data-wallpaper-mode="none"
+							class="hidden"
+						>
+						</div>
+						<slot />
+					</div>
+				</main>
+
+				<!-- 右侧栏 -->
+				<div class="right-sidebar-container order-3 lg:order-3">
+					<RightSideBar headings={headings} />
+				</div>
+			</div>
+
+			<FloatingControls headings={headings} />
+		</div>
+
+		<!-- 页脚 -->
+		<div class="footer col-span-full mt-6">
+			<Footer />
+		</div>
+	</div>
+
+	<style>
+		.right-sidebar-container {
+			align-self: start;
+			display: block;
+		}
+		.right-sidebar-container #right-sidebar {
+			height: fit-content;
+		}
+		/* 手账首屏之后的间距（照搬 .paper-shell margin-top: 28px） */
+		#paper-home-content {
+			margin-top: 28px;
+		}
+		@media (max-width: 760px) {
+			#paper-home-content {
+				margin-top: 18px;
+			}
+		}
+	</style>
+</Layout>

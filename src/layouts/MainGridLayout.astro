@@ -2,8 +2,6 @@
 import FloatingControls from "@components/control/FloatingControls.astro";
 import { SidebarTOC } from "@components/features/toc";
 import Banner from "@components/layout/Banner.astro";
-import PaperHero from "@components/layout/PaperHero.astro";
-import "../styles/paper-hero.css";
 import RightSideBar from "@components/layout/RightSideBar.astro";
 import FullscreenWallpaper from "@components/misc/FullscreenWallpaper.astro";
 import IconifyLoader from "@components/misc/IconifyLoader.astro";
@@ -101,16 +99,6 @@ const transparentClass = getTransparencyClass(shouldEnable);
 
 // 布局模式
 const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
-
-// 手账首屏（PaperHero）：仅在 siteConfig.homeLayout === "paper" 且开关开启时启用。
-// 关掉后完全回落到原有 Banner 壁纸首屏，功能不受影响。
-const paperHeroConfig = siteConfig.paperHero ?? {};
-const paperHeroActive =
-	(siteConfig.homeLayout ?? "banner") === "paper" &&
-	(paperHeroConfig.enable ?? true);
-const paperHeroImages = (paperHeroConfig.images ?? []).filter(
-	(src): src is string => typeof src === "string" && src.length > 0,
-);
 ---
 
 <Layout
@@ -157,43 +145,18 @@ const paperHeroImages = (paperHeroConfig.images ?? []).filter(
 		</div>
 	</div>
 
-	<!-- 首屏：手账风 PaperHero（首页且 homeLayout="paper"）或原有 Banner -->
-	{
-		paperHeroActive && isHomePage ? (
-			<PaperHero
-				image={paperHeroImages[0] ?? ""}
-				mobileImage={paperHeroConfig.mobileImage ?? false}
-				imageOverlay={paperHeroConfig.imageOverlay ?? [0.2, 0.2]}
-				noteText={paperHeroConfig.noteText ?? "今天也要\n好好生活"}
-				stickers={paperHeroConfig.stickers ?? []}
-				stickersDraggable={paperHeroConfig.stickersDraggable ?? true}
-				ctaText={paperHeroConfig.ctaText ?? "开始阅读"}
-				ctaTarget="paper-home-content"
-			/>
-		) : (
-			<Banner
-				bannerImages={bannerImages}
-				mobileNonHomeBannerClass={mobileNonHomeBannerClass}
-				showTextOverlay={isHomePage &&
-					(siteConfig.banner.homeText?.enable ?? false)}
-			/>
-		)
-	}
+	<!-- Banner 组件 -->
+	<Banner
+		bannerImages={bannerImages}
+		mobileNonHomeBannerClass={mobileNonHomeBannerClass}
+		showTextOverlay={isHomePage &&
+			(siteConfig.banner.homeText?.enable ?? false)}
+	/>
 
 	<!-- Main content -->
 	<div
-		id="paper-home-content"
-		class:list={[
-			paperHeroActive && isHomePage
-				? "relative w-full z-30 pointer-events-none paper-home-flow"
-				: "absolute w-full z-30 pointer-events-none",
-			{
-				"mobile-main-no-banner": mobileNonHomeBannerClass,
-				"no-banner-layout": siteConfig.wallpaperMode.defaultMode === "none",
-			},
-			transparentClass,
-		]}
-		style={paperHeroActive && isHomePage ? `` : `top: ${finalMainPanelTop}`}
+		class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? "mobile-main-no-banner" : ""} ${siteConfig.wallpaperMode.defaultMode === "none" ? "no-banner-layout" : ""} ${transparentClass}`}
+		style={`top: ${finalMainPanelTop}`}
 	>
 		<!-- The pointer-events-none here prevent blocking the click event of the TOC -->
 		<div class="relative max-w-(--page-width) mx-auto pointer-events-auto">
@@ -362,4 +325,3 @@ const paperHeroImages = (paperHeroConfig.images ?? []).filter(
   Banner 和网格布局样式已提取到 src/styles/banner.css
   该文件通过 src/styles/main.css 导入
 -->
-

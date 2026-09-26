@@ -1,8 +1,10 @@
 ---
 import Pagination from "@components/control/Pagination.astro";
 import CategoryBar from "@components/features/posts/CategoryBar.astro";
+import PaperPostList from "@components/features/posts/PaperPostList.astro";
 import PostPage from "@components/features/posts/PostPage.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import PaperHomeLayout from "@layouts/PaperHomeLayout.astro";
 import type { GetStaticPaths } from "astro";
 
 import { siteConfig } from "../config";
@@ -11,6 +13,12 @@ import { getSortedPosts } from "../utils/content-utils";
 import { initPostIdMap } from "../utils/permalink-utils";
 
 const showCategoryBar = siteConfig.postListLayout.categoryBar?.enable ?? false;
+
+// 首页是否走手账布局（PaperHomeLayout + PaperPostList）。
+// 关掉后完全回落到原有 MainGridLayout + PostPage，功能一条不删。
+const usePaperHome =
+	(siteConfig.homeLayout ?? "banner") === "paper" &&
+	(siteConfig.paperHero?.enable ?? true);
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
@@ -23,14 +31,27 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page } = Astro.props;
 
 const len = page.data.length;
+const isFirstPage = (page.currentPage ?? 1) === 1;
+
+// 仅首页第 1 页用手账布局；第 2 页起沿用原布局，避免分页样式割裂
+const paperMode = usePaperHome && isFirstPage;
 ---
 
-<MainGridLayout>
-	{showCategoryBar && <CategoryBar />}
-	<PostPage page={page} />
-	<Pagination
-		class="mx-auto onload-animation"
-		page={page}
-		style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
-	/>
-</MainGridLayout>
+{
+	paperMode ? (
+		<PaperHomeLayout title={siteConfig.title} description={siteConfig.subtitle}>
+			{showCategoryBar && <CategoryBar />}
+			<PaperPostList page={page} heading="最新文章" />
+		</PaperHomeLayout>
+	) : (
+		<MainGridLayout>
+			{showCategoryBar && <CategoryBar />}
+			<PostPage page={page} />
+			<Pagination
+				class="mx-auto onload-animation"
+				page={page}
+				style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
+			/>
+		</MainGridLayout>
+	)
+}

@@ -1,0 +1,98 @@
+---
+/**
+ * PaperPostList —— 手账风文章列表
+ * 1:1 移植 flatpaper layout/index.ejs 的列表段：
+ *
+ *   <section class="section-head">   ← 「最新文章」小标题（图标 + h2）
+ *   <div class="post-list">          ← 两列网格（repeat(2, minmax(0,1fr)) gap:18px）
+ *     <article class="post-card">…
+ *   <nav class="pager">              ← 上一篇 / 页码 / 下一篇
+ *
+ * 照搬 post-card.styl：
+ *   .post-list  grid 两列，gap 18px
+ *   .post-card  flex 纵向，padding 14px，悬停 translateY(-3px) + 纸影
+ *   封面 margin -14px -14px 14px，高 130px，圆角 4px 4px 0 0
+ */
+import PaperPostCard from "@components/features/posts/PaperPostCard.astro";
+import { Icon } from "astro-icon/components";
+import type { Page } from "astro";
+
+interface Props {
+	page: Page<any>;
+	/** 标题文案（原版为「最新文章」） */
+	heading?: string;
+}
+
+const { page, heading = "最新文章" } = Astro.props;
+
+const posts = page.data as any[];
+const current = page.currentPage ?? 1;
+const total = page.lastPage ?? 1;
+const urlPrev = page.url.prev;
+const urlNext = page.url.next;
+---
+
+<!-- section-head：照搬 .section-head -->
+<section class="section-head">
+	<h2>
+		<Icon name="material-symbols:history" class="section-head__icon" />
+		{heading}
+	</h2>
+</section>
+
+<!-- post-list：照搬两列网格 -->
+{
+	posts.length > 0 ? (
+		<div class="post-list">
+			{posts.map((entry, index) => (
+				<PaperPostCard entry={entry} index={index} />
+			))}
+		</div>
+	) : (
+		<section class="empty-paper">
+			<h1>YuJing</h1>
+			<p>还没有文章。</p>
+		</section>
+	)
+}
+
+<!-- pager：照搬 .pager -->
+{
+	total > 1 && (
+		<nav class="pager" aria-label="文章分页">
+			{urlPrev ? (
+				<a class="pager-link pager-link--prev" href={urlPrev}>
+					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" />
+					<span>上一页</span>
+				</a>
+			) : (
+				<span class="pager-link pager-link--prev is-disabled" aria-disabled="true">
+					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" />
+					<span>上一页</span>
+				</span>
+			)}
+
+			<span class="pager-pages">
+				{current} / {total}
+			</span>
+
+			{urlNext ? (
+				<a class="pager-link pager-link--next" href={urlNext}>
+					<span>下一页</span>
+					<Icon
+						name="material-symbols:arrow-forward-rounded"
+						class="pager-icon"
+					/>
+				</a>
+			) : (
+				<span class="pager-link pager-link--next is-disabled" aria-disabled="true">
+					<span>下一页</span>
+					<Icon
+						name="material-symbols:arrow-forward-rounded"
+						class="pager-icon"
+					/>
+				</span>
+			)}
+		</nav>
+	)
+}
