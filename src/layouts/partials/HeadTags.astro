@@ -195,6 +195,12 @@ const favicons: Favicon[] =
 			// 立即执行一次
 			adjustPageScale();
 
+			// body 尚未解析时 checkPaperLayout() 必然 false，会导致手账布局
+			// 首屏被错误缩放 —— DOM 就绪后再判定一次并纠正。
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", adjustPageScale);
+			}
+
 			// 监听窗口大小变化
 			window.addEventListener("resize", adjustPageScale);
 

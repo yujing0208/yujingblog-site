@@ -246,16 +246,7 @@ const bannerOffset =
   <script defer src="https://cloud.umami.is/script.js" data-website-id="7c89b032-a326-4890-b75f-7a8a8537489d"></script>
 </head>
 	<body
-		class="min-h-screen"
-		class:list={[
-			{
-				"enable-banner": enableBanner,
-				"enable-card-border": siteConfig.card?.border,
-			},
-			// 手账布局标识：HeadTags 的 pageScaling 脚本据此跳过整页缩放，
-			// 照搬 FlatPaper 的固定容器（min(94%,1300px)），避免三栏被压缩
-			{ "paper-layout": isPaperLayout },
-		]}
+		class={`min-h-screen${enableBanner ? " enable-banner" : ""}${siteConfig.card?.border ? " enable-card-border" : ""}${isPaperLayout ? " paper-layout" : ""}`}
 
 		data-overlayscrollbars-initialize
 		data-edit={EDIT_PAGE || undefined}
