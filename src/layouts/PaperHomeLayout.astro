@@ -33,6 +33,7 @@ import PaperProfileCard from "@components/widgets/sidebar/PaperProfileCard.astro
 import PaperCategoriesCard from "@components/widgets/sidebar/PaperCategoriesCard.astro";
 import PaperTagsCard from "@components/widgets/sidebar/PaperTagsCard.astro";
 import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
+import PaperRecentCard from "@components/widgets/sidebar/PaperRecentCard.astro";
 import type { MarkdownHeading } from "astro";
 
 import { profileConfig, siteConfig } from "../config";
@@ -161,6 +162,8 @@ const tagCount = tagList.length;
 					<!-- 站内原有右侧 widget（公告 / 一言 / 统计 / 目录等），
 					     照搬 FlatPaper 顺序放在欢迎卡之后 -->
 					<RightSideBar headings={headings} />
+					<!-- 最近动态（聚合文章/动态/足迹/番剧/相册；替代原版的随机文章卡） -->
+					<PaperRecentCard limit={8} />
 				</aside>
 			</div>
 

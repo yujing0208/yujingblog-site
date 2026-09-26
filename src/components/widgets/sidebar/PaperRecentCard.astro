@@ -1,0 +1,178 @@
+---
+/**
+ * PaperRecentCard —— 手账风「最近动态」侧栏卡片
+ *
+ * 移植基础：flatpaper _components/random-posts.styl（52 行）
+ *   .recent-card::before  右上角黄胶带
+ *   .recent-list          ul，li+li 用虚线分隔
+ *   .recent-item          标题 + 日期，悬停右移 2px 变强调色
+ *
+ * 本卡片把原版的「随机文章」替换为聚合「最近动态」，数据源：
+ *   · 最近文章  → getSortedPosts()
+ *   · 动态/日记 → src/data/diary.ts（按 date 倒序）
+ *   · 足迹      → src/data/footprints.ts（按 date 倒序）
+ *   · 番剧      → src/data/anime.ts（按 year 倒序）
+ *   · 相册      → utils/album-scanner 扫描结果
+ *
+ * 每条带类型徽章（文章/动态/足迹/番剧/相册），点击跳对应页面。
+ */
+import { Icon } from "astro-icon/components";
+
+import localAnimeList from "../../../data/anime";
+import { getDiaryList } from "../../../data/diary";
+import { footprintsData } from "../../../data/footprints";
+import { getSortedPosts } from "../../../utils/content-utils";
+import { getPostUrl } from "../../../utils/url-utils";
+
+interface Props {
+	/** 总条数上限（照搬原版 random_posts 的 limit 概念） */
+	limit?: number;
+}
+
+const { limit = 8 } = Astro.props;
+
+interface RecentEntry {
+	type: "post" | "diary" | "footprint" | "anime" | "album";
+	label: string;
+	icon: string;
+	title: string;
+	date: string;
+	url: string;
+}
+
+const entries: RecentEntry[] = [];
+
+/* --- 最近文章 --- */
+const posts = await getSortedPosts();
+for (const entry of posts.slice(0, 4)) {
+	const d = (entry as any).data ?? {};
+	const dt = d.published ? new Date(d.published) : null;
+	// 标题可能来自 data.title，也可能是 slug/文件名兜底
+	const rawTitle =
+		d.title ??
+		(entry as any).title ??
+		(entry as any).slug ??
+		String((entry as any).id ?? "").split("/").pop() ??
+		"";
+	entries.push({
+		type: "post",
+		label: "文章",
+		icon: "material-symbols:article-outline",
+		title: String(rawTitle).trim() || "未命名",
+		date: dt && !Number.isNaN(dt.getTime()) ? dt.toISOString().slice(0, 10) : "",
+		url: getPostUrl(entry as any),
+	});
+}
+
+/* --- 动态 / 日记（用文件提供的 getDiaryList 取最新） --- */
+const diary = (() => {
+	try {
+		const list = getDiaryList(3);
+		return Array.isArray(list) ? list : [];
+	} catch (e) {
+		return [];
+	}
+})();
+for (const item of diary as any[]) {
+	const raw = String(item.content ?? "").replace(/https?:\/\/\S+/g, "").trim();
+	entries.push({
+		type: "diary",
+		label: "动态",
+		icon: "material-symbols:chat-outline",
+		title: raw.slice(0, 40) || "（图片动态）",
+		date: String(item.date ?? "").slice(0, 10),
+		url: "/diary/",
+	});
+}
+
+/* --- 足迹 --- */
+const footprints = (Array.isArray(footprintsData) ? footprintsData : [])
+	.slice()
+	.sort((a: any, b: any) => String(b.date ?? "").localeCompare(String(a.date ?? "")));
+for (const item of footprints.slice(0, 2)) {
+	entries.push({
+		type: "footprint",
+		label: "足迹",
+		icon: "material-symbols:location-on-outline",
+		title: String(item.name ?? ""),
+		date: String(item.date ?? ""),
+		url: "/footprint/",
+	});
+}
+
+/* --- 番剧（anime.ts 为 default 导出，无日期字段，取列表前若干） --- */
+const animeList = Array.isArray(localAnimeList) ? (localAnimeList as any[]) : [];
+for (const item of animeList.slice(0, 2)) {
+	entries.push({
+		type: "anime",
+		label: "番剧",
+		icon: "material-symbols:movie-outline",
+		title: String(item.title ?? ""),
+		date: String(item.year ?? ""),
+		url: "/anime/",
+	});
+}
+
+/* --- 相册（扫描目录；元数据缺失时用 id/文件夹名兜底） --- */
+let albumEntries: RecentEntry[] = [];
+try {
+	const { scanAlbums } = await import("../../../utils/album-scanner");
+	const albums = await scanAlbums();
+	for (const album of albums.slice(0, 2)) {
+		const a = album as any;
+		const rawTitle = String(a.title ?? "").trim() || String(a.id ?? "").trim();
+		albumEntries.push({
+			type: "album",
+			label: "相册",
+			icon: "material-symbols:photo-library-outline",
+			title: rawTitle || "相册",
+			// AlbumGroup.date 存在时是日期，可能带时间，截到 10 位
+			date: String(a.date ?? "").slice(0, 10),
+			url: "/albums/",
+		});
+	}
+} catch (e) {
+	albumEntries = [];
+}
+entries.push(...albumEntries);
+
+/* --- 配额：番剧/相册（无日期）保底各 1 席，其余名额给有日期的最近条目。
+       否则有日期的条目会把它们全部挤出榜单。 --- */
+const dated = entries
+	.filter((e) => e.date)
+	.sort((a, b) => b.date.localeCompare(a.date));
+const animeItems = entries.filter((e) => e.type === "anime");
+const albumItems = entries.filter((e) => e.type === "album");
+const reserved = [...animeItems.slice(0, 1), ...albumItems.slice(0, 1)];
+const reservedCount = reserved.length;
+const datedQuota = Math.max(1, limit - reservedCount);
+
+const items = [...dated.slice(0, datedQuota), ...reserved].slice(0, limit);
+---
+
+<section class="side-card recent-card">
+	<h2>
+		<Icon name="material-symbols:bolt-outline" class="side-card-icon" />
+		最近动态
+	</h2>
+	<ul class="recent-list">
+		{
+			items.map((item) => (
+				<li>
+					<a class="recent-item" href={item.url} data-type={item.type}>
+						<span class="recent-item__type">
+							<Icon name={item.icon} class="recent-item__icon" />
+						</span>
+						<span class="recent-item__main">
+							<strong>{item.title}</strong>
+							<em>
+								{item.label}
+								{item.date ? ` · ${item.date}` : ""}
+							</em>
+						</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</section>
