@@ -78,7 +78,13 @@ const featuredSlugs = featuredItems.map((it) => it.slug);
 		<PaperHomeLayout title={siteConfig.title} description={siteConfig.subtitle}>
 			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）；原分类条 CategoryBar 已按需求移除 */}
 			<PaperFeaturedCarousel items={featuredItems} autoplay={5000} />
-			<PaperPostList page={page} heading="最新文章" />
+			{/* 置顶文章已进上方轮播，这里从「最新文章」列表排除，避免同一篇出现两次；
+			    列表其余文章保持按时间倒序（不做置顶提升）。 */}
+			<PaperPostList
+				page={page}
+				heading="最新文章"
+				excludeSlugs={featuredSlugs}
+			/>
 		</PaperHomeLayout>
 	) : (
 		<MainGridLayout>
