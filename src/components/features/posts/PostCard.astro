@@ -31,7 +31,9 @@ const {
 
 const url = getPostUrl(entry);
 const hasCover = image !== undefined && image !== null && image !== "";
-const coverWidth = "30%";
+const coverWidth = "52%";
+// 卡片最小高度 = 封面高度(16:9) + 上下各 12px 留白，保证封面永远完整显示且上下留白最小
+const coverMinHeight = "calc(29.25cqw + 24px)"; // 52% × 9/16 = 29.25
 
 const { remarkPluginFrontmatter } = await render(entry);
 const homeContent = getPostHomeContent(
@@ -48,23 +50,27 @@ const homeContent = getPostHomeContent(
 	style={style}
 >
 	<div
-		class:list={[
-			"pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 relative",
-			{
-				"w-full md:w-[calc(100%-3.25rem-0.75rem)]": !hasCover,
-				"w-full md:w-[calc(100%-var(--coverWidth)-0.75rem)]":
-					hasCover,
-			},
-		]}
-	>
+	class:list={[
+		"pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 relative",
+		{ "post-card-text": hasCover },
+		{
+			"w-full md:w-[calc(100%-3.25rem-0.75rem)]": !hasCover,
+			"w-full md:w-[calc(100%-var(--coverWidth)-0.75rem)]":
+				hasCover,
+		},
+	]}
+>
 		<a
 			href={url}
-			class="transition group w-full block font-bold mb-3 text-3xl text-90
-        hover:text-(--primary) dark:hover:text-(--primary)
-        active:text-(--title-active) dark:active:text-(--title-active)
-        before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
-        before:absolute
-        before:top-8.75 before:left-4.5 before:hidden md:before:block"
+			class:list={[
+			"transition group w-full block font-bold mb-3 text-3xl text-90",
+			"hover:text-(--primary) dark:hover:text-(--primary)",
+			"active:text-(--title-active) dark:active:text-(--title-active)",
+			"before:w-1 before:h-5 before:rounded-md before:bg-(--primary)",
+			"before:absolute",
+			"before:top-8.75 before:left-4.5 before:hidden md:before:block",
+			{ "post-card-title": hasCover },
+		]}
 		>
 			{
 				pinned && (
@@ -110,6 +116,7 @@ const homeContent = getPostHomeContent(
 			class:list={[
 				"transition text-75 mb-3.5 pr-4",
 				{ "line-clamp-2 md:line-clamp-1": !description },
+				{ "md:line-clamp-2": !!description },
 			]}
 		>
 			{homeContent}
@@ -147,6 +154,7 @@ const homeContent = getPostHomeContent(
 				aria-label={title}
 				class:list={[
 					"group",
+					"post-card-cover",
 					"aspect-video mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
 					"md:w-(--coverWidth) relative md:absolute md:top-1/2 md:-translate-y-1/2 md:right-3 rounded-xl overflow-hidden active:scale-95",
 					{ "lcp-candidate": index === 0 }, // 标记 LCP 候选元素
@@ -197,4 +205,44 @@ const homeContent = getPostHomeContent(
 >
 </div>
 
-<style define:vars={{ coverWidth }}></style>
+<style define:vars={{ coverWidth, coverMinHeight }}>
+	/* 中屏及以上：把封面放大到卡片宽度的 52%（16:9），并让卡片高度至少等于封面高度 + 上下各 12px，
+	   这样封面既不会被裁切，上下留白也恒定在 12px 左右 */
+	@media (min-width: 768px) {
+		.card-base {
+			container-type: inline-size;
+		}
+
+		/* 宽卡片（列表模式）：封面在右侧，文字区在左侧 */
+		@container (min-width: 560px) {
+			.post-card-text {
+				min-height: var(--coverMinHeight);
+			}
+			/* 标题最多 2 行，简介最多 2 行，标签单行，保证卡片高度稳定 */
+			.post-card-title {
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
+			}
+			.post-card-text > div:last-child {
+				flex-wrap: nowrap;
+				overflow: hidden;
+			}
+		}
+
+		/* 窄卡片（网格模式 / 双列）：封面改为顶部通栏，避免侧边封面过小导致的大片留白 */
+		@container (max-width: 559px) {
+			.post-card-cover {
+				order: -1;
+				position: static;
+				width: calc(100% - 2rem);
+				margin: 1rem 1rem -0.5rem;
+				transform: none;
+			}
+			.post-card-text {
+				width: 100%;
+			}
+		}
+	}
+</style>
