@@ -85,7 +85,7 @@ const dateLabel = published
 				{pinned && <Icon name="mdi:pin" class="post-card-pin" />}
 				{title}
 				{encrypted && password && (
-					<Icon name="material-symbols:lock-outline" class="post-card-lock" />
+					<Icon name="material-symbols:lock-outline" class="post-card-lock" is:inline />
 				)}
 			</a>
 		</h3>
@@ -96,7 +96,7 @@ const dateLabel = published
 			tags && tags.length > 0 && (
 				<div class="meta-line meta-line--tags">
 					<span class="meta-tags">
-						<Icon name="material-symbols:tag" class="meta-icon" />
+						<Icon name="material-symbols:tag" class="meta-icon" is:inline />
 						{tags.map((tag) => (
 							<a class="meta-tag-link" href={getTagUrl(tag)}>
 								#{tag.trim()}
@@ -110,13 +110,13 @@ const dateLabel = published
 		<div class="meta-line meta-line--tax">
 			{dateLabel && (
 				<span class="meta-date">
-					<Icon name="material-symbols:calendar-month-outline" class="meta-icon" />
+					<Icon name="material-symbols:calendar-month-outline" class="meta-icon" is:inline />
 					{dateLabel}
 				</span>
 			)}
 			{category && (
 				<span class="meta-cat">
-					<Icon name="material-symbols:folder-outline" class="meta-icon" />
+					<Icon name="material-symbols:folder-outline" class="meta-icon" is:inline />
 					<a class="meta-cat-link" href={`/categories/${category}/`}>
 						{category}
 					</a>
