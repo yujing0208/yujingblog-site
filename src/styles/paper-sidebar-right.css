@@ -21,9 +21,12 @@
  *       .paper-main     grid，gap 24px        ← 主栏块间距
  *     文章页用 .paper-shell--article 砍掉第三栏（照着 FlatPaper 的两栏规则）。
  * ========================================================================== */
-/* 页面级容器：与导航栏用同一宽度规格（照搬 FlatPaper 的 min(94vw, 1300px)） */
+/* 页面级容器：与导航栏用同一宽度规格
+   照搬 FlatPaper 的 min(94vw, 1300px)。这里用 100% 而非 vw：
+   本站 html 有 scrollbar-gutter: stable（占 15px），vw 含滚动条宽度会导致
+   整体偏移约 7px；用百分比基于内容盒宽度计算，才能真正居中。 */
 .paper-shell-container {
-	width: min(94vw, var(--page-width));
+	width: min(94%, var(--page-width));
 	margin-inline: auto;
 }
 

@@ -882,10 +882,18 @@ body.no-banner-mode #top-row.paper-hero-layout,
 	min-height: 0 !important;
 	position: relative !important;
 	top: auto !important;
-	margin: 0 !important;
+	/* ⚠️ 只清垂直 margin，保留水平 auto —— 否则会把 mx-auto 的居中一并清掉，
+	     导航就贴到屏幕最左边（实测偏 -155px） */
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
 	padding: 0 !important;
 	transition: none !important;
 	overflow: visible !important;
+	/* 居中：宽度按 FlatPaper .site-header 规格，水平 auto 居中 */
+	width: min(94vw, var(--page-width)) !important;
+	max-width: none !important;
 }
 
 /* 导航本体：照搬 FlatPaper .site-header 的 sticky 行为 */

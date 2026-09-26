@@ -97,12 +97,13 @@ const tagCount = tagList.length;
 		ctaTarget="paper-home-content"
 	/>
 
-	<!-- 导航（照搬 FlatPaper .site-header：width min(94vw,1300px) + margin-inline auto + sticky top 16px）
-	     宽度/居中/吸顶全部用内联 Tailwind 类直给，不依赖 CSS 覆盖原 banner 体系 -->
+	<!-- 导航（照搬 FlatPaper .site-header：width min(94%,1300px) + margin-inline auto + sticky top 16px）
+	     宽度用 94%（非 94vw）：本站 html 有 scrollbar-gutter: stable 占 15px，
+	     vw 含滚动条宽度会让导航整体偏 7px；百分比基于内容盒计算才准。 -->
 	<div
 		id="top-row"
-		class="paper-hero-layout z-50 pointer-events-none relative mx-auto"
-		style="width: min(94vw, var(--page-width));"
+		class="paper-hero-layout z-50 pointer-events-none relative"
+		style="width: min(94%, var(--page-width)); margin-inline: auto;"
 	>
 		<div
 			id="navbar-wrapper"
