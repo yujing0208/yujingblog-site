@@ -25,6 +25,8 @@ import SocialIcon from "@components/widgets/sidebar/SocialIcon.astro";
 interface Props {
 	/** 首屏背景图；留空则用纯纸张底（照搬 FlatPaper 的 --image 分支） */
 	image?: string;
+	/** 背景图列表；>1 张时输出 data-hero-images，由脚本随机挑一张（照搬 FlatPaper） */
+	images?: string[];
 	/** 移动端是否也使用背景图（对应原版 home-hero--mobile-image） */
 	mobileImage?: boolean;
 	/** 上下遮罩浓度 [top, bottom] */
@@ -44,10 +46,16 @@ interface Props {
 	ctaText?: string;
 	/** 下拉目标锚点 id */
 	ctaTarget?: string;
+	/**
+	 * 下拉纸签背景："random" = 内置 9 张 cta-bg 随机（照搬原版 cta_background: 'random'），
+	 * 或直接传一张图片路径固定使用。
+	 */
+	ctaBackground?: string;
 }
 
 const {
 	image = "",
+	images,
 	mobileImage = false,
 	imageOverlay = [0.2, 0.2],
 	noteText = "今天也要\n好好生活",
@@ -55,7 +63,35 @@ const {
 	stickersDraggable = true,
 	ctaText = "开始阅读",
 	ctaTarget = "paper-home-content",
+	ctaBackground = "random",
 } = Astro.props;
+
+// 背景图：images 数组优先，回退到单张 image（兼容旧调用）
+const heroImages = (
+	images && images.length > 0 ? images : image ? [image] : []
+).filter(Boolean);
+const heroImage = heroImages[0] ?? "";
+// >1 张才输出 data-hero-images 交给脚本随机（与原版一致：单张时无该属性）
+const heroImagesAttr =
+	heroImages.length > 1 ? JSON.stringify(heroImages) : undefined;
+
+// 下拉纸签背景：random = 内置 9 张（与 homulilly.com 线上一致：内联样式给 01，
+// data-hero-cta-backgrounds 给全部 9 张由脚本随机轮换）
+const CTA_BUILTIN_COUNT = 9;
+const ctaBackgrounds =
+	ctaBackground === "random"
+		? Array.from(
+				{ length: CTA_BUILTIN_COUNT },
+				(_, i) => `/assets/home/cta/cta-bg-0${i + 1}.webp`,
+			)
+		: ctaBackground
+			? [ctaBackground]
+			: [];
+const ctaBgAttr =
+	ctaBackgrounds.length > 1 ? JSON.stringify(ctaBackgrounds) : undefined;
+const ctaBgStyle = `--hero-cta-bg: url("${
+	ctaBackgrounds[0] ?? "/assets/home/cta/cta-bg-01.webp"
+}");`;
 
 const heroTitle = siteConfig.title;
 const heroSubtitle = profileConfig.name;
@@ -98,12 +134,18 @@ const heroClass = [
 	.join(" ");
 
 // 背景图内联变量（与原版一致，供 JS 随机切换 data-hero-images 时复用）
-const heroStyle = image
-	? `--hero-bg-image: url("${image}"); --hero-image-overlay-top: rgba(42, 33, 22, ${overlayTop}); --hero-image-overlay-bottom: rgba(42, 33, 22, ${overlayBottom});`
+const heroStyle = heroImage
+	? `--hero-bg-image: url("${heroImage}"); --hero-image-overlay-top: rgba(42, 33, 22, ${overlayTop}); --hero-image-overlay-bottom: rgba(42, 33, 22, ${overlayBottom});`
 	: "";
 ---
 
-<section class={heroClass} aria-label="站点首屏" data-paper-hero style={heroStyle}>
+<section
+	class={heroClass}
+	aria-label="站点首屏"
+	data-paper-hero
+	style={heroStyle}
+	data-hero-images={heroImagesAttr}
+>
 	<!-- 颗粒层 -->
 	<div class="home-hero__grain" aria-hidden="true"></div>
 
@@ -114,8 +156,8 @@ const heroStyle = image
 				<button
 					class="icon-button home-hero__tool js-hero-shuffle"
 					type="button"
-					aria-label="重新摆放贴纸"
-					title="重新摆放贴纸"
+					aria-label="打乱贴纸位置"
+					title="打乱贴纸位置"
 				>
 					<Icon name="material-symbols:shuffle" width={18} height={18} is:inline />
 				</button>
@@ -231,15 +273,16 @@ const heroStyle = image
 		</div>
 	</div>
 
-	<!-- 下拉纸签 CTA（照搬 FlatPaper：背景用 cta-bg-01.webp 花朵药丸贴纸，
-	     text-shadow 提可读性；--hero-cta-bg 由内联样式给出） -->
+	<!-- 下拉纸签 CTA（照搬 FlatPaper：背景用 cta-bg-01..09.webp 花朵药丸贴纸，
+	     random 时输出全部 9 张由脚本随机轮换，text-shadow 提可读性） -->
 	<a
 		class="home-hero__arrow"
 		href={`#${ctaTarget}`}
 		data-hero-scroll
+		data-hero-cta-backgrounds={ctaBgAttr}
 		aria-label={ctaText}
 		title={ctaText}
-		style={`--hero-cta-bg: url("/assets/home/cta/cta-bg-01.webp");`}
+		style={ctaBgStyle}
 	>
 		<span class="home-hero__arrow-text">{ctaText}</span>
 	</a>
