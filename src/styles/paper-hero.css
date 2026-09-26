@@ -459,6 +459,36 @@ body.is-hero-active::before {
 	transform: translateX(-50%) translateY(0) rotate(1deg);
 }
 
+/* 书签 tooltip 的小菱形指示箭头（照搬 flatpaper profile.styl 的 ::after；
+   原版只有气泡没有箭头，hover 时看起来和书签「脱节」，故补齐以与 homulilly 完全一致） */
+.home-hero__links a[data-tooltip]::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: calc(100% + 4px);
+	bottom: auto;
+	width: 8px;
+	height: 8px;
+	z-index: 5;
+	border-right: 0;
+	border-bottom: 0;
+	border-left: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	border-top: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	background: var(--card-bg);
+	opacity: 0;
+	pointer-events: none;
+	transform: translateX(-50%) translateY(-4px) rotate(45deg);
+	transition:
+		opacity 0.16s ease,
+		transform 0.16s ease;
+}
+
+.home-hero__links a[data-tooltip]:hover::after,
+.home-hero__links a[data-tooltip]:focus-visible::after {
+	opacity: 1;
+	transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
 /* ---------------------------------------------------------------------------
  * 5. 贴纸层（照搬 .home-hero__stickers / .hero-sticker）
  * ------------------------------------------------------------------------ */
