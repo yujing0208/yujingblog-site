@@ -6,6 +6,7 @@
  *   · 贴纸拖拽（pointer 事件 + setPointerCapture + 3px 阈值 + 边界 clamp）
  *   · shuffle 按钮重新摆放
  *   · 下拉纸签平滑滚动（data-hero-scroll）
+ *   · 下拉纸签随机背景（data-hero-cta-backgrounds，照搬 main.js 1008-1023）
  *   · 主题亮暗切换
  *   · 社交书签条超宽自动裁切（syncClippedHeroLinks）
  *   · 外链二次确认气泡（hero-visit-confirm）
@@ -169,6 +170,30 @@
 			hero.style.setProperty("--hero-bg-image", next);
 		}
 		applyRandomHeroImage();
+
+		/* ---------------- 下拉纸签随机背景（照搬 flatpaper main.js 1008-1023） ---------------- */
+		function applyRandomHeroCtaBackground() {
+			var trigger = hero.querySelector("[data-hero-cta-backgrounds]");
+			if (!trigger) return;
+			var rawImages = trigger.getAttribute("data-hero-cta-backgrounds");
+			if (!rawImages) return;
+			var images = [];
+			try {
+				images = JSON.parse(rawImages);
+			} catch (e) {
+				images = [];
+			}
+			images = images.filter(function (image) {
+				return typeof image === "string" && image;
+			});
+			if (images.length < 2) return;
+			var selected = images[Math.floor(Math.random() * images.length)];
+			var next = 'url("' + selected.replace(/"/g, '\\"') + '")';
+			if (trigger.style.getPropertyValue("--hero-cta-bg").trim() === next)
+				return;
+			trigger.style.setProperty("--hero-cta-bg", next);
+		}
+		applyRandomHeroCtaBackground();
 
 		/* ---------------- 社交书签条裁切 ---------------- */
 		var heroSocialLinks = hero.querySelector(".home-hero__links");
