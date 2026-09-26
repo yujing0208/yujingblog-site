@@ -106,6 +106,55 @@
 }
 
 /* ===========================================================================
+ *  0.1 主题色映射（照搬 FlatPaper var.styl 49-89 行 html[data-accent] 段）
+ *  FlatPaper 用 data-accent 覆写 --color-accent*；本站强调色全链路收敛到
+ *  --hue（--primary/--fp-accent* 均由 oklch(--hue) 派生），故映射到 --hue。
+ *  ⚠️ 必须 !important：HeadTags.astro 的内联脚本把 --hue 写在 html 的
+ *  inline style 上，普通声明优先级低于 inline style，压不过它。
+ *  black 特例：FlatPaper 的 black 是无彩色（#111 / dark #f5f5f5），oklch
+ *  派生链 chroma 固定无法去色，故照搬其观感——核心 accent 变量直接覆盖为
+ *  炭色/浅灰，低饱和内联色（chroma 0.05-0.12）用暖炭 hue 30 弱化处理。
+ * ======================================================================== */
+html[data-accent="orange"] {
+	--hue: 60 !important;
+}
+
+html[data-accent="purple"] {
+	--hue: 290 !important;
+}
+
+html[data-accent="sakura"] {
+	--hue: 345 !important;
+}
+
+html[data-accent="blue"] {
+	--hue: 230 !important;
+}
+
+html[data-accent="pink"] {
+	--hue: 320 !important;
+}
+
+html[data-accent="green"] {
+	--hue: 140 !important;
+}
+
+html[data-accent="black"] {
+	--hue: 30 !important;
+	--primary: oklch(0.35 0 0);
+	--fp-accent: oklch(0.35 0 0);
+	--fp-accent-soft: oklch(0.9 0 0);
+	--fp-accent-muted: oklch(0.5 0 0);
+}
+
+:root.dark[data-accent="black"] {
+	--primary: oklch(0.88 0 0);
+	--fp-accent: oklch(0.88 0 0);
+	--fp-accent-soft: oklch(0.32 0 0);
+	--fp-accent-muted: oklch(0.75 0 0);
+}
+
+/* ===========================================================================
  *  1. 纸张底纹 —— 照搬 base.styl
  * ======================================================================== */
 body::before {
