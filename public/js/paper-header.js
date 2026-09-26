@@ -42,10 +42,17 @@
 
 	/* ---------------- 配色选择器（7 色，照搬 flatpaper accants） ---------------- */
 	var ACCENTS = ["orange", "purple", "sakura", "blue", "pink", "green", "black"];
+	// 色相表：须与 paper-theme.css 的 html[data-accent] 映射段、HeadTags.astro 保持一致
+	var ACCENT_HUES = { orange: 60, purple: 290, sakura: 345, blue: 230, pink: 320, green: 140, black: 30 };
 
 	function applyAccent(value) {
 		if (ACCENTS.indexOf(value) === -1) value = "green";
+		// 照搬 flatpaper main.js setAccent：data-accent 属性驱动 CSS 映射；
+		// 本站强调色全链路派生自 --hue，这里同步落地 inline style（与 HeadTags 首帧逻辑一致）
 		ROOT.setAttribute("data-accent", value);
+		if (ACCENT_HUES[value] !== undefined) {
+			ROOT.style.setProperty("--hue", String(ACCENT_HUES[value]));
+		}
 		document.querySelectorAll("[data-accent-option]").forEach(function (option) {
 			var on = option.dataset.accentOption === value;
 			option.setAttribute("aria-checked", on ? "true" : "false");
@@ -74,8 +81,14 @@
 	}
 
 	function initAccentPicker() {
-		var stored = ROOT.getAttribute("data-accent");
-		applyAccent(stored || "green");
+		// 照搬 flatpaper main.js 50-52：优先从存储读回上次选中的主题色
+		//（原版 cookie flatpaper-accent → 本站 localStorage.paper-accent），
+		// 读不到再回退 SSR 已设的 data-accent，最后默认 green。
+		var stored = null;
+		try {
+			stored = localStorage.getItem("paper-accent");
+		} catch (e) {}
+		applyAccent(stored || ROOT.getAttribute("data-accent") || "green");
 
 		document.querySelectorAll(".accent-picker").forEach(function (picker) {
 			var toggle = picker.querySelector(".accent-toggle");
@@ -93,7 +106,10 @@
 				option.addEventListener("click", function () {
 					var next = option.dataset.accentOption;
 					applyAccent(next);
+					// 照搬 flatpaper：持久化用户选择（原版写 cookie；本站写 paper-accent 主键，
+					// 并同步写 HeadTags/设置面板使用的 hue 键，两条恢复链路保持一致）
 					safeSet("paper-accent", next);
+					if (ACCENT_HUES[next] !== undefined) safeSet("hue", String(ACCENT_HUES[next]));
 					closeAccentMenu(picker);
 				});
 			});
