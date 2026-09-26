@@ -143,6 +143,23 @@ const favicons: Favicon[] =
 	const hue = themeColorFixed ? configHue : (localStorage.getItem("hue") || configHue);
 	document.documentElement.style.setProperty("--hue", hue);
 
+	// FlatPaper 主题色（照搬 main.js 46-52：从存储读回上次选中的 accent；
+	// 原版 cookie flatpaper-accent → 本站 localStorage.paper-accent）。
+	// 本脚本是 head 内联同步执行：首帧前就把 data-accent 与 --hue 一并设好，避免换色闪烁。
+	// themeColorFixed 时保持站点固定主题色、忽略 accent（与上方 fixed 语义一致）。
+	// 色相表必须与 paper-theme.css 的 html[data-accent] 映射段、public/js/paper-header.js 保持一致。
+	const ACCENT_HUES = { orange: 60, purple: 290, sakura: 345, blue: 230, pink: 320, green: 140, black: 30 };
+	if (!themeColorFixed) {
+		var storedAccent = null;
+		try {
+			storedAccent = localStorage.getItem("paper-accent");
+		} catch (e) {}
+		if (storedAccent && Object.prototype.hasOwnProperty.call(ACCENT_HUES, storedAccent)) {
+			document.documentElement.setAttribute("data-accent", storedAccent);
+			document.documentElement.style.setProperty("--hue", ACCENT_HUES[storedAccent]);
+		}
+	}
+
 	// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
 	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
 	offset = offset - (offset % 4);
