@@ -1,0 +1,64 @@
+---
+/**
+ * PaperAccentPicker —— FlatPaper 的配色选择器（7 色 swatch 弹层）
+ * 1:1 移植：layout/_partial/header.ejs 87-114 行（结构）
+ *          + _layout/header.styl 447-529 行（accent-picker / accent-menu /
+ *            accent-option / accent-swatch--* 七色）
+ *
+ * 交互在 public/js/paper-header.js 的 initAccentPicker（照搬 main.js 89-152 行）：
+ *   点 toggle 开合、点 option 选中（写 data-accent + cookie/localStorage）、点外关闭。
+ *
+ * FlatPaper 的 7 色通过 html[data-accent="..."] 覆写 --color-accent*；
+ * 本站把 data-accent 映射到 --hue（见 paper-theme.css 的 [data-accent] 段）。
+ */
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	/** 初始色（orange/purple/sakura/blue/pink/green/black） */
+	defaultAccent?: string;
+}
+
+const { defaultAccent = "green" } = Astro.props;
+
+const ACCENTS = [
+	{ key: "orange", hue: 60 },
+	{ key: "purple", hue: 290 },
+	{ key: "sakura", hue: 345 },
+	{ key: "blue", hue: 230 },
+	{ key: "pink", hue: 320 },
+	{ key: "green", hue: 140 },
+	{ key: "black", hue: 0 },
+];
+---
+
+<div class="accent-picker" data-default-accent={defaultAccent}>
+	<button
+		class="icon-button accent-toggle"
+		type="button"
+		aria-label="选择主题色"
+		title="选择主题色"
+		aria-haspopup="true"
+		aria-expanded="false"
+		aria-controls="accent-menu"
+	>
+		<Icon name="material-symbols:palette-outline" class="accent-toggle-icon" />
+	</button>
+	<div class="accent-menu" id="accent-menu" role="menu" aria-label="主题色">
+		{
+			ACCENTS.map((a) => (
+				<button
+					type="button"
+					class="accent-option"
+					role="menuitemradio"
+					aria-label={a.key}
+					aria-checked={a.key === defaultAccent ? "true" : "false"}
+					aria-pressed={a.key === defaultAccent ? "true" : "false"}
+					data-accent-option={a.key}
+					data-hue={a.hue}
+				>
+					<span class={`accent-swatch accent-swatch--${a.key}`} aria-hidden="true" />
+				</button>
+			))
+		}
+	</div>
+</div>

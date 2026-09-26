@@ -20,6 +20,7 @@
  */
 import { Icon } from "astro-icon/components";
 import { profileConfig, siteConfig } from "../../config";
+import SocialIcon from "@components/widgets/sidebar/SocialIcon.astro";
 
 interface Props {
 	/** 首屏背景图；留空则用纯纸张底（照搬 FlatPaper 的 --image 分支） */
@@ -72,6 +73,18 @@ const socials = (profileConfig.links ?? []).filter(
 		l.icon.split(":")[0].length > 0 &&
 		l.icon.split(":")[1].length > 0,
 );
+
+// ⚠️ astro-icon sprite 白名单由构建期源码扫描生成，只认静态字面量。
+// 社交图标名是运行时变量，必须在此以字面量罗列一次才能进 sprite，
+// 否则书签图标渲染为空白（详见 PaperProfileCard.astro 内同名注释）。
+const ICON_SPRITE_MANIFEST = [
+	"fa7-brands:github",
+	"fa7-brands:bilibili",
+	"fa7-brands:qq",
+	"mdi:wechat",
+	"simple-icons:tiktok",
+];
+void ICON_SPRITE_MANIFEST;
 
 const [overlayTop, overlayBottom] = imageOverlay;
 
@@ -210,7 +223,7 @@ const heroStyle = image
 							aria-label={link.name}
 							data-tooltip={link.name}
 						>
-							<Icon name={link.icon} width={16} height={16} />
+							<SocialIcon name={link.icon} />
 						</a>
 					))
 				}

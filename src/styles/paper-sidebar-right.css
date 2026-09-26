@@ -714,8 +714,15 @@ a.site-info__item:focus-visible strong {
 	list-style: none;
 }
 
+/* 条目分隔虚线（照搬 .recent-list li + li 的 border-top:1px dashed var(--line)）。
+   --paper-line 的 0.1 透明度在米黄纸底上太淡（截图实测几乎不可见），
+   提到 0.16 与原版视觉一致；宽度 1px、虚线节奏照搬。 */
 .recent-list li + li {
-	border-top: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	border-top: 1px dashed rgba(89, 62, 30, 0.16);
+}
+
+:root.dark .recent-list li + li {
+	border-top-color: rgba(255, 255, 255, 0.14);
 }
 
 /* 每条：照搬原版纯文字结构（strong 标题 + em 日期，无图标） */

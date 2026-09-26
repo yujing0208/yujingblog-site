@@ -1,0 +1,131 @@
+/* ============================================================================
+ *  PaperAccentPicker —— 配色选择器（照搬 flatpaper header.styl 420-548 行）
+ *  含：.header-tools 布局、.icon-button 虚线圆、.accent-picker/.accent-menu
+ *     /.accent-option/.accent-swatch--* 七色
+ *  仅两处必要改写：.dark-mode→:root.dark；--color-accent*→--primary/oklch(--hue)
+ * ========================================================================= */
+
+/* ---- icon-button（照搬 .icon-button） ---- */
+.icon-button {
+	display: inline-grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	border-radius: 50%;
+	color: var(--ink-soft, #4a5751);
+	background: transparent;
+	cursor: pointer;
+	transition:
+		color 0.2s ease,
+		background 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.2s ease;
+}
+
+.icon-button:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	border-color: var(--primary);
+	background: oklch(0.9 0.05 var(--hue));
+	transform: translateY(-1px);
+}
+
+.accent-toggle-icon {
+	width: 17px;
+	height: 17px;
+}
+
+/* ---- accent-picker / accent-menu（照搬） ---- */
+.accent-picker {
+	position: relative;
+}
+
+.accent-menu {
+	position: absolute;
+	top: calc(100% + 10px);
+	right: 0;
+	z-index: 30;
+	display: none;
+	padding: 8px;
+}
+
+/* 纸面层：铺纸 + 撕纸边（照搬 .accent-menu::before） */
+.accent-menu::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--card-bg);
+	z-index: -1;
+	border-radius: 4px;
+	filter: url(#paper-edge) drop-shadow(0 10px 22px rgba(82, 64, 38, 0.1));
+}
+
+.accent-picker.is-open .accent-menu {
+	display: flex;
+	gap: 4px;
+}
+
+/* ---- accent-option / accent-swatch（照搬） ---- */
+.accent-option {
+	display: inline-grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	color: var(--ink-soft, #4a5751);
+	background: transparent;
+	font: inherit;
+	cursor: pointer;
+}
+
+.accent-option:hover,
+.accent-option[aria-checked="true"],
+.accent-option[aria-pressed="true"] {
+	background: oklch(0.9 0.05 var(--hue));
+	border-radius: 50%;
+	outline: 1px dashed var(--primary);
+	outline-offset: -3px;
+}
+
+.accent-swatch {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+}
+
+.accent-swatch--green {
+	background: #6fa67c;
+}
+.accent-swatch--pink {
+	background: #df7f9b;
+}
+.accent-swatch--purple {
+	background: #7b5fb4;
+}
+.accent-swatch--sakura {
+	background: #ffc0cb;
+}
+.accent-swatch--blue {
+	background: #6fa9d9;
+}
+.accent-swatch--orange {
+	background: #ec9b5b;
+}
+.accent-swatch--black {
+	background: #111111;
+}
+
+:root.dark .icon-button {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+:root.dark .icon-button:hover {
+	color: oklch(0.82 0.07 var(--hue));
+	background: oklch(0.35 0.04 var(--hue));
+}

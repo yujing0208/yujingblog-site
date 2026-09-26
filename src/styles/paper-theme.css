@@ -339,17 +339,21 @@ html.tape-disabled .tape {
 		transform 0.2s ease;
 }
 
-/* hover：虚线显形 + 荧光笔画痕（照搬 .site-nav-link::before 的 scaleX 手法）
-   几何对齐原版：原版按钮 min-height 36px、padding 8px 16px，画痕
-   left/right:8px 恰好=文字宽、bottom:8px 恰好压住文字下半行。
-   本站按钮 h-11(44px)、lg:px-5(20px)，等比换算：left/right 16px、
-   bottom 13px（44-14-8-9，让 14px 痕压在文字底部） */
+/* hover：荧光笔画痕（照搬 .site-nav-link::before 的 scaleX 手法）
+   几何依据（CDP 实测本站在「我的」按钮上）：
+     按钮 124x44、padding 20px、内含 18px 图标 + 32x24 文字 span（居中排列）
+     文字 span 左缘相对按钮左缘偏移 46px
+   原版画痕 = 贴着文字的一条横痕（文字宽 + 左右各 8px 余量、压在文字下半行）。
+   因此这里不用固定 left/right，改用「相对文字区」计算：
+     left/right = padding(20) + 图标(18) + 图标间距(8) - 8 = 38px
+     height 14px、bottom = (44 - 14) / 2 + 1 = 16px（压在文字下半行）
+   纯图标按钮（无文字 span）退回按钮内衬几何。 */
 #navbar-links-container .btn-plain::before {
 	content: "";
 	position: absolute;
-	left: 16px;
-	right: 16px;
-	bottom: 13px;
+	left: 38px;
+	right: 38px;
+	bottom: 16px;
 	height: 14px;
 	border-radius: var(--radius-handdrawn);
 	background-color: var(--fp-accent-soft);
@@ -364,9 +368,8 @@ html.tape-disabled .tape {
 	pointer-events: none;
 }
 
-/* 纯图标按钮（无文字 span）与折叠态：画痕退回按钮内衬几何 */
-#navbar-links-container .btn-plain:not(:has(span:not(.truncate)))::before,
-#navbar-links-container .btn-plain:has(> span.truncate:empty)::before {
+/* 纯图标按钮（无文字）：画痕退回按钮内衬几何，覆盖整个按钮 */
+#navbar-links-container .btn-plain:not(:has(> span))::before {
 	left: 8px;
 	right: 8px;
 	bottom: 8px;

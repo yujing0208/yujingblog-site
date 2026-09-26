@@ -17,6 +17,7 @@
  */
 import { Icon } from "astro-icon/components";
 
+import SocialIcon from "./SocialIcon.astro";
 import { profileConfig } from "../../../config";
 
 interface Props {
@@ -59,6 +60,21 @@ const siteInfoItems = [
 	{ href: "/categories/", value: categoryCount, label: "分类" },
 	{ href: "/tags/", value: tagCount, label: "标签" },
 ].filter((it) => it.value > 0);
+
+// ⚠️ astro-icon 的 sprite 白名单由构建期源码扫描（buildIconInclude）生成，
+// 只认 src/ 里的「静态字面量」。社交图标名来自 profileConfig（运行时变量），
+// 若某图标恰好没有在其它文件以字面量出现过，sprite 里就没有它，
+// <Icon name={变量}> 渲染出的 <use> 会指向不存在的 symbol → 图标空白。
+// 这里把配置里出现的每个图标名以字面量形式静态罗列一次，保证收集。
+// （新增社交平台时：改 profileConfig 后，在此清单补一行即可。）
+const ICON_SPRITE_MANIFEST = [
+	"fa7-brands:github",
+	"fa7-brands:bilibili",
+	"fa7-brands:qq",
+	"mdi:wechat",
+	"simple-icons:tiktok",
+];
+void ICON_SPRITE_MANIFEST;
 ---
 
 <section class="side-card profile-card">
@@ -117,7 +133,12 @@ const siteInfoItems = [
 						aria-label={link.name}
 						data-tooltip={link.name}
 					>
-						<Icon name={link.icon} class="socials-icon" />
+						{/* astro-icon 的 sprite 白名单由构建期源码扫描生成，且只在
+						    图标名以 JSX 静态字面量出现时才内联展开 path。
+						    变量名（link.icon）会退化为 <use href="#..."> 引用，而页内
+						    无对应 symbol 时图标空白。因此这里按名字静态分支展开；
+						    新增社交平台时在 SocialIcon 补一个分支即可。 */}
+						<SocialIcon name={link.icon} />
 					</a>
 				))}
 			</div>
