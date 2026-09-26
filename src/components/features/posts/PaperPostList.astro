@@ -38,7 +38,7 @@ const urlNext = page.url.next;
 <!-- section-head：照搬 .section-head -->
 <section class="section-head">
 	<h2>
-		<Icon name="material-symbols:history" class="section-head__icon" />
+		<Icon name="material-symbols:history" class="section-head__icon" is:inline />
 		{heading}
 	</h2>
 </section>
@@ -65,12 +65,12 @@ const urlNext = page.url.next;
 		<nav class="pager" aria-label="文章分页">
 			{urlPrev ? (
 				<a class="pager-link pager-link--prev" href={urlPrev}>
-					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" />
+					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" is:inline />
 					<span>上一页</span>
 				</a>
 			) : (
 				<span class="pager-link pager-link--prev is-disabled" aria-disabled="true">
-					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" />
+					<Icon name="material-symbols:arrow-back-rounded" class="pager-icon" is:inline />
 					<span>上一页</span>
 				</span>
 			)}
@@ -82,18 +82,20 @@ const urlNext = page.url.next;
 			{urlNext ? (
 				<a class="pager-link pager-link--next" href={urlNext}>
 					<span>下一页</span>
-					<Icon
-						name="material-symbols:arrow-forward-rounded"
-						class="pager-icon"
-					/>
+<Icon
+	name="material-symbols:arrow-forward-rounded"
+	class="pager-icon"
+	is:inline
+/>
 				</a>
 			) : (
 				<span class="pager-link pager-link--next is-disabled" aria-disabled="true">
 					<span>下一页</span>
-					<Icon
-						name="material-symbols:arrow-forward-rounded"
-						class="pager-icon"
-					/>
+<Icon
+	name="material-symbols:arrow-forward-rounded"
+	class="pager-icon"
+	is:inline
+/>
 				</span>
 			)}
 		</nav>
