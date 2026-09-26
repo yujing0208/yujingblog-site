@@ -30,6 +30,8 @@ interface Props {
 	setOGTypeArticle?: boolean;
 	postSlug?: string;
 	coverImage?: string;
+	/** 手账布局（PaperHomeLayout 等）：body 加 paper-layout 类，跳过整页缩放 */
+	paper?: boolean;
 }
 
 let {
@@ -40,7 +42,10 @@ let {
 	setOGTypeArticle,
 	postSlug,
 	coverImage,
+	paper = false,
 } = Astro.props;
+
+const isPaperLayout = paper;
 
 // defines global css variables
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
@@ -243,7 +248,13 @@ const bannerOffset =
 	<body
 		class="min-h-screen"
 		class:list={[
-			{ "enable-banner": enableBanner, "enable-card-border": siteConfig.card?.border },
+			{
+				"enable-banner": enableBanner,
+				"enable-card-border": siteConfig.card?.border,
+			},
+			// 手账布局标识：HeadTags 的 pageScaling 脚本据此跳过整页缩放，
+			// 照搬 FlatPaper 的固定容器（min(94%,1300px)），避免三栏被压缩
+			{ "paper-layout": isPaperLayout },
 		]}
 
 		data-overlayscrollbars-initialize

@@ -339,13 +339,17 @@ html.tape-disabled .tape {
 		transform 0.2s ease;
 }
 
-/* hover：虚线显形 + 荧光笔画痕（照搬 .site-nav-link::before 的 scaleX 手法） */
+/* hover：虚线显形 + 荧光笔画痕（照搬 .site-nav-link::before 的 scaleX 手法）
+   几何对齐原版：原版按钮 min-height 36px、padding 8px 16px，画痕
+   left/right:8px 恰好=文字宽、bottom:8px 恰好压住文字下半行。
+   本站按钮 h-11(44px)、lg:px-5(20px)，等比换算：left/right 16px、
+   bottom 13px（44-14-8-9，让 14px 痕压在文字底部） */
 #navbar-links-container .btn-plain::before {
 	content: "";
 	position: absolute;
-	left: 8px;
-	right: 8px;
-	bottom: 8px;
+	left: 16px;
+	right: 16px;
+	bottom: 13px;
 	height: 14px;
 	border-radius: var(--radius-handdrawn);
 	background-color: var(--fp-accent-soft);
@@ -358,6 +362,14 @@ html.tape-disabled .tape {
 		opacity 0.2s ease,
 		transform 0.2s ease;
 	pointer-events: none;
+}
+
+/* 纯图标按钮（无文字 span）与折叠态：画痕退回按钮内衬几何 */
+#navbar-links-container .btn-plain:not(:has(span:not(.truncate)))::before,
+#navbar-links-container .btn-plain:has(> span.truncate:empty)::before {
+	left: 8px;
+	right: 8px;
+	bottom: 8px;
 }
 
 #navbar-links-container .btn-plain:hover {

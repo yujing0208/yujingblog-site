@@ -21,11 +21,14 @@ interface Props {
 	page: Page<any>;
 	/** 标题文案（原版为「最新文章」） */
 	heading?: string;
+	/** 需要从列表排除的 slug（置顶已进轮播，避免重复出现） */
+	excludeSlugs?: string[];
 }
 
-const { page, heading = "最新文章" } = Astro.props;
+const { page, heading = "最新文章", excludeSlugs = [] } = Astro.props;
 
-const posts = page.data as any[];
+const exclude = new Set(excludeSlugs);
+const posts = (page.data as any[]).filter((entry) => !exclude.has(String(entry.id)));
 const current = page.currentPage ?? 1;
 const total = page.lastPage ?? 1;
 const urlPrev = page.url.prev;

@@ -69,6 +69,8 @@ const featuredItems = paperMode
 			return items;
 		})()
 	: [];
+// 置顶文章已进轮播，从「最新文章」列表排除，避免重复
+const featuredSlugs = featuredItems.map((it) => it.slug);
 ---
 
 {

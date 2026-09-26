@@ -153,8 +153,20 @@ const favicons: Favicon[] =
 
 	// 自动缩放逻辑 (Moved from MainGridLayout to here for earlier execution)
 	(function () {
+		// 手账布局跳过整页缩放：body.paper-layout 由 Layout 的 paper prop 打上。
+		// FlatPaper 无整页缩放（固定 min(94%,1300px) 容器），缩放会把三栏压扁。
+		// 注：本脚本在 <head> 内执行时 body 尚未解析，改为监听 DOM 就绪后再判断。
+		var paperLayoutSkip = false;
+		function checkPaperLayout() {
+			paperLayoutSkip = !!(document.body && document.body.classList.contains("paper-layout"));
+			return paperLayoutSkip;
+		}
 		if (pageScaling && pageScaling.enable) {
 			function adjustPageScale() {
+				if (checkPaperLayout()) {
+					document.documentElement.style.fontSize = "";
+					return;
+				}
 				const isTouch =
 					(window.matchMedia &&
 						(window.matchMedia("(pointer:coarse)").matches ||
@@ -241,3 +253,4 @@ const favicons: Favicon[] =
 		document.addEventListener("DOMContentLoaded", () => setTimeout(ensureStyles, 0));
 	})();
 </script>
+

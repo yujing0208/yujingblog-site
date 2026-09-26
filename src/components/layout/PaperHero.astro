@@ -218,13 +218,15 @@ const heroStyle = image
 		</div>
 	</div>
 
-	<!-- 下拉纸签 CTA -->
+	<!-- 下拉纸签 CTA（照搬 FlatPaper：背景用 cta-bg-01.webp 花朵药丸贴纸，
+	     text-shadow 提可读性；--hero-cta-bg 由内联样式给出） -->
 	<a
 		class="home-hero__arrow"
 		href={`#${ctaTarget}`}
 		data-hero-scroll
 		aria-label={ctaText}
 		title={ctaText}
+		style={`--hero-cta-bg: url("/assets/home/cta/cta-bg-01.webp");`}
 	>
 		<span class="home-hero__arrow-text">{ctaText}</span>
 	</a>

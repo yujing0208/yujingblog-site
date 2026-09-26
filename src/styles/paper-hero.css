@@ -605,10 +605,14 @@ body.is-hero-active::before {
 	line-height: 1;
 	letter-spacing: 0;
 	text-decoration: none;
-	background-color: var(--tape-yellow);
-	background-image: var(--tape-stripes);
-	border: 1px dashed rgba(106, 84, 48, 0.34);
-	border-radius: 4px 4px 6px 6px;
+	/* 照搬原版：花朵药丸贴纸背景图（cta-bg-01.webp），contain 居中 */
+	background-image: var(
+		--hero-cta-bg,
+		url("/assets/home/cta/cta-bg-01.webp")
+	);
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
 	filter: drop-shadow(0 8px 14px rgba(82, 64, 38, 0.14));
 	transform: translateX(-50%) rotate(-0.6deg);
 	transition: transform 0.24s ease;
