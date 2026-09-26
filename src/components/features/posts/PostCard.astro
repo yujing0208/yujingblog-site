@@ -31,9 +31,11 @@ const {
 
 const url = getPostUrl(entry);
 const hasCover = image !== undefined && image !== null && image !== "";
-const coverWidth = "44%";
+const coverWidth = "34%";
+const coverWidthNarrow = "42%";
 // 卡片最小高度 = 封面高度(16:9) + 上下各 12px 留白，保证封面永远完整显示且上下留白最小
-const coverMinHeight = "calc(24.75cqw + 24px)"; // 44% × 9/16 = 24.75
+const coverMinHeight = "calc(19.125cqw + 24px)"; // 34% × 9/16 = 19.125
+const coverMinHeightNarrow = "calc(23.625cqw + 24px)"; // 42% × 9/16 = 23.625
 
 const { remarkPluginFrontmatter } = await render(entry);
 const homeContent = getPostHomeContent(
@@ -205,9 +207,11 @@ const homeContent = getPostHomeContent(
 >
 </div>
 
-<style define:vars={{ coverWidth, coverMinHeight }}>
-	/* 中屏及以上：封面占卡片宽度的 44%（16:9，与封面图比例一致，永不裁切），
-	   并让卡片高度至少等于封面高度 + 上下各 12px，使封面上下留白恒定在 12px 左右 */
+<style
+	define:vars={{ coverWidth, coverWidthNarrow, coverMinHeight, coverMinHeightNarrow }}
+>
+	/* 中屏及以上：封面保持 16:9（与封面图比例一致，永不裁切），占卡片宽度的 34%，
+	   让标题有更宽的一行；卡片高度至少等于封面高度 + 上下各 12px，避免大片留白 */
 	@media (min-width: 768px) {
 		.card-base {
 			container-type: inline-size;
@@ -228,6 +232,18 @@ const homeContent = getPostHomeContent(
 			.post-card-text > div:last-child {
 				flex-wrap: nowrap;
 				overflow: hidden;
+			}
+		}
+
+		/* 卡片偏窄时（约 1024–1280 视口，字号更大、换行更多）：封面按比例放大一点，
+		   否则文字天然比封面高一截，上下会出现大片留白 */
+		@container (min-width: 560px) and (max-width: 660px) {
+			.post-card-cover {
+				width: var(--coverWidthNarrow);
+			}
+			.post-card-text {
+				width: calc(100% - var(--coverWidthNarrow) - 0.75rem);
+				min-height: var(--coverMinHeightNarrow);
 			}
 		}
 
