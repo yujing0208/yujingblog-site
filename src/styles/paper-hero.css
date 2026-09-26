@@ -864,9 +864,47 @@ body.is-hero-active::before {
 	}
 }
 
-/* ---------------------------------------------------------------------------
- * 9. 无障碍
- * ------------------------------------------------------------------------ */
+/* ===========================================================================
+ * 10. 手账首页导航容器修复（关键）
+ *
+ *  原站 banner 模式下有（来自 banner.css）：
+ *     .enable-banner #top-row { height: calc(var(--banner-height-home) - 4.5rem); }
+ *  即「横幅高度 − 导航高度」的占位。手账首页里 hero 已是正常文档流，
+ *  这段高度会变成 hero 与导航之间的一条空白带（实测约 155px）。
+ *
+ *  特异性对比：.enable-banner #top-row            = (0,1,1)
+ *              body.enable-banner #top-row.x       = (0,2,2)  ← 本规则，稳赢
+ * ======================================================================== */
+body.enable-banner #top-row.paper-hero-layout,
+body.no-banner-mode #top-row.paper-hero-layout,
+#top-row.paper-hero-layout {
+	height: auto !important;
+	min-height: 0 !important;
+	position: relative !important;
+	top: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	transition: none !important;
+	overflow: visible !important;
+}
+
+/* 导航本体：照搬 FlatPaper .site-header 的 sticky 行为 */
+body.enable-banner #top-row.paper-hero-layout #navbar-wrapper,
+#top-row.paper-hero-layout #navbar-wrapper {
+	position: sticky;
+	top: 16px;
+	z-index: 20;
+	margin-top: 0;
+}
+
+/* 手账首页不需要原 banner 的 180px 顶部高光层 */
+body.is-hero-active .top-gradient-highlight {
+	display: none;
+}
+
+/* ===========================================================================
+ * 11. 无障碍
+ * ======================================================================== */
 @media (prefers-reduced-motion: reduce) {
 	.home-hero__arrow,
 	.home-hero__arrow:hover {

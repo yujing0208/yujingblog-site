@@ -578,6 +578,37 @@ body.is-hero-active .waves {
  *     而不是像徽章模式那样用 absolute 叠在 banner 上。
  * ======================================================================== */
 
+/* ---------------------------------------------------------------------------
+ * 8.0 【关键修复】解除原 banner 体系对导航容器的高度约束
+ *
+ *   原站 banner 模式为了让导航悬浮在横幅之上，给 #top-row 强加了
+ *     #top-row { height: calc(var(--banner-height-home) - 4.5rem); }
+ *   即「横幅高度 - 导航高度」。手账首页里 hero 已是正常文档流，
+ *   这个占位高度就变成 hero 上方的一条纯空白带（实测约 155px）。
+ *
+ *   FlatPaper 的 header 是 position:sticky; top:16px; min-height:72px，
+ *   本身不占额外高度。所以这里把手账首页的 #top-row 高度约束归零，
+ *   并让它正常参与文档流。
+ * ------------------------------------------------------------------------ */
+body.is-hero-active #top-row,
+#paper-home-content ~ #top-row,
+.paper-home #top-row {
+	height: auto !important;
+	min-height: 0 !important;
+	position: relative !important;
+	top: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+/* 导航本体：照搬 FlatPaper .site-header（sticky + top:16px + min-height:72px） */
+body.is-hero-active #navbar-wrapper {
+	position: sticky;
+	top: 16px;
+	z-index: 20;
+	margin-top: 0;
+}
+
 /* 内容区在首屏之后自然流动 */
 .paper-home-flow {
 	position: relative !important;
@@ -601,6 +632,11 @@ body.is-hero-active .waves {
    （body::before 在 paper-theme.css 第 1 节定义） */
 body.is-hero-active::before {
 	opacity: 0;
+}
+
+/* 首屏激活时隐藏顶部高光层（原 banner 模式的 180px 渐变，手账下不需要） */
+body.is-hero-active .top-gradient-highlight {
+	display: none;
 }
 
 /* ===========================================================================

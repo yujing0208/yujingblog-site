@@ -3,10 +3,7 @@
  * PaperHomeLayout —— 手账风首页独立布局
  *
  * 为什么要独立布局（根因说明）：
- *   原有 MainGridLayout 是「全屏壁纸 + Banner 偏移 + 主内容 absolute 叠加」体系：
- *     · FullscreenWallpaper 固定层
- *     · finalMainPanelTop = 按 BANNER_HEIGHT 计算的偏移
- *     · 主内容 div 用 position:absolute; top:<offset> 压在 banner 之上
+ *   原有 MainGridLayout 是「全屏壁纸 + Banner 偏移 + 主内容 absolute 叠加」体系，
  *   而 FlatPaper 的结构是「hero 在最前 → 导航 → 内容正常文档流」。
  *   把 hero 塞进前者会出现：首屏被 absolute 层挤压塌缩、资料卡不可见、大段空白。
  *   所以这里照搬 flatpaper layout.ejs 的结构，给首页一套干净的文档流布局。
@@ -15,24 +12,26 @@
  *   <home-hero>                        → PaperHero
  *   partial('_partial/header')         → Navbar
  *   <main class="paper-shell">         → .paper-shell 三栏
- *     sidebar-right (TOC)              → 右侧栏
- *     <section class="paper-main">     → 主栏
- *       body (index.ejs)               → section-head + post-list + pager
- *     sidebar-left                     → 左侧栏
+ *     sidebar-right.ejs（⚠️ 视觉左栏）  → 个人名片 + 分类 + 标签
+ *     <section class="paper-main">     → 主栏（section-head + post-list + pager）
+ *     sidebar-left.ejs（⚠️ 视觉右栏）   → 欢迎卡
  *   footer                             → Footer
+ *
+ * ⚠️ FlatPaper 的文件名与视觉位置相反：
+ *   DOM 顺序 = 视觉从左到右，sidebar-right.ejs 排第一（视觉左），
+ *   sidebar-left.ejs 排第三（视觉右）。已在其官方站点实测核实。
+ *   因此这里 class 名沿用 flatpaper 的 --right/--left（保持 DOM 一致），
+ *   视觉位置以 DOM 顺序为准。
  */
 import FloatingControls from "@components/control/FloatingControls.astro";
-import { SidebarTOC } from "@components/features/toc";
 import PaperHero from "@components/layout/PaperHero.astro";
-import RightSideBar from "@components/layout/RightSideBar.astro";
 import IconifyLoader from "@components/misc/IconifyLoader.astro";
 import Footer from "@components/organisms/footer/Footer.astro";
 import Navbar from "@components/organisms/navigation/Navbar.astro";
-import SideBar from "@components/widgets/sidebar/SideBar.astro";
-import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
 import PaperProfileCard from "@components/widgets/sidebar/PaperProfileCard.astro";
 import PaperCategoriesCard from "@components/widgets/sidebar/PaperCategoriesCard.astro";
 import PaperTagsCard from "@components/widgets/sidebar/PaperTagsCard.astro";
+import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
 import type { MarkdownHeading } from "astro";
 
 import { profileConfig, siteConfig } from "../config";
@@ -58,7 +57,7 @@ const paperHeroImages = (paperHeroConfig.images ?? []).filter(
 	(src): src is string => typeof src === "string" && src.length > 0,
 );
 
-// 右侧栏个人名片的站点统计（照搬 flatpaper 的 site_info：文章/分类/标签）
+// 个人名片的站点统计（照搬 flatpaper 的 site_info：文章/分类/标签）
 const [allPosts, categoryList, tagList] = await Promise.all([
 	getSortedPosts(),
 	getCategoryList(),
@@ -98,8 +97,12 @@ const tagCount = tagList.length;
 		ctaTarget="paper-home-content"
 	/>
 
-	<!-- 导航（照搬 header） -->
-	<div id="top-row" class="z-50 pointer-events-none relative px-0 md:px-4 mx-auto max-w-(--page-width)">
+	<!-- 导航（照搬 header）
+	     注意：原站 banner 模式下 .enable-banner #top-row 会被强制
+	     height: calc(var(--banner-height-home) - 4.5rem)，在手账首页里
+	     这会变成 hero 与导航之间的一条空白带。paper-hero-layout 类
+	     在 CSS 侧解除该约束。 -->
+	<div id="top-row" class="paper-hero-layout z-50 pointer-events-none relative px-0 md:px-4 mx-auto max-w-(--page-width)">
 		<div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
 			<Navbar />
 		</div>
@@ -113,19 +116,17 @@ const tagCount = tagList.length;
 				class="paper-shell w-full left-0 right-0 grid grid-cols-1 md:grid-cols-[17.5rem_minmax(0,1fr)] lg:grid-cols-[17.5rem_minmax(0,1fr)_17.5rem] grid-rows-none md:grid-rows-[auto] mx-auto gap-4"
 				data-layout-mode="grid"
 			>
-				<!-- 左侧栏 -->
-				<div class="order-2 md:order-1 lg:order-1">
-					<!-- 手账欢迎卡（照搬 flatpaper sidebar-left 的 welcome-card，置于首位） -->
-					<PaperWelcomeCard
-						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
-						label={paperHeroConfig.welcomeLabel ?? "Hello!"}
-						title={siteConfig.title}
-						text={profileConfig.bio ?? ""}
-						ctaText={paperHeroConfig.welcomeCtaText ?? "开始阅读"}
-						ctaLink={paperHeroConfig.welcomeCtaLink ?? "/archive/"}
+				<!-- 视觉左栏（flatpaper sidebar-right.ejs，文件名与视觉相反）：
+				     个人名片 → 分类 → 标签 -->
+				<aside class="paper-sidebar paper-sidebar--right order-2 md:order-1 lg:order-1">
+					<PaperProfileCard
+						postCount={postCount}
+						categoryCount={categoryCount}
+						tagCount={tagCount}
 					/>
-					<SideBar headings={headings} />
-				</div>
+					<PaperCategoriesCard limit={6} />
+					<PaperTagsCard limit={12} />
+				</aside>
 
 				<!-- 主栏 -->
 				<main
@@ -146,17 +147,17 @@ const tagCount = tagList.length;
 					</div>
 				</main>
 
-				<!-- 右侧栏（照搬 flatpaper sidebar-right.ejs 顺序：profile → categories → tag） -->
-				<div class="right-sidebar-container order-3 lg:order-3">
-					<PaperProfileCard
-						postCount={postCount}
-						categoryCount={categoryCount}
-						tagCount={tagCount}
+				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 -->
+				<aside class="paper-sidebar paper-sidebar--left order-3 lg:order-3">
+					<PaperWelcomeCard
+						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
+						label={paperHeroConfig.welcomeLabel ?? "Hello!"}
+						title={siteConfig.title}
+						text={profileConfig.bio ?? ""}
+						ctaText={paperHeroConfig.welcomeCtaText ?? "开始阅读"}
+						ctaLink={paperHeroConfig.welcomeCtaLink ?? "/archive/"}
 					/>
-					<PaperCategoriesCard limit={6} />
-					<PaperTagsCard limit={12} />
-					<RightSideBar headings={headings} />
-				</div>
+				</aside>
 			</div>
 
 			<FloatingControls headings={headings} />
@@ -169,13 +170,6 @@ const tagCount = tagList.length;
 	</div>
 
 	<style>
-		.right-sidebar-container {
-			align-self: start;
-			display: block;
-		}
-		.right-sidebar-container #right-sidebar {
-			height: fit-content;
-		}
 		/* 手账首屏之后的间距（照搬 .paper-shell margin-top: 28px） */
 		#paper-home-content {
 			margin-top: 28px;
