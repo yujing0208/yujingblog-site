@@ -679,6 +679,35 @@ a.site-info__item:focus-visible strong {
 	transform: rotate(6deg);
 }
 
+/* ==========================================================================
+ * 5.5 右栏 widget 的手账化（音乐播放器等 widget-layout.card-base）
+ *     左栏胶带规则在 paper-theme.css 只覆盖 #sidebar，这里是右栏对应版本。
+ *     音乐组件按需求要有「胶带便签」感：右上角黄胶带 + 纸片基座（纸面层
+ *     由 paper-theme.css 的 .card-base::after 已提供）。
+ * ========================================================================== */
+.right-sidebar-container .card-base::before,
+#paper-home-content .right-sidebar-container .card-base::before {
+	content: "";
+	position: absolute;
+	top: -9px;
+	right: 20px;
+	z-index: 6;
+	width: 66px;
+	height: 19px;
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.92);
+	transform: rotate(5deg);
+	pointer-events: none;
+	border-radius: 1px;
+}
+
+/* 站点统计卡给蓝胶带（区分功能，仍属同一手账语言） */
+.right-sidebar-container .card-base:nth-of-type(1)::before {
+	background-color: var(--tape-blue);
+	transform: rotate(-4deg);
+}
+
 .recent-list {
 	margin: 0;
 	padding: 0;
@@ -689,11 +718,9 @@ a.site-info__item:focus-visible strong {
 	border-top: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
 }
 
-/* 每条：图标徽章 + 文案两行（照搬 .recent-item 的悬停位移） */
+/* 每条：照搬原版纯文字结构（strong 标题 + em 日期，无图标） */
 .recent-item {
-	display: flex;
-	align-items: flex-start;
-	gap: 10px;
+	display: block;
 	padding: 10px 4px;
 	border-radius: 6px;
 	color: var(--ink-soft, #4a5751);
@@ -711,58 +738,6 @@ a.site-info__item:focus-visible strong {
 
 :root.dark .recent-item:hover {
 	color: oklch(0.78 0.08 var(--hue));
-}
-
-/* 类型徽章：虚线圆 + 按类型着色 */
-.recent-item__type {
-	display: inline-grid;
-	place-items: center;
-	flex: 0 0 auto;
-	width: 26px;
-	height: 26px;
-	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.14));
-	border-radius: 50%;
-	color: var(--text-muted);
-	background: transparent;
-	transition:
-		border-color 0.15s ease,
-		background 0.15s ease,
-		color 0.15s ease;
-}
-
-.recent-item__icon {
-	width: 14px;
-	height: 14px;
-}
-
-.recent-item:hover .recent-item__type {
-	border-color: var(--primary);
-	background: oklch(0.9 0.05 var(--hue));
-	color: oklch(0.55 0.12 var(--hue));
-}
-
-/* 按类型给徽章一点色彩区分（保持低饱和，符合手账调性） */
-.recent-item[data-type="post"] .recent-item__type {
-	border-color: rgba(111, 166, 124, 0.55);
-}
-.recent-item[data-type="diary"] .recent-item__type {
-	border-color: rgba(111, 169, 217, 0.55);
-}
-.recent-item[data-type="footprint"] .recent-item__type {
-	border-color: rgba(236, 155, 91, 0.55);
-}
-.recent-item[data-type="anime"] .recent-item__type {
-	border-color: rgba(156, 143, 235, 0.55);
-}
-.recent-item[data-type="album"] .recent-item__type {
-	border-color: rgba(232, 168, 158, 0.6);
-}
-
-.recent-item__main {
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
 }
 
 .recent-item strong {

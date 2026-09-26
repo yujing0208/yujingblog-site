@@ -248,41 +248,7 @@
 		});
 	}
 
-	/* ---------------- 导航吸顶（视觉照搬 .site-header 的 sticky top:16px） ----------------
-	   原版只靠 position:sticky；本站导航父容器 #top-row 高度不足，
-	   sticky 无滚动空间。这里用「过阈值后固定距顶 16px」兜底，
-	   视觉与原版吸附态一致（纸带 + 顶部胶带保留）。 */
-	function initNavSticky() {
-		var wrapper = document.querySelector("#top-row.paper-hero-layout #navbar-wrapper");
-		if (!wrapper || wrapper.dataset.paperStickyBound) return;
-		wrapper.dataset.paperStickyBound = "1";
-
-		var ticking = false;
-		function update() {
-			ticking = false;
-			// hero 存在时：滚过 hero 下缘才吸附；无 hero：滚过 80px 即吸附
-			var hero = document.querySelector("[data-paper-hero]");
-			var threshold = hero
-				? hero.offsetTop + hero.offsetHeight - 120
-				: 80;
-			var y = window.pageYOffset || document.documentElement.scrollTop;
-			wrapper.classList.toggle("paper-nav-stuck", y > threshold);
-		}
-		window.addEventListener(
-			"scroll",
-			function () {
-				if (ticking) return;
-				ticking = true;
-				window.requestAnimationFrame(update);
-			},
-			{ passive: true },
-		);
-		window.addEventListener("resize", update, { passive: true });
-		update();
-	}
-
 	function initAll() {
-		initNavSticky();
 		initThemeToggle();
 		initAccentPicker();
 		initNavDropdowns();

@@ -77,7 +77,10 @@ const tagCount = tagList.length;
 		defaultPostListLayout={siteConfig.postListLayout?.defaultMode || "list"}
 		BANNER_HEIGHT={0}
 		BANNER_HEIGHT_FULLSCREEN={0}
-		pageScaling={siteConfig.pageScaling}
+		{/* 手账首页不做页面缩放（照搬 FlatPaper：固定 min(94%,1300px) 容器）。
+		    开启 pageScaling 会在窄于 targetWidth(2000) 的视口整体缩放，
+		    把 1300px 容器缩成 ~1105px，导致三栏比例失真、主栏过窄。 */}
+		pageScaling={{ enable: false, targetWidth: 2000 }}
 		wavesEnabled={false}
 		bannerTitleEnabled={false}
 		wallpaperEnabled={false}
@@ -149,7 +152,8 @@ const tagCount = tagList.length;
 					</div>
 				</main>
 
-				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 + 站内原有 widget -->
+				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 → 最近动态 → 站内 widget
+				     顺序按需求：音乐组件在「最近动态」下面 -->
 				<aside class="paper-sidebar paper-sidebar--left">
 					<PaperWelcomeCard
 						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
@@ -159,11 +163,10 @@ const tagCount = tagList.length;
 						ctaText={paperHeroConfig.welcomeCtaText ?? "开始阅读"}
 						ctaLink={paperHeroConfig.welcomeCtaLink ?? "/archive/"}
 					/>
-					<!-- 站内原有右侧 widget（公告 / 一言 / 统计 / 目录等），
-					     照搬 FlatPaper 顺序放在欢迎卡之后 -->
-					<RightSideBar headings={headings} />
-					<!-- 最近动态（聚合文章/动态/足迹/番剧/相册；替代原版的随机文章卡） -->
+					<!-- 最近动态（聚合文章/动态/足迹/番剧/相册） -->
 					<PaperRecentCard limit={8} />
+					<!-- 站内右侧 widget（站点统计 → 音乐播放器；日历与分类已按需求移除） -->
+					<RightSideBar headings={headings} />
 				</aside>
 			</div>
 

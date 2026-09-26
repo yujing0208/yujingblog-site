@@ -115,6 +115,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	],
 
 	// 侧栏组件布局配置
+	//   right: 手账首页右栏顺序 —— 站点统计 → 音乐播放器 →（代码外）最近动态卡。
+	//   按需求：删掉日历（calendar）与分类（categories）组件；
+	//   音乐组件放在「最近动态」下面（最近动态卡由 PaperHomeLayout 渲染在 RightSideBar 之后）。
 	components: {
 		left: [
 			"profile",
@@ -124,7 +127,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			"hitokoto",
 			"umami-stats",
 		],
-		right: ["site-stats", "calendar", "categories", "music-sidebar"],
+		right: ["site-stats", "music-sidebar"],
 		drawer: ["profile", "announcement", "music-sidebar", "categories", "tags"],
 	},
 
@@ -151,3 +154,4 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		},
 	},
 };
+

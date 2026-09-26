@@ -918,25 +918,34 @@ body.enable-banner #top-row.paper-hero-layout #navbar-wrapper,
 }
 
 /* ===========================================================================
- * 10.2 导航吸顶兜底（视觉与原版一致：纸带完整、停在距顶 16px）
+ * 10.2 导航吸顶（照搬 FlatPaper .site-header：纯 position:sticky，无 JS）
  *
- *   FlatPaper 原版仅靠 position:sticky 实现。本站导航被包在 #top-row
- *   （高度仅为导航自身）里，父容器高度不足导致 sticky 无滚动空间而失效。
- *   不改 DOM 的前提下，用「固定 + JS 切类」兜底：滚动超过阈值后导航
- *   固定在距顶 16px 处，视觉与原版吸附状态完全一致（纸带 + 胶带保留）。
- *   JS 在 public/js/paper-header.js。
+ *   原版：.site-header { position: sticky; top: 16px; z-index: 20; }
+ *   sticky 生效要素：①祖先不裁切 overflow ②sticky 元素在文档流中随滚动，
+ *   滚过阈值后钉住。钉住范围 = 其父元素的内容高度 —— #top-row 的父级是
+ *   body 直下层（整页高），够高。
+ *
+ *   之前失败的原因：sticky 放在 #navbar-wrapper 上，而它的父级 #top-row
+ *   高度恰为导航自身（72px），没有滚动余地，滚过即走 —— 表现为"吸附不自然"。
+ *   修正：sticky 移到 #top-row 自身，#navbar-wrapper 回归普通文档流。
  * ========================================================================== */
-#top-row.paper-hero-layout #navbar-wrapper.paper-nav-stuck {
-	position: fixed;
-	top: 16px;
-	left: 50%;
-	width: min(94%, var(--page-width));
-	transform: translateX(-50%);
+body.enable-banner #top-row.paper-hero-layout,
+body.no-banner-mode #top-row.paper-hero-layout,
+#top-row.paper-hero-layout {
+	position: sticky !important;
+	top: 16px !important;
 	z-index: 40;
 }
 
-/* 纸带贴顶时的胶带装饰（照搬 .site-header::after 的顶部胶带） */
-#top-row.paper-hero-layout #navbar-wrapper.paper-nav-stuck #navbar > div:nth-child(2)::after {
+#top-row.paper-hero-layout #navbar-wrapper {
+	position: relative !important;
+	top: auto !important;
+	z-index: auto;
+	margin-top: 0;
+}
+
+/* 导航纸带顶部胶带（照搬 .site-header::after：60x20 黄胶带 left:25% rotate(2deg)） */
+#top-row.paper-hero-layout #navbar > div:nth-child(2)::after {
 	content: "";
 	position: absolute;
 	top: -8px;
@@ -946,7 +955,7 @@ body.enable-banner #top-row.paper-hero-layout #navbar-wrapper,
 	height: 20px;
 	background-color: var(--tape-yellow);
 	background-image: var(--tape-stripes);
-	transform: rotate(-2deg);
+	transform: translateX(-50%) rotate(2deg);
 	pointer-events: none;
 }
 

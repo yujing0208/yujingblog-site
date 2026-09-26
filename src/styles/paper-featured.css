@@ -263,11 +263,69 @@
 	transform: translateY(1px);
 }
 
+/* read-more 纸片按钮（照搬 welcome.styl 149-206 行：与 .welcome-cta 同一套）
+   ⚠️ .featured-copy 有 z-index:2 创建了层叠上下文，::before 的 -1 会落到
+   上下文底部被 .featured-paper::before 纸面盖掉 —— 给 .read-more 加
+   isolation:isolate，让它的 ::before 以按钮自身为底，框就能显示出来。 */
 .read-more {
+	position: relative;
+	isolation: isolate;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: fit-content;
 	margin-left: auto;
+	padding: 8px 18px;
+	color: var(--ink-soft, #4a5751);
 	font-size: 12px;
-	color: inherit;
+	font-weight: 600;
 	text-decoration: none;
+	transition:
+		color 0.2s ease,
+		transform 0.2s ease;
+	z-index: 1;
+}
+
+.read-more::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--paper-warm, #f8f2e2);
+	z-index: -1;
+	border-radius: 4px;
+	box-shadow: inset 0 0 0 1px var(--paper-dash, rgba(89, 62, 30, 0.24));
+	filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(82, 64, 38, 0.14));
+	transition:
+		background 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+:root.dark .read-more::before {
+	box-shadow: none;
+}
+
+.read-more:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	transform: translateY(-1px);
+}
+
+.read-more:hover::before {
+	background: oklch(0.9 0.05 var(--hue));
+	box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.read-more .meta-line-icon {
+	width: 14px;
+	height: 14px;
+	transition: transform 0.2s ease;
+}
+
+.read-more:hover .meta-line-icon {
+	transform: translateX(2px);
 }
 
 .featured-thumb {

@@ -160,16 +160,11 @@ const items = [...dated.slice(0, datedQuota), ...reserved].slice(0, limit);
 			items.map((item) => (
 				<li>
 					<a class="recent-item" href={item.url} data-type={item.type}>
-						<span class="recent-item__type">
-							<Icon name={item.icon} class="recent-item__icon" />
-						</span>
-						<span class="recent-item__main">
-							<strong>{item.title}</strong>
-							<em>
-								{item.label}
-								{item.date ? ` · ${item.date}` : ""}
-							</em>
-						</span>
+						<strong>{item.title}</strong>
+						<em>
+							{item.label}
+							{item.date ? ` · ${item.date}` : ""}
+						</em>
 					</a>
 				</li>
 			))
