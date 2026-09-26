@@ -97,13 +97,18 @@ const tagCount = tagList.length;
 		ctaTarget="paper-home-content"
 	/>
 
-	<!-- 导航（照搬 header）
-	     注意：原站 banner 模式下 .enable-banner #top-row 会被强制
-	     height: calc(var(--banner-height-home) - 4.5rem)，在手账首页里
-	     这会变成 hero 与导航之间的一条空白带。paper-hero-layout 类
-	     在 CSS 侧解除该约束。 -->
-	<div id="top-row" class="paper-hero-layout z-50 pointer-events-none relative px-0 md:px-4 mx-auto max-w-(--page-width)">
-		<div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
+	<!-- 导航（照搬 FlatPaper .site-header：width min(94vw,1300px) + margin-inline auto + sticky top 16px）
+	     宽度/居中/吸顶全部用内联 Tailwind 类直给，不依赖 CSS 覆盖原 banner 体系 -->
+	<div
+		id="top-row"
+		class="paper-hero-layout z-50 pointer-events-none relative mx-auto"
+		style="width: min(94vw, var(--page-width));"
+	>
+		<div
+			id="navbar-wrapper"
+			class="pointer-events-auto sticky transition-all"
+			style="top: 16px;"
+		>
 			<Navbar />
 		</div>
 	</div>
