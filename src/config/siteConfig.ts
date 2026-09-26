@@ -54,21 +54,28 @@ export const siteConfig: SiteConfig = {
 	homeLayout: "paper",
 
 	// 手账首屏（homeLayout: "paper" 时生效）
+	// ↓↓↓ 以下取值 1:1 照搬 homulilly.com 线上 home_hero 配置 ↓↓↓
 	paperHero: {
 		enable: true,
 		// 背景图；留空则用纯纸张底（FlatPaper 默认）。可写多张，脚本会随机挑一张
-		images: ["/assets/banner/city-sunset.jpg"],
-		// 移动端是否也使用背景图。false = 手机端回退纯纸张底（原版的可读性策略）
-		mobileImage: false,
-		// 背景图上下遮罩浓度 [上, 下]，0~1
+		// 照搬 homulilly：bg-homura-2.webp（已本地化到 /assets/home/）
+		images: ["/assets/home/hero-bg.webp"],
+		// 照搬 homulilly：home-hero--mobile-image，移动端同样使用背景图
+		mobileImage: true,
+		// 背景图上下遮罩浓度 [上, 下]，0~1（与 homulilly 一致）
 		imageOverlay: [0.2, 0.2],
-		// 内置便签贴纸文字（\n 换行）
-		noteText: "今天也要\n好好生活",
+		// 内置便签贴纸文字（\n 换行）——照搬 homulilly：「欢迎访问」
+		noteText: "欢迎访问",
 		// 自定义图片贴纸（最多 5 张）：{ image, link?, alt?, size? }
-		stickers: [],
-		// 贴纸可拖拽
+		// 照搬 homulilly 三张贴纸：claudecode / madoka / homura，各 100px（已本地化到 /images/stickers/）
+		stickers: [
+			{ image: "/images/stickers/claudecode.webp", size: 100 },
+			{ image: "/images/stickers/madoka.webp", size: 100 },
+			{ image: "/images/stickers/homura.webp", size: 100 },
+		],
+		// 贴纸可拖拽（homulilly 线上 has-draggable-stickers）
 		stickersDraggable: true,
-		// 下拉纸签文案
+		// 下拉纸签文案（cta_background: 'random' 的 9 张内置背景已内置在 PaperHero 组件里）
 		ctaText: "开始阅读",
 	},
 
