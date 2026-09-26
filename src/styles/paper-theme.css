@@ -1,0 +1,288 @@
+/* ============================================================================
+ *  手账 / 纸张质感皮肤层（FlatPaper 风格移植到 Mizuki 底座）
+ * ----------------------------------------------------------------------------
+ *  本文件是「纯增量」皮肤层：
+ *    · 不修改任何原有组件结构
+ *    · 不覆盖原有功能逻辑，只做视觉增强
+ *    · 全部依赖 variables.styl 中的设计 token
+ *    · 可通过 <html class="tape-disabled"> 关闭纸胶带装饰
+ *  移植来源：Homulilly/hexo-theme-flatpaper（Stylus → 原生 CSS 改写）
+ * ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+ * 0. 撕纸边 SVG 滤镜（供 filter: url(#paper-edge) 使用）
+ *    FlatPaper 用 feTurbulence 做纸纤维边缘，这里保持同样手法。
+ *    滤镜定义挂在 body 上，SVG 尺寸为 0，不占布局。
+ * ------------------------------------------------------------------------ */
+.paper-edge-defs {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * 1. 纸张纹理底（网格 / 横线 / 点阵）
+ *    默认给 body 铺一层极淡的方格纸纹理。
+ * ------------------------------------------------------------------------ */
+:root {
+	--paper-grain-color-1: rgba(89, 62, 30, 0.034);
+	--paper-grain-color-2: rgba(89, 62, 30, 0.023);
+	--paper-grain-size: 34px;
+}
+
+:root.dark {
+	--paper-grain-color-1: rgba(255, 255, 255, 0.025);
+	--paper-grain-color-2: rgba(255, 255, 255, 0.017);
+}
+
+/* 全局纸张底纹层：固定在视口，位于内容之下 */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-image:
+		linear-gradient(var(--paper-grain-color-1) 1px, transparent 1px),
+		linear-gradient(90deg, var(--paper-grain-color-2) 1px, transparent 1px);
+	background-size: var(--paper-grain-size) var(--paper-grain-size);
+	/* 上下边缘淡出，避免纹理生硬地切在屏幕边上 */
+	-webkit-mask-image: linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+	mask-image: linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+}
+
+/* 纸张底纹变体：横线纸（手账内页最常见） */
+html.paper-style-line body::before {
+	background-image: linear-gradient(var(--paper-grain-color-1) 1px, transparent 1px);
+	background-size: 100% var(--paper-grain-size);
+}
+
+/* 纸张底纹变体：点阵纸（子弹笔记 Bullet Journal） */
+html.paper-style-dotted body::before {
+	background-image: radial-gradient(var(--paper-grain-color-1) 1px, transparent 1px);
+	background-size: 16px 16px;
+}
+
+/* 纸张底纹变体：十字点（FlatPaper 原版还有一种 cross） */
+html.paper-style-cross body::before {
+	background-image: url("data:image/svg+xml,%3Csvg width='34' height='34' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0H4V1H1V4H0Z' fill='rgba(89,62,30,0.05)'/%3E%3Crect x='30' y='0' width='4' height='1' fill='rgba(89,62,30,0.05)'/%3E%3Crect x='0' y='30' width='1' height='4' fill='rgba(89,62,30,0.05)'/%3E%3C/svg%3E");
+	background-size: 34px 34px;
+}
+
+:root.dark html.paper-style-cross body::before,
+html.paper-style-cross:root.dark body::before {
+	background-image: url("data:image/svg+xml,%3Csvg width='34' height='34' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0H4V1H1V4H0Z' fill='rgba(255,255,255,0.04)'/%3E%3Crect x='30' y='0' width='4' height='1' fill='rgba(255,255,255,0.04)'/%3E%3Crect x='0' y='30' width='1' height='4' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E");
+}
+
+/* 纸纹理固定附着，滚动时纸张不动（更像一张垫在下面的纸） */
+@media (hover: hover) and (pointer: fine) {
+	body::before {
+		background-attachment: fixed;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. 纸片卡片：手绘边缘 + 纸张投影 + 悬停上浮
+ *    .card-base 是 Mizuki 全站卡片基类，这里做视觉增强。
+ * ------------------------------------------------------------------------ */
+
+/* 纸张投影：暖棕、低透明度、大扩散（更像纸）
+   静态用较小的 paper-shadow，悬停时增强 */
+.card-base {
+	position: relative;
+	box-shadow: 0 2px 6px var(--paper-shadow);
+	transition:
+		transform 0.22s ease,
+		box-shadow 0.22s ease,
+		background-color 0.15s ease;
+}
+
+/* 悬停上浮 —— 手账里翻动纸片的手感 */
+@media (hover: hover) and (pointer: fine) {
+	.card-base:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 18px 38px var(--paper-shadow);
+	}
+}
+
+/* 手绘圆角：把原本规整的圆角换成不规则手绘形。
+   注意：只对"整块纸片"类卡片生效，不对小控件（按钮/标签）生效，
+   否则小元素上会出现奇怪的长弧。 */
+.card-base,
+.post-card,
+.side-card,
+.widget-card,
+.article-paper {
+	border-radius: var(--radius-handdrawn-sm);
+}
+
+/* 嵌套在卡片内的卡片（如侧栏里的子卡）用更小的手绘圆角 */
+.card-base .card-base {
+	border-radius: 8px 3px 10px 4px / 4px 9px 3px 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. 纸胶带装饰
+ *    手账的灵魂。用 ::before 贴一条半透明斜纹胶带在卡片顶边。
+ *    可通过 html.tape-disabled 一键关闭。
+ * ------------------------------------------------------------------------ */
+.tape {
+	position: absolute;
+	z-index: 4;
+	width: 86px;
+	height: 22px;
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.88);
+	pointer-events: none;
+}
+
+.tape--top-left {
+	top: -10px;
+	left: 24px;
+	background-color: var(--tape-pink);
+	transform: rotate(-6deg);
+}
+
+.tape--top-center {
+	top: -10px;
+	left: 50%;
+	background-color: var(--tape-pink);
+	transform: translateX(-50%) rotate(-2deg);
+}
+
+.tape--top-right {
+	top: -10px;
+	right: 32px;
+	width: 70px;
+	background-color: var(--tape-pink);
+	transform: rotate(7deg);
+}
+
+/* 自动贴胶带的卡片：侧栏卡片右上角一条黄胶带 */
+.side-card::before,
+.widget-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	right: 18px;
+	z-index: 2;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.9);
+	transform: rotate(6deg);
+	pointer-events: none;
+}
+
+/* 文章正文纸片顶部居中贴一条 */
+.article-paper::before,
+.post-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	z-index: 2;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-green);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.9);
+	transform: translateX(-50%) rotate(-2deg);
+	pointer-events: none;
+}
+
+/* 一键关闭全部纸胶带 */
+html.tape-disabled .tape,
+html.tape-disabled .side-card::before,
+html.tape-disabled .widget-card::before,
+html.tape-disabled .article-paper::before,
+html.tape-disabled .post-card::before {
+	display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. 纸张细节：标题下的手绘下划线、分隔线做成"虚线撕口"
+ * ------------------------------------------------------------------------ */
+
+/* 侧栏卡片标题：左侧一个手绘小方块（FlatPaper 的 green-dot） */
+.side-card h2::before,
+.widget-card h2::before {
+	content: "";
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: 8px;
+	border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+	background: var(--primary);
+	transform: rotate(15deg);
+	flex-shrink: 0;
+}
+
+/* 分隔线做成虚点（像手账里的裁剪线） */
+hr,
+.divider-dashed {
+	border: 0;
+	border-top: 2px dashed var(--line-color);
+	opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. 输入控件：纸张感
+ * ------------------------------------------------------------------------ */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+	border-radius: 8px 3px 10px 4px / 4px 9px 3px 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 6. 图片：手账里贴照片的白色留边框（拍立得效果）
+ *    只作用于正文图片，不动头像和图标。
+ * ------------------------------------------------------------------------ */
+.article-paper .markdown-content img:not(.no-paper-frame),
+.post-content img:not(.no-paper-frame) {
+	border: 6px solid var(--card-bg);
+	border-bottom-width: 6px;
+	border-radius: 3px;
+	box-shadow: 0 2px 8px var(--paper-shadow);
+}
+
+/* ---------------------------------------------------------------------------
+ * 7. 顶部高光改成暖纸色（原本是纯白渐变，会盖掉米黄纸感）
+ * ------------------------------------------------------------------------ */
+.top-gradient-highlight {
+	background: linear-gradient(
+		to bottom,
+		rgba(255, 252, 242, 0.42) 0%,
+		rgba(255, 252, 242, 0.24) 30%,
+		rgba(255, 252, 242, 0.12) 60%,
+		rgba(255, 252, 242, 0.04) 80%,
+		transparent 100%
+	);
+}
+
+:root.dark .top-gradient-highlight {
+	background: linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0.5) 0%,
+		rgba(0, 0, 0, 0.3) 30%,
+		rgba(0, 0, 0, 0.15) 60%,
+		rgba(0, 0, 0, 0.05) 80%,
+		transparent 100%
+	);
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. 降低动效偏好
+ * ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+	.card-base,
+	.card-base:hover {
+		transition: none;
+		transform: none;
+	}
+}

@@ -153,7 +153,7 @@ const bannerOffset =
 <!doctype html>
 <html
 	lang={siteLang}
-	class="bg-(--page-bg) text-[14px] md:text-[16px]"
+	class="bg-(--page-bg) text-[14px] md:text-[16px] paper-style-grid"
 	data-overlayscrollbars-initialize
 	data-waves-config-enabled={siteConfig.banner?.waves?.enable ? "true" : "false"}
 	data-banner-title-config-enabled={siteConfig.banner?.homeText?.enable ? "true" : "false"}
@@ -246,6 +246,25 @@ const bannerOffset =
 		>
 		<!-- 页面顶部渐变高光效果 - 只在full和semifull模式下显示 -->
 		{shouldShowTopHighlight && <div class="top-gradient-highlight" />}
+
+		<!-- 手账主题：撕纸边 SVG 滤镜定义（供 filter: url(#paper-edge) 使用，尺寸为 0 不占布局） -->
+		<svg class="paper-edge-defs" aria-hidden="true" focusable="false">
+			<filter id="paper-edge">
+				<feTurbulence
+					type="fractalNoise"
+					baseFrequency="0.02"
+					numOctaves="3"
+					seed="7"
+					result="noise"
+				></feTurbulence>
+				<feDisplacementMap
+					in="SourceGraphic"
+					in2="noise"
+					scale="3"
+					xChannelSelector="R"
+					yChannelSelector="G"></feDisplacementMap>
+			</filter>
+		</svg>
 
 		<ConfigCarrier />
 		<PageProgressBar
@@ -348,3 +367,4 @@ const bannerOffset =
 <script>
 	import "../scripts/theme-optimizer.js";
 </script>
+

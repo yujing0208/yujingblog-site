@@ -10,6 +10,8 @@
 @import "./gradient-buttons.css";
 /* 导入 Banner 和网格布局样式 */
 @import "./banner.css";
+/* 手账 / 纸张质感皮肤层（纯增量视觉增强，不改变组件结构） */
+@import "./paper-theme.css";
 /* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 @plugin "@tailwindcss/typography";
@@ -882,3 +884,4 @@ html {
 .card-github.fetch-error {
   border-color: oklch(0.6 0.2 25) !important;
 }
+

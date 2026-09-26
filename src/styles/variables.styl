@@ -8,8 +8,24 @@ black(a)
 rainbow-light = linear-gradient(to right, oklch(0.80 0.10 0), oklch(0.80 0.10 30), oklch(0.80 0.10 60), oklch(0.80 0.10 90), oklch(0.80 0.10 120), oklch(0.80 0.10 150), oklch(0.80 0.10 180), oklch(0.80 0.10 210), oklch(0.80 0.10 240), oklch(0.80 0.10 270), oklch(0.80 0.10 300), oklch(0.80 0.10 330), oklch(0.80 0.10 360))
 rainbow-dark = linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30), oklch(0.70 0.10 60), oklch(0.70 0.10 90), oklch(0.70 0.10 120), oklch(0.70 0.10 150), oklch(0.70 0.10 180), oklch(0.70 0.10 210), oklch(0.70 0.10 240), oklch(0.70 0.10 270), oklch(0.70 0.10 300), oklch(0.70 0.10 330), oklch(0.70 0.10 360))
 
+/*
+ * ============================================================
+ *  手账 / 纸张主题（FlatPaper 风格）设计层
+ * ============================================================
+ *  原则：
+ *   1. 保留 var(--hue) 色相驱动 —— 用户主题色仍然生效
+ *   2. 底色换成米黄纸张，纸面奶白，墨色偏暖（非纯黑）
+ *   3. 圆角改成手绘不规则形
+ *   4. 阴影改成纸张投影（暖棕、低透明度、大扩散）
+ *   5. 暗色模式做成「深色牛皮纸 / 黑纸」
+ * ============================================================
+ */
+
 :root
   --radius-large 1rem
+  /* 手绘不规则圆角：像用剪刀随手剪出来的纸片 */
+  --radius-handdrawn 255px 15px 225px 15px / 15px 225px 15px 255px
+  --radius-handdrawn-sm 12px 4px 14px 5px / 5px 13px 4px 12px
   --content-delay 150ms
   --wallpaper-opacity 0.8
   --wallpaper-blur 0px
@@ -26,62 +42,85 @@ define(vars)
         {key}: value[1]
 
 define({
+  /* ---------- 强调色：仍然跟随 --hue ---------- */
   --primary: oklch(0.70 0.14 var(--hue)) oklch(0.75 0.14 var(--hue))
-  --page-bg: oklch(0.95 0.01 var(--hue)) oklch(0.16 0.014 var(--hue))
-  --card-bg: white oklch(0.23 0.015 var(--hue))
-  --card-bg-transparent: rgba(255, 255, 255, 0.8) rgba(23, 23, 23, 0.8)
+
+  /* ---------- 纸张底色 ---------- */
+  /* 亮：米黄纸底 #f7f3e9  →  暗：深墨蓝黑 #15171c */
+  --page-bg: oklch(0.962 0.014 85) oklch(0.205 0.012 265)
+  /* 亮：奶白纸面 #fffdf6  →  暗：深色牛皮纸 #1d2027 */
+  --card-bg: oklch(0.994 0.008 90) oklch(0.256 0.012 265)
+  --card-bg-transparent: rgba(255, 253, 246, 0.82) rgba(29, 32, 39, 0.82)
+  /* 更暖的第二层纸（嵌套卡片 / 侧栏用） */
+  --paper-warm: oklch(0.975 0.018 88) oklch(0.283 0.014 265)
+  /* 纸张纹理线条色 */
+  --paper-line: rgba(89, 62, 30, 0.055) rgba(255, 255, 255, 0.05)
+  --paper-line-strong: rgba(89, 62, 30, 0.09) rgba(255, 255, 255, 0.08)
+
+  /* ---------- 纸胶带（手账标志性元素） ---------- */
+  --tape-yellow: rgba(238, 201, 110, 0.72)
+  --tape-pink: rgba(232, 168, 158, 0.62)
+  --tape-green: rgba(143, 192, 152, 0.62)
+  --tape-blue: rgba(111, 169, 217, 0.58)
+  --tape-brown: rgba(202, 169, 134, 0.75)
+  --tape-stripes: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.25) 0 2px, transparent 2px 7px)
+
+  /* ---------- 纸张投影：暖棕、低透明、大扩散 ---------- */
+  --paper-shadow: rgba(82, 64, 38, 0.13) rgba(0, 0, 0, 0.35)
 
   --btn-content: oklch(0.55 0.12 var(--hue)) oklch(0.75 0.1 var(--hue))
 
-  --btn-regular-bg: oklch(0.95 0.025 var(--hue)) oklch(0.33 0.035 var(--hue))
-  --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue)) oklch(0.38 0.04 var(--hue))
-  --btn-regular-bg-active: oklch(0.85 0.08 var(--hue)) oklch(0.43 0.045 var(--hue))
+  --btn-regular-bg: oklch(0.955 0.02 88) oklch(0.33 0.02 265)
+  --btn-regular-bg-hover: oklch(0.92 0.035 88) oklch(0.38 0.025 265)
+  --btn-regular-bg-active: oklch(0.885 0.05 88) oklch(0.43 0.03 265)
 
-  --btn-plain-bg-hover: oklch(0.95 0.025 var(--hue)) oklch(0.30 0.035 var(--hue))
-  --btn-plain-bg-active: oklch(0.98 0.01 var(--hue)) oklch(0.27 0.025 var(--hue))
+  --btn-plain-bg-hover: oklch(0.955 0.02 88) oklch(0.30 0.02 265)
+  --btn-plain-bg-active: oklch(0.975 0.012 88) oklch(0.27 0.015 265)
 
-  --btn-card-bg-hover: oklch(0.98 0.005 var(--hue)) oklch(0.3 0.03 var(--hue))
-  --btn-card-bg-active: oklch(0.9 0.03 var(--hue)) oklch(0.35 0.035 var(--hue))
+  --btn-card-bg-hover: oklch(0.978 0.012 88) oklch(0.3 0.018 265)
+  --btn-card-bg-active: oklch(0.92 0.03 88) oklch(0.35 0.022 265)
 
   --enter-btn-bg: var(--btn-regular-bg)
   --enter-btn-bg-hover: var(--btn-regular-bg-hover)
   --enter-btn-bg-active: var(--btn-regular-bg-active)
 
-  --deep-text: oklch(0.25 0.02 var(--hue))
+  /* 墨色：偏暖的深棕灰，不用纯黑 */
+  --deep-text: oklch(0.26 0.018 80) oklch(0.30 0.05 var(--hue))
 
-  --text-color: oklch(0.35 0.02 var(--hue)) oklch(0.90 0.01 var(--hue))
-  --text-muted: oklch(0.55 0.02 var(--hue)) oklch(0.70 0.015 var(--hue))
-  --text-strong: oklch(0.25 0.02 var(--hue)) oklch(0.97 0.005 var(--hue))
+  --text-color: oklch(0.36 0.02 80) oklch(0.92 0.008 265)
+  --text-muted: oklch(0.575 0.022 80) oklch(0.70 0.012 265)
+  --text-strong: oklch(0.26 0.018 80) oklch(0.97 0.006 265)
 
   --title-active: oklch(0.6 0.1 var(--hue))
 
-  --line-divider: black(0.08) white(0.08)
+  --line-divider: rgba(89, 62, 30, 0.12) white(0.09)
 
-  --line-color: black(0.1) white(0.1)
-  --meta-divider: black(0.2) white(0.2)
-  --content-meta: black(0.7) white(0.6)
+  --line-color: rgba(89, 62, 30, 0.14) white(0.11)
+  --meta-divider: rgba(89, 62, 30, 0.22) white(0.2)
+  --content-meta: rgba(60, 48, 32, 0.68) white(0.6)
 
   --inline-code-bg: var(--btn-regular-bg)
   --inline-code-color: var(--btn-content)
-  --selection-bg: oklch(0.90 0.05 var(--hue)) oklch(0.40 0.08 var(--hue))
+  --selection-bg: oklch(0.88 0.055 88) oklch(0.40 0.05 265)
   --codeblock-selection: var(--selection-bg)
-  --codeblock-bg: oklch(0.97 0.005 var(--hue)) oklch(0.17 0.015 var(--hue))
-  --codeblock-topbar-bg: oklch(0.94 0.01 var(--hue)) oklch(0.12 0.015 var(--hue))
+  /* 代码块也做成纸质感：亮色偏米，暗色偏墨 */
+  --codeblock-bg: oklch(0.965 0.012 88) oklch(0.215 0.012 265)
+  --codeblock-topbar-bg: oklch(0.935 0.016 88) oklch(0.175 0.012 265)
 
-  --license-block-bg: black(0.03) var(--codeblock-bg)
+  --license-block-bg: rgba(89, 62, 30, 0.045) var(--codeblock-bg)
 
-  --link-underline: oklch(0.93 0.04 var(--hue)) oklch(0.40 0.08 var(--hue))
-  --link-hover: oklch(0.95 0.025 var(--hue)) oklch(0.40 0.08 var(--hue))
-  --link-active: oklch(0.90 0.05 var(--hue)) oklch(0.35 0.07 var(--hue))
+  --link-underline: oklch(0.92 0.04 88) oklch(0.40 0.05 265)
+  --link-hover: oklch(0.945 0.03 88) oklch(0.40 0.05 265)
+  --link-active: oklch(0.885 0.05 88) oklch(0.35 0.045 265)
 
-  --float-panel-bg: white oklch(0.19 0.015 var(--hue))
+  --float-panel-bg: oklch(0.994 0.008 90) oklch(0.235 0.012 265)
 
-  --scrollbar-bg-light: black(0.4)
-  --scrollbar-bg-hover-light: black(0.5)
-  --scrollbar-bg-active-light: black(0.6)
+  --scrollbar-bg-light: rgba(89, 62, 30, 0.32)
+  --scrollbar-bg-hover-light: rgba(89, 62, 30, 0.45)
+  --scrollbar-bg-active-light: rgba(89, 62, 30, 0.58)
 
-  --scrollbar-bg-dark: white(0.4)
-  --scrollbar-bg-hover-dark: white(0.5)
+  --scrollbar-bg-dark: white(0.35)
+  --scrollbar-bg-hover-dark: white(0.48)
   --scrollbar-bg-active-dark: white(0.6)
 
   --scrollbar-bg: var(--scrollbar-bg-light) var(--scrollbar-bg-dark)
@@ -93,17 +132,18 @@ define({
   --display-light-icon: 1 0
   --display-dark-icon: 0 1
 
-  --admonitions-color-tip: oklch(0.7 0.14 180) oklch(0.75 0.14 180)
-  --admonitions-color-note: oklch(0.7 0.14 250) oklch(0.75 0.14 250)
-  --admonitions-color-important: oklch(0.7 0.14 310) oklch(0.75 0.14 310)
-  --admonitions-color-warning: oklch(0.7 0.14 60) oklch(0.75 0.14 60)
-  --admonitions-color-caution: oklch(0.6 0.2 25) oklch(0.65 0.2 25)
+  /* admonition 换成手账色系（纸胶带五色） */
+  --admonitions-color-tip: oklch(0.68 0.10 165) oklch(0.75 0.10 165)
+  --admonitions-color-note: oklch(0.68 0.10 250) oklch(0.75 0.10 250)
+  --admonitions-color-important: oklch(0.68 0.10 300) oklch(0.75 0.10 300)
+  --admonitions-color-warning: oklch(0.76 0.12 75) oklch(0.78 0.11 75)
+  --admonitions-color-caution: oklch(0.64 0.15 28) oklch(0.68 0.14 28)
 
-  --toc-badge-bg: oklch(0.9 0.045 var(--hue)) var(--btn-regular-bg)
-  --toc-btn-hover: oklch(0.92 0.015 var(--hue)) oklch(0.22 0.02 var(--hue))
-  --toc-btn-active: oklch(0.90 0.015 var(--hue)) oklch(0.25 0.02 var(--hue))
+  --toc-badge-bg: oklch(0.90 0.04 88) var(--btn-regular-bg)
+  --toc-btn-hover: oklch(0.935 0.018 88) oklch(0.22 0.012 265)
+  --toc-btn-active: oklch(0.905 0.018 88) oklch(0.25 0.012 265)
   --toc-width: calc((100vw - var(--page-width)) / 2 - 1rem)
-  --toc-item-active: oklch(0.70 0.13 var(--hue)) oklch(0.35 0.07 var(--hue))
+  --toc-item-active: oklch(0.70 0.13 var(--hue)) oklch(0.35 0.05 265)
 })
 
 /* 非全屏壁纸模式下，--card-bg-transparent 应该和 --card-bg 一致（不透明） */
@@ -111,7 +151,7 @@ body:not(.wallpaper-transparent)
   --card-bg-transparent: var(--card-bg)
 
 body.wallpaper-transparent
-  --card-bg-transparent: unquote("rgba(255, 255, 255, var(--card-transparent-opacity, 0.8))")
+  --card-bg-transparent: unquote("rgba(255, 253, 246, var(--card-transparent-opacity, 0.8))")
 
 :root.dark body.wallpaper-transparent
-  --card-bg-transparent: unquote("rgba(23, 23, 23, var(--card-transparent-opacity, 0.8))")
+  --card-bg-transparent: unquote("rgba(29, 32, 39, var(--card-transparent-opacity, 0.8))")
