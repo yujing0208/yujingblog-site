@@ -195,13 +195,16 @@
 	letter-spacing: 0;
 }
 
-/* 标题黄色荧光笔下划线（照搬） */
+/* 标题黄色荧光笔下划线（照搬 h1 a：inline 背景 62% 以下填充；
+   补 box-decoration-break: clone，标题换行时每行都有荧光笔） */
 .featured-paper h1 a {
 	background-image: linear-gradient(
 		180deg,
 		transparent 62%,
 		rgba(241, 193, 84, 0.45) 62%
 	);
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
 	color: inherit;
 	text-decoration: none;
 }
@@ -292,6 +295,7 @@
 	z-index: 2;
 	width: 30px;
 	pointer-events: none;
+	/* 照搬原版：用纸面色 --paper（本站映射为 --card-bg），锯齿咬合出"撕开"感 */
 	background: var(--card-bg);
 	filter: drop-shadow(1px 0 0 rgba(255, 248, 236, 0.72))
 		drop-shadow(3px 1px 4px rgba(82, 64, 38, 0.22));

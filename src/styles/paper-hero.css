@@ -896,13 +896,58 @@ body.no-banner-mode #top-row.paper-hero-layout,
 	max-width: none !important;
 }
 
-/* 导航本体：照搬 FlatPaper .site-header 的 sticky 行为 */
+/* 导航吸顶：照搬 FlatPaper .site-header（position:sticky; top:16px）
+   ⚠️ sticky 生效条件：祖先不裁切 overflow 且父容器比导航高。
+   #top-row 高度 auto（跟随内容 = 导航自身 72px）时 sticky 没有滚动空间，
+   因此把 sticky 上移到与内容区同层的 wrapper —— 让 #top-row 自身被
+   "拉高"：用 margin-bottom 预留不了，正确做法是让 #top-row 的高度
+   覆盖整个内容区（height: 0 + sticky 子元素脱离文档流也可以，但最稳
+   的是让 wrapper 的 sticky 相对更外层）。
+   实测采用：#top-row 高度 auto，sticky 放在 #navbar-wrapper 上，
+   且 #top-row 不设 overflow（已设 visible）——sticky 相对最近滚动祖先生效，
+   父容器高度不足时 sticky 元素会随父容器一起滚走，所以这里给 #top-row
+   追加 min-height: 0 且不再强制 height —— 真正的吸顶由 10.2 节的
+   header-scrolled 方案兜底（原版无 JS 吸顶，但本站导航 wrapper 处于
+   absolute 链中，纯 sticky 在部分页面失效，故按原版视觉补齐）。 */
 body.enable-banner #top-row.paper-hero-layout #navbar-wrapper,
 #top-row.paper-hero-layout #navbar-wrapper {
 	position: sticky;
 	top: 16px;
 	z-index: 20;
 	margin-top: 0;
+}
+
+/* ===========================================================================
+ * 10.2 导航吸顶兜底（视觉与原版一致：纸带完整、停在距顶 16px）
+ *
+ *   FlatPaper 原版仅靠 position:sticky 实现。本站导航被包在 #top-row
+ *   （高度仅为导航自身）里，父容器高度不足导致 sticky 无滚动空间而失效。
+ *   不改 DOM 的前提下，用「固定 + JS 切类」兜底：滚动超过阈值后导航
+ *   固定在距顶 16px 处，视觉与原版吸附状态完全一致（纸带 + 胶带保留）。
+ *   JS 在 public/js/paper-header.js。
+ * ========================================================================== */
+#top-row.paper-hero-layout #navbar-wrapper.paper-nav-stuck {
+	position: fixed;
+	top: 16px;
+	left: 50%;
+	width: min(94%, var(--page-width));
+	transform: translateX(-50%);
+	z-index: 40;
+}
+
+/* 纸带贴顶时的胶带装饰（照搬 .site-header::after 的顶部胶带） */
+#top-row.paper-hero-layout #navbar-wrapper.paper-nav-stuck #navbar > div:nth-child(2)::after {
+	content: "";
+	position: absolute;
+	top: -8px;
+	left: 25%;
+	z-index: 2;
+	width: 60px;
+	height: 20px;
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	transform: rotate(-2deg);
+	pointer-events: none;
 }
 
 /* 手账首页不需要原 banner 的 180px 顶部高光层 */

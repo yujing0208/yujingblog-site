@@ -25,6 +25,7 @@
  */
 import FloatingControls from "@components/control/FloatingControls.astro";
 import PaperHero from "@components/layout/PaperHero.astro";
+import RightSideBar from "@components/layout/RightSideBar.astro";
 import IconifyLoader from "@components/misc/IconifyLoader.astro";
 import Footer from "@components/organisms/footer/Footer.astro";
 import Navbar from "@components/organisms/navigation/Navbar.astro";
@@ -147,7 +148,7 @@ const tagCount = tagList.length;
 					</div>
 				</main>
 
-				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 -->
+				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 + 站内原有 widget -->
 				<aside class="paper-sidebar paper-sidebar--left">
 					<PaperWelcomeCard
 						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
@@ -157,6 +158,9 @@ const tagCount = tagList.length;
 						ctaText={paperHeroConfig.welcomeCtaText ?? "开始阅读"}
 						ctaLink={paperHeroConfig.welcomeCtaLink ?? "/archive/"}
 					/>
+					<!-- 站内原有右侧 widget（公告 / 一言 / 统计 / 目录等），
+					     照搬 FlatPaper 顺序放在欢迎卡之后 -->
+					<RightSideBar headings={headings} />
 				</aside>
 			</div>
 

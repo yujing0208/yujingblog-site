@@ -22,6 +22,8 @@
 @import "./paper-sidebar-right.css";
 /* 手账置顶轮播（照搬 featured-carousel + featured-paper） */
 @import "./paper-featured.css";
+/* 手账响应式与移动端（照搬 responsive.styl 650 行：断点 + 侧栏抽屉全套） */
+@import "./paper-responsive.css";
 /* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 @plugin "@tailwindcss/typography";
