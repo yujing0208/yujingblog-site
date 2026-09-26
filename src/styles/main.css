@@ -12,6 +12,10 @@
 @import "./banner.css";
 /* 手账 / 纸张质感皮肤层（纯增量视觉增强，不改变组件结构） */
 @import "./paper-theme.css";
+/* 手账导航工具组（照搬 flatpaper icon-button + accent-picker 七色选择器） */
+@import "./paper-accent.css";
+/* 手账顶栏（照搬 flatpaper header.styl：site-header / brand / site-nav / theme-toggle） */
+@import "./paper-header.css";
 /* 手账文章列表 / 卡片 / 分页（照搬 flatpaper post-card + pager + section-head） */
 @import "./paper-post-list.css";
 /* 手账首屏（照搬 flatpaper home-hero；由 PaperHomeLayout 使用） */
