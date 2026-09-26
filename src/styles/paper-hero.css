@@ -351,7 +351,11 @@ body.is-hero-active::before {
 	gap: 12px;
 	margin: 0;
 	padding: 0 0 0 var(--hero-links-offset, 0px);
-	z-index: -2;
+	/* 照搬原版数值；z-index 由 -2 提升为 2：
+	   原版 -2 让书签条嵌进资料卡下沿，但会把 hover tooltip 一起压到
+	   资料卡纸面层(z:-1)之下，tooltip 下半被盖（实测截图"GitHub"显示不全）。
+	   提到 2 后书签条在纸面之上、资料卡内容(z:2)同级，tooltip 完整可见。 */
+	z-index: 2;
 	width: auto;
 	max-width: none;
 }

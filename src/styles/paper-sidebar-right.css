@@ -320,14 +320,19 @@ a.site-info__item:focus-visible strong {
 	margin: 0 auto;
 }
 
+/* --- 社交按钮（照搬 FlatPaper 站点实机：data-button-style="tape" 时的
+       buttons.styl 覆盖样式 —— 手绘虚线方框，非 profile.styl 默认圆） ---
+   实测 homulilly.com 计算样式：
+     w/h 34px、border 2px dashed rgb(221,208,181)、
+     radius 255px 15px 225px/15px 225px 15px 255px（handdrawn） */
 .socials a {
 	position: relative;
 	display: grid;
 	place-items: center;
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
+	width: 34px;
+	height: 34px;
+	border: 2px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn, 255px 15px 225px 15px / 15px 225px 15px 255px);
 	background: transparent;
 	color: var(--text-muted);
 	transition:
