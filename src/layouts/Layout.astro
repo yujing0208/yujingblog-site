@@ -194,6 +194,10 @@ const bannerOffset =
 		     靠这个脚本填数据并摘掉 fetch-waiting（数据走 /api/github-card 代理，不直连 api.github.com） -->
 		<script is:inline defer src="/js/github-card.js?v=1"></script>
 
+		<!-- 手账首屏交互（拖拽贴纸 / shuffle / 主题切换 / 下拉纸签 / 外链确认）
+		     移植自 flatpaper main.js 的 initHomeHero，脚本自带幂等，全站加载无害 -->
+		<script is:inline defer src="/js/paper-hero.js?v=1"></script>
+
 		<!-- 第三方分析脚本 -->
 		<AnalyticsScripts
 			thirdPartyAnalytics={siteConfig.thirdPartyAnalytics}

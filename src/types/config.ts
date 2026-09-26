@@ -69,6 +69,33 @@ export interface SiteConfig {
 		targetWidth?: number; // 目标宽度，低于此宽度时开始缩放
 	};
 
+	// 首页首屏布局："paper" = 手账风 PaperHero；"banner" = 原有壁纸 Banner
+	homeLayout?: "paper" | "banner";
+
+	// 手账首屏配置（homeLayout === "paper" 时生效；移植自 Hexo FlatPaper 的 home_hero）
+	paperHero?: {
+		enable?: boolean;
+		/** 背景图列表；留空则用纯纸张底。多张时脚本随机挑一张 */
+		images?: string[];
+		/** 移动端是否也使用背景图（false = 手机端回退纯纸张底） */
+		mobileImage?: boolean;
+		/** 背景图上下遮罩浓度 [上, 下]，0~1 */
+		imageOverlay?: [number, number];
+		/** 内置便签贴纸文字（\n 换行） */
+		noteText?: string;
+		/** 自定义图片贴纸（最多 5 张） */
+		stickers?: Array<{
+			image: string;
+			link?: string;
+			alt?: string;
+			size?: number;
+		}>;
+		/** 贴纸是否可拖拽 */
+		stickersDraggable?: boolean;
+		/** 下拉纸签文案 */
+		ctaText?: string;
+	};
+
 	// 字体现在通过 astro.config.mjs 的 fonts 选项配置（Astro Font API）
 
 	// 添加bangumi配置
@@ -575,3 +602,4 @@ export interface ThirdPartyAnalyticsConfig {
 	enable: boolean; // 是否启用第三方统计（Microsoft Clarity），默认关闭
 	clarityId?: string; // Clarity 项目 ID
 }
+

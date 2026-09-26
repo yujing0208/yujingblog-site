@@ -503,10 +503,12 @@ footer,
 }
 
 /* ===========================================================================
- *  8. 首屏纸张化 —— 照搬 home-hero.styl
- *     做法：不动 Banner 的轮播 JS，只隐藏图片层、铺上纸张底 + 网格 + 颗粒，
- *          并把标题层改成深墨色、加手账资料卡质感。
- *     好处：随时可切回图片 banner（改 --paper-hero-image-mode 即可）。
+ *  8. 首屏纸色变量
+ *     注意：首屏本体由独立的 PaperHero 组件 + paper-hero.css 负责
+ *     （1:1 移植 flatpaper home-hero）。
+ *     这里只保留变量，供 PaperHero 与其它组件共用。
+ *     早期版本曾在此处覆盖 #banner-wrapper 来"伪纸张化"原有 Banner —— 那套
+ *     规则依赖轮播模式的选择器，单图模式下失效会把首屏弄乱，已移除。
  * ======================================================================== */
 :root {
 	/* FlatPaper 的首屏纸色（比页面底色更暖黄） */
@@ -514,96 +516,13 @@ footer,
 }
 
 :root.dark {
-	--hero-paper: #1a1d23;
+	--hero-paper: #22262b;
 }
 
-/* 8.1 隐藏图片轮播层（首屏走纯纸张） */
-#banner-wrapper #banner-carousel {
-	display: none !important;
-}
-
-/* 8.2 首屏纸张底 + 网格纹 + 颗粒 */
-#banner-wrapper {
-	background: var(--hero-paper);
-	isolation: isolate;
-}
-
-#banner-wrapper::before,
-#banner-wrapper::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-}
-
-/* 网格纸纹（照搬 .home-hero::before） */
-#banner-wrapper::before {
-	z-index: 0;
-	opacity: 0.42;
-	background-image:
-		linear-gradient(rgba(89, 62, 30, 0.08) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(89, 62, 30, 0.055) 1px, transparent 1px);
-	background-size: 34px 34px, 34px 34px;
-}
-
-:root.dark #banner-wrapper::before {
-	background-image:
-		linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
-
-/* 颗粒层（照搬 .home-hero__grain） */
-#banner-wrapper::after {
-	z-index: 1;
-	opacity: 0.28;
-	background-image:
-		repeating-radial-gradient(
-			circle at 18% 18%,
-			rgba(88, 62, 31, 0.11) 0 1px,
-			transparent 1px 5px
-		),
-		repeating-linear-gradient(
-			95deg,
-			rgba(255, 255, 255, 0.28) 0 1px,
-			transparent 1px 8px
-		);
-	-webkit-mask-image: linear-gradient(
-		to bottom,
-		transparent,
-		#000 8%,
-		#000 92%,
-		transparent
-	);
-	mask-image: linear-gradient(
-		to bottom,
-		transparent,
-		#000 8%,
-		#000 92%,
-		transparent
-	);
-}
-
-/* 8.3 标题层：改用深墨色（原本是白字 + drop-shadow，在纸上不可读） */
-.banner-text-overlay {
-	z-index: 3;
-}
-
-.banner-title {
-	color: var(--deep-text) !important;
-	text-shadow: none !important;
-	filter: none !important;
-	/* 照搬 .home-hero h1 的字号气场，但适配已有 6xl/8xl */
-}
-
-.banner-subtitle {
-	color: var(--ink-soft) !important;
-	text-shadow: none !important;
-	filter: none !important;
-}
-
-/* 8.4 波浪层在纸张上不合适，隐藏 */
-#header-waves,
-.waves {
+/* 波浪层在手账首屏上不合适（PaperHero 自带独立视觉），
+   仅在启用手账首屏时隐藏；banner 模式不受影响。 */
+body.is-hero-active #header-waves,
+body.is-hero-active .waves {
 	display: none !important;
 }
 
@@ -654,7 +573,38 @@ footer,
 }
 
 /* ===========================================================================
- *  10. 无障碍
+ *  8. 手账首屏（PaperHero）接线样式
+ *     首屏是 100vh 的独立区块，内容区改为正常文档流接在它后面，
+ *     而不是像徽章模式那样用 absolute 叠在 banner 上。
+ * ======================================================================== */
+
+/* 内容区在首屏之后自然流动 */
+.paper-home-flow {
+	position: relative !important;
+	top: 0 !important;
+	margin-top: 0;
+}
+
+/* 首屏之后的第一个纸片留出呼吸距离（照搬 FlatPaper .paper-shell margin-top: 28px） */
+.paper-home-flow #main-grid {
+	margin-top: 28px;
+}
+
+/* 首屏贴纸在窄屏会被内容挤压，给首屏自身留出可滚动高度 */
+@media (max-width: 760px) {
+	.paper-home-flow #main-grid {
+		margin-top: 18px;
+	}
+}
+
+/* 首屏激活时隐藏全局纸张底纹，避免与首屏自带纹理叠加发脏
+   （body::before 在 paper-theme.css 第 1 节定义） */
+body.is-hero-active::before {
+	opacity: 0;
+}
+
+/* ===========================================================================
+ *  9. 无障碍
  * ======================================================================== */
 @media (prefers-reduced-motion: reduce) {
 	.card-base,

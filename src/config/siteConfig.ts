@@ -48,6 +48,30 @@ export const siteConfig: SiteConfig = {
 		targetWidth: 2000, // 目标宽度，低于此宽度时开始缩放
 	},
 
+	// 首页首屏布局
+	//   "paper"  —— 手账风首屏（PaperHero，移植 Hexo FlatPaper 的 home-hero）
+	//   "banner" —— 原有的壁纸/Banner 首屏（功能完整保留，可随时切回）
+	homeLayout: "paper",
+
+	// 手账首屏（homeLayout: "paper" 时生效）
+	paperHero: {
+		enable: true,
+		// 背景图；留空则用纯纸张底（FlatPaper 默认）。可写多张，脚本会随机挑一张
+		images: ["/assets/banner/city-sunset.jpg"],
+		// 移动端是否也使用背景图。false = 手机端回退纯纸张底（原版的可读性策略）
+		mobileImage: false,
+		// 背景图上下遮罩浓度 [上, 下]，0~1
+		imageOverlay: [0.2, 0.2],
+		// 内置便签贴纸文字（\n 换行）
+		noteText: "今天也要\n好好生活",
+		// 自定义图片贴纸（最多 5 张）：{ image, link?, alt?, size? }
+		stickers: [],
+		// 贴纸可拖拽
+		stickersDraggable: true,
+		// 下拉纸签文案
+		ctaText: "开始阅读",
+	},
+
 	bangumi: {
 		userId: "your-bangumi-id", // 在此处设置你的Bangumi用户ID，可以设置为 "sai" 测试
 		fetchOnDev: false, // 是否在开发环境下获取 Bangumi 数据（默认 false），获取前先执行 pnpm build 构建 json 文件
@@ -219,3 +243,4 @@ export const siteConfig: SiteConfig = {
 };
 
 export { SITE_LANG };
+
