@@ -14,6 +14,90 @@
  * ========================================================================= */
 
 /* ==========================================================================
+ * 〇、纸片壳层布局（照搬 shell.styl 第 1-63 行）
+ *     这是侧栏卡片「间隔」的来源：
+ *       .paper-shell    grid 三栏 280px / 1fr / 280px，gap 28px，margin-top 28px
+ *       .paper-sidebar  grid，gap 22px        ← 侧栏卡片间距
+ *       .paper-main     grid，gap 24px        ← 主栏块间距
+ *     文章页用 .paper-shell--article 砍掉第三栏（照着 FlatPaper 的两栏规则）。
+ * ========================================================================== */
+/* 页面级容器：与导航栏用同一宽度规格（照搬 FlatPaper 的 min(94vw, 1300px)） */
+.paper-shell-container {
+	width: min(94vw, var(--page-width));
+	margin-inline: auto;
+}
+
+.paper-shell {
+	display: grid;
+	grid-template-columns: 280px minmax(0, 1fr) 280px;
+	gap: 28px;
+	margin-top: 28px;
+	align-items: start;
+}
+
+/* 文章页 / 独立页：两栏，去掉视觉右栏（sidebar-left）
+   —— 与 FlatPaper 官方架构说明一致：
+   「文章页/独立页为两栏布局，会去掉 sidebar-left」 */
+.paper-shell--article {
+	grid-template-columns: 280px minmax(0, 1fr);
+	align-items: stretch;
+}
+
+/* 文章页：侧栏格子撑满，让 sticky TOC 能钉到正文结尾 */
+.paper-shell--article .paper-sidebar {
+	align-content: start;
+	height: 100%;
+}
+
+.paper-main {
+	min-width: 0;
+	display: grid;
+	gap: 24px;
+}
+
+/* ⚠️ 侧栏卡片间距（FlatPaper 的 gap: 22px）—— 之前漏搬导致卡片贴在一起 */
+.paper-sidebar {
+	display: grid;
+	gap: 22px;
+}
+
+/* 文章页侧栏：TOC 与文章相关卡片成组吸顶 */
+.paper-shell--article .paper-sidebar .post-sticky-stack {
+	position: sticky;
+	top: 110px;
+	z-index: 2;
+	max-height: calc(100dvh - 130px);
+	display: grid;
+	gap: 22px;
+	align-self: start;
+}
+
+.paper-shell--article .paper-sidebar .toc-card {
+	display: flex;
+	flex-direction: column;
+	overflow: visible;
+}
+
+.paper-shell--article .paper-sidebar .toc-card__head {
+	flex-shrink: 0;
+}
+
+.paper-shell--article .paper-sidebar .toc-content {
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+}
+
+/* 窄屏：三栏降为单栏，与 FlatPaper responsive 行为一致 */
+@media (max-width: 960px) {
+	.paper-shell,
+	.paper-shell--article {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 22px;
+	}
+}
+
+/* ==========================================================================
  * 一、.side-card 基座（照搬 shell.styl）
  * ========================================================================== */
 .side-card {

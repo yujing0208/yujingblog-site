@@ -903,6 +903,49 @@ body.is-hero-active .top-gradient-highlight {
 }
 
 /* ===========================================================================
+ * 10.1 导航栏宽度与居中（照搬 FlatPaper .site-header）
+ *
+ *  FlatPaper 的 header 规格：
+ *    .site-header { width: min(94vw, 1300px); margin-inline: auto; }
+ *  本站导航原始结构是 #top-row（限宽 --page-width + mx-auto）里再套一层
+ *  #navbar > div（自身也写 max-w-[var(--page-width)]），两级都限宽又各自
+ *  带 px-4 内边距，导致导航实际比内容区窄一截、看起来没居中。
+ *
+ *  这里直接按原版规格统一：容器宽度 = min(94vw, var(--page-width))，
+ *  水平居中；内层 #navbar > div 取消自身限宽（宽度交给外层）。
+ * ========================================================================== */
+#top-row.paper-hero-layout {
+	width: min(94vw, var(--page-width)) !important;
+	max-width: none !important;
+	margin-inline: auto !important;
+	padding-inline: 0 !important;
+}
+
+/* 内层导航纸带：不再自带限宽，宽度跟随外层容器 */
+#top-row.paper-hero-layout #navbar > div {
+	width: 100% !important;
+	max-width: none !important;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+/* 导航纸带本体：照搬 .site-header 的 padding 与最小高度 */
+#top-row.paper-hero-layout #navbar > div:not(.absolute) {
+	min-height: 72px;
+	padding: 12px 24px;
+}
+
+@media (max-width: 760px) {
+	#top-row.paper-hero-layout {
+		width: min(94vw, 760px) !important;
+	}
+	#top-row.paper-hero-layout #navbar > div:not(.absolute) {
+		min-height: 60px;
+		padding: 10px 16px;
+	}
+}
+
+/* ===========================================================================
  * 11. 无障碍
  * ======================================================================== */
 @media (prefers-reduced-motion: reduce) {

@@ -108,17 +108,14 @@ const tagCount = tagList.length;
 		</div>
 	</div>
 
-	<!-- 主内容（照搬 main.paper-shell：正常文档流，不再 absolute 叠加） -->
+	<!-- 主内容（照搬 main.paper-shell：正常文档流，不再 absolute 叠加）
+	     容器宽度与导航一致，都用 FlatPaper 的 min(94vw, 1300px) 规格 -->
 	<div id="paper-home-content" class="relative w-full z-30">
-		<div class="relative max-w-(--page-width) mx-auto px-2 md:px-4">
-			<div
-				id="main-grid"
-				class="paper-shell w-full left-0 right-0 grid grid-cols-1 md:grid-cols-[17.5rem_minmax(0,1fr)] lg:grid-cols-[17.5rem_minmax(0,1fr)_17.5rem] grid-rows-none md:grid-rows-[auto] mx-auto gap-4"
-				data-layout-mode="grid"
-			>
+		<div class="paper-shell-container">
+			<div id="main-grid" class="paper-shell" data-layout-mode="grid">
 				<!-- 视觉左栏（flatpaper sidebar-right.ejs，文件名与视觉相反）：
 				     个人名片 → 分类 → 标签 -->
-				<aside class="paper-sidebar paper-sidebar--right order-2 md:order-1 lg:order-1">
+				<aside class="paper-sidebar paper-sidebar--right">
 					<PaperProfileCard
 						postCount={postCount}
 						categoryCount={categoryCount}
@@ -128,11 +125,8 @@ const tagCount = tagList.length;
 					<PaperTagsCard limit={12} />
 				</aside>
 
-				<!-- 主栏 -->
-				<main
-					id="swup-container"
-					class="order-1 md:order-2 lg:order-2 min-w-0 transition-main"
-				>
+				<!-- 主栏（照搬 section.paper-main：grid gap 24px） -->
+				<main id="swup-container" class="paper-main transition-main">
 					<div id="content-wrapper" class="onload-animation transition-leaving">
 						<div
 							id="page-overlay-data"
@@ -148,7 +142,7 @@ const tagCount = tagList.length;
 				</main>
 
 				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 -->
-				<aside class="paper-sidebar paper-sidebar--left order-3 lg:order-3">
+				<aside class="paper-sidebar paper-sidebar--left">
 					<PaperWelcomeCard
 						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
 						label={paperHeroConfig.welcomeLabel ?? "Hello!"}
