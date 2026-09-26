@@ -347,28 +347,22 @@ html.tape-disabled .tape {
 	transform: scaleX(1) rotate(-2deg);
 }
 
-/* 4.3 图标按钮（logo / 调色板 / 菜单）：虚线圆（照搬 .brand-mark / .icon-button） */
+/* 4.3 图标按钮（logo / 调色板 / 菜单）：虚线边框（照搬 buttons.styl 的 tape 风格）
+   ⚠️ 不加静置倾斜：FlatPaper 的 rotate(-3deg) 等只作用于 40px 的圆形小图标按钮
+   （.brand-mark / .icon-button），本站导航的 logo 是含文字的大按钮、调色板/
+   菜单是整条导航的一部分，倾斜会扭歪整条导航。这里只保留虚线 + hover 效果。 */
 #site-logo,
 #display-settings-switch,
 #nav-menu-switch {
 	border: 1px dashed var(--paper-line) !important;
 	border-radius: var(--radius-handdrawn) !important;
 	background: transparent;
-	/* 静置微倾斜（照搬 buttons.styl 的"手贴上去"效果） */
-	transform: rotate(-3deg);
 	transition:
 		color 0.2s ease,
 		background-color 0.2s ease,
 		border-color 0.2s ease,
 		transform 0.22s ease,
 		box-shadow 0.2s ease;
-}
-
-#display-settings-switch {
-	transform: rotate(3deg);
-}
-#nav-menu-switch {
-	transform: rotate(-2deg);
 }
 
 #site-logo:hover,
@@ -378,8 +372,8 @@ html.tape-disabled .tape {
 	border-color: var(--fp-accent) !important;
 	background-color: var(--fp-accent-soft) !important;
 	background-image: var(--nav-tape-stripes);
-	/* hover 摆正 + 上浮（照搬 buttons.styl） */
-	transform: rotate(0deg) translateY(-2px) scale(1.06);
+	/* hover 上浮（照搬 buttons.styl，无倾斜） */
+	transform: translateY(-2px) scale(1.04);
 	box-shadow: var(--soft-shadow);
 }
 
