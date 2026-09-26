@@ -1,0 +1,133 @@
+---
+/**
+ * PaperFeaturedCarousel —— 手账风置顶文章轮播
+ * 1:1 移植 flatpaper：layout/index.ejs 的 featured 段 (26-77 行)
+ *                   + _components/featured-carousel.styl (116 行)
+ *                   + _components/featured-paper.styl (187 行)
+ *                   + source/js/main.js 的 Featured carousel 段 (1933-1975 行)
+ *
+ * 原版结构（严格照搬）：
+ *   section.featured-carousel.has-multiple[data-autoplay]
+ *     div.featured-track
+ *       article.featured-paper.is-active[data-index]      ← 每篇
+ *         span.tape.tape--top-center                      ← 顶部居中胶带
+ *         .featured-copy
+ *           span.label-pill                               ← 「置顶」
+ *           h1 > a                                        ← 标题（黄色荧光笔下划线）
+ *           p                                             ← 摘要
+ *           .meta-line
+ *             span.meta-date 日期 / span.meta-cat 分类 / a.read-more 阅读全文
+ *         .featured-thumb.featured-thumb--zigzag          ← 锯齿撕边缩略图
+ *       button.carousel-arrow.carousel-prev / .carousel-next
+ *       div.carousel-dots > button.carousel-dot.is-active × N
+ *
+ * 交互（照搬 main.js）：
+ *   show(index) 循环切换 is-active；箭头/圆点点击后重启 autoplay；
+ *   mouseenter 暂停、mouseleave 恢复（原版行为）。
+ */
+import { Icon } from "astro-icon/components";
+
+interface FeaturedItem {
+	slug: string;
+	url: string;
+	title: string;
+	summary: string;
+	date: string;
+	category: string;
+	image: string;
+}
+
+interface Props {
+	/** 置顶文章列表（frontmatter pinned: true 的文章，按时间倒序） */
+	items: FeaturedItem[];
+	/** 自动播放间隔 ms（原版 featured_autoplay 默认 5000；0=关闭） */
+	autoplay?: number;
+	/** 摘要截断长度（原版 excerpt_length 默认 96） */
+	excerptLength?: number;
+}
+
+const { items, autoplay = 5000, excerptLength = 96 } = Astro.props;
+
+const hasMultiple = items.length > 1;
+---
+
+{
+	items.length > 0 && (
+		<section
+			class:list={["featured-carousel", hasMultiple && "has-multiple"]}
+			data-autoplay={hasMultiple ? autoplay : 0}
+			aria-label="置顶文章"
+		>
+			<div class="featured-track">
+				{items.map((post, idx) => (
+					<article class:list={["featured-paper", idx === 0 && "is-active"]} data-index={idx}>
+						<span class="tape tape--top-center" aria-hidden="true" />
+						<div class="featured-copy">
+							<span class="label-pill">置顶</span>
+							<h1>
+								<a href={post.url}>{post.title}</a>
+							</h1>
+							<p>
+								{post.summary.slice(0, excerptLength)}
+								{post.summary.length > excerptLength ? "..." : ""}
+							</p>
+							<div class="meta-line">
+								<span class="meta-date">
+									<Icon name="material-symbols:calendar-month-outline" class="meta-line-icon" />
+									{post.date}
+								</span>
+								{post.category && (
+									<span class="meta-cat">
+										<Icon name="material-symbols:folder-outline" class="meta-line-icon meta-line-icon--folder" />
+										<a class="meta-cat-link" href={`/archive/?category=${encodeURIComponent(post.category)}`}>
+											{post.category}
+										</a>
+									</span>
+								)}
+								<a class="read-more" href={post.url}>
+									<span>阅读全文</span>
+									<Icon name="material-symbols:arrow-forward-rounded" class="meta-line-icon" />
+								</a>
+							</div>
+						</div>
+						{post.image && (
+							<div class="featured-thumb featured-thumb--zigzag">
+								<div class="paper-thumb paper-thumb--large paper-thumb--cover">
+									<img
+										class="paper-thumb__img"
+										src={post.image}
+										alt={post.title}
+										loading={idx === 0 ? "eager" : "lazy"}
+										decoding="async"
+										referrerpolicy="no-referrer"
+									/>
+								</div>
+							</div>
+						)}
+					</article>
+				))}
+
+				{hasMultiple && (
+					<>
+						<button type="button" class="carousel-arrow carousel-prev" aria-label="上一张">
+							<Icon name="material-symbols:chevron-left-rounded" class="carousel-arrow-icon" />
+						</button>
+						<button type="button" class="carousel-arrow carousel-next" aria-label="下一张">
+							<Icon name="material-symbols:chevron-right-rounded" class="carousel-arrow-icon" />
+						</button>
+						<div class="carousel-dots" role="group" aria-label="轮播分页">
+							{items.map((_, idx) => (
+								<button
+									type="button"
+									class:list={["carousel-dot", idx === 0 && "is-active"]}
+									data-index={idx}
+									aria-label={`第 ${idx + 1} 张`}
+								/>
+							))}
+						</div>
+					</>
+				)}
+			</div>
+		</section>
+	)
+}

@@ -20,6 +20,8 @@
 @import "./paper-sidebar.css";
 /* 手账右侧栏：个人名片 / 分类 / 标签（照搬 profile + categories-sidebar + tags） */
 @import "./paper-sidebar-right.css";
+/* 手账置顶轮播（照搬 featured-carousel + featured-paper） */
+@import "./paper-featured.css";
 /* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 @plugin "@tailwindcss/typography";

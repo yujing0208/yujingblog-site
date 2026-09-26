@@ -1,0 +1,365 @@
+/* ============================================================================
+ *  手账置顶轮播 —— 直接移植 flatpaper 源码
+ *    _components/featured-carousel.styl (116 行)
+ *    _components/featured-paper.styl (187 行)
+ *  仅两处必要改写：.dark-mode → :root.dark；--color-accent* → --primary/oklch(--hue)
+ * ========================================================================= */
+
+/* ============== FEATURED CAROUSEL（照搬） ============== */
+.featured-carousel {
+	position: relative;
+	margin-bottom: 16px;
+}
+
+.featured-carousel.has-multiple {
+	margin-bottom: 28px;
+}
+
+.featured-track {
+	position: relative;
+	display: grid;
+	grid-template-columns: 1fr;
+}
+
+/* Slides, arrows and dots all live on row 1 (the card row).（照搬注释与机制） */
+.featured-track > .featured-paper,
+.featured-track > .carousel-arrow,
+.featured-track > .carousel-dots {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+.featured-track > .featured-paper {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateX(20px);
+	transition:
+		opacity 0.4s ease,
+		transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1),
+		visibility 0s linear 0.4s;
+	pointer-events: none;
+}
+
+.featured-track > .featured-paper.is-active {
+	opacity: 1;
+	visibility: visible;
+	transform: translateX(0);
+	transition:
+		opacity 0.4s ease,
+		transform 0.5s cubic-bezier(0.2, 0.8, 0.3, 1),
+		visibility 0s linear 0s;
+	pointer-events: auto;
+}
+
+/* Carousel arrows — grid items centered on the card row.（照搬） */
+.featured-carousel .carousel-arrow {
+	align-self: center;
+	z-index: 5;
+	display: inline-grid;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	margin: 0;
+	padding: 0;
+	border: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: 50%;
+	color: var(--ink-soft, #4a5751);
+	background: var(--card-bg);
+	cursor: pointer;
+	transition:
+		color 0.2s ease,
+		background 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.2s ease;
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
+}
+
+.featured-carousel .carousel-arrow:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	border-color: var(--primary);
+	background: oklch(0.9 0.05 var(--hue));
+	transform: scale(1.05);
+}
+
+.featured-carousel .carousel-prev {
+	justify-self: start;
+	margin-left: -16px;
+}
+.featured-carousel .carousel-next {
+	justify-self: end;
+	margin-right: -16px;
+}
+
+.carousel-arrow-icon {
+	width: 16px;
+	height: 16px;
+}
+
+/* Dots — grid item on the card row.（照搬） */
+.featured-carousel .carousel-dots {
+	align-self: end;
+	justify-self: center;
+	margin-bottom: -22px;
+	display: inline-flex;
+	gap: 8px;
+	z-index: 4;
+}
+
+.featured-carousel .carousel-dot {
+	width: 8px;
+	height: 8px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--paper-dash, rgba(89, 62, 30, 0.24));
+	cursor: pointer;
+	transition:
+		transform 0.2s ease,
+		background 0.2s ease,
+		width 0.3s ease;
+}
+
+.featured-carousel .carousel-dot:hover {
+	background: var(--primary);
+}
+
+.featured-carousel .carousel-dot.is-active {
+	width: 22px;
+	border-radius: 999px;
+	background: var(--primary);
+}
+
+/* ============== FEATURED PAPER（照搬） ============== */
+.featured-paper {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(170px, 0.9fr);
+	gap: 0;
+	align-items: stretch;
+	padding: 0;
+	overflow: visible;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* 纸面层：铺纸 + 撕纸边（照搬 shell.styl 手法） */
+.featured-paper::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--card-bg);
+	z-index: -1;
+	border-radius: 4px;
+	filter: url(#paper-edge);
+	pointer-events: none;
+}
+
+.featured-paper > .tape {
+	z-index: 5;
+}
+
+.featured-copy {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 26px 28px;
+}
+
+/* 「置顶」标签（照搬 .label-pill） */
+.label-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	align-self: flex-start;
+	min-height: 24px;
+	padding: 0 12px;
+	border-radius: 6px;
+	color: oklch(0.98 0.01 var(--hue));
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	background: linear-gradient(135deg, var(--primary), oklch(0.55 0.12 var(--hue)));
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
+}
+
+.featured-paper h1 {
+	margin: 14px 0 10px;
+	font-size: 24px;
+	line-height: 1.4;
+	font-weight: 800;
+	letter-spacing: 0;
+}
+
+/* 标题黄色荧光笔下划线（照搬） */
+.featured-paper h1 a {
+	background-image: linear-gradient(
+		180deg,
+		transparent 62%,
+		rgba(241, 193, 84, 0.45) 62%
+	);
+	color: inherit;
+	text-decoration: none;
+}
+
+.featured-paper p {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+/* meta 行（featured 版：gap 10px 16px，与 post-card 版不同，照搬各自数值） */
+.featured-paper .meta-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 16px;
+	margin-top: 16px;
+	color: var(--text-muted);
+	font-size: 12px;
+}
+
+.featured-paper .meta-line span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.meta-tag-link,
+.meta-cat-link {
+	color: inherit;
+	text-decoration: none;
+	transition: color 0.15s ease;
+}
+
+.meta-tag-link:hover,
+.meta-cat-link:hover {
+	color: oklch(0.55 0.12 var(--hue));
+}
+
+:root.dark .meta-tag-link:hover,
+:root.dark .meta-cat-link:hover {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+.meta-line-icon {
+	display: block;
+	width: 13px;
+	height: 13px;
+	opacity: 0.75;
+	flex-shrink: 0;
+}
+
+/* 光学对齐（照搬：folder 比 calendar 视觉重心高 1px） */
+.meta-line-icon--folder {
+	transform: translateY(1px);
+}
+
+.read-more {
+	margin-left: auto;
+	font-size: 12px;
+	color: inherit;
+	text-decoration: none;
+}
+
+.featured-thumb {
+	position: relative;
+	align-self: stretch;
+	border-radius: 0 4px 4px 0;
+	overflow: visible;
+	min-height: 180px;
+}
+
+.featured-thumb .paper-thumb,
+.featured-thumb .paper-thumb--large {
+	width: 100%;
+	height: 100%;
+	min-height: 180px;
+	border-radius: 0 4px 4px 0;
+}
+
+.featured-thumb--zigzag::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: -1px;
+	z-index: 2;
+	width: 30px;
+	pointer-events: none;
+	background: var(--card-bg);
+	filter: drop-shadow(1px 0 0 rgba(255, 248, 236, 0.72))
+		drop-shadow(3px 1px 4px rgba(82, 64, 38, 0.22));
+	clip-path: polygon(
+		0 0,
+		72% 0,
+		56% 4%,
+		75% 7%,
+		48% 11%,
+		79% 15%,
+		62% 18%,
+		70% 23%,
+		51% 27%,
+		77% 31%,
+		59% 35%,
+		73% 39%,
+		46% 43%,
+		80% 47%,
+		65% 51%,
+		54% 55%,
+		76% 58%,
+		50% 63%,
+		78% 67%,
+		61% 70%,
+		72% 74%,
+		47% 78%,
+		79% 82%,
+		58% 86%,
+		74% 90%,
+		52% 94%,
+		68% 97%,
+		63% 100%,
+		0 100%
+	);
+}
+
+/* paper-thumb（thumbnail.styl 的照片封面分支，置顶图用） */
+.paper-thumb--large {
+	height: 100%;
+	min-height: 160px;
+	border-radius: 10px;
+}
+
+.paper-thumb__img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: 50% 50%;
+	display: block;
+	transition: transform 0.45s ease;
+}
+
+.paper-thumb--cover {
+	background: var(--card-bg);
+}
+
+.featured-paper:hover .paper-thumb__img {
+	transform: scale(1.04);
+}
+
+/* 无障碍 */
+@media (prefers-reduced-motion: reduce) {
+	.featured-track > .featured-paper,
+	.featured-carousel .carousel-arrow,
+	.paper-thumb__img {
+		transition: none;
+		transform: none;
+	}
+}

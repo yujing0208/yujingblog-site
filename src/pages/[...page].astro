@@ -1,16 +1,19 @@
 ---
 import Pagination from "@components/control/Pagination.astro";
 import CategoryBar from "@components/features/posts/CategoryBar.astro";
+import PaperFeaturedCarousel from "@components/features/posts/PaperFeaturedCarousel.astro";
 import PaperPostList from "@components/features/posts/PaperPostList.astro";
 import PostPage from "@components/features/posts/PostPage.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import PaperHomeLayout from "@layouts/PaperHomeLayout.astro";
+import { render } from "astro:content";
 import type { GetStaticPaths } from "astro";
 
 import { siteConfig } from "../config";
 import { PAGE_SIZE } from "../constants/constants";
 import { getSortedPosts } from "../utils/content-utils";
 import { initPostIdMap } from "../utils/permalink-utils";
+import { getPostUrl } from "../utils/url-utils";
 
 const showCategoryBar = siteConfig.postListLayout.categoryBar?.enable ?? false;
 
@@ -35,12 +38,44 @@ const isFirstPage = (page.currentPage ?? 1) === 1;
 
 // 仅首页第 1 页用手账布局；第 2 页起沿用原布局，避免分页样式割裂
 const paperMode = usePaperHome && isFirstPage;
+
+// 置顶文章（照搬 flatpaper 的 featured：取 frontmatter pinned 的文章，
+// 按时间倒序，最多 4 篇 —— 对应原版 keys.slice(0, 4)）
+const featuredItems = paperMode
+	? await (async () => {
+			const pinned = page.data.filter((e: any) => e.data.pinned === true).slice(0, 4);
+			const items = [];
+			for (const entry of pinned) {
+				const { remarkPluginFrontmatter } = await render(entry);
+				items.push({
+					slug: entry.id,
+					url: getPostUrl(entry),
+					title: entry.data.title,
+					summary: String(
+						entry.data.description ??
+							remarkPluginFrontmatter?.excerpt ??
+							"",
+					)
+						.replace(/<[^>]*>/gu, " ")
+						.replace(/\s+/gu, " ")
+						.trim(),
+					date: entry.data.published
+						? new Date(entry.data.published).toISOString().slice(0, 10)
+						: "",
+					category: entry.data.category ?? "",
+					image: entry.data.image ?? "",
+				});
+			}
+			return items;
+		})()
+	: [];
 ---
 
 {
 	paperMode ? (
 		<PaperHomeLayout title={siteConfig.title} description={siteConfig.subtitle}>
-			{showCategoryBar && <CategoryBar />}
+			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）；原分类条 CategoryBar 已按需求移除 */}
+			<PaperFeaturedCarousel items={featuredItems} autoplay={5000} />
 			<PaperPostList page={page} heading="最新文章" />
 		</PaperHomeLayout>
 	) : (
