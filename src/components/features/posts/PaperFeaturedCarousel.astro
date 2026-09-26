@@ -73,12 +73,12 @@ const hasMultiple = items.length > 1;
 							</p>
 							<div class="meta-line">
 								<span class="meta-date">
-									<Icon name="material-symbols:calendar-month-outline" class="meta-line-icon" />
+									<Icon name="material-symbols:calendar-month-outline" class="meta-line-icon" is:inline />
 									{post.date}
 								</span>
 								{post.category && (
 									<span class="meta-cat">
-										<Icon name="material-symbols:folder-outline" class="meta-line-icon meta-line-icon--folder" />
+										<Icon name="material-symbols:folder-outline" class="meta-line-icon meta-line-icon--folder" is:inline />
 										<a class="meta-cat-link" href={`/archive/?category=${encodeURIComponent(post.category)}`}>
 											{post.category}
 										</a>
@@ -86,7 +86,7 @@ const hasMultiple = items.length > 1;
 								)}
 								<a class="read-more" href={post.url}>
 									<span>阅读全文</span>
-									<Icon name="material-symbols:arrow-forward-rounded" class="meta-line-icon" />
+									<Icon name="material-symbols:arrow-forward-rounded" class="meta-line-icon" is:inline />
 								</a>
 							</div>
 						</div>
@@ -110,10 +110,10 @@ const hasMultiple = items.length > 1;
 				{hasMultiple && (
 					<>
 						<button type="button" class="carousel-arrow carousel-prev" aria-label="上一张">
-							<Icon name="material-symbols:chevron-left-rounded" class="carousel-arrow-icon" />
+							<Icon name="material-symbols:chevron-left-rounded" class="carousel-arrow-icon" is:inline />
 						</button>
 						<button type="button" class="carousel-arrow carousel-next" aria-label="下一张">
-							<Icon name="material-symbols:chevron-right-rounded" class="carousel-arrow-icon" />
+							<Icon name="material-symbols:chevron-right-rounded" class="carousel-arrow-icon" is:inline />
 						</button>
 						<div class="carousel-dots" role="group" aria-label="轮播分页">
 							{items.map((_, idx) => (
