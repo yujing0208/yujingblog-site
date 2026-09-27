@@ -23,7 +23,7 @@ const sizeBucket = (n: number) =>
 		: Math.round(1 + (3 * (n - minCount)) / (maxCount - minCount));
 ---
 
-<MainGridLayout title={i18n(I18nKey.tags)}>
+<MainGridLayout title={i18n(I18nKey.tags)} paperListRail>
 	<section class="taxonomy-paper">
 		<h1>{i18n(I18nKey.tags)}</h1>
 		{tags.length ? (

@@ -13,7 +13,7 @@ import "../styles/paper-archive.css";
 const categories = await getCategoryList();
 ---
 
-<MainGridLayout title={i18n(I18nKey.categories)}>
+<MainGridLayout title={i18n(I18nKey.categories)} paperListRail>
 	<section class="taxonomy-paper">
 		<h1>{i18n(I18nKey.categories)}</h1>
 		{categories.length ? (
