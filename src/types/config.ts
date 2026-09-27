@@ -295,9 +295,28 @@ export interface PermalinkConfig {
 
 export interface CommentConfig {
 	enable: boolean; // 是否启用评论功能
-	system?: "twikoo" | "giscus"; // 评论系统选择
+	system?: "twikoo" | "giscus" | "waline"; // 评论系统选择
 	twikoo?: TwikooConfig;
 	giscus?: GiscusConfig;
+	waline?: WalineConfig;
+}
+
+export interface WalineConfig {
+	serverURL: string;
+	lang?: string;
+	locale?: { placeholder?: string };
+	emoji?: string[];
+	meta?: string[];
+	requiredMeta?: string[];
+	login?: "enable" | "force" | "disable";
+	wordLimit?: [number, number];
+	pageSize?: number;
+	visitorCount?: boolean;
+	highlighter?: boolean;
+	imageUploader?: boolean;
+	texRenderer?: boolean;
+	search?: boolean;
+	reaction?: boolean;
 }
 
 export interface GiscusConfig {
@@ -319,6 +338,8 @@ interface TwikooConfig {
 	envId: string;
 	region?: string;
 	lang?: string;
+	/** 访客头像加载失败时的兜底图（留言墙用） */
+	avatarFallback?: string;
 }
 
 export type LIGHT_DARK_MODE = typeof LIGHT_MODE | typeof DARK_MODE;

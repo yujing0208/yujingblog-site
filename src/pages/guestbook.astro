@@ -1,36 +1,89 @@
 ---
-import GuestbookChat from "@components/widgets/guestbook/GuestbookChat.svelte";
+// 留言板（留言墙）—— 1:1 照搬 homulilly.com/comment/
+// 结构 / 类名 / 文案 / 初始化方式均与 homulilly 一致，后端同为 Twikoo。
 import { commentConfig } from "@/config";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Twikoo from "@components/comment/Twikoo.astro";
 
 export const prerender = true;
 
 const title = "留言板";
 const description = "在这里给我留言，畅所欲言～";
 
-// 预热 Waline 服务端：线上 Serverless 冷启动实测首字节 4.34s，
-// 是留言板"转圈半天"的最大头。在页面 HTML 解析到这里时就发一个只取 1 条的
-// 轻量请求把实例唤醒，等 GuestbookChat hydration 后正式取数时已经是热实例了。
-// （preconnect 已由 Layout.astro 全局提供，这里不重复声明。）
-const serverURL = String(commentConfig.waline?.serverURL ?? "").replace(/\/+$/, "");
-const warmupPath = serverURL
-	? `${serverURL}/api/comment?path=${encodeURIComponent("/guestbook/")}&pageSize=1&page=1&lang=zh-CN&sortBy=insertedAt_desc`
-	: "";
+// Twikoo 环境地址（照搬 homulilly 的 data-guestbook-env / twikoo.init({envId})）
+const twikooEnvId = String(commentConfig.twikoo?.envId ?? "").replace(/\/+$/, "");
+const pageSize = 15;
+const avatarFallback = "/images/icon-error.webp";
 ---
 
 <MainGridLayout title={title} description={description}>
-	<link slot="head" rel="stylesheet" href="/guestbook-chat-v11.css" />
-	<script is:inline define:vars={{ warmupPath }}>
-		// 只为唤醒 Serverless 实例，结果丢弃；CORS 失败也不影响唤醒效果
-		if (warmupPath) {
-			fetch(warmupPath, {
-				mode: "cors",
-				credentials: "omit",
-				priority: "low",
-			}).catch(() => {});
-		}
-	</script>
-	<div class="guestbook-page">
-		<GuestbookChat client:idle />
-	</div>
+	<link slot="head" rel="stylesheet" href="/paper-guestbook-wall.css" />
+
+	<!-- 留言墙（照搬 homulilly /comment/ 的 DOM 结构） -->
+	<article
+		class="article-paper guestbook-page article-paper--with-top-img article-paper--page-top-img"
+	>
+		<div class="article-content guestbook-intro">
+			<p class="guestbook-subtitle">欢迎在这里留下足迹，说点什么吧～</p>
+		</div>
+
+		<section
+			class="guestbook-wall"
+			data-guestbook-system="twikoo"
+			data-guestbook-env={twikooEnvId}
+			data-page-size={String(pageSize)}
+			data-avatar-fallback={avatarFallback}
+			aria-label="留言板"
+		>
+			<div class="guestbook-wall__summary" hidden>
+				<span class="guestbook-wall__stat" data-guestbook-stat="total"></span>
+				<span class="guestbook-wall__stat" data-guestbook-stat="shown" hidden></span>
+				<button
+					class="guestbook-wall__sort"
+					type="button"
+					data-guestbook-sort
+					hidden
+				>
+				</button>
+				<a class="guestbook-wall__write" href="#tcomment">
+					在下方留言，刷新后就会贴到墙上
+				</a>
+			</div>
+			<p class="guestbook-wall__state" data-guestbook-state aria-live="polite">
+				正在铺开留言墙…
+			</p>
+			<ul class="guestbook-wall__list" data-guestbook-list></ul>
+			<button
+				class="guestbook-wall__more"
+				type="button"
+				data-guestbook-more
+				hidden
+			>
+				展开更多留言
+			</button>
+		</section>
+	</article>
+
+	<!-- 下方评论区：Twikoo（复用骨架自带组件：懒加载 + Swup 钩子 + 本地 SDK） -->
+	<section class="comments-section" aria-label="评论">
+		<header class="comments-section__head">
+			<h2>
+				<svg
+					class="lucide"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+					></path>
+				</svg>
+				评论
+			</h2>
+		</header>
+		<Twikoo path="/guestbook/" />
+	</section>
 </MainGridLayout>
