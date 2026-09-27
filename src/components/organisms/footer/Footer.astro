@@ -36,56 +36,93 @@ if (footerConfig.enable) {
 }
 ---
 
-<!--<div class="border-t border-[var(--primary)] mx-16 border-dashed py-8 max-w-[var(--page-width)] flex flex-col items-center justify-center px-6">-->
-<div
-	class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"
->
-</div>
-<!--<div class="transition bg-[oklch(92%_0.01_var(--hue))] dark:bg-black rounded-2xl py-8 mt-4 mb-8 flex flex-col items-center justify-center px-6">-->
-<div
-	class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6"
->
-	<div class="transition text-50 text-sm text-center">
-		{customFooterHtml && <div class="mb-2" set:html={customFooterHtml} />}
-
-		<div class="mb-2">
-			&copy; <span id="copyright-year">{currentYear}</span>
-			{profileConfig.name}. All Rights Reserved. /
+<!-- FlatPaper 风格页脚：左侧版权，右侧 Powered by + 链接行（footer.ejs 的 .site-footer 结构） -->
+<footer class="site-footer">
+	<span class="site-footer__left">
+		&copy; <span id="copyright-year">{currentYear}</span>
+		{profileConfig.name}
+	</span>
+	<span class="site-footer__right">
+		{customFooterHtml && (
+			<span class="site-footer__row" set:html={customFooterHtml} />
+		)}
+		<span class="site-footer__row">
+			Powered by
 			<a
-				class="transition link text-[var(--primary)] font-medium"
+				class="transition link"
+				target="_blank"
+				href="https://github.com/LyraVoid/Mizuki">Mizuki</a
+			>
+		</span>
+		<span class="site-footer__row">
+			<a
+				class="transition link"
 				href={url("rss/")}
-				onclick={`event.preventDefault(); navigateToPage('${url("rss/")}')`}
-				>RSS</a
-			> /
+				onclick={`event.preventDefault(); navigateToPage('${url("rss/")}')`}>RSS</a
+			>
+			<span class="site-footer__separator">·</span>
 			<a
-				class="transition link text-[var(--primary)] font-medium"
+				class="transition link"
 				href={url("atom/")}
-				onclick={`event.preventDefault(); navigateToPage('${url("atom/")}')`}
-				>Atom</a
-			> /
+				onclick={`event.preventDefault(); navigateToPage('${url("atom/")}')`}>Atom</a
+			>
+			<span class="site-footer__separator">·</span>
 			<a
-				class="transition link text-[var(--primary)] font-medium"
+				class="transition link"
 				target="_blank"
 				href={url("sitemap-index.xml")}>Sitemap</a
 			>
-		</div>
+		</span>
+	</span>
+</footer>
 
-		<div>
-			Powered by
-			<a
-				class="transition link text-[var(--primary)] font-medium"
-				target="_blank"
-				href="https://astro.build">Astro</a
-			> &
-			<a
-				class="transition link text-[var(--primary)] font-medium"
-				target="_blank"
-				href="https://github.com/LyraVoid/Mizuki">Mizuki</a
-			>&nbsp; Version <a
-				class="transition link text-[var(--primary)] font-medium"
-				target="_blank"
-				href="https://github.com/LyraVoid/Mizuki">9.0</a
-			>
-		</div>
-	</div>
-</div>
+<style>
+	/* 移植 FlatPaper footer.styl（变量映射：--dash→--paper-dash、--muted 同名、
+	   --color-accent-strong→--fp-accent、--color-accent-muted→--fp-accent-muted） */
+	.site-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 20px;
+		margin-top: 36px;
+		margin-bottom: 24px;
+		padding: 18px 0 0;
+		border-top: 1px dashed var(--paper-dash);
+		color: var(--muted);
+		font-size: 12px;
+		line-height: 1.8;
+	}
+
+	.site-footer__left {
+		text-align: left;
+	}
+
+	.site-footer__right {
+		display: grid;
+		justify-items: end;
+		gap: 2px;
+		text-align: right;
+	}
+
+	.site-footer__row {
+		display: block;
+	}
+
+	.site-footer__separator {
+		opacity: 0.68;
+		margin-inline: 0.35em;
+	}
+
+	.site-footer a {
+		transition: color 0.15s ease;
+		color: inherit;
+	}
+
+	.site-footer a:hover {
+		color: var(--fp-accent);
+	}
+
+	:global(html.dark) .site-footer a:hover {
+		color: var(--fp-accent-muted);
+	}
+</style>
