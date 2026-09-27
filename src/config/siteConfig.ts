@@ -59,7 +59,7 @@ export const siteConfig: SiteConfig = {
 		enable: true,
 		// 背景图；留空则用纯纸张底（FlatPaper 默认）。可写多张，脚本会随机挑一张
 		// 照搬 homulilly：bg-homura-2.webp（已本地化到 /assets/home/）
-		images: ["/assets/home/hero-bg.webp"],
+		images: [] /* 暂时置空：hero-bg.webp 因二进制损坏导致 astro build 失败（NoImageMetadata），改用 FlatPaper 纯纸张底 */,
 		// 照搬 homulilly：home-hero--mobile-image，移动端同样使用背景图
 		mobileImage: true,
 		// 背景图上下遮罩浓度 [上, 下]，0~1（与 homulilly 一致）
