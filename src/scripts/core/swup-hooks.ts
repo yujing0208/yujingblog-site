@@ -72,6 +72,7 @@ export class SwupHooksManager {
 		if (!window.swup) {
 			return;
 		}
+		this.registerLayoutGuardHook();
 		this.registerScrollTopHook();
 		this.registerLinkClickHook();
 		this.registerContentReplaceHook();
@@ -253,6 +254,63 @@ export class SwupHooksManager {
 	}
 
 	// ==================== 私有辅助方法 ====================
+
+	/**
+	 * 跨布局导航守卫（兜底）
+	 * 手账首页(.paper-shell)与普通页面(#main-grid)的 DOM 骨架不同，Swup 只替换
+	 * <main>，跨布局导航会导致页面结构残缺（回首页丢 hero/壳、进文章页丢网格）。
+	 * astro.config.mjs 的 ignore 选项已拦截链接点击与 swup.navigate()，
+	 * 但 popstate（浏览器后退/前进）在 swup 内部直接 createVisit+performNavigation，
+	 * 绕过 ignoreVisit 检查 —— 必须在 visit:start 最早的钩子点兜底拦截。
+	 */
+	private registerLayoutGuardHook(): void {
+		const hooks = window.swup!.hooks as unknown as {
+			before?: (
+				event: string,
+				handler: (visit: {
+					to: { url: string; hash?: string };
+					history: { popstate: boolean };
+				}) => boolean,
+			) => void;
+		};
+		if (typeof hooks.before !== "function") {
+			return;
+		}
+		hooks.before("visit:start", (visit) => {
+			const targetUrl = visit?.to?.url || "";
+			if (!this.isCrossLayoutNavigation(targetUrl)) {
+				return true;
+			}
+			console.log(
+				"SwupHooks: 跨布局导航，回退整页加载:",
+				targetUrl,
+			);
+			if (visit?.history?.popstate) {
+				// 浏览器后退/前进：地址栏已变为目标 URL，直接重载当前条目
+				window.location.reload();
+			} else {
+				// 普通导航：中止 swup，整页加载目标页
+				window.location.assign(targetUrl + (visit?.to?.hash || ""));
+			}
+			return false;
+		});
+	}
+
+	/**
+	 * 判断目标 URL 与当前页面是否属于不同布局
+	 * 布局判定：站点根路径("/")为手账首页(paper 布局)，其余页面为网格布局
+	 */
+	private isCrossLayoutNavigation(targetUrl: string): boolean {
+		try {
+			const path = String(targetUrl).split("#")[0].split("?")[0];
+			const targetIsPaperHome = path.replace(/^\/+|\/+$/g, "") === "";
+			const currentIsPaperHome =
+				!!document.querySelector(".paper-shell");
+			return targetIsPaperHome !== currentIsPaperHome;
+		} catch {
+			return false;
+		}
+	}
 
 	/**
 	 * 处理链接点击时的 navbar 隐藏

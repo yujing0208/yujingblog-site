@@ -30,7 +30,6 @@ import { rehypeImageWidth } from "./src/plugins/rehype-image-width.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypeWrapTable } from "./src/plugins/rehype-wrap-table.mjs";
 import { remarkContent } from "./src/plugins/remark-content.mjs";
-import { remarkGithubCard } from "./src/plugins/remark-github-card.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-colons.mjs";
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
@@ -125,17 +124,27 @@ export default defineConfig({
 					: false,
 			updateBodyClass: false,
 			globalInstance: true,
-			// 滚动相关配置优化
-			resolveUrl: (url) => url,
-			animateHistoryBrowsing: false,
-			skipPopStateHandling: (event) => {
-				// 跳过锚点链接的处理，让浏览器原生处理
-				return (
-					event.state &&
-					event.state.url &&
-					event.state.url.includes("#")
-				);
+			// 跨布局导航保护（修复：从其他页面返回首页偶发显示异常，需手动刷新）：
+			// 手账首页(PaperHomeLayout)与其他页面(MainGridLayout)的 DOM 骨架完全不同
+			// （.paper-shell 三栏 vs #main-grid 网格），而 Swup 只替换 <main> 元素，
+			// 跨布局换页时外层壳无法凭空生成 —— 回首页丢 hero/壳、进文章页丢侧栏网格。
+			// ignore 返回 true 时 Swup 完全不接管该导航（官方行为：浏览器整页加载）。
+			// 注意：此函数会被序列化进客户端脚本，必须自包含、不能引用外部变量；
+			// 仅匹配站点根路径("/")为手账首页，若未来改为子路径部署需同步调整。
+			ignore: (targetUrl) => {
+				try {
+					const path = String(targetUrl).split("#")[0].split("?")[0];
+					const targetIsPaperHome = path.replace(/^\/+|\/+$/g, "") === "";
+					const currentIsPaperHome =
+						!!document.querySelector(".paper-shell");
+					return targetIsPaperHome !== currentIsPaperHome;
+				} catch {
+					return false;
+				}
 			},
+			// 注：原 resolveUrl / animateHistoryBrowsing / skipPopStateHandling
+			// 三项不在 @swup/astro 1.8 支持的选项列表中（一直被静默忽略），
+			// 已移除以免误导；popstate 跨布局兜底见 src/scripts/core/swup-hooks.ts。
 		}),
 		icon({
 			include: {
@@ -199,12 +208,11 @@ export default defineConfig({
 	],
 	markdown: {
 		processor: unified({
-		remarkPlugins: [
-			remarkMath,
-			remarkContent,
-			remarkFixGithubAdmonitions,
-			remarkGithubCard,
-			remarkDirective,
+			remarkPlugins: [
+				remarkMath,
+				remarkContent,
+				remarkFixGithubAdmonitions,
+				remarkDirective,
 				remarkEscapeNumericColons,
 				remarkSectionize,
 				parseDirectiveNode,
