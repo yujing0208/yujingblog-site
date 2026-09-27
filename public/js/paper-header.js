@@ -264,6 +264,72 @@
 		});
 	}
 
+	/* ---------------- 首页开屏（照搬 main.js 963-1120 hero 段） ---------------- */
+	/* 组件已输出 data-hero-images / data-hero-cta-backgrounds / data-hero-scroll
+	 * 三个钩子，这里照搬原版消费它们：
+	 *   · data-hero-images        >1 张时随机换 --hero-bg-image（背景图随机）
+	 *   · data-hero-cta-backgrounds >1 张时随机换 --hero-cta-bg（贴纸 9 选 1）
+	 *   · data-hero-scroll        点击平滑滚到首页内容区
+	 * 本站锚点：原版 #flatpaper-home-content → 本站 #paper-home-content。 */
+	function initHomeHero() {
+		var hero = document.querySelector(".home-hero");
+		if (!hero) return;
+
+		function parseImageList(raw) {
+			var images = [];
+			try { images = JSON.parse(raw); } catch (e) { images = []; }
+			return images.filter(function (image) {
+				return typeof image === "string" && image;
+			});
+		}
+
+		function applyRandomHeroImage() {
+			var rawImages = hero.getAttribute("data-hero-images");
+			if (!rawImages) return;
+			var images = parseImageList(rawImages);
+			if (images.length < 2) return;
+			var selected = images[Math.floor(Math.random() * images.length)];
+			var next = 'url("' + selected.replace(/"/g, '\\"') + '")';
+			// 服务端已内联第一张；命中同一张就不写，省一次无谓的重排
+			if (hero.style.getPropertyValue("--hero-bg-image").trim() === next) return;
+			hero.style.setProperty("--hero-bg-image", next);
+		}
+
+		function applyRandomHeroCtaBackground() {
+			var trigger = hero.querySelector("[data-hero-cta-backgrounds]");
+			if (!trigger) return;
+			var rawImages = trigger.getAttribute("data-hero-cta-backgrounds");
+			if (!rawImages) return;
+			var images = parseImageList(rawImages);
+			if (images.length < 2) return;
+			var selected = images[Math.floor(Math.random() * images.length)];
+			var next = 'url("' + selected.replace(/"/g, '\\"') + '")';
+			if (trigger.style.getPropertyValue("--hero-cta-bg").trim() === next) return;
+			trigger.style.setProperty("--hero-cta-bg", next);
+		}
+
+		applyRandomHeroImage();
+		applyRandomHeroCtaBackground();
+
+		// 下拉纸签：平滑滚到首页内容区（原版 scrollToHome 的简化等价实现）
+		hero.querySelectorAll("[data-hero-scroll]").forEach(function (link) {
+			if (link.dataset.paperHeroBound) return;
+			link.dataset.paperHeroBound = "1";
+			link.addEventListener("click", function (event) {
+				var id = (link.getAttribute("href") || "").replace(/^#/, "");
+				var target = id ? document.getElementById(id) : null;
+				if (!target) return;
+				event.preventDefault();
+				var header = document.querySelector(".site-header");
+				var offset = header ? header.getBoundingClientRect().height + 56 : 56;
+				window.scrollTo({
+					top: Math.max(0, target.getBoundingClientRect().top + window.pageYOffset - offset),
+					behavior: "smooth",
+				});
+			});
+		});
+	}
+
 	function initAll() {
 		initThemeToggle();
 		initAccentPicker();
@@ -273,6 +339,7 @@
 		initBrandMenu();
 		initSearchOpen();
 		initEscape();
+		initHomeHero();
 	}
 
 	if (document.readyState === "loading") {
