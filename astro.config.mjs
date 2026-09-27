@@ -40,12 +40,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * dist 内非 ASCII 路径段 → percent-encoded 形式（构建后处理）。
+ * dist 非 ASCII 路径 → Vercel routes 修复（构建后处理，不重命名产物）。
  *
- * 背景：Vercel 静态路由以「原始请求串（percent-encoded）」字面匹配产物文件名，
- * 中文目录（/posts/中文/、/tag/中文/）永远无法命中 —— 实测全站中文文章页
- * 长期 404。把产物文件名编码化后，与浏览器发出的编码请求字面一致，即可命中。
- * 页面内 href 保持原样不改：浏览器请求非 ASCII href 时会自动 percent-encode。
+ * Round 6（2026-09-28）线上探针实证的 edge 匹配模型：
+ *   - routes src 按「原始 percent-encoded 请求串」字面匹配（S2 命中）；
+ *   - routes dest 在文件系统查找前会被解码/规范化（S1 ASCII dest 命中；
+ *     S5 编码名 dest 404 —— 指向编码名文件的 dest 永远失配）。
+ *   - 因此旧「产物重命名为编码名」路线必然 404（Round 4/4b 失败的根因）。
+ * 新模型：产物保留原始中文名，src 仍写编码请求串，dest 写解码原路径
+ * —— dest 解码后字面命中中文名产物。页面内 href 无需改动（浏览器自动编码）。
  */
 function encodeNonAsciiDistPaths() {
 	return {
@@ -58,9 +61,9 @@ function encodeNonAsciiDistPaths() {
 					name.replace(/[^\x00-\x7F]+/g, (m) => encodeURIComponent(m));
 				const escapeRegex = (s) =>
 					s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-				// 重命名事件：parentRel 为「当时（尚未被祖先改名污染）」的相对目录，原始段形式
+				// 记录所有含非 ASCII 段的相对路径（不重命名，产物保留原始中文名）
 				const events = [];
-				let renamed = 0;
+				let kept = 0;
 				const walk = (dirPath, parentRel) => {
 					let entries;
 					try {
@@ -69,51 +72,39 @@ function encodeNonAsciiDistPaths() {
 						return;
 					}
 					for (const entry of entries) {
-						const full = path.join(dirPath, entry.name);
-						// 后序处理：先递归子目录，再重命名自身（父目录最后改名，路径不失效）
-						if (entry.isDirectory()) walk(full, parentRel ? parentRel + "/" + entry.name : entry.name);
-						if (!hasNonAscii(entry.name)) continue;
-						const encoded = encodeSegment(entry.name);
-						if (encoded === entry.name) continue;
-						const target = path.join(dirPath, encoded);
-						if (fs.existsSync(target)) continue;
-						fs.renameSync(full, target);
-						events.push({ parentRel, origName: entry.name, encName: encoded, isDir: entry.isDirectory() });
-						renamed++;
+						const rel = parentRel ? parentRel + "/" + entry.name : entry.name;
+						if (entry.isDirectory()) walk(path.join(dirPath, entry.name), rel);
+						if (!/[^\x00-\x7F]/.test(rel)) continue;
+						events.push({ rel, isDir: entry.isDirectory() });
+						kept++;
 					}
 				};
 				walk(base, "");
-				if (renamed > 0) {
-					// 生成 Vercel Build Output v3 配置片段：
-					// routes 以「原始 percent-encoded 请求串」字面匹配产物（dest 为编码路径的 index.html）；
-					// overrides 把解码后的中文请求路径映射到编码产物文件（服务端解码匹配时兜底）。
+				if (kept > 0) {
+					// 生成 Vercel Build Output v3 路由：
+					// src = 编码请求串（edge 原样匹配），dest = 解码原路径（dest 查找层会解码）。
 					const routes = [];
 					const overrides = {};
 					for (const ev of events) {
-						const encParent = ev.parentRel
-							? ev.parentRel.split("/").map(encodeSegment).join("/")
-							: "";
-						const origRel = ev.parentRel ? ev.parentRel + "/" + ev.origName : ev.origName;
-						const encRel = encParent ? encParent + "/" + ev.encName : ev.encName;
-						const destBase = "/" + encRel + (ev.isDir ? "/index.html" : "");
-						routes.push({
-							src: "^" + escapeRegex("/" + encRel + "/") + "$",
-							dest: destBase,
-						});
+						const encRel = ev.rel.split("/").map(encodeSegment).join("/");
+						const dest = "/" + ev.rel + (ev.isDir ? "/index.html" : "");
 						if (ev.isDir) {
-							overrides[encRel + "/index.html"] = { path: origRel + "/index.html" };
+							routes.push({ src: "^" + escapeRegex("/" + encRel + "/") + "$", dest });
+							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
+							routes.push({ src: "^" + escapeRegex("/" + encRel + "/") + "index\\.html$", dest });
+						} else {
+							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
 						}
 					}
-				// ===== TEMP PROBE（2026-09-28 Round 6）— 定位 Vercel edge 匹配行为后删除 =====
-				// 背景：fp-debug.json 证实 routes/overrides 已生成且 workflow 已合并进 config.json，
-				// 但中文路由仍 404。本探针用 7 条额外路由二分定位：
-				//   S1  /__probe/s1     → /__probe/s1.txt       routes 是否生效 + dest 文件解析
-				//   S2  /tag/<编码中文>/ → /__probe/s2.txt       edge 是否按 percent-encoded 串匹配 src
-				//   S3  /tag/<中文原样>/ → /__probe/s3.txt       edge 是否按解码后路径匹配 src
-				//   S5  /__probe/s5     → /tag/<编码中文>/index.html   编码 dest 能否解析产物
-				//   S6  /__probe/s6     → /tag/<中文原样>/index.html   解码 dest 能否解析产物
-				//   S4  /__probe/s4     → /tag/<中文原样>/             解码目录 dest
-				//   S7  /tag/:pslug/    → /__probe/s7.txt       path-to-regexp 参数捕获（置最后）
+				// ===== TEMP PROBE（2026-09-28 Round 6）— 根因确认后删除 =====
+				// 线上探针实证：src 按编码请求串匹配（S2 命中）、dest 查找前解码（S1 命中/S5 404）。
+				// 本轮修复改为「产物保留中文名 + dest 解码原路径」，探针保留作回归信号：
+				//   S1  /__probe/s1  → /__probe/s1.txt   routes 生效 + ASCII dest 解析（应 200）
+				//   S2  /tag/<编码假标签>/ → s2.txt      src 编码匹配回归信号（应 200）
+				//   S3  /tag/<中文假标签>/ → s3.txt      src 解码匹配（预期 404，非匹配层）
+				//   S5  /__probe/s5  → /tag/<编码中文>/index.html  编码 dest（预期仍 404=对照）
+				//   S6  /__probe/s6  → /tag/<中文原样>/index.html  解码 dest（修复后应 200！）
+				//   S4  /__probe/s4  → /tag/<中文原样>/           解码目录 dest（修复后应 200！）
 				// 探针中文标签「探针标签」不在真实路由/产物中，绝不影响真实流量。
 				const PROBE_TAG = "探针标签";
 				const PROBE_BO = "博客折腾";
@@ -121,7 +112,6 @@ function encodeNonAsciiDistPaths() {
 				fs.writeFileSync(path.join(base, "__probe", "s1.txt"), "S1-ROUTES-FIRE-AND-DEST-RESOLVES", "utf8");
 				fs.writeFileSync(path.join(base, "__probe", "s2.txt"), "S2-ENCODED-SRC-HIT", "utf8");
 				fs.writeFileSync(path.join(base, "__probe", "s3.txt"), "S3-DECODED-SRC-HIT", "utf8");
-				fs.writeFileSync(path.join(base, "__probe", "s7.txt"), "S7-PARAM-SRC-HIT", "utf8");
 				routes.push(
 					{ src: "^/__probe/s1/?$", dest: "/__probe/s1.txt" },
 					{ src: "^/tag/" + encodeURIComponent(PROBE_TAG) + "/$", dest: "/__probe/s2.txt" },
@@ -129,7 +119,6 @@ function encodeNonAsciiDistPaths() {
 					{ src: "^/__probe/s5/?$", dest: "/tag/" + encodeURIComponent(PROBE_BO) + "/index.html" },
 					{ src: "^/__probe/s6/?$", dest: "/tag/" + PROBE_BO + "/index.html" },
 					{ src: "^/__probe/s4/?$", dest: "/tag/" + PROBE_BO + "/" },
-					{ src: "^/tag/:pslug/$", dest: "/__probe/s7.txt" },
 				);
 				// ===== END TEMP PROBE =====
 					fs.writeFileSync(
@@ -145,7 +134,8 @@ function encodeNonAsciiDistPaths() {
 						path.join(base, "fp-debug.json"),
 						JSON.stringify({
 							generatedAt: new Date().toISOString(),
-							renamed,
+							mode: "keep-original-names+decoded-dest",
+							kept,
 							routeCount: routes.length,
 							overrideCount: Object.keys(overrides).length,
 							sampleRoutes: routes.slice(0, 3),
@@ -153,7 +143,7 @@ function encodeNonAsciiDistPaths() {
 						"utf8",
 					);
 					logger.info(
-						`encode-non-ascii-dist-paths: renamed ${renamed} paths, generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
+						`encode-non-ascii-dist-paths: kept ${kept} non-ascii paths (no rename), generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
 					);
 				}
 			},
