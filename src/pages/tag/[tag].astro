@@ -22,11 +22,11 @@ export async function getStaticPaths() {
 	}
 	return [...map.entries()].map(([tag, entries]) => ({
 		params: { tag },
-		props: { entries },
+		props: { entries, tagName: tag },
 	}));
 }
 
-const { entries } = Astro.props;
+const { entries, tagName } = Astro.props;
 
 const items = entries.map((entry) => ({
 	url: getPostUrl(entry),
@@ -37,9 +37,9 @@ const items = entries.map((entry) => ({
 }));
 ---
 
-<MainGridLayout title={Astro.params.tag}>
+<MainGridLayout title={tagName}>
 	<section class="archive-paper">
-		<h1>{Astro.params.tag}</h1>
+		<h1>{tagName}</h1>
 		<div class="archive-list">
 			{items.map((item) => (
 				<a class="archive-item" href={item.url}>

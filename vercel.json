@@ -101,6 +101,20 @@
     }
   ],
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/tag/:tag/",
+      "destination": "/tag/:tag/index.html"
+    },
+    {
+      "source": "/category/:category/",
+      "destination": "/category/:category/index.html"
+    },
+    {
+      "source": "/posts/:slug*/",
+      "destination": "/posts/:slug*/index.html"
+    }
+  ],
   "env": {
     "ENABLE_CONTENT_SYNC": "true",
     "CONTENT_REPO_URL": "https://github.com/yujing0208/yujingblog-content.git"
