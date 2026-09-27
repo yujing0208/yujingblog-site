@@ -104,6 +104,34 @@ function encodeNonAsciiDistPaths() {
 							overrides[encRel + "/index.html"] = { path: origRel + "/index.html" };
 						}
 					}
+				// ===== TEMP PROBE（2026-09-28 Round 6）— 定位 Vercel edge 匹配行为后删除 =====
+				// 背景：fp-debug.json 证实 routes/overrides 已生成且 workflow 已合并进 config.json，
+				// 但中文路由仍 404。本探针用 7 条额外路由二分定位：
+				//   S1  /__probe/s1     → /__probe/s1.txt       routes 是否生效 + dest 文件解析
+				//   S2  /tag/<编码中文>/ → /__probe/s2.txt       edge 是否按 percent-encoded 串匹配 src
+				//   S3  /tag/<中文原样>/ → /__probe/s3.txt       edge 是否按解码后路径匹配 src
+				//   S5  /__probe/s5     → /tag/<编码中文>/index.html   编码 dest 能否解析产物
+				//   S6  /__probe/s6     → /tag/<中文原样>/index.html   解码 dest 能否解析产物
+				//   S4  /__probe/s4     → /tag/<中文原样>/             解码目录 dest
+				//   S7  /tag/:pslug/    → /__probe/s7.txt       path-to-regexp 参数捕获（置最后）
+				// 探针中文标签「探针标签」不在真实路由/产物中，绝不影响真实流量。
+				const PROBE_TAG = "探针标签";
+				const PROBE_BO = "博客折腾";
+				fs.mkdirSync(path.join(base, "__probe"), { recursive: true });
+				fs.writeFileSync(path.join(base, "__probe", "s1.txt"), "S1-ROUTES-FIRE-AND-DEST-RESOLVES", "utf8");
+				fs.writeFileSync(path.join(base, "__probe", "s2.txt"), "S2-ENCODED-SRC-HIT", "utf8");
+				fs.writeFileSync(path.join(base, "__probe", "s3.txt"), "S3-DECODED-SRC-HIT", "utf8");
+				fs.writeFileSync(path.join(base, "__probe", "s7.txt"), "S7-PARAM-SRC-HIT", "utf8");
+				routes.push(
+					{ src: "^/__probe/s1/?$", dest: "/__probe/s1.txt" },
+					{ src: "^/tag/" + encodeURIComponent(PROBE_TAG) + "/$", dest: "/__probe/s2.txt" },
+					{ src: "^/tag/" + PROBE_TAG + "/$", dest: "/__probe/s3.txt" },
+					{ src: "^/__probe/s5/?$", dest: "/tag/" + encodeURIComponent(PROBE_BO) + "/index.html" },
+					{ src: "^/__probe/s6/?$", dest: "/tag/" + PROBE_BO + "/index.html" },
+					{ src: "^/__probe/s4/?$", dest: "/tag/" + PROBE_BO + "/" },
+					{ src: "^/tag/:pslug/$", dest: "/__probe/s7.txt" },
+				);
+				// ===== END TEMP PROBE =====
 					fs.writeFileSync(
 						path.join(base, "__fp-routes.json"),
 						JSON.stringify({ routes, overrides }),
