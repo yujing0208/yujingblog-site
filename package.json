@@ -1,4 +1,4 @@
-{
+﻿{
 	"name": "mizuki",
 	"type": "module",
 	"version": "9.0",
@@ -14,7 +14,7 @@
 		"update-anime": "node scripts/update-anime.mjs",
 		"update-bangumi": "node scripts/update-bangumi.mjs",
 		"update-bilibili": "node scripts/update-bilibili.mjs",
-		"build": "node scripts/update-anime.mjs && astro build && pagefind --site dist",
+		"build": "(node scripts/update-anime.mjs || true) && astro build && pagefind --site dist",
 		"submit": "node scripts/indexnow-submit.js",
 		"preview": "astro preview",
 		"astro": "astro",
