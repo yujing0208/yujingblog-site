@@ -35,6 +35,56 @@ import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-c
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkWikiLink } from "./src/plugins/remark-wiki-link.mjs";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+/**
+ * dist 内非 ASCII 路径段 → percent-encoded 形式（构建后处理）。
+ *
+ * 背景：Vercel 静态路由以「原始请求串（percent-encoded）」字面匹配产物文件名，
+ * 中文目录（/posts/中文/、/tag/中文/）永远无法命中 —— 实测全站中文文章页
+ * 长期 404。把产物文件名编码化后，与浏览器发出的编码请求字面一致，即可命中。
+ * 页面内 href 保持原样不改：浏览器请求非 ASCII href 时会自动 percent-encode。
+ */
+function encodeNonAsciiDistPaths() {
+	return {
+		name: "encode-non-ascii-dist-paths",
+		hooks: {
+			"astro:build:done": async ({ dir, logger }) => {
+				const base = fileURLToPath(dir);
+				const hasNonAscii = (s) => /[^\x00-\x7F]/.test(s);
+				const encodeSegment = (name) =>
+					name.replace(/[^\x00-\x7F]+/g, (m) => encodeURIComponent(m));
+				let renamed = 0;
+				const walk = (dirPath) => {
+					let entries;
+					try {
+						entries = fs.readdirSync(dirPath, { withFileTypes: true });
+					} catch {
+						return;
+					}
+					for (const entry of entries) {
+						const full = path.join(dirPath, entry.name);
+						// 后序处理：先递归子目录，再重命名自身（父目录最后改名，路径不失效）
+						if (entry.isDirectory()) walk(full);
+						if (!hasNonAscii(entry.name)) continue;
+						const encoded = encodeSegment(entry.name);
+						if (encoded === entry.name) continue;
+						const target = path.join(dirPath, encoded);
+						if (fs.existsSync(target)) continue;
+						fs.renameSync(full, target);
+						renamed++;
+					}
+				};
+				walk(base);
+				if (renamed > 0) {
+					logger.info(`encode-non-ascii-dist-paths: renamed ${renamed} paths`);
+				}
+			},
+		},
+	};
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -100,6 +150,7 @@ export default defineConfig({
 	},
 
 	integrations: [
+		encodeNonAsciiDistPaths(),
 		umami({
 			shareUrl: 'https://cloud.umami.is/share/eq6I2iWnakVCH2Rt',
 		}),
