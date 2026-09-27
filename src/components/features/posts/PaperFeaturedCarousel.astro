@@ -26,6 +26,7 @@
  *   mouseenter 暂停、mouseleave 恢复（原版行为）。
  */
 import { Icon } from "astro-icon/components";
+import { getCategoryUrl } from "@/utils/url-utils";
 
 interface FeaturedItem {
 	slug: string;
@@ -79,7 +80,7 @@ const hasMultiple = items.length > 1;
 								{post.category && (
 									<span class="meta-cat">
 										<Icon name="material-symbols:folder-outline" class="meta-line-icon meta-line-icon--folder" is:inline />
-										<a class="meta-cat-link" href={`/archive/?category=${encodeURIComponent(post.category)}`}>
+										<a class="meta-cat-link" href={getCategoryUrl(post.category)}>
 											{post.category}
 										</a>
 									</span>

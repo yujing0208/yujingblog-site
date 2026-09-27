@@ -1,0 +1,33 @@
+---
+// 分类索引页 —— 1:1 移植 flatpaper layout/categories.ejs：
+//   .taxonomy-paper 纸卡 + h1「分类」+ .taxonomy-grid 彩点分类卡
+//   （dot-N 彩点 + 分类名 + 文章数 em，虚线边框 warm 底）
+// 样式见 src/styles/paper-archive.css（archive-taxonomy.styl + categories-sidebar.styl 移植段）。
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getCategoryList } from "../utils/content-utils";
+
+import "../styles/paper-archive.css";
+
+const categories = await getCategoryList();
+---
+
+<MainGridLayout title={i18n(I18nKey.categories)}>
+	<section class="taxonomy-paper">
+		<h1>{i18n(I18nKey.categories)}</h1>
+		{categories.length ? (
+			<div class="taxonomy-grid">
+				{categories.map((category, index) => (
+					<a class="taxonomy-card" href={category.url}>
+						<span class={`dot dot-${index % 4}`} />
+						<strong>{category.name}</strong>
+						<em>{category.count} 篇</em>
+					</a>
+				))}
+			</div>
+		) : (
+			<p class="empty-state">暂无分类</p>
+		)}
+	</section>
+</MainGridLayout>

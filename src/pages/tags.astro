@@ -1,0 +1,44 @@
+---
+// 标签索引页 —— 1:1 移植 flatpaper layout/tags.ejs：
+//   .taxonomy-paper 纸卡 + h1「标签」+ .tag-cloud 胶带纸片 chip 云
+//   chip 按 index%6 上色（tag-chip-0..5），按文章数分 4 档大小（tag-size-1..4）
+// 样式见 src/styles/paper-archive.css（tags.styl 移植段）。
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getTagList } from "../utils/content-utils";
+import { getTagUrl } from "../utils/url-utils";
+
+import "../styles/paper-archive.css";
+
+const tags = await getTagList();
+
+// 照搬 tags.ejs sizeBucket：按文章数把标签分 4 档，全员同数时都取 2 档
+const counts = tags.map((t) => t.count);
+const maxCount = counts.length ? Math.max(...counts) : 0;
+const minCount = counts.length ? Math.min(...counts) : 0;
+const sizeBucket = (n: number) =>
+	maxCount === minCount
+		? 2
+		: Math.round(1 + (3 * (n - minCount)) / (maxCount - minCount));
+---
+
+<MainGridLayout title={i18n(I18nKey.tags)}>
+	<section class="taxonomy-paper">
+		<h1>{i18n(I18nKey.tags)}</h1>
+		{tags.length ? (
+			<div class="tag-cloud">
+				{tags.map((tag, index) => (
+					<a
+						class={`tag-chip tag-chip-${index % 6} tag-size-${sizeBucket(tag.count)}`}
+						href={getTagUrl(tag.name)}
+					>
+						{tag.name}
+					</a>
+				))}
+			</div>
+		) : (
+			<p class="empty-state">暂无标签</p>
+		)}
+	</section>
+</MainGridLayout>

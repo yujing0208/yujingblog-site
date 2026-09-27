@@ -1,0 +1,53 @@
+---
+// 单分类页 —— 1:1 移植 flatpaper layout/category.ejs（复用 archive-list 结构）：
+//   .archive-paper 纸卡 + h1(分类名) + .archive-list 平铺行（日期/标题/箭头）
+// 样式见 src/styles/paper-archive.css（Round 3 已移植）。
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPosts } from "../../utils/content-utils";
+import { getPostUrl } from "../../utils/url-utils";
+
+import "../../styles/paper-archive.css";
+
+export async function getStaticPaths() {
+	const posts = await getSortedPosts();
+	const map = new Map<string, typeof posts>();
+	for (const entry of posts) {
+		if (entry.data.published === false) continue;
+		const raw = entry.data.category;
+		if (!raw) continue;
+		const name = String(raw).trim();
+		if (!name) continue;
+		if (!map.has(name)) map.set(name, []);
+		map.get(name)!.push(entry);
+	}
+	return [...map.entries()].map(([category, entries]) => ({
+		params: { category },
+		props: { entries },
+	}));
+}
+
+const { entries } = Astro.props;
+
+const items = entries.map((entry) => ({
+	url: getPostUrl(entry),
+	title: entry.data.title,
+	date: entry.data.published
+		? new Date(entry.data.published).toISOString().slice(0, 10)
+		: "",
+}));
+---
+
+<MainGridLayout title={Astro.params.category}>
+	<section class="archive-paper">
+		<h1>{Astro.params.category}</h1>
+		<div class="archive-list">
+			{items.map((item) => (
+				<a class="archive-item" href={item.url}>
+					<span>{item.date}</span>
+					<strong>{item.title}</strong>
+					<em />
+				</a>
+			))}
+		</div>
+	</section>
+</MainGridLayout>
