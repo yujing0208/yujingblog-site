@@ -113,6 +113,41 @@ jobs:
           npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
           npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
 
+      # 部署存储治理（2026-09-27）：
+      #   Hobby 免费版「部署存储」上限 10 GB。Astro 每次构建重新生成 /_astro/* 哈希资源
+      #   （单字体 TTF 约 3.8 MB），每次部署完整存一份、Vercel 不会自动回收 →
+      #   曾累积到 11.34 GB 触发超限，导致所有新部署被拒绝（Builds 显示 [0ms]）。
+      #   此处仅清理「本项目」旧部署，保留最近 5 次；失败不影响本次部署结果。
+      #   ⚠️ 必须按项目名过滤：同一账号下还有 waline-vercel / yujing-3d-home 等其他项目，
+      #      不加过滤会误删它们的部署。
+      - name: Prune old deployments (keep latest 5, this project only)
+        if: success()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          set -uo pipefail
+          KEEP=5
+          # ls 输出按时间倒序；先按项目名过滤出本项目部署，再跳过前 KEEP 条
+          urls=$(npx vercel ls --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes 2>/dev/null \
+            | grep -oE 'https://yujingblog-site-[a-z0-9]+-yujing\.vercel\.app' \
+            | awk '!seen[$0]++' | tail -n +$((KEEP + 1)) || true)
+          if [ -z "$urls" ]; then
+            echo "本项目没有需要清理的旧部署（总数 <= $KEEP）"
+            exit 0
+          fi
+          count=0
+          for url in $urls; do
+            echo "pruning: $url"
+            # 删除失败（如已是当前线上/已被清理）不阻断流程
+            if npx vercel remove "$url" --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" >/dev/null 2>&1; then
+              count=$((count + 1))
+            else
+              echo "  skip (remove failed): $url"
+            fi
+          done
+          echo "已清理 $count 个旧部署"
+
       - name: Success notify
         if: success()
         env:
