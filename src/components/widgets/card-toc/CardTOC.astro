@@ -22,8 +22,14 @@ interface Props {
 
 const { class: className, style } = Astro.props;
 const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
+
+// FlatPaper 对齐（2026-09-27 Round 5）：toc-card 只在文章页出现
+// （flatpaper sidebar-right.ejs：文章页换 toc-card+latest-posts，列表页无目录卡）。
+// 非文章路径渲染空占位，避免归档/标签页出现「当前页面没有目录」的空卡。
+const isPostPage = Astro.url.pathname.startsWith("/posts/");
 ---
 
+{isPostPage ? (
 <WidgetLayout
 	name={i18n(I18nKey.tableOfContents)}
 	id="card-toc"
@@ -36,6 +42,9 @@ const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 		</div>
 	</div>
 </WidgetLayout>
+) : (
+	<div class="hidden" aria-hidden="true"></div>
+)}
 
 <style>
 	.toc-scroll-container {
