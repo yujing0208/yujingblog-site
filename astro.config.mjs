@@ -56,8 +56,12 @@ function encodeNonAsciiDistPaths() {
 				const hasNonAscii = (s) => /[^\x00-\x7F]/.test(s);
 				const encodeSegment = (name) =>
 					name.replace(/[^\x00-\x7F]+/g, (m) => encodeURIComponent(m));
+				const escapeRegex = (s) =>
+					s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+				// 重命名事件：parentRel 为「当时（尚未被祖先改名污染）」的相对目录，原始段形式
+				const events = [];
 				let renamed = 0;
-				const walk = (dirPath) => {
+				const walk = (dirPath, parentRel) => {
 					let entries;
 					try {
 						entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -67,19 +71,47 @@ function encodeNonAsciiDistPaths() {
 					for (const entry of entries) {
 						const full = path.join(dirPath, entry.name);
 						// 后序处理：先递归子目录，再重命名自身（父目录最后改名，路径不失效）
-						if (entry.isDirectory()) walk(full);
+						if (entry.isDirectory()) walk(full, parentRel ? parentRel + "/" + entry.name : entry.name);
 						if (!hasNonAscii(entry.name)) continue;
 						const encoded = encodeSegment(entry.name);
 						if (encoded === entry.name) continue;
 						const target = path.join(dirPath, encoded);
 						if (fs.existsSync(target)) continue;
 						fs.renameSync(full, target);
+						events.push({ parentRel, origName: entry.name, encName: encoded, isDir: entry.isDirectory() });
 						renamed++;
 					}
 				};
-				walk(base);
+				walk(base, "");
 				if (renamed > 0) {
-					logger.info(`encode-non-ascii-dist-paths: renamed ${renamed} paths`);
+					// 生成 Vercel Build Output v3 配置片段：
+					// routes 以「原始 percent-encoded 请求串」字面匹配产物（dest 为编码路径的 index.html）；
+					// overrides 把解码后的中文请求路径映射到编码产物文件（服务端解码匹配时兜底）。
+					const routes = [];
+					const overrides = {};
+					for (const ev of events) {
+						const encParent = ev.parentRel
+							? ev.parentRel.split("/").map(encodeSegment).join("/")
+							: "";
+						const origRel = ev.parentRel ? ev.parentRel + "/" + ev.origName : ev.origName;
+						const encRel = encParent ? encParent + "/" + ev.encName : ev.encName;
+						const destBase = "/" + encRel + (ev.isDir ? "/index.html" : "");
+						routes.push({
+							src: "^" + escapeRegex("/" + encRel + "/") + "$",
+							dest: destBase,
+						});
+						if (ev.isDir) {
+							overrides[encRel + "/index.html"] = { path: origRel + "/index.html" };
+						}
+					}
+					fs.writeFileSync(
+						path.join(base, "__fp-routes.json"),
+						JSON.stringify({ routes, overrides }),
+						"utf8",
+					);
+					logger.info(
+						`encode-non-ascii-dist-paths: renamed ${renamed} paths, generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
+					);
 				}
 			},
 		},

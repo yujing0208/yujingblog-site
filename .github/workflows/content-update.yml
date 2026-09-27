@@ -80,6 +80,17 @@ jobs:
           mkdir -p .vercel/output/static
           cp -r dist/. .vercel/output/static/
           printf '{"version":3}' > .vercel/output/config.json
+          # 合并中文路径路由配置（encodeNonAsciiDistPaths integration 生成）：
+          #   routes    —— 原始 percent-encoded 请求串字面匹配编码产物（edge 层不解码时命中）
+          #   overrides —— 解码后的中文请求路径映射到编码产物文件（服务端解码匹配时兜底）
+          # 注意：本 workflow 不跑 vercel build，vercel.json 的 rewrites 不会进入部署配置，
+          #       中文路由必须显式写入 config.json（2026-09-27 实测教训）。
+          if [ -f .vercel/output/static/__fp-routes.json ]; then
+            node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('.vercel/output/config.json','utf8'));const x=JSON.parse(fs.readFileSync('.vercel/output/static/__fp-routes.json','utf8'));c.routes=x.routes||[];c.overrides=x.overrides||{};fs.writeFileSync('.vercel/output/config.json',JSON.stringify(c));console.log('config.json: routes='+(c.routes.length)+' overrides='+Object.keys(c.overrides).length)"
+            rm -f .vercel/output/static/__fp-routes.json
+          else
+            echo "no __fp-routes.json (no non-ASCII paths renamed)"
+          fi
           # 打包 api/*.js 为 serverless 函数：
           #   /api/chat          —— DeepSeek 代理（看板娘聊天）
           #   /api/editor-auth   —— 编辑器密码登录（下发签名 Cookie）
