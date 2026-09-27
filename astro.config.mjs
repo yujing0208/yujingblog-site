@@ -109,6 +109,21 @@ function encodeNonAsciiDistPaths() {
 						JSON.stringify({ routes, overrides }),
 						"utf8",
 					);
+					// 诊断探针（2026-09-27 Round 4b 后 routes/overrides 线上仍 404）：
+					// 把生成结果同步写一份到 dist 根的固定名文件，部署后直接
+					// GET /fp-debug.json 即可确认 Actions 构建是否生成路由数据，
+					// 免掉 GitHub Actions 日志无权限拿的僵局。确认根因后删除。
+					fs.writeFileSync(
+						path.join(base, "fp-debug.json"),
+						JSON.stringify({
+							generatedAt: new Date().toISOString(),
+							renamed,
+							routeCount: routes.length,
+							overrideCount: Object.keys(overrides).length,
+							sampleRoutes: routes.slice(0, 3),
+						}),
+						"utf8",
+					);
 					logger.info(
 						`encode-non-ascii-dist-paths: renamed ${renamed} paths, generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
 					);

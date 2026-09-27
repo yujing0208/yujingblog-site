@@ -425,6 +425,9 @@ export type WidgetComponentType =
 	| "calendar" // 日历组件
 	| "hitokoto" // 每日一言(Hitokoto)组件
 	| "umami-stats" // Umami 访问统计组件
+	| "paper-profile" // FlatPaper 手账风个人名片（内页侧栏）
+	| "paper-categories" // FlatPaper 手账风分类卡（内页侧栏）
+	| "paper-tags" // FlatPaper 手账风标签云卡（内页侧栏）
 	| "custom";
 
 export interface WidgetComponentConfig {

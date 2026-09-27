@@ -13,6 +13,9 @@ import Categories from "../widgets/categories/Categories.astro";
 import Hitokoto from "../widgets/hitokoto/Hitokoto.astro";
 import MusicPlayer from "../widgets/music-player/MusicPlayer.svelte";
 import { MusicSidebarWidget } from "../widgets/music-sidebar";
+import PaperProfileCard from "../widgets/sidebar/PaperProfileCard.astro";
+import PaperCategoriesCard from "../widgets/sidebar/PaperCategoriesCard.astro";
+import PaperTagsCard from "../widgets/sidebar/PaperTagsCard.astro";
 import Profile from "../widgets/profile/Profile.astro";
 import SiteStats from "../widgets/site-stats/SiteStats.astro";
 import Tags from "../widgets/tags/Tags.astro";
@@ -49,6 +52,9 @@ const componentMap: Record<string, unknown> = {
 	announcement: Announcement,
 	categories: Categories,
 	tags: Tags,
+	"paper-profile": PaperProfileCard,
+	"paper-categories": PaperCategoriesCard,
+	"paper-tags": PaperTagsCard,
 	toc: SidebarTOC,
 	"card-toc": CardTOC,
 	"music-player": MusicPlayer,
@@ -84,6 +90,29 @@ const desktopStickyComponents = showDesktop
 	? widgetManager.getComponentsByPosition("sticky", side, "desktop")
 	: [];
 
+// paper-profile 的站点统计（构建期算一次，flatpaper site_info 三列）
+const allRendered = [
+	...mobileTopComponents,
+	...mobileStickyComponents,
+	...tabletTopComponents,
+	...tabletStickyComponents,
+	...desktopTopComponents,
+	...desktopStickyComponents,
+];
+const needsPaperCounts = allRendered.some((c) => c.type === "paper-profile");
+const paperCounts = needsPaperCounts
+	? await (async () => {
+			const { getSortedPosts, getCategoryList, getTagList } =
+				await import("../../utils/content-utils");
+			const [posts, cats, tgs] = await Promise.all([
+				getSortedPosts(),
+				getCategoryList(),
+				getTagList(),
+			]);
+			return { posts: posts.length, categories: cats.length, tags: tgs.length };
+		})()
+	: { posts: 0, categories: 0, tags: 0 };
+
 function renderComponent(
 	component: WidgetComponentConfig,
 	index: number,
@@ -95,9 +124,19 @@ function renderComponent(
 		return null;
 	}
 
+	const props = buildComponentProps(component, index, headings);
+
+	// paper-profile 需要「文章/分类/标签」三列统计，构建期现算注入
+	// （FlatPaper profile-card 的 site_info 段）
+	if (component.type === "paper-profile") {
+		props.postCount = paperCounts.posts;
+		props.categoryCount = paperCounts.categories;
+		props.tagCount = paperCounts.tags;
+	}
+
 	return {
 		Component: ComponentToRender,
-		props: buildComponentProps(component, index, headings),
+		props,
 	};
 }
 ---

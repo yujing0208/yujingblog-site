@@ -23,6 +23,9 @@ export const WIDGET_COMPONENT_MAP = {
 	calendar: "../components/widgets/calendar/Calendar.astro",
 	hitokoto: "../components/widgets/hitokoto/Hitokoto.astro",
 	"umami-stats": "../components/widgets/umami-stats/UmamiStats.astro",
+	"paper-profile": "../components/widgets/sidebar/PaperProfileCard.astro",
+	"paper-categories": "../components/widgets/sidebar/PaperCategoriesCard.astro",
+	"paper-tags": "../components/widgets/sidebar/PaperTagsCard.astro",
 	custom: null,
 } as const;
 

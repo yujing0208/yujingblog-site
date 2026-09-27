@@ -93,6 +93,27 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			animationDelay: 200,
 		},
 		{
+			// FlatPaper 手账风个人名片（内页侧栏，flatpaper profile-card）
+			type: "paper-profile",
+			position: "top",
+			class: "onload-animation",
+			animationDelay: 0,
+		},
+		{
+			// FlatPaper 手账风分类卡（内页侧栏，flatpaper categories-card）
+			type: "paper-categories",
+			position: "top",
+			class: "onload-animation",
+			animationDelay: 50,
+		},
+		{
+			// FlatPaper 手账风标签云卡（内页侧栏，flatpaper tag-card）
+			type: "paper-tags",
+			position: "top",
+			class: "onload-animation",
+			animationDelay: 100,
+		},
+		{
 			// 组件类型：站点统计组件
 			type: "site-stats",
 			// 组件位置
@@ -120,12 +141,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	//   音乐组件放在「最近动态」下面（最近动态卡由 PaperHomeLayout 渲染在 RightSideBar 之后）。
 	components: {
 		left: [
-			"profile",
-			"announcement",
-			"tags",
+			// FlatPaper 化内页侧栏（2026-09-27 Round 5）：
+			// profile-card（名片+统计）→ categories-card（彩点分类）→ tag-card（胶带标签云）
+			// 对齐 flatpaper sidebar-right.ejs；card-toc 保留（文章页目录，对应 flatpaper 文章页 toc-card）
+			// announcement/hitokoto/umami-stats 从桌面内页侧栏撤下（drawer 移动端仍可见）
+			"paper-profile",
+			"paper-categories",
+			"paper-tags",
 			"card-toc",
-			"hitokoto",
-			"umami-stats",
 		],
 		right: ["music-sidebar"],
 		drawer: ["profile", "announcement", "music-sidebar", "categories", "tags"],
