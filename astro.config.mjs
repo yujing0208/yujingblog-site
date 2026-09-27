@@ -49,6 +49,13 @@ import { fileURLToPath } from "node:url";
  *   - 因此旧「产物重命名为编码名」路线必然 404（Round 4/4b 失败的根因）。
  * 新模型：产物保留原始中文名，src 仍写编码请求串，dest 写解码原路径
  * —— dest 解码后字面命中中文名产物。页面内 href 无需改动（浏览器自动编码）。
+ *
+ * Round 9 v2（2026-09-28）追加 404 回退：手工 Build Output 打包模式不会自动把
+ * 404.html 接为回退页。形态经 @vercel/routing-utils 实测预检：
+ *   routes.push({ src:"^(?:/(.*))$", dest:"/404.html", check:true })
+ * —— check:true 让引擎先查文件系统再重写（未命中才回退 404 页）；
+ * v1（{handle:"filesystem"} + {src,dest,status:404}）因「duplicate handle:
+ * filesystem」被平台整组拒绝，已回滚（详见 flatpaper-progress.md）。
  */
 function encodeNonAsciiDistPaths() {
 	return {
@@ -80,7 +87,7 @@ function encodeNonAsciiDistPaths() {
 					}
 				};
 				walk(base, "");
-				if (kept > 0) {
+				{
 					// 生成 Vercel Build Output v3 路由：
 					// src = 编码请求串（edge 原样匹配），dest = 解码原路径（dest 查找层会解码）。
 					const routes = [];
@@ -96,54 +103,24 @@ function encodeNonAsciiDistPaths() {
 							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
 						}
 					}
-				// ===== TEMP PROBE（2026-09-28 Round 6）— 根因确认后删除 =====
-				// 线上探针实证：src 按编码请求串匹配（S2 命中）、dest 查找前解码（S1 命中/S5 404）。
-				// 本轮修复改为「产物保留中文名 + dest 解码原路径」，探针保留作回归信号：
-				//   S1  /__probe/s1  → /__probe/s1.txt   routes 生效 + ASCII dest 解析（应 200）
-				//   S2  /tag/<编码假标签>/ → s2.txt      src 编码匹配回归信号（应 200）
-				//   S3  /tag/<中文假标签>/ → s3.txt      src 解码匹配（预期 404，非匹配层）
-				//   S5  /__probe/s5  → /tag/<编码中文>/index.html  编码 dest（预期仍 404=对照）
-				//   S6  /__probe/s6  → /tag/<中文原样>/index.html  解码 dest（修复后应 200！）
-				//   S4  /__probe/s4  → /tag/<中文原样>/           解码目录 dest（修复后应 200！）
-				// 探针中文标签「探针标签」不在真实路由/产物中，绝不影响真实流量。
-				const PROBE_TAG = "探针标签";
-				const PROBE_BO = "博客折腾";
-				fs.mkdirSync(path.join(base, "__probe"), { recursive: true });
-				fs.writeFileSync(path.join(base, "__probe", "s1.txt"), "S1-ROUTES-FIRE-AND-DEST-RESOLVES", "utf8");
-				fs.writeFileSync(path.join(base, "__probe", "s2.txt"), "S2-ENCODED-SRC-HIT", "utf8");
-				fs.writeFileSync(path.join(base, "__probe", "s3.txt"), "S3-DECODED-SRC-HIT", "utf8");
-				routes.push(
-					{ src: "^/__probe/s1/?$", dest: "/__probe/s1.txt" },
-					{ src: "^/tag/" + encodeURIComponent(PROBE_TAG) + "/$", dest: "/__probe/s2.txt" },
-					{ src: "^/tag/" + PROBE_TAG + "/$", dest: "/__probe/s3.txt" },
-					{ src: "^/__probe/s5/?$", dest: "/tag/" + encodeURIComponent(PROBE_BO) + "/index.html" },
-					{ src: "^/__probe/s6/?$", dest: "/tag/" + PROBE_BO + "/index.html" },
-					{ src: "^/__probe/s4/?$", dest: "/tag/" + PROBE_BO + "/" },
-				);
-				// ===== END TEMP PROBE =====
+				// ===== 404 回退接线（2026-09-28 Round 9 v2，经 @vercel/routing-utils 预检）=====
+				// 手工 Build Output 打包模式（workflow Package 步骤）不会自动接 404 回退。
+				// v1 教训（同日已回滚）：catch-all 不带 check:true 时，路由处理层会自动
+				// 展开插入 {handle:"filesystem"}，与手写的 handle 条目相撞触发
+				// 「duplicate handle: filesystem at most」→ 整组 routes 被拒 → 中文路由全灭。
+				// v2 正确形态（getTransformedRoutes 对 rewrites 的产物 + normalizeRoutes 放行）：
+				//   { src:"^(?:/(.*))$", dest:"/404.html", check:true }
+				//   check:true = 引擎在该路由处先查文件系统（ASCII 静态文件与 /api 函数照常命中），
+				//   未命中才重写到站点自定义 404 页；无 handle 条目、无 status 字段。
+				// 无论是否存在非 ASCII 路径都必须写入，故此段恒执行（404 回退始终需要）。
+				routes.push({ src: "^(?:/(.*))$", dest: "/404.html", check: true });
 					fs.writeFileSync(
 						path.join(base, "__fp-routes.json"),
 						JSON.stringify({ routes, overrides }),
 						"utf8",
 					);
-					// 诊断探针（2026-09-27 Round 4b 后 routes/overrides 线上仍 404）：
-					// 把生成结果同步写一份到 dist 根的固定名文件，部署后直接
-					// GET /fp-debug.json 即可确认 Actions 构建是否生成路由数据，
-					// 免掉 GitHub Actions 日志无权限拿的僵局。确认根因后删除。
-					fs.writeFileSync(
-						path.join(base, "fp-debug.json"),
-						JSON.stringify({
-							generatedAt: new Date().toISOString(),
-							mode: "keep-original-names+decoded-dest",
-							kept,
-							routeCount: routes.length,
-							overrideCount: Object.keys(overrides).length,
-							sampleRoutes: routes.slice(0, 3),
-						}),
-						"utf8",
-					);
 					logger.info(
-						`encode-non-ascii-dist-paths: kept ${kept} non-ascii paths (no rename), generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
+						`encode-non-ascii-dist-paths: kept ${kept} non-ascii paths (no rename), generated ${routes.length} routes (incl. 404 fallback w/ check) + ${Object.keys(overrides).length} overrides`,
 					);
 				}
 			},
