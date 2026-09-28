@@ -1,14 +1,15 @@
 name: Deploy Site
 
-# 站点部署主链路（唯一部署入口）
-# 触发：push 到 main 分支（方案 A：统一在 main 开发与推送）；或内容仓库通过 repository_dispatch 触发（type: deploy-site）
-# 职责：在 GitHub Actions 内构建，并用 Vercel Token 直接部署产物到 Vercel，
-#       不再 curl 触发 Vercel 二次构建。
-# ⚠️ 历史注记：Vercel 项目设置中「Git 自动部署」实际从未关闭，push 后 Vercel 自行构建并部署。
-# 2026-09-29 部署线决策（Round 12）：接受双线并行——Package 步骤改跑 vercel build，
-# 使 workflow 线产物与自动线完全同构（原生 404 fallback + 中文路径解码匹配 + api/ 函数），
-# 谁后完成谁占生产 alias 从此无害。VERCEL_TOKEN 失效期间 workflow 止步于 Link & Deploy，
-# 生产部署由自动线承接，不受影响。
+# 站点构建校验 + 部署存储治理链路
+# 触发：push 到 main 分支；或内容仓库通过 repository_dispatch 触发（type: deploy-site）
+# 2026-09-29 部署线决策（Round 12 终版）：生产部署统一由 Vercel Git 自动部署线承接
+#   （vercel build 产物：原生 404 fallback + 中文路径解码匹配 + api/ 函数，长期线上实证）。
+#   本 workflow 保留：内容同步 + astro build/pagefind 构建校验 + vercel build 产物验证
+#   （Package 步骤）+ 旧部署清理（Prune，if: always() 防存储超限死锁）。
+#   workflow 部署步已移除：deploy --prebuilt 对 vercel build 产物持续失败（Round 12 三轮实证：
+#   手动打包产物可部署（run 771）而 vercel build 产物不可（run 774/775），同版本 CLI、
+#   token 有效、存储已释放，原因因日志 403 无法取证）；且双线并行本身是混乱源。
+#   若需恢复 workflow 部署：git 历史保留完整部署步骤，另需先解决 vercel build 产物部署验证。
 # 需要 Secrets：
 #   VERCEL_TOKEN     —— Vercel 账户 Token（https://vercel.com/account/tokens）
 #   VERCEL_ORG_ID    —— 团队/账户 ID（Vercel 项目 Settings → General）
@@ -166,17 +167,8 @@ jobs:
           done
           echo "已清理 $count 个旧部署"
 
-      # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
-      - name: Link & Deploy to Vercel
-        id: deploy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          set -euo pipefail
-          npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
-          npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+      # Round 12 终版：Link & Deploy 步骤已移除（生产部署由 Vercel Git 自动部署线统一承接，
+      # 理由见文件头部决策注记）。
 
       - name: Success notify
         if: success()
