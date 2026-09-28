@@ -77,17 +77,44 @@ jobs:
       # Package Vercel Build Output：改跑官方 vercel build（2026-09-29 Round 12 部署线决策）。
       # 旧「手动打包 + 手写 config.json routes」路线被终结（Round 4b-10 实证）：
       #   - config.json routes 恒先于文件系统/函数层执行，catch-all 必遮蔽全站（v2/v3 事故）；
-      #   - Vercel Git 自动部署线（项目里一直开着）跑 vercel build，其产物原生含
-      #     404 fallback + 中文路径解码匹配 + api/ 函数，是唯一被线上实证正确的产物形态。
-      #   - 本步骤改跑 vercel build 后，workflow 线与自动线产物收敛为同一形态，双线竞争无害化；
-      #     astro.config.mjs 的 encodeNonAsciiDistPaths integration（v4 routes + __fp-routes.json）已同步删除。
+      #   - Vercel Git 自动部署线跑 vercel build，产物原生含 404 fallback + 中文路径解码匹配
+      #     + api/ 函数，是唯一被线上实证正确的产物形态；本步骤与其收敛，双线竞争无害化。
+      # 修复记录（Round 12 当轮）：首版直接 npx vercel build 在 CI 失败（日志 403 无法取证，
+      #   最可能为缺项目上下文），故先 vercel link 建立 .vercel 上下文再 build（与部署步同参，
+      #   VERCEL_TOKEN 已由 run 771 部署成功验证复活）；functions/ 缺失时回退旧版手动打包兜底。
       - name: Package Vercel Build Output (vercel build)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           set -euo pipefail
+          npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
           npx vercel build
           test -f .vercel/output/config.json || { echo "::error::vercel build: config.json missing"; exit 1; }
           test -f .vercel/output/static/index.html || { echo "::error::vercel build: static/index.html missing"; exit 1; }
-          test -d .vercel/output/functions || { echo "::error::vercel build: functions/ missing - api/* NOT packaged"; exit 1; }
+          # api/ 函数：vercel build 正常会自动打包；若 functions/ 缺失则回退旧版手动打包兜底
+          if [ ! -d .vercel/output/functions ] || [ -z "$(ls -A .vercel/output/functions 2>/dev/null)" ]; then
+            echo "functions/ missing or empty after vercel build - falling back to manual api/*.js packing"
+            shopt -s nullglob
+            packaged=0
+            for f in api/*.js; do
+              name="$(basename "$f" .js)"
+              dir=".vercel/output/functions/api/${name}.func"
+              mkdir -p "$dir"
+              cp "$f" "$dir/index.js"
+              printf '{"runtime":"nodejs22.x","handler":"index.js","launcherType":"Nodejs"}' > "$dir/.vc-config.json"
+              echo "packed function: /api/${name}"
+              packaged=$((packaged + 1))
+            done
+            if [ "$packaged" -eq 0 ]; then
+              echo "::error::api/ 下没有匹配到任何 *.js 函数，构建产物会缺失 serverless 函数"
+              exit 1
+            fi
+          else
+            echo "functions/ packaged by vercel build:"
+            find .vercel/output/functions -maxdepth 3 -name ".vc-config.json" | head -10
+          fi
           # 防御：若 vercel build 内部只跑 astro build 而非 package.json build 脚本，
           # dist 会被重建、pagefind 搜索索引丢失 —— 检测缺失则补跑并注入产物。
           if [ ! -d .vercel/output/static/pagefind ] && [ -d dist ]; then
