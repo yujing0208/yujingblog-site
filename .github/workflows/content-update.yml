@@ -79,9 +79,11 @@ jobs:
       #   - config.json routes 恒先于文件系统/函数层执行，catch-all 必遮蔽全站（v2/v3 事故）；
       #   - Vercel Git 自动部署线跑 vercel build，产物原生含 404 fallback + 中文路径解码匹配
       #     + api/ 函数，是唯一被线上实证正确的产物形态；本步骤与其收敛，双线竞争无害化。
-      # 修复记录（Round 12 当轮）：首版直接 npx vercel build 在 CI 失败（日志 403 无法取证，
-      #   最可能为缺项目上下文），故先 vercel link 建立 .vercel 上下文再 build（与部署步同参，
-      #   VERCEL_TOKEN 已由 run 771 部署成功验证复活）；functions/ 缺失时回退旧版手动打包兜底。
+      # 修复记录（Round 12 当轮，两轮 CI 实证 + 本地干净安装复现）：
+      #   vercel build（57/60.x）要求本地存在项目设置，裸跑报
+      #   "No Project Settings found locally. Run `vercel pull --yes`"；仅 link 不够。
+      #   故顺序为 link → pull → build（token 已由 run 771 部署成功验证可用）。
+      #   functions/ 缺失时回退旧版手动打包兜底。
       - name: Package Vercel Build Output (vercel build)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -90,6 +92,7 @@ jobs:
         run: |
           set -euo pipefail
           npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
+          npx vercel pull --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
           npx vercel build
           test -f .vercel/output/config.json || { echo "::error::vercel build: config.json missing"; exit 1; }
           test -f .vercel/output/static/index.html || { echo "::error::vercel build: static/index.html missing"; exit 1; }
