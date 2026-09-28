@@ -94,52 +94,20 @@ function encodeNonAsciiDistPaths() {
 							routes.push({ src: "^" + escapeRegex("/" + encRel + "/") + "index\\.html$", dest });
 						} else {
 							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
-						}
 					}
-				// ===== TEMP PROBE（2026-09-28 Round 6）— 根因确认后删除 =====
-				// 线上探针实证：src 按编码请求串匹配（S2 命中）、dest 查找前解码（S1 命中/S5 404）。
-				// 本轮修复改为「产物保留中文名 + dest 解码原路径」，探针保留作回归信号：
-				//   S1  /__probe/s1  → /__probe/s1.txt   routes 生效 + ASCII dest 解析（应 200）
-				//   S2  /tag/<编码假标签>/ → s2.txt      src 编码匹配回归信号（应 200）
-				//   S3  /tag/<中文假标签>/ → s3.txt      src 解码匹配（预期 404，非匹配层）
-				//   S5  /__probe/s5  → /tag/<编码中文>/index.html  编码 dest（预期仍 404=对照）
-				//   S6  /__probe/s6  → /tag/<中文原样>/index.html  解码 dest（修复后应 200！）
-				//   S4  /__probe/s4  → /tag/<中文原样>/           解码目录 dest（修复后应 200！）
-				// 探针中文标签「探针标签」不在真实路由/产物中，绝不影响真实流量。
-				const PROBE_TAG = "探针标签";
-				const PROBE_BO = "博客折腾";
-				fs.mkdirSync(path.join(base, "__probe"), { recursive: true });
-				fs.writeFileSync(path.join(base, "__probe", "s1.txt"), "S1-ROUTES-FIRE-AND-DEST-RESOLVES", "utf8");
-				fs.writeFileSync(path.join(base, "__probe", "s2.txt"), "S2-ENCODED-SRC-HIT", "utf8");
-				fs.writeFileSync(path.join(base, "__probe", "s3.txt"), "S3-DECODED-SRC-HIT", "utf8");
-				routes.push(
-					{ src: "^/__probe/s1/?$", dest: "/__probe/s1.txt" },
-					{ src: "^/tag/" + encodeURIComponent(PROBE_TAG) + "/$", dest: "/__probe/s2.txt" },
-					{ src: "^/tag/" + PROBE_TAG + "/$", dest: "/__probe/s3.txt" },
-					{ src: "^/__probe/s5/?$", dest: "/tag/" + encodeURIComponent(PROBE_BO) + "/index.html" },
-					{ src: "^/__probe/s6/?$", dest: "/tag/" + PROBE_BO + "/index.html" },
-					{ src: "^/__probe/s4/?$", dest: "/tag/" + PROBE_BO + "/" },
-				);
-				// ===== END TEMP PROBE =====
+				}
+				// ===== 404 fallback v4（2026-09-29 Round 11）=====
+				// 引擎实证（Round 9/10）：config.json routes 恒先于文件系统/函数层，
+				// 裸 catch-all 必遮蔽全站（v2 全 NOT_FOUND / v3 全吐 404 页）；
+				// dest=/404.html 是保留名永远 NOT_FOUND；dest=/404 干净路径可解析。
+				// 官方 Build Output v3：handle:"miss" = "check matches after every
+				// filesystem miss" —— 其后的路由只对文件系统未命中的请求生效。
+				// (?!/api/) 负向前瞻：即使 miss 语义被线上忽略，/api 三函数也不被吞。
+				routes.push({ handle: "miss" });
+				routes.push({ src: "^(?!/api/)(?:/(.*))$", dest: "/404" });
 					fs.writeFileSync(
 						path.join(base, "__fp-routes.json"),
 						JSON.stringify({ routes, overrides }),
-						"utf8",
-					);
-					// 诊断探针（2026-09-27 Round 4b 后 routes/overrides 线上仍 404）：
-					// 把生成结果同步写一份到 dist 根的固定名文件，部署后直接
-					// GET /fp-debug.json 即可确认 Actions 构建是否生成路由数据，
-					// 免掉 GitHub Actions 日志无权限拿的僵局。确认根因后删除。
-					fs.writeFileSync(
-						path.join(base, "fp-debug.json"),
-						JSON.stringify({
-							generatedAt: new Date().toISOString(),
-							mode: "keep-original-names+decoded-dest",
-							kept,
-							routeCount: routes.length,
-							overrideCount: Object.keys(overrides).length,
-							sampleRoutes: routes.slice(0, 3),
-						}),
 						"utf8",
 					);
 					logger.info(
