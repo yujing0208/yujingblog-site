@@ -35,89 +35,6 @@ import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-c
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkWikiLink } from "./src/plugins/remark-wiki-link.mjs";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-/**
- * dist 非 ASCII 路径 → Vercel routes 修复（构建后处理，不重命名产物）。
- *
- * Round 6（2026-09-28）线上探针实证的 edge 匹配模型：
- *   - routes src 按「原始 percent-encoded 请求串」字面匹配（S2 命中）；
- *   - routes dest 在文件系统查找前会被解码/规范化（S1 ASCII dest 命中；
- *     S5 编码名 dest 404 —— 指向编码名文件的 dest 永远失配）。
- *   - 因此旧「产物重命名为编码名」路线必然 404（Round 4/4b 失败的根因）。
- * 新模型：产物保留原始中文名，src 仍写编码请求串，dest 写解码原路径
- * —— dest 解码后字面命中中文名产物。页面内 href 无需改动（浏览器自动编码）。
- */
-function encodeNonAsciiDistPaths() {
-	return {
-		name: "encode-non-ascii-dist-paths",
-		hooks: {
-			"astro:build:done": async ({ dir, logger }) => {
-				const base = fileURLToPath(dir);
-				const hasNonAscii = (s) => /[^\x00-\x7F]/.test(s);
-				const encodeSegment = (name) =>
-					name.replace(/[^\x00-\x7F]+/g, (m) => encodeURIComponent(m));
-				const escapeRegex = (s) =>
-					s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-				// 记录所有含非 ASCII 段的相对路径（不重命名，产物保留原始中文名）
-				const events = [];
-				let kept = 0;
-				const walk = (dirPath, parentRel) => {
-					let entries;
-					try {
-						entries = fs.readdirSync(dirPath, { withFileTypes: true });
-					} catch {
-						return;
-					}
-					for (const entry of entries) {
-						const rel = parentRel ? parentRel + "/" + entry.name : entry.name;
-						if (entry.isDirectory()) walk(path.join(dirPath, entry.name), rel);
-						if (!/[^\x00-\x7F]/.test(rel)) continue;
-						events.push({ rel, isDir: entry.isDirectory() });
-						kept++;
-					}
-				};
-				walk(base, "");
-				if (kept > 0) {
-					// 生成 Vercel Build Output v3 路由：
-					// src = 编码请求串（edge 原样匹配），dest = 解码原路径（dest 查找层会解码）。
-					const routes = [];
-					const overrides = {};
-					for (const ev of events) {
-						const encRel = ev.rel.split("/").map(encodeSegment).join("/");
-						const dest = "/" + ev.rel + (ev.isDir ? "/index.html" : "");
-						if (ev.isDir) {
-							routes.push({ src: "^" + escapeRegex("/" + encRel + "/") + "$", dest });
-							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
-							routes.push({ src: "^" + escapeRegex("/" + encRel + "/") + "index\\.html$", dest });
-						} else {
-							routes.push({ src: "^" + escapeRegex("/" + encRel) + "$", dest });
-					}
-				}
-				// ===== 404 fallback v4（2026-09-29 Round 11）=====
-				// 引擎实证（Round 9/10）：config.json routes 恒先于文件系统/函数层，
-				// 裸 catch-all 必遮蔽全站（v2 全 NOT_FOUND / v3 全吐 404 页）；
-				// dest=/404.html 是保留名永远 NOT_FOUND；dest=/404 干净路径可解析。
-				// 官方 Build Output v3：handle:"miss" = "check matches after every
-				// filesystem miss" —— 其后的路由只对文件系统未命中的请求生效。
-				// (?!/api/) 负向前瞻：即使 miss 语义被线上忽略，/api 三函数也不被吞。
-				routes.push({ handle: "miss" });
-				routes.push({ src: "^(?!/api/)(?:/(.*))$", dest: "/404" });
-					fs.writeFileSync(
-						path.join(base, "__fp-routes.json"),
-						JSON.stringify({ routes, overrides }),
-						"utf8",
-					);
-					logger.info(
-						`encode-non-ascii-dist-paths: kept ${kept} non-ascii paths (no rename), generated ${routes.length} routes + ${Object.keys(overrides).length} overrides`,
-					);
-				}
-			},
-		},
-	};
-}
 
 // https://astro.build/config
 export default defineConfig({
@@ -183,7 +100,6 @@ export default defineConfig({
 	},
 
 	integrations: [
-		encodeNonAsciiDistPaths(),
 		umami({
 			shareUrl: 'https://cloud.umami.is/share/eq6I2iWnakVCH2Rt',
 		}),
