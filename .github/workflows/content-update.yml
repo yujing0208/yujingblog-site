@@ -128,27 +128,18 @@ jobs:
           fi
           node -e "const c=JSON.parse(require('fs').readFileSync('.vercel/output/config.json','utf8'));console.log('config.json: routes='+((c.routes||[]).length)+' functions='+Object.keys(c.functions||{}).length)"
 
-      # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
-      - name: Link & Deploy to Vercel
-        id: deploy
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          set -euo pipefail
-          npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
-          npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
-
-      # 部署存储治理（2026-09-27）：
+      # 部署存储治理（2026-09-27 引入 / 2026-09-29 Round 12 修正）：
       #   Hobby 免费版「部署存储」上限 10 GB。Astro 每次构建重新生成 /_astro/* 哈希资源
       #   （单字体 TTF 约 3.8 MB），每次部署完整存一份、Vercel 不会自动回收 →
       #   曾累积到 11.34 GB 触发超限，导致所有新部署被拒绝（Builds 显示 [0ms]）。
-      #   此处仅清理「本项目」旧部署，保留最近 5 次；失败不影响本次部署结果。
+      #   Round 12 发现死锁：本步骤原为 if: success() 且排在部署之后 —— 自 Round 9 起
+      #   workflow 每次都失败在部署步，prune 从未运行，存储再次顶满上限，部署持续被拒。
+      #   修正：if: always() + 移到部署之前（先清理后部署）。仅清理「本项目」旧部署，
+      #   保留最近 5 次；失败不影响后续步骤。
       #   ⚠️ 必须按项目名过滤：同一账号下还有 waline-vercel / yujing-3d-home 等其他项目，
       #      不加过滤会误删它们的部署。
       - name: Prune old deployments (keep latest 5, this project only)
-        if: success()
+        if: always()
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -174,6 +165,18 @@ jobs:
             fi
           done
           echo "已清理 $count 个旧部署"
+
+      # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
+      - name: Link & Deploy to Vercel
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          npx vercel link --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
+          npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
 
       - name: Success notify
         if: success()
