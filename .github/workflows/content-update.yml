@@ -4,7 +4,11 @@ name: Deploy Site
 # 触发：push 到 main 分支（方案 A：统一在 main 开发与推送）；或内容仓库通过 repository_dispatch 触发（type: deploy-site）
 # 职责：在 GitHub Actions 内构建，并用 Vercel Token 直接部署产物到 Vercel，
 #       不再 curl 触发 Vercel 二次构建。
-# ⚠️ 需配合在 Vercel 项目设置中「关闭 Git 自动部署」，否则 push 会部署两次。
+# ⚠️ 历史注记：Vercel 项目设置中「Git 自动部署」实际从未关闭，push 后 Vercel 自行构建并部署。
+# 2026-09-29 部署线决策（Round 12）：接受双线并行——Package 步骤改跑 vercel build，
+# 使 workflow 线产物与自动线完全同构（原生 404 fallback + 中文路径解码匹配 + api/ 函数），
+# 谁后完成谁占生产 alias 从此无害。VERCEL_TOKEN 失效期间 workflow 止步于 Link & Deploy，
+# 生产部署由自动线承接，不受影响。
 # 需要 Secrets：
 #   VERCEL_TOKEN     —— Vercel 账户 Token（https://vercel.com/account/tokens）
 #   VERCEL_ORG_ID    —— 团队/账户 ID（Vercel 项目 Settings → General）
@@ -16,11 +20,10 @@ name: Deploy Site
 #   - 失败时若配置了 NOTIFY_URL 则发送 webhook 通知，便于排查
 #   - 在构建前记录被同步的内容仓库 commit，便于事后核对"内容是否真的进来了"
 #
-# serverless 函数打包（2026-09-24）：
-#   --prebuilt 模式不会自动发现仓库根部的 api/ 目录，必须显式拷进 .vercel/output/functions/。
-#   原先只硬编码打包了 api/chat.js，导致新增的 /api/editor-auth、/api/editor-github
-#   虽然推到了 main，构建产物里却没有它们，线上访问一律 404。
-#   现改为通配扫描 api/*.js，以后新增函数无需再改本文件。
+# serverless 函数打包（2026-09-24 起 / 2026-09-29 更新）：
+#   vercel build（Package 步骤）自动发现仓库根部的 api/ 目录并打包为 serverless 函数
+#   （/api/chat、/api/editor-auth、/api/editor-github），新增函数无需改本文件。
+#   旧 --prebuilt 手动打包时代需要显式拷贝，已随 Round 12 部署线决策废弃。
 
 on:
   push:
@@ -71,46 +74,29 @@ jobs:
           echo "站点仓库 commit: ${{ github.sha }}"
           pnpm build
 
-      # 把 Astro 静态产物 dist/ 转换成 Vercel Build Output 格式（--prebuilt 要求 .vercel/output），
-      # 否则 vercel deploy --prebuilt 会因找不到 .vercel/output 直接退出码 1。
-      - name: Package Vercel Build Output
+      # Package Vercel Build Output：改跑官方 vercel build（2026-09-29 Round 12 部署线决策）。
+      # 旧「手动打包 + 手写 config.json routes」路线被终结（Round 4b-10 实证）：
+      #   - config.json routes 恒先于文件系统/函数层执行，catch-all 必遮蔽全站（v2/v3 事故）；
+      #   - Vercel Git 自动部署线（项目里一直开着）跑 vercel build，其产物原生含
+      #     404 fallback + 中文路径解码匹配 + api/ 函数，是唯一被线上实证正确的产物形态。
+      #   - 本步骤改跑 vercel build 后，workflow 线与自动线产物收敛为同一形态，双线竞争无害化；
+      #     astro.config.mjs 的 encodeNonAsciiDistPaths integration（v4 routes + __fp-routes.json）已同步删除。
+      - name: Package Vercel Build Output (vercel build)
         run: |
           set -euo pipefail
-          rm -rf .vercel/output
-          mkdir -p .vercel/output/static
-          cp -r dist/. .vercel/output/static/
-          printf '{"version":3}' > .vercel/output/config.json
-          # 合并中文路径路由配置（encodeNonAsciiDistPaths integration 生成）：
-          #   routes    —— 原始 percent-encoded 请求串字面匹配编码产物（edge 层不解码时命中）
-          #   overrides —— 解码后的中文请求路径映射到编码产物文件（服务端解码匹配时兜底）
-          # 注意：本 workflow 不跑 vercel build，vercel.json 的 rewrites 不会进入部署配置，
-          #       中文路由必须显式写入 config.json（2026-09-27 实测教训）。
-          if [ -f .vercel/output/static/__fp-routes.json ]; then
-            node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('.vercel/output/config.json','utf8'));const x=JSON.parse(fs.readFileSync('.vercel/output/static/__fp-routes.json','utf8'));c.routes=x.routes||[];c.overrides=x.overrides||{};fs.writeFileSync('.vercel/output/config.json',JSON.stringify(c));console.log('config.json: routes='+(c.routes.length)+' overrides='+Object.keys(c.overrides).length)"
-            rm -f .vercel/output/static/__fp-routes.json
-          else
-            echo "no __fp-routes.json (no non-ASCII paths renamed)"
+          npx vercel build
+          test -f .vercel/output/config.json || { echo "::error::vercel build: config.json missing"; exit 1; }
+          test -f .vercel/output/static/index.html || { echo "::error::vercel build: static/index.html missing"; exit 1; }
+          test -d .vercel/output/functions || { echo "::error::vercel build: functions/ missing - api/* NOT packaged"; exit 1; }
+          # 防御：若 vercel build 内部只跑 astro build 而非 package.json build 脚本，
+          # dist 会被重建、pagefind 搜索索引丢失 —— 检测缺失则补跑并注入产物。
+          if [ ! -d .vercel/output/static/pagefind ] && [ -d dist ]; then
+            npx pagefind --site dist
+            rm -rf .vercel/output/static/pagefind
+            cp -r dist/pagefind .vercel/output/static/pagefind
+            echo "pagefind index patched into output/static"
           fi
-          # 打包 api/*.js 为 serverless 函数：
-          #   /api/chat          —— DeepSeek 代理（看板娘聊天）
-          #   /api/editor-auth   —— 编辑器密码登录（下发签名 Cookie）
-          #   /api/editor-github —— 编辑器 GitHub 代理（服务端持有 GH_TOKEN）
-          # 通配扫描而非逐个硬编码，新增 api/*.js 时无需再改本文件。
-          shopt -s nullglob
-          packaged=0
-          for f in api/*.js; do
-            name="$(basename "$f" .js)"
-            dir=".vercel/output/functions/api/${name}.func"
-            mkdir -p "$dir"
-            cp "$f" "$dir/index.js"
-            printf '{"runtime":"nodejs22.x","handler":"index.js","launcherType":"Nodejs"}' > "$dir/.vc-config.json"
-            echo "packed function: /api/${name}"
-            packaged=$((packaged + 1))
-          done
-          if [ "$packaged" -eq 0 ]; then
-            echo "::error::api/ 下没有匹配到任何 *.js 函数，构建产物会缺失 serverless 函数"
-            exit 1
-          fi
+          node -e "const c=JSON.parse(require('fs').readFileSync('.vercel/output/config.json','utf8'));console.log('config.json: routes='+((c.routes||[]).length)+' functions='+Object.keys(c.functions||{}).length)"
 
       # 用 Vercel CLI 直接部署已打包好的 .vercel/output（prebuilt），不再 curl 触发 Vercel 二次构建。
       - name: Link & Deploy to Vercel
