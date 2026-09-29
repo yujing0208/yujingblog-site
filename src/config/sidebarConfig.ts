@@ -114,6 +114,15 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			animationDelay: 100,
 		},
 		{
+			// FlatPaper「最新文章」卡（r15）：仅文章页左栏由 SidebarColumn 特判注入
+			// （flatpaper sidebar-right.ejs is_post 分支：toc-card + latest-posts），
+			// 不进 components.left，列表页不渲染
+			type: "paper-latest",
+			position: "sticky",
+			class: "onload-animation",
+			animationDelay: 150,
+		},
+		{
 			// 组件类型：站点统计组件
 			type: "site-stats",
 			// 组件位置
