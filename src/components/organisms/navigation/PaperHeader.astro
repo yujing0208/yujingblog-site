@@ -1,1 +1,327 @@
-LS0tCi8qKgogKiBQYXBlckhlYWRlciDigJTigJQgRmxhdFBhcGVyIOeahCAuc2l0ZS1oZWFkZXLvvIjlhoXpobXlr7zoiKrvvIkKICoKICogMToxIOWvueeFpyBoZXhvLXRoZW1lLWZsYXRwYXBlcu+8mgogKiAgIOe7k+aehCA9IGxheW91dC9fcGFydGlhbC9oZWFkZXIuZWpz77yI5rGJ5aChICsgYnJhbmQgKyBzaXRlLW5hdiArIGhlYWRlci10b29sc++8iQogKiAgIOagt+W8jyA9IHN0eWxlcy9wYXBlci1oZWFkZXIuY3Nz77yIbWFpbi5jc3Mg5bey5byV5YWl77yJKyBwYXBlci1yZXNwb25zaXZlLmNzcyDnp7vliqjnq6/mrrUKICogICDooYzkuLogPSBwdWJsaWMvanMvcGFwZXItaGVhZGVyLmpz77yIYnJhbmQg6I+c5Y2VIC8gc2l0ZS1uYXYg5LiL5ouJIC8gYWNjZW50IC8gRXNj77yJCiAqCiAqIOS4jiBmbGF0cGFwZXIg55qE5Lik5aSE5b+F6KaB5beu5byC77yI5pys56uZ5Z+65bu65beu5byC77yM6Z2e6KeG6KeJ5beu5byC77yJ77yaCiAqICAgMS4g5pCc57Si77yaZmxhdHBhcGVyIOaYr+eLrOeri+aQnOe0ouW8ueWxgu+8m+acrOermeWkjeeUqCBTZWFyY2gg57uE5Lu277yIcGFnZWZpbmTvvInvvIwKICogICAgICDnu4Tku7bmnKzkvZPol4/lnKggLnBhcGVyLXNlYXJjaC1jYXJyaWVy77yI5Y+q5riy5p+T5rWu5bGC77yJ77yMLmpzLXNlYXJjaC1vcGVuIOi9rOWPkeeCueWHu+OAggogKiAgIDIuIOS4u+mimOWIh+aNou+8mmZsYXRwYXBlciDnmoQgLnRoZW1lLXRvZ2dsZSDnlLEgbWFpbi5qcyDoh6rooYzliIfnsbvvvIjkvJrmvI/mjonmnKznq5kKICogICAgICDku6PnoIHlnZcgZGF0YS10aGVtZSDlkIzmraXvvInvvJvov5nph4zovazlj5Hnu5kgVGhlbWVTd2l0Y2jvvIgjc2NoZW1lLXN3aXRjaO+8ie+8jAogKiAgICAgIOS4juWFqOermeS4u+mimOmTvui3r++8iGxvY2FsU3RvcmFnZS9kYXRhLXRoZW1lL3ZpZXcgdHJhbnNpdGlvbu+8ieWujOWFqOS4gOiHtOOAggogKgogKiDnp7vliqjnq6/vvJpmbGF0cGFwZXIgOTYwcHgg5Lul5LiL5a+86Iiq6L+b5oq95bGJ77yb5pys56uZ5YaF6aG15peg5oq95bGJ57uT5p6E77yM5rGJ5aCh5oyJ6ZKu5pS55Li6CiAqIOW8gOWQiCBOYXZNZW51UGFuZWzvvIjlhajnq5npk77mjqXpnaLmnb/vvIzkuI7ljp8gTmF2YmFyIOenu+WKqOerr+iDveWKm+etieS7t++8ieOAggogKi8KaW1wb3J0IHsgSWNvbiB9IGZyb20gImFzdHJvLWljb24vY29tcG9uZW50cyI7CgppbXBvcnQgeyBuYXZCYXJDb25maWcsIHByb2ZpbGVDb25maWcsIHNpdGVDb25maWcgfSBmcm9tICIuLi8uLi8uLi9jb25maWciOwppbXBvcnQgeyBMaW5rUHJlc2V0cyB9IGZyb20gIi4uLy4uLy4uL2NvbnN0YW50cy9saW5rLXByZXNldHMiOwppbXBvcnQgeyBMaW5rUHJlc2V0LCB0eXBlIE5hdkJhckxpbmsgfSBmcm9tICIuLi8uLi8uLi90eXBlcy9jb25maWciOwppbXBvcnQgeyB1cmwgfSBmcm9tICIuLi8uLi8uLi91dGlscy91cmwtdXRpbHMiOwppbXBvcnQgTW9iaWxlVE9DIGZyb20gIi4uLy4uL2ZlYXR1cmVzL3RvYy9Nb2JpbGVUT0Muc3ZlbHRlIjsKaW1wb3J0IFRoZW1lU3dpdGNoIGZyb20gIi4uLy4uL2NvbnRyb2wvVGhlbWVTd2l0Y2guc3ZlbHRlIjsKaW1wb3J0IE5hdk1lbnVQYW5lbCBmcm9tICIuL05hdk1lbnVQYW5lbC5hc3RybyI7CmltcG9ydCBQYXBlckFjY2VudFBpY2tlciBmcm9tICIuL1BhcGVyQWNjZW50UGlja2VyLmFzdHJvIjsKaW1wb3J0IFNlYXJjaCBmcm9tICIuL1NlYXJjaC5zdmVsdGUiOwoKY29uc3QgY3VycmVudFBhdGggPSBBc3Ryby51cmwucGF0aG5hbWU7CgovLyBmZWF0dXJlUGFnZSBVUkwgLT4gY29uZmlnIGtleSBtYXBwaW5n77yI5LiOIE5hdmJhci5hc3RybyDkv53mjIHkuIDoh7TvvIkKY29uc3QgZmVhdHVyZVBhZ2VVcmxNYXA6IFJlY29yZDxzdHJpbmcsIHN0cmluZz4gPSB7CgkiL2FsYnVtcy8iOiAiYWxidW1zIiwKCSIvYW5pbWUvIjogImFuaW1lIiwKCSIvZGlhcnkvIjogImRpYXJ5IiwKCSIvZnJpZW5kcy8iOiAiZnJpZW5kcyIsCgkiL3dlYnNpdGVzLyI6ICJmcmllbmRzIiwKCSIvcHJvamVjdHMvIjogInByb2plY3RzIiwKCSIvc2tpbGxzLyI6ICJza2lsbHMiLAoJIi90aW1lbGluZS8iOiAidGltZWxpbmUiLAoJIi9kZXZpY2VzLyI6ICJkZXZpY2VzIiwKCSIvY2hhbmdlbG9nLyI6ICJjaGFuZ2Vsb2ciLAoJIi9ub3RlYm9va3MvIjogIm5vdGVib29rcyIsCn07CgpmdW5jdGlvbiBpc0ZlYXR1cmVQYWdlRGlzYWJsZWQobGlua1VybDogc3RyaW5nKTogYm9vbGVhbiB7Cgljb25zdCBrZXkgPSBmZWF0dXJlUGFnZVVybE1hcFtsaW5rVXJsXTsKCWlmICgKCQlrZXkgJiYKCQkhc2l0ZUNvbmZpZy5mZWF0dXJlUGFnZXNba2V5IGFzIGtleW9mIHR5cGVvZiBzaXRlQ29uZmlnLmZlYXR1cmVQYWdlc10KCSkgewoJCXJldHVybiB0cnVlOwoJfQoJcmV0dXJuIGZhbHNlOwp9CgpmdW5jdGlvbiByZXNvbHZlTGluayhpdGVtOiBOYXZCYXJMaW5rIHwgTGlua1ByZXNldCk6IE5hdkJhckxpbmsgfCBudWxsIHsKCWlmICh0eXBlb2YgaXRlbSA9PT0gIm51bWJlciIpIHsKCQljb25zdCByZXNvbHZlZCA9IExpbmtQcmVzZXRzW2l0ZW1dOwoJCWlmIChpc0ZlYXR1cmVQYWdlRGlzYWJsZWQocmVzb2x2ZWQudXJsKSkgcmV0dXJuIG51bGw7CgkJcmV0dXJuIHJlc29sdmVkOwoJfQoJaWYgKGlzRmVhdHVyZVBhZ2VEaXNhYmxlZChpdGVtLnVybCkpIHJldHVybiBudWxsOwoJcmV0dXJuIGl0ZW07Cn0KCmZ1bmN0aW9uIGZpbHRlckxpbmtzQnlGZWF0dXJlUGFnZXMoCglpdGVtczogKE5hdkJhckxpbmsgfCBMaW5rUHJlc2V0KVtdLAopOiBOYXZCYXJMaW5rW10gewoJcmV0dXJuIGl0ZW1zCgkJLm1hcChyZXNvbHZlTGluaykKCQkuZmlsdGVyKChpdGVtKTogaXRlbSBpcyBOYXZCYXJMaW5rID0+IGl0ZW0gIT09IG51bGwpCgkJLm1hcCgoaXRlbSkgPT4gewoJCQlpZiAoaXRlbS5jaGlsZHJlbikgewoJCQkJY29uc3QgZmlsdGVyZWRDaGlsZHJlbiA9IGl0ZW0uY2hpbGRyZW4KCQkJCQkubWFwKHJlc29sdmVMaW5rKQoJCQkJCS5maWx0ZXIoKGNoaWxkKTogY2hpbGQgaXMgTmF2QmFyTGluayA9PiBjaGlsZCAhPT0gbnVsbCk7CgkJCQlyZXR1cm4geyAuLi5pdGVtLCBjaGlsZHJlbjogZmlsdGVyZWRDaGlsZHJlbiB9OwoJCQl9CgkJCXJldHVybiBpdGVtOwoJCX0pCgkJLmZpbHRlcigoaXRlbSkgPT4gIWl0ZW0uY2hpbGRyZW4gfHwgaXRlbS5jaGlsZHJlbi5sZW5ndGggPiAwKTsKfQoKY29uc3QgbGlua3M6IE5hdkJhckxpbmtbXSA9IGZpbHRlckxpbmtzQnlGZWF0dXJlUGFnZXMobmF2QmFyQ29uZmlnLmxpbmtzKTsKCmNvbnN0IGlzQWN0aXZlID0gKGhyZWY6IHN0cmluZykgPT4gewoJY29uc3QgcGF0aCA9IGhyZWYgPT09ICIvIiA/ICIvIiA6IHVybChocmVmKTsKCWlmIChwYXRoID09PSAiLyIpIHJldHVybiBjdXJyZW50UGF0aCA9PT0gIi8iIHx8IGN1cnJlbnRQYXRoID09PSAiIjsKCXJldHVybiBjdXJyZW50UGF0aC5zdGFydHNXaXRoKHBhdGgpOwp9OwoKY29uc3QgYnJhbmRUaXRsZSA9IHNpdGVDb25maWcudGl0bGUgfHwgIkZsYXRQYXBlciI7Ci0tLQoKPGhlYWRlciBjbGFzcz0ic2l0ZS1oZWFkZXIiPgoJPCEtLSDmsYnloKHvvJrnp7vliqjnq6/lvIDlkIggTmF2TWVudVBhbmVs77yIZmxhdHBhcGVyIOS4uuS+p+agj+aKveWxie+8iSAtLT4KCTxidXR0b24KCQljbGFzcz0iaWNvbi1idXR0b24ganMtc2lkZWJhci10b2dnbGUgc2lkZWJhci10b2dnbGUiCgkJdHlwZT0iYnV0dG9uIgoJCWFyaWEtbGFiZWw9IuaJk+W8gOiPnOWNlSIKCQlhcmlhLWNvbnRyb2xzPSJuYXYtbWVudS1wYW5lbCIKCQlhcmlhLWV4cGFuZGVkPSJmYWxzZSIKCT4KCQk8SWNvbiBuYW1lPSJtYXRlcmlhbC1zeW1ib2xzOm1lbnUtcm91bmRlZCIgaXM6aW5saW5lIC8+Cgk8L2J1dHRvbj4KCgk8ZGl2IGNsYXNzPSJicmFuZCI+CgkJPGRpdiBjbGFzcz0iYnJhbmQtbWFyay13cmFwcGVyIj4KCQkJPGJ1dHRvbgoJCQkJY2xhc3M9ImJyYW5kLW1hcmsiCgkJCQl0eXBlPSJidXR0b24iCgkJCQlhcmlhLWxhYmVsPSLlv6vmjbfoj5zljZUiCgkJCQlhcmlhLWhhc3BvcHVwPSJ0cnVlIgoJCQkJYXJpYS1leHBhbmRlZD0iZmFsc2UiCgkJCQlhcmlhLWNvbnRyb2xzPSJicmFuZC1uYXYtbWVudSIKCQkJPgoJCQkJPEljb24gbmFtZT0ibWF0ZXJpYWwtc3ltYm9sczpncmlkLXZpZXctb3V0bGluZS1yb3VuZGVkIiBpczppbmxpbmUgLz4KCQkJPC9idXR0b24+CgkJCTxkaXYgY2xhc3M9ImJyYW5kLW5hdi1tZW51IiBpZD0iYnJhbmQtbmF2LW1lbnUiIHJvbGU9Im1lbnUiPgoJCQkJPGRpdiBjbGFzcz0iYnJhbmQtbmF2LWdyb3VwIj4KCQkJCQk8ZGl2IGNsYXNzPSJicmFuZC1uYXYtdGl0bGUiPuaJvuWIsOaIkTwvZGl2PgoJCQkJCXsKCQkJCQkJcHJvZmlsZUNvbmZpZy5saW5rcy5tYXAoKGxpbmspID0+ICgKCQkJCQkJCTxhCgkJCQkJCQkJcm9sZT0ibWVudWl0ZW0iCgkJCQkJCQkJaHJlZj17bGluay51cmx9CgkJCQkJCQkJdGFyZ2V0PSJfYmxhbmsiCgkJCQkJCQkJcmVsPSJub29wZW5lciBub3JlZmVycmVyIgoJCQkJCQkJPgoJCQkJCQkJCTxJY29uIG5hbWU9e2xpbmsuaWNvbn0gaXM6aW5saW5lIC8+CgkJCQkJCQkJPHNwYW4+e2xpbmsubmFtZX08L3NwYW4+CgkJCQkJCQk8L2E+CgkJCQkJCSkpCgkJCQkJfQoJCQkJPC9kaXY+CgkJCTwvZGl2PgoJCTwvZGl2PgoJCTxhIGNsYXNzPSJicmFuZC10ZXh0IiBocmVmPXt1cmwoIi8iKX0+e2JyYW5kVGl0bGV9PC9hPgoJPC9kaXY+CgoJPG5hdiBjbGFzcz0ic2l0ZS1uYXYiIGFyaWEtbGFiZWw9IuS4u+WvvOiIqiI+CgkJewoJCQlsaW5rcy5tYXAoKGwpID0+IHsKCQkJCWNvbnN0IGFjdGl2ZSA9IGlzQWN0aXZlKGwudXJsKTsKCQkJCWlmIChsLmNoaWxkcmVuICYmIGwuY2hpbGRyZW4ubGVuZ3RoID4gMCkgewoJCQkJCWNvbnN0IGNoaWxkQWN0aXZlID0gbC5jaGlsZHJlbi5zb21lKChjKSA9PiBpc0FjdGl2ZShjLnVybCkpOwoJCQkJCXJldHVybiAoCgkJCQkJCTxkaXYgY2xhc3M6bGlzdD17WyJzaXRlLW5hdi1pdGVtIiwgImhhcy1jaGlsZHJlbiIsIHsgYWN0aXZlOiBhY3RpdmUgfHwgY2hpbGRBY3RpdmUgfV19PgoJCQkJCQkJPGJ1dHRvbgoJCQkJCQkJCWNsYXNzPSJzaXRlLW5hdi1saW5rIHNpdGUtbmF2LXBhcmVudCIKCQkJCQkJCQl0eXBlPSJidXR0b24iCgkJCQkJCQkJYXJpYS1oYXNwb3B1cD0idHJ1ZSIKCQkJCQkJCQlhcmlhLWV4cGFuZGVkPSJmYWxzZSIKCQkJCQkJCT4KCQkJCQkJCQl7bC5pY29uICYmIDxJY29uIG5hbWU9e2wuaWNvbn0gaXM6aW5saW5lIC8+fQoJCQkJCQkJCTxzcGFuPntsLm5hbWV9PC9zcGFuPgoJCQkJCQkJPC9idXR0b24+CgkJCQkJCQk8ZGl2IGNsYXNzPSJzaXRlLW5hdi1tZW51IiByb2xlPSJtZW51Ij4KCQkJCQkJCQl7bC5jaGlsZHJlbi5tYXAoKGMpID0+IHsKCQkJCQkJCQkJY29uc3QgY0FjdGl2ZSA9IGlzQWN0aXZlKGMudXJsKTsKCQkJCQkJCQkJY29uc3QgY0hyZWYgPSBjLmV4dGVybmFsID8gYy51cmwgOiB1cmwoYy51cmwpOwoJCQkJCQkJCQlyZXR1cm4gKAoJCQkJCQkJCQkJPGEKCQkJCQkJCQkJCQlyb2xlPSJtZW51aXRlbSIKCQkJCQkJCQkJCQljbGFzczpsaXN0PXtbeyBhY3RpdmU6IGNBY3RpdmUgfV19CgkJCQkJCQkJCQkJaHJlZj17Y0hyZWZ9CgkJCQkJCQkJCQkJdGFyZ2V0PXtjLmV4dGVybmFsID8gIl9ibGFuayIgOiBudWxsfQoJCQkJCQkJCQkJCXJlbD17Yy5leHRlcm5hbCA/ICJub29wZW5lciBub3JlZmVycmVyIiA6IG51bGx9CgkJCQkJCQkJCQkJey4uLihjSHJlZiA9PT0gIi9tdXNpYy8iID8geyAiZGF0YS1zd3VwLWlnbm9yZSI6IHRydWUgfSA6IHt9KX0KCQkJCQkJCQkJCT4KCQkJCQkJCQkJCQl7Yy5pY29uICYmIDxJY29uIG5hbWU9e2MuaWNvbn0gaXM6aW5saW5lIC8+fQoJCQkJCQkJCQkJCTxzcGFuPntjLm5hbWV9PC9zcGFuPgoJCQkJCQkJCQkJPC9hPgoJCQkJCQkJCQkpOwoJCQkJCQkJCX0pfQoJCQkJCQkJPC9kaXY+CgkJCQkJCTwvZGl2PgoJCQkJCSk7CgkJCQl9CgkJCQljb25zdCBocmVmID0gbC5leHRlcm5hbCA/IGwudXJsIDogdXJsKGwudXJsKTsKCQkJCXJldHVybiAoCgkJCQkJPGEKCQkJCQkJY2xhc3M6bGlzdD17WyJzaXRlLW5hdi1saW5rIiwgeyBhY3RpdmUgfV19CgkJCQkJCWhyZWY9e2hyZWZ9CgkJCQkJCXRhcmdldD17bC5leHRlcm5hbCA/ICJfYmxhbmsiIDogbnVsbH0KCQkJCQkJcmVsPXtsLmV4dGVybmFsID8gIm5vb3BlbmVyIG5vcmVmZXJyZXIiIDogbnVsbH0KCQkJCQkJey4uLihocmVmID09PSAiL211c2ljLyIgPyB7ICJkYXRhLXN3dXAtaWdub3JlIjogdHJ1ZSB9IDoge30pfQoJCQkJCT4KCQkJCQkJe2wuaWNvbiAmJiA8SWNvbiBuYW1lPXtsLmljb259IGlzOmlubGluZSAvPn0KCQkJCQkJPHNwYW4+e2wubmFtZX08L3NwYW4+CgkJCQkJPC9hPgoJCQkJKTsKCQkJfSkKCQl9Cgk8L25hdj4KCgk8ZGl2IGNsYXNzPSJoZWFkZXItdG9vbHMiPgoJCTxidXR0b24KCQkJY2xhc3M9Imljb24tYnV0dG9uIGpzLXNlYXJjaC1vcGVuIgoJCQl0eXBlPSJidXR0b24iCgkJCWFyaWEtbGFiZWw9IuaQnOe0ouaWh+eroCIKCQk+CgkJCTxJY29uIG5hbWU9Im1hdGVyaWFsLXN5bWJvbHM6c2VhcmNoLXJvdW5kZWQiIGlzOmlubGluZSAvPgoJCTwvYnV0dG9uPgoJCXsKCQkJc2l0ZUNvbmZpZy50b2MuZW5hYmxlICYmIHNpdGVDb25maWcudG9jLm1vYmlsZVRvcCAmJiAoCgkJCQk8TW9iaWxlVE9DIGNsaWVudDpvbmx5PSJzdmVsdGUiIC8+CgkJCSkKCQl9CgkJPFBhcGVyQWNjZW50UGlja2VyIGRlZmF1bHRBY2NlbnQ9ImdyZWVuIiAvPgoJCTxidXR0b24KCQkJY2xhc3M9InRoZW1lLXRvZ2dsZSIKCQkJdHlwZT0iYnV0dG9uIgoJCQlhcmlhLWxhYmVsPSLliIfmjaLmmI7mmpfmqKHlvI8iCgkJPgoJCQk8c3BhbiBjbGFzcz0idGhlbWUtaWNvbiB0aGVtZS1pY29uLS1zdW4iPgoJCQkJPEljb24gbmFtZT0ibWF0ZXJpYWwtc3ltYm9sczp3Yi1zdW5ueS1vdXRsaW5lLXJvdW5kZWQiIGlzOmlubGluZSAvPgoJCQk8L3NwYW4+CgkJCTxzcGFuIGNsYXNzPSJ0aGVtZS1pY29uIHRoZW1lLWljb24tLW1vb24iPgoJCQkJPEljb24gbmFtZT0ibWF0ZXJpYWwtc3ltYm9sczpkYXJrLW1vZGUtb3V0bGluZS1yb3VuZGVkIiBpczppbmxpbmUgLz4KCQkJPC9zcGFuPgoJCTwvYnV0dG9uPgoKCQk8IS0tIOaQnOe0oiAvIOS4u+mimOWIh+aNoueahOmakOiXj+i9veS9k++8muWPquWAn+Wug+S7rOeahOa1ruWxguS4jueKtuaAgeeuoeeQhiAtLT4KCQk8ZGl2IGNsYXNzPSJwYXBlci1zZWFyY2gtY2FycmllciIgYXJpYS1oaWRkZW49InRydWUiPgoJCQk8U2VhcmNoIGNsaWVudDpvbmx5PSJzdmVsdGUiIC8+CgkJPC9kaXY+CgkJPGRpdiBjbGFzcz0icGFwZXItdGhlbWUtY2FycmllciIgYXJpYS1oaWRkZW49InRydWUiPgoJCQk8VGhlbWVTd2l0Y2ggY2xpZW50Om9ubHk9InN2ZWx0ZSIgLz4KCQk8L2Rpdj4KCTwvZGl2PgoKCTxOYXZNZW51UGFuZWwgbGlua3M9e2xpbmtzfSAvPgo8L2hlYWRlcj4KCjxzdHlsZSBpczpnbG9iYWw+CgkvKiDpmpDol4/ovb3kvZPvvJpTZWFyY2gg55qE5rWu5bGC77yII3NlYXJjaC1wYW5lbO+8ieS4jiBNb2JpbGVUT0Mg5rWu5bGC5pivIGFic29sdXRlCgkgICDlrprkvY3vvIzpnIDkv53nlZnlnKjluIPlsYDlhoXvvJvku4XpmpDol4/lhbbmjInpkq7mnKzkvZPjgILimqDvuI8g5LiN6IO955SoIGRpc3BsYXk6bm9uZSDmjILlnKgKCSAgIOi9veS9k+WuueWZqOS4iuKAlOKAlOmCo+S8muaKiua1ruWxguS4gOi1t+iXj+aOieOAgiAqLwoJLnBhcGVyLXNlYXJjaC1jYXJyaWVyLAoJLnBhcGVyLXRoZW1lLWNhcnJpZXIgewoJCXBvc2l0aW9uOiBhYnNvbHV0ZTsKCQl3aWR0aDogMDsKCQloZWlnaHQ6IDA7CgkJb3ZlcmZsb3c6IHZpc2libGU7Cgl9CgkucGFwZXItc2VhcmNoLWNhcnJpZXIgPiBkaXY6Zmlyc3QtY2hpbGQsCgkucGFwZXItc2VhcmNoLWNhcnJpZXIgPiBidXR0b24sCgkucGFwZXItdGhlbWUtY2FycmllciA+IGJ1dHRvbiB7CgkJZGlzcGxheTogbm9uZSAhaW1wb3J0YW50OwoJfQoJLyog56qE5bGPIENTUyDnu5kgLnNpdGUtaGVhZGVyIOWumuWuve+8iG1pbig5NHZ3LDc2MHB4Ke+8ie+8jOihpeWxheS4rSAqLwoJLnNpdGUtaGVhZGVyIHsKCQltYXJnaW4taW5saW5lOiBhdXRvOwoJfQo8L3N0eWxlPgoKPHNjcmlwdCBpczppbmxpbmU+CgkoZnVuY3Rpb24gKCkgewoJCSJ1c2Ugc3RyaWN0IjsKCgkJZnVuY3Rpb24gYmluZE9uY2Uoc2VsZWN0b3IsIGhhbmRsZXIpIHsKCQkJZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbChzZWxlY3RvcikuZm9yRWFjaChmdW5jdGlvbiAoYnRuKSB7CgkJCQkvLyDpooTljaAgcGFwZXItaGVhZGVyLmpzIOeahOe7keWumuagh+iusO+8muS4ieS4quaMiemSrueahOi9rOWPkemAu+i+keeUseacrOiEmuacrOi0n+i0o++8jAoJCQkJLy8g6YG/5YWNIHB1YmxpYy9qcy9wYXBlci1oZWFkZXIuanMg55qE6YCa55So5a6e546w77yI5oq95bGJL+ijuOWIh+exu++8ieS6jOasoee7keWumuOAggoJCQkJaWYgKGJ0bi5kYXRhc2V0LnBhcGVyQm91bmQpIHJldHVybjsKCQkJCWJ0bi5kYXRhc2V0LnBhcGVyQm91bmQgPSAiMSI7CgkJCQlidG4uYWRkRXZlbnRMaXN0ZW5lcigiY2xpY2siLCBoYW5kbGVyKTsKCQkJfSk7CgkJfQoKCQkvLyDmsYnloKEg4oaSIOenu+WKqOerr+iPnOWNlemdouadv++8iE5hdk1lbnVQYW5lbO+8iQoJCWJpbmRPbmNlKCIuanMtc2lkZWJhci10b2dnbGUiLCBmdW5jdGlvbiAoKSB7CgkJCXZhciBwYW5lbCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJuYXYtbWVudS1wYW5lbCIpOwoJCQlpZiAoIXBhbmVsKSByZXR1cm47CgkJCXZhciB3aWxsT3BlbiA9IHBhbmVsLmNsYXNzTGlzdC5jb250YWlucygiZmxvYXQtcGFuZWwtY2xvc2VkIik7CgkJCXBhbmVsLmNsYXNzTGlzdC50b2dnbGUoImZsb2F0LXBhbmVsLWNsb3NlZCIsICF3aWxsT3Blbik7CgkJCWRvY3VtZW50CgkJCQkucXVlcnlTZWxlY3RvckFsbCgiLmpzLXNpZGViYXItdG9nZ2xlIikKCQkJCS5mb3JFYWNoKGZ1bmN0aW9uIChiKSB7CgkJCQkJYi5zZXRBdHRyaWJ1dGUoImFyaWEtZXhwYW5kZWQiLCB3aWxsT3BlbiA/ICJ0cnVlIiA6ICJmYWxzZSIpOwoJCQkJfSk7CgkJfSk7CgoJCS8vIOaQnOe0oiDihpIg6L2s5Y+R57uZIFNlYXJjaCDnu4Tku7bnmoTnp7vliqjnq6/lvIDlhbPplK7vvIjmiZPlvIAgcGFnZWZpbmQg5rWu5bGC77yJCgkJYmluZE9uY2UoIi5qcy1zZWFyY2gtb3BlbiIsIGZ1bmN0aW9uICgpIHsKCQkJdmFyIHN3ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInNlYXJjaC1zd2l0Y2giKTsKCQkJaWYgKHN3KSBzdy5jbGljaygpOwoJCX0pOwoKCQkvLyDkuLvpopgg4oaSIOi9rOWPkee7mSBUaGVtZVN3aXRjaO+8iOS/neivgSBkYXRhLXRoZW1lL2xvY2FsU3RvcmFnZS/ov4fmuKHkuIDoh7TvvIkKCQliaW5kT25jZSgiLnRoZW1lLXRvZ2dsZSIsIGZ1bmN0aW9uICgpIHsKCQkJdmFyIHN3ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoInNjaGVtZS1zd2l0Y2giKTsKCQkJaWYgKHN3KSBzdy5jbGljaygpOwoJCX0pOwoKCQkvLyDngrnlpJbpg6jlhbPpl63np7vliqjnq6/oj5zljZXpnaLmnb8KCQlpZiAoIWRvY3VtZW50LmRvY3VtZW50RWxlbWVudC5kYXRhc2V0LnBhcGVyTWVudU91dHNpZGUpIHsKCQkJZG9jdW1lbnQuZG9jdW1lbnRFbGVtZW50LmRhdGFzZXQucGFwZXJNZW51T3V0c2lkZSA9ICIxIjsKCQkJZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcigiY2xpY2siLCBmdW5jdGlvbiAoZXZlbnQpIHsKCQkJCXZhciBwYW5lbCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJuYXYtbWVudS1wYW5lbCIpOwoJCQkJaWYgKCFwYW5lbCB8fCBwYW5lbC5jbGFzc0xpc3QuY29udGFpbnMoImZsb2F0LXBhbmVsLWNsb3NlZCIpKQoJCQkJCXJldHVybjsKCQkJCWlmICgKCQkJCQlldmVudC50YXJnZXQuY2xvc2VzdCAmJgoJCQkJCShldmVudC50YXJnZXQuY2xvc2VzdCgiI25hdi1tZW51LXBhbmVsIikgfHwKCQkJCQkJZXZlbnQudGFyZ2V0LmNsb3Nlc3QoIi5qcy1zaWRlYmFyLXRvZ2dsZSIpKQoJCQkJKQoJCQkJCXJldHVybjsKCQkJCXBhbmVsLmNsYXNzTGlzdC5hZGQoImZsb2F0LXBhbmVsLWNsb3NlZCIpOwoJCQkJZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbCgiLmpzLXNpZGViYXItdG9nZ2xlIikuZm9yRWFjaChmdW5jdGlvbiAoYikgewoJCQkJCWIuc2V0QXR0cmlidXRlKCJhcmlhLWV4cGFuZGVkIiwgImZhbHNlIik7CgkJCQl9KTsKCQkJfSk7CgkJCS8vIEVzYyDlhbPpl63np7vliqjnq6/oj5zljZXpnaLmnb/vvIhwYXBlci1oZWFkZXIuanMg55qEIEVzYyDnrqHkuI3liLDlroPvvIkKCQkJZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcigia2V5ZG93biIsIGZ1bmN0aW9uIChldmVudCkgewoJCQkJaWYgKGV2ZW50LmtleSAhPT0gIkVzY2FwZSIpIHJldHVybjsKCQkJCXZhciBwYW5lbCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJuYXYtbWVudS1wYW5lbCIpOwoJCQkJaWYgKHBhbmVsKSBwYW5lbC5jbGFzc0xpc3QuYWRkKCJmbG9hdC1wYW5lbC1jbG9zZWQiKTsKCQkJfSk7CgkJfQoJfSkoKTsKPC9zY3JpcHQ+Cg==
+---
+/**
+ * PaperHeader —— FlatPaper 的 .site-header（内页导航）
+ *
+ * 1:1 对照 hexo-theme-flatpaper：
+ *   结构 = layout/_partial/header.ejs（汉堡 + brand + site-nav + header-tools）
+ *   样式 = styles/paper-header.css（main.css 已引入）+ paper-responsive.css 移动端段
+ *   行为 = public/js/paper-header.js（brand 菜单 / site-nav 下拉 / accent / Esc）
+ *
+ * 与 flatpaper 的两处必要差异（本站基建差异，非视觉差异）：
+ *   1. 搜索：flatpaper 是独立搜索弹层；本站复用 Search 组件（pagefind），
+ *      组件本体藏在 .paper-search-carrier（只渲染浮层），.js-search-open 转发点击。
+ *   2. 主题切换：flatpaper 的 .theme-toggle 由 main.js 自行切类（会漏掉本站
+ *      代码块 data-theme 同步）；这里转发给 ThemeSwitch（#scheme-switch），
+ *      与全站主题链路（localStorage/data-theme/view transition）完全一致。
+ *
+ * 移动端：flatpaper 960px 以下导航进抽屉；本站内页无抽屉结构，汉堡按钮改为
+ * 开合 NavMenuPanel（全站链接面板，与原 Navbar 移动端能力等价）。
+ */
+import { Icon } from "astro-icon/components";
+
+import { navBarConfig, profileConfig, siteConfig } from "../../../config";
+import { LinkPresets } from "../../../constants/link-presets";
+import { LinkPreset, type NavBarLink } from "../../../types/config";
+import { url } from "../../../utils/url-utils";
+import MobileTOC from "../../features/toc/MobileTOC.svelte";
+import ThemeSwitch from "../../control/ThemeSwitch.svelte";
+import NavMenuPanel from "./NavMenuPanel.astro";
+import PaperAccentPicker from "./PaperAccentPicker.astro";
+import Search from "./Search.svelte";
+
+const currentPath = Astro.url.pathname;
+
+// featurePage URL -> config key mapping（与 Navbar.astro 保持一致）
+const featurePageUrlMap: Record<string, string> = {
+	"/albums/": "albums",
+	"/anime/": "anime",
+	"/diary/": "diary",
+	"/friends/": "friends",
+	"/websites/": "friends",
+	"/projects/": "projects",
+	"/skills/": "skills",
+	"/timeline/": "timeline",
+	"/devices/": "devices",
+	"/changelog/": "changelog",
+	"/notebooks/": "notebooks",
+};
+
+function isFeaturePageDisabled(linkUrl: string): boolean {
+	const key = featurePageUrlMap[linkUrl];
+	if (
+		key &&
+		!siteConfig.featurePages[key as keyof typeof siteConfig.featurePages]
+	) {
+		return true;
+	}
+	return false;
+}
+
+function resolveLink(item: NavBarLink | LinkPreset): NavBarLink | null {
+	if (typeof item === "number") {
+		const resolved = LinkPresets[item];
+		if (isFeaturePageDisabled(resolved.url)) return null;
+		return resolved;
+	}
+	if (isFeaturePageDisabled(item.url)) return null;
+	return item;
+}
+
+function filterLinksByFeaturePages(
+	items: (NavBarLink | LinkPreset)[],
+): NavBarLink[] {
+	return items
+		.map(resolveLink)
+		.filter((item): item is NavBarLink => item !== null)
+		.map((item) => {
+			if (item.children) {
+				const filteredChildren = item.children
+					.map(resolveLink)
+					.filter((child): child is NavBarLink => child !== null);
+				return { ...item, children: filteredChildren };
+			}
+			return item;
+		})
+		.filter((item) => !item.children || item.children.length > 0);
+}
+
+const links: NavBarLink[] = filterLinksByFeaturePages(navBarConfig.links);
+
+const isActive = (href: string) => {
+	const path = href === "/" ? "/" : url(href);
+	if (path === "/") return currentPath === "/" || currentPath === "";
+	return currentPath.startsWith(path);
+};
+
+const brandTitle = siteConfig.title || "FlatPaper";
+---
+
+<header class="site-header">
+	<!-- 汉堡：移动端开合 NavMenuPanel（flatpaper 为侧栏抽屉） -->
+	<button
+		class="icon-button js-sidebar-toggle sidebar-toggle"
+		type="button"
+		aria-label="打开菜单"
+		aria-controls="nav-menu-panel"
+		aria-expanded="false"
+	>
+		<Icon name="material-symbols:menu-rounded" is:inline />
+	</button>
+
+	<div class="brand">
+		<div class="brand-mark-wrapper">
+			<button
+				class="brand-mark"
+				type="button"
+				aria-label="快捷菜单"
+				aria-haspopup="true"
+				aria-expanded="false"
+				aria-controls="brand-nav-menu"
+			>
+				<Icon name="material-symbols:grid-view-outline-rounded" is:inline />
+			</button>
+			<div class="brand-nav-menu" id="brand-nav-menu" role="menu">
+				<div class="brand-nav-group">
+					<div class="brand-nav-title">找到我</div>
+					{
+						profileConfig.links.map((link) => (
+							<a
+								role="menuitem"
+								href={link.url}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<Icon name={link.icon} is:inline />
+								<span>{link.name}</span>
+							</a>
+						))
+					}
+				</div>
+			</div>
+		</div>
+		<a class="brand-text" href={url("/")}>{brandTitle}</a>
+	</div>
+
+	<nav class="site-nav" aria-label="主导航">
+		{
+			links.map((l) => {
+				const active = isActive(l.url);
+				if (l.children && l.children.length > 0) {
+					const childActive = l.children.some((c) => isActive(c.url));
+					return (
+						<div class:list={["site-nav-item", "has-children", { active: active || childActive }]}>
+							<button
+								class="site-nav-link site-nav-parent"
+								type="button"
+								aria-haspopup="true"
+								aria-expanded="false"
+							>
+								{l.icon && <Icon name={l.icon} is:inline />}
+								<span>{l.name}</span>
+							</button>
+							<div class="site-nav-menu" role="menu">
+								{l.children.map((c) => {
+									const cActive = isActive(c.url);
+									const cHref = c.external ? c.url : url(c.url);
+									return (
+										<a
+											role="menuitem"
+											class:list={[{ active: cActive }]}
+											href={cHref}
+											target={c.external ? "_blank" : null}
+											rel={c.external ? "noopener noreferrer" : null}
+											{...(cHref === "/music/" ? { "data-swup-ignore": true } : {})}
+										>
+											{c.icon && <Icon name={c.icon} is:inline />}
+											<span>{c.name}</span>
+										</a>
+									);
+								})}
+							</div>
+						</div>
+					);
+				}
+				const href = l.external ? l.url : url(l.url);
+				return (
+					<a
+						class:list={["site-nav-link", { active }]}
+						href={href}
+						target={l.external ? "_blank" : null}
+						rel={l.external ? "noopener noreferrer" : null}
+						{...(href === "/music/" ? { "data-swup-ignore": true } : {})}
+					>
+						{l.icon && <Icon name={l.icon} is:inline />}
+						<span>{l.name}</span>
+					</a>
+				);
+			})
+		}
+	</nav>
+
+	<div class="header-tools">
+		<button
+			class="icon-button js-search-open"
+			type="button"
+			aria-label="搜索文章"
+		>
+			<Icon name="material-symbols:search-rounded" is:inline />
+		</button>
+		{
+			siteConfig.toc.enable && siteConfig.toc.mobileTop && (
+				<MobileTOC client:only="svelte" />
+			)
+		}
+		<PaperAccentPicker defaultAccent="green" />
+		<button
+			class="theme-toggle"
+			type="button"
+			aria-label="切换明暗模式"
+		>
+			<span class="theme-icon theme-icon--sun">
+				<Icon name="material-symbols:wb-sunny-outline-rounded" is:inline />
+			</span>
+			<span class="theme-icon theme-icon--moon">
+				<Icon name="material-symbols:dark-mode-outline-rounded" is:inline />
+			</span>
+		</button>
+
+		<!-- 搜索 / 主题切换的隐藏载体：只借它们的浮层与状态管理 -->
+		<div class="paper-search-carrier" aria-hidden="true">
+			<Search client:only="svelte" />
+		</div>
+		<div class="paper-theme-carrier" aria-hidden="true">
+			<ThemeSwitch client:only="svelte" />
+		</div>
+	</div>
+
+	<NavMenuPanel links={links} />
+</header>
+
+<style is:global>
+	/* 隐藏载体：Search 的浮层（#search-panel）与 MobileTOC 浮层是 absolute
+	   定位，需保留在布局内；仅隐藏其按钮本体。⚠️ 不能用 display:none 挂在
+	   载体容器上——那会把浮层一起藏掉。 */
+	.paper-search-carrier,
+	.paper-theme-carrier {
+		position: absolute;
+		width: 0;
+		height: 0;
+		overflow: visible;
+	}
+	.paper-search-carrier > div:first-child,
+	.paper-search-carrier > button,
+	.paper-theme-carrier > button {
+		display: none !important;
+	}
+	/* 窄屏 CSS 给 .site-header 定宽（min(94vw,760px)），补居中 */
+	.site-header {
+		margin-inline: auto;
+	}
+</style>
+
+<script is:inline>
+	(function () {
+		"use strict";
+
+		function bindOnce(selector, handler) {
+			document.querySelectorAll(selector).forEach(function (btn) {
+				// 预占 paper-header.js 的绑定标记：三个按钮的转发逻辑由本脚本负责，
+				// 避免 public/js/paper-header.js 的通用实现（抽屉/裸切类）二次绑定。
+				if (btn.dataset.paperBound) return;
+				btn.dataset.paperBound = "1";
+				btn.addEventListener("click", handler);
+			});
+		}
+
+		// 汉堡 → 移动端菜单面板（NavMenuPanel）
+		bindOnce(".js-sidebar-toggle", function () {
+			var panel = document.getElementById("nav-menu-panel");
+			if (!panel) return;
+			var willOpen = panel.classList.contains("float-panel-closed");
+			panel.classList.toggle("float-panel-closed", !willOpen);
+			document
+				.querySelectorAll(".js-sidebar-toggle")
+				.forEach(function (b) {
+					b.setAttribute("aria-expanded", willOpen ? "true" : "false");
+				});
+		});
+
+		// 搜索 → 转发给 Search 组件的移动端开关键（打开 pagefind 浮层）
+		bindOnce(".js-search-open", function () {
+			var sw = document.getElementById("search-switch");
+			if (sw) sw.click();
+		});
+
+		// 主题 → 转发给 ThemeSwitch（保证 data-theme/localStorage/过渡一致）
+		bindOnce(".theme-toggle", function () {
+			var sw = document.getElementById("scheme-switch");
+			if (sw) sw.click();
+		});
+
+		// 点外部关闭移动端菜单面板
+		if (!document.documentElement.dataset.paperMenuOutside) {
+			document.documentElement.dataset.paperMenuOutside = "1";
+			document.addEventListener("click", function (event) {
+				var panel = document.getElementById("nav-menu-panel");
+				if (!panel || panel.classList.contains("float-panel-closed"))
+					return;
+				if (
+					event.target.closest &&
+					(event.target.closest("#nav-menu-panel") ||
+						event.target.closest(".js-sidebar-toggle"))
+				)
+					return;
+				panel.classList.add("float-panel-closed");
+				document.querySelectorAll(".js-sidebar-toggle").forEach(function (b) {
+					b.setAttribute("aria-expanded", "false");
+				});
+			});
+			// Esc 关闭移动端菜单面板（paper-header.js 的 Esc 管不到它）
+			document.addEventListener("keydown", function (event) {
+				if (event.key !== "Escape") return;
+				var panel = document.getElementById("nav-menu-panel");
+				if (panel) panel.classList.add("float-panel-closed");
+			});
+		}
+	})();
+</script>
