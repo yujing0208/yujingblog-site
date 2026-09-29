@@ -1,0 +1,65 @@
+---
+/**
+ * PaperLatestCard —— FlatPaper「最新文章」侧栏卡片（r15 差距 #2）
+ *
+ * 移植基础：flatpaper layout/_partial/latest-posts.ejs
+ *   .side-card.recent-card.latest-posts-card
+ *   .recent-list > li > a.recent-item（strong 标题 + em 日期）
+ *   数据源 = 全站文章按发布时间倒序，limit 默认 5
+ *
+ * 用法：仅文章页左栏 toc-card 之后（sidebar-right.ejs 的 is_post 分支），
+ * 由 SidebarColumn.astro 的文章页特判注入，列表页不渲染。
+ */
+import { Icon } from "astro-icon/components";
+
+import { getSortedPosts } from "../../../utils/content-utils";
+import { getPostUrl } from "../../../utils/url-utils";
+
+interface Props {
+	/** 条数上限（flatpaper latest_posts.limit，默认 5） */
+	limit?: number;
+	/** 需要排除的文章 id（预留；当前由侧栏通用渲染管线传入不到，先不排除） */
+	excludeId?: string;
+}
+
+const { limit = 5, excludeId } = Astro.props;
+
+const posts = await getSortedPosts();
+const items = posts
+	.filter((p: any) => !excludeId || p.id !== excludeId)
+	.slice(0, limit)
+	.map((p: any) => {
+		const d = p.data ?? {};
+		const dt = d.published ? new Date(d.published) : null;
+		const title = String(d.title ?? p.id ?? "").trim() || "未命名";
+		return {
+			title,
+			date:
+				dt && !Number.isNaN(dt.getTime())
+					? dt.toISOString().slice(0, 10)
+					: "",
+			url: getPostUrl(p),
+		};
+	});
+---
+
+{
+	items.length > 0 && (
+		<section class="side-card recent-card latest-posts-card onload-animation" style="animation-delay: 150ms">
+			<h2>
+				<Icon name="material-symbols:history" class="side-card-icon" is:inline />
+				最新文章
+			</h2>
+			<ul class="recent-list">
+				{items.map((item) => (
+					<li>
+						<a class="recent-item" href={item.url}>
+							<strong>{item.title}</strong>
+							<em>{item.date}</em>
+						</a>
+					</li>
+				))}
+			</ul>
+		</section>
+	)
+}
