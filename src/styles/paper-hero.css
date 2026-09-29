@@ -1054,3 +1054,69 @@ body.is-hero-active .top-gradient-highlight {
 		animation: none;
 	}
 }
+
+/* ===========================================================================
+ * 12. 暗色补全（r17 暗色验收修复）
+ *
+ *  照搬原版 home-hero.styl L623-669 的 .dark-mode 段（.dark-mode → :root.dark，
+ *  --dash → --paper-dash，--color-accent* → --fp-accent*）。
+ *  此前仅 --image 模式有暗色卡变体，非图模式暗色下资料卡 ::before 仍是
+ *  亮米纸 rgba(255,253,246,0.86)，标题浅字压浅底不可读（r17 首页暗色实拍实证）。
+ *  image 模式已有自有暗色分支（L235），故非图分支用 :not(.home-hero--image)
+ *  限定，不与既有规则打架。
+ * ======================================================================== */
+:root.dark .home-hero::before {
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+:root.dark .home-hero__grain {
+	background-image:
+		repeating-radial-gradient(
+			circle at 18% 18%,
+			rgba(255, 255, 255, 0.12) 0 1px,
+			transparent 1px 5px
+		),
+		repeating-linear-gradient(
+			95deg,
+			rgba(255, 255, 255, 0.02) 0 1px,
+			transparent 1px 8px
+		);
+}
+
+:root.dark .home-hero:not(.home-hero--image) .home-hero__profile::before {
+	background: rgba(35, 39, 50, 0.9);
+	border-color: var(--paper-dash);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+:root.dark .home-hero:not(.home-hero--image) .home-hero__tools .home-hero__tool {
+	color: var(--ink-soft);
+	background: rgba(35, 39, 50, 0.78);
+	border-color: var(--paper-dash);
+	box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+:root.dark
+	.home-hero:not(.home-hero--image)
+	.home-hero__tools
+	.home-hero__tool:hover,
+:root.dark
+	.home-hero:not(.home-hero--image)
+	.home-hero__tools
+	.home-hero__tool:focus-visible {
+	color: var(--fp-accent-muted);
+	background: var(--fp-accent-soft);
+	border-color: var(--fp-accent);
+}
+
+:root.dark .home-hero:not(.home-hero--image) .home-hero__arrow {
+	color: #684029;
+	filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.24));
+}
+
+:root.dark .home-hero:not(.home-hero--image) .home-hero__arrow:hover,
+:root.dark .home-hero:not(.home-hero--image) .home-hero__arrow:focus-visible {
+	color: #54311f;
+}
