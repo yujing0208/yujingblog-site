@@ -8,12 +8,11 @@ import IconifyLoader from "@components/misc/IconifyLoader.astro";
 import Footer from "@components/organisms/footer/Footer.astro";
 import PaperHeader from "@components/organisms/navigation/PaperHeader.astro";
 import SideBar from "@components/widgets/sidebar/SideBar.astro";
-import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
-import PaperRecentCard from "@components/widgets/sidebar/PaperRecentCard.astro";
+import PaperRandomCard from "@components/widgets/sidebar/PaperRandomCard.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
 
-import { fullscreenWallpaperConfig, profileConfig, siteConfig } from "../config";
+import { fullscreenWallpaperConfig, siteConfig } from "../config";
 import {
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_FULLSCREEN,
@@ -105,10 +104,11 @@ const transparentClass = getTransparencyClass(shouldEnable);
 // 布局模式
 const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 
-// FlatPaper 列表页右栏（sidebar-left.ejs：welcome-card + random-posts）。
+// FlatPaper 列表页右栏（sidebar-left.ejs：random-posts 单卡）。
+// flatpaper 的 welcome-card 仅 is_home()（首页由 PaperHomeLayout 直渲），
+// 归档/分类/标签/分页列表页右栏只有随机文章 —— 对齐 r16 差距 #1③。
 // 仅列表页渲染（paperListRail 由 archive/tags/categories/tag/category/分页页传入）；
 // 文章页与独立页保持 flatpaper 两栏结构；音乐组件（红线）始终保留。
-const paperHeroCfg = siteConfig.paperHero ?? {};
 ---
 
 <Layout
@@ -231,19 +231,7 @@ const paperHeroCfg = siteConfig.paperHero ?? {};
 								class={`right-sidebar-container ${rightSidebarClass} ${transparentClass}`}
 							>
 								<div class="hidden w-full flex-col gap-4 lg:flex">
-									{paperListRail && (
-										<Fragment>
-											<PaperWelcomeCard
-												image={paperHeroCfg.welcomeImage ?? profileConfig.avatar ?? ""}
-												label={paperHeroCfg.welcomeLabel ?? "Hello!"}
-												title={siteConfig.title}
-												text={profileConfig.bio ?? ""}
-												ctaText={paperHeroCfg.welcomeCtaText ?? "开始阅读"}
-												ctaLink={paperHeroCfg.welcomeCtaLink ?? "/archive/"}
-											/>
-											<PaperRecentCard limit={8} />
-										</Fragment>
-									)}
+									{paperListRail && <PaperRandomCard limit={5} />}
 									<RightSideBar headings={headings} />
 								</div>
 							</div>
