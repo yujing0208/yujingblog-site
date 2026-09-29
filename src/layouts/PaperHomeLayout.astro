@@ -33,7 +33,7 @@ import PaperProfileCard from "@components/widgets/sidebar/PaperProfileCard.astro
 import PaperCategoriesCard from "@components/widgets/sidebar/PaperCategoriesCard.astro";
 import PaperTagsCard from "@components/widgets/sidebar/PaperTagsCard.astro";
 import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
-import PaperRecentCard from "@components/widgets/sidebar/PaperRecentCard.astro";
+import PaperRandomCard from "@components/widgets/sidebar/PaperRandomCard.astro";
 import type { MarkdownHeading } from "astro";
 
 import { profileConfig, siteConfig } from "../config";
@@ -153,8 +153,8 @@ const tagCount = tagList.length;
 					</div>
 				</main>
 
-				<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 → 最近动态 → 站内 widget
-				     顺序按需求：音乐组件在「最近动态」下面 -->
+			<!-- 视觉右栏（flatpaper sidebar-left.ejs）：欢迎卡 → 随机文章 → 站内 widget
+			     顺序按需求：音乐组件在「随机文章」下面 -->
 				<aside class="paper-sidebar paper-sidebar--left">
 					<PaperWelcomeCard
 						image={paperHeroConfig.welcomeImage ?? profileConfig.avatar ?? ""}
@@ -164,8 +164,8 @@ const tagCount = tagList.length;
 						ctaText={paperHeroConfig.welcomeCtaText ?? "开始阅读"}
 						ctaLink={paperHeroConfig.welcomeCtaLink ?? "/archive/"}
 					/>
-					<!-- 最近动态（聚合文章/动态/足迹/番剧/相册） -->
-					<PaperRecentCard limit={8} />
+					<!-- 随机文章（flatpaper sidebar-left.ejs：welcome-card + random-posts） -->
+					<PaperRandomCard limit={5} />
 					<!-- 站内右侧 widget（站点统计 → 音乐播放器；日历与分类已按需求移除） -->
 					<RightSideBar headings={headings} />
 				</aside>
