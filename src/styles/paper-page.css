@@ -1,0 +1,199 @@
+/* ============================================================
+   FlatPaper 自有页面壳层（r16 · 差距 #1：friends/guestbook/404 套壳）
+   移植基础：flatpaper _page/article.styl（article-paper / article-header 段）
+            + _page/not-found.styl（全段）
+            + _components/friends.styl（壳段 + friend-card 观感）
+   覆盖页面：src/pages/friends.astro / guestbook.astro / 404.astro
+   机制说明：
+   - .article-paper 一律与 .card-base 双挂 → 纸面铺层由 card-base::after
+     （paper-theme.css 全站撕纸边机制）承担，本文件只管结构与内边距
+   - .article-tape-wrap 是胶带定位上下文；.tape/.tape--top-right 在 paper-theme.css
+   - .label-pill 基础样式在 paper-featured.css
+   - 响应式：paper-responsive.css 已有 .article-paper 移动端覆盖（960px 断点），
+     本文件末尾重申同值规则，防打包顺序导致覆盖失效
+   ============================================================ */
+
+:root {
+	/* flatpaper --color-accent-strong 映射（跟随本站 --hue） */
+	--fp-page-accent-strong: oklch(0.52 0.12 var(--hue));
+}
+
+:root.dark {
+	--fp-page-accent-strong: oklch(0.78 0.1 var(--hue));
+}
+
+/* ---------- 胶带定位上下文（照搬 article.styl .article-tape-wrap） ---------- */
+.article-tape-wrap {
+	position: relative;
+	min-width: 0;
+}
+
+/* ---------- 卡片本体（照搬 .article-paper；纸面来自 card-base::after） ---------- */
+.article-paper {
+	--article-top-img-pad-top: 44px;
+	--article-top-img-pad-x: 64px;
+	padding: 44px 64px 0;
+	min-width: 0;
+	border-radius: 4px;
+	overflow-x: clip;
+}
+
+/* ---------- 页面头（照搬 .article-header） ---------- */
+.article-header {
+	position: relative;
+	padding-bottom: 18px;
+	border-bottom: 1px dashed var(--paper-line);
+}
+
+.article-header .label-pill {
+	margin-bottom: 14px;
+}
+
+.article-header h1 {
+	margin: 4px 0 0;
+	font-size: 28px;
+	font-weight: 800;
+	line-height: 1.4;
+	letter-spacing: 0;
+}
+
+/* ---------- friends（照搬 friends.styl 壳段） ---------- */
+.friends-page {
+	padding-bottom: 32px;
+}
+
+.friends-subtitle {
+	margin: 8px 0 0;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+/* friend-card 观感对齐 flatpaper（dashed 边框 + 常态纸底 + 上浮） */
+.friends-page .friend-card {
+	border-style: dashed;
+	border-color: var(--paper-dash);
+	background: var(--card-bg);
+	transition:
+		transform 0.22s ease,
+		border-color 0.22s ease,
+		box-shadow 0.22s ease;
+}
+
+.friends-page .friend-card:hover {
+	transform: translateY(-3px);
+	border-color: var(--fp-accent);
+	box-shadow: var(--small-shadow);
+}
+
+/* ---------- guestbook 壳（header 由 article-header 提供；墙样式在
+   public/paper-guestbook-wall.css，数据侧归另一会话，此处不越界） ---------- */
+.article-paper.guestbook-page .article-header {
+	margin-bottom: 6px;
+}
+
+/* ---------- 404（照搬 not-found.styl 全段） ---------- */
+.not-found-paper {
+	padding-bottom: 44px;
+	text-align: center;
+}
+
+.not-found-header {
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	padding-bottom: 24px;
+}
+
+.not-found-code {
+	margin: 6px 0 0;
+	color: var(--fp-page-accent-strong);
+	font-size: 72px;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: 0;
+}
+
+.not-found-lead {
+	max-width: 520px;
+	margin: 12px auto 0;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.8;
+}
+
+.not-found-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 18px;
+}
+
+.not-found-action {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-width: 128px;
+	padding: 8px 18px;
+	border: 0;
+	color: var(--ink-soft);
+	background: transparent;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		color 0.2s ease,
+		transform 0.2s ease;
+	z-index: 1;
+}
+
+/* 纸片按钮：::before 铺纸 + 撕边滤镜（照搬 .not-found-action::before） */
+.not-found-action::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--paper-warm);
+	z-index: -1;
+	border-radius: 4px;
+	box-shadow: inset 0 0 0 1px var(--paper-dash);
+	filter: url(#paper-edge) drop-shadow(var(--paper-shadow));
+	transition:
+		background 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+:root.dark .not-found-action::before {
+	box-shadow: none;
+}
+
+.not-found-action:hover {
+	color: var(--fp-page-accent-strong);
+	transform: translateY(-1px);
+}
+
+.not-found-action:hover::before {
+	background: var(--fp-accent-soft);
+	box-shadow: inset 0 0 0 1px var(--fp-accent);
+}
+
+/* ---------- 响应式（与 paper-responsive.css 960px 断点同值重申，防顺序漂移） ---------- */
+@media (max-width: 960px) {
+	.article-paper {
+		padding: 28px 26px 0;
+	}
+
+	.article-header h1 {
+		font-size: 24px;
+	}
+
+	.not-found-code {
+		font-size: 56px;
+	}
+}
