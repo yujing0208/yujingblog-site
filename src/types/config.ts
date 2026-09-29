@@ -428,6 +428,7 @@ export type WidgetComponentType =
 	| "paper-profile" // FlatPaper 手账风个人名片（内页侧栏）
 	| "paper-categories" // FlatPaper 手账风分类卡（内页侧栏）
 	| "paper-tags" // FlatPaper 手账风标签云卡（内页侧栏）
+	| "paper-latest" // FlatPaper「最新文章」卡（文章页左栏，latest-posts.ejs）
 	| "custom";
 
 export interface WidgetComponentConfig {
