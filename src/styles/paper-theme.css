@@ -81,6 +81,10 @@
 	--ink-soft: oklch(0.68 0.012 265);
 	--muted: oklch(0.53 0.012 265);
 	--fp-accent-muted: oklch(0.78 0.08 var(--hue));
+	/* r17 暗色验收补：accent-soft 亮色值 oklch(0.9 ...) 是浅色底，
+	   暗色下作 hover 背景会刺眼；照搬原版 var.styl 暗色段语义
+	   （.dark-mode --color-accent-soft: #354a3a = 暗底柔和色） */
+	--fp-accent-soft: oklch(0.34 0.035 var(--hue));
 	--tape-yellow: rgba(214, 168, 80, 0.5);
 	--tape-pink: rgba(196, 130, 118, 0.45);
 	--tape-green: rgba(120, 168, 130, 0.5);
