@@ -48,16 +48,26 @@ const isPostPage = Astro.url.pathname.startsWith("/posts/");
 
 <style>
 	.toc-scroll-container {
-		max-height: 50vh;
+		/* FlatPaper 对齐（r15）：flatpaper toc-content 为
+		   max-height calc(100vh - 200px) + 细滚动条（6px --line） */
+		max-height: calc(100vh - 200px);
 		overflow-y: auto;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
+		scrollbar-width: thin;
+		scrollbar-color: var(--paper-line, var(--line-divider)) transparent;
 	}
 
 	.toc-scroll-container::-webkit-scrollbar {
-		display: none;
-		width: 0;
-		height: 0;
+		width: 6px;
+		height: 6px;
+	}
+
+	.toc-scroll-container::-webkit-scrollbar-thumb {
+		background: var(--paper-line, var(--line-divider));
+		border-radius: 999px;
+	}
+
+	.toc-scroll-container::-webkit-scrollbar-track {
+		background: transparent;
 	}
 </style>
 
