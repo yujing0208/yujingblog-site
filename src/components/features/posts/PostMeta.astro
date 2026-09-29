@@ -62,7 +62,8 @@ const {
         </div>
     )}
 
-    <Category category={category} />
+    {/* r15：分类由文章头 label-pill 承担，meta 行仅在显式传入分类时渲染（flatpaper meta-line 无分类） */}
+    {category && <Category category={category} />}
 
     {showWordCount && words && (
         <WordCount words={words} />
