@@ -1,0 +1,143 @@
+/* ============================================================
+   FlatPaper 文章页结构对齐（r15 差距 #2）
+   移植基础：flatpaper source/css/_partials/_page/article.styl
+   —— 题图（article-top-img）+ 文章头（article-header / label-pill）
+   token 映射：--paper → --card-bg（Mizuki 卡片纸色）
+   仅由 src/pages/posts/[...slug].astro 引入（文章页专属）
+   ============================================================ */
+
+/* ---------- 题图：出血到卡顶左右边缘，底部渐隐融入纸色 ---------- */
+.fp-article-top-img {
+	position: relative;
+	/* 抵消 card-base 的 pt-6(1.5rem) / px-6(1.5rem)；md 断点横向 padding 为 px-9(2.25rem) */
+	margin: -1.5rem -1.5rem 0;
+	height: clamp(220px, 31vw, 360px);
+	overflow: hidden;
+	background: var(--card-bg);
+}
+
+@media (min-width: 768px) {
+	.fp-article-top-img {
+		margin: -1.5rem -2.25rem 0;
+	}
+}
+
+.fp-article-top-img img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	filter: saturate(0.94) contrast(0.98);
+	user-select: none;
+	pointer-events: none;
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		#fff 0%,
+		#fff 34%,
+		rgba(255, 255, 255, 0.5) 56%,
+		rgba(255, 255, 255, 0.14) 70%,
+		transparent 80%
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		#fff 0%,
+		#fff 34%,
+		rgba(255, 255, 255, 0.5) 56%,
+		rgba(255, 255, 255, 0.14) 70%,
+		transparent 80%
+	);
+}
+
+/* 渐变过渡层：图下半部融进纸色（照搬 .article-top-img::after） */
+.fp-article-top-img::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	background: linear-gradient(
+		to bottom,
+		transparent 0%,
+		transparent 24%,
+		var(--card-bg) 56%
+	);
+	opacity: 0.96;
+	transform: translateY(22%);
+}
+
+/* 暗色渐变（照搬 .dark-mode .article-top-img::after） */
+:root.dark .fp-article-top-img::after {
+	background: linear-gradient(
+		to bottom,
+		transparent 0%,
+		rgba(29, 32, 39, 0.08) 20%,
+		rgba(29, 32, 39, 0.2) 36%,
+		rgba(29, 32, 39, 0.38) 52%,
+		rgba(29, 32, 39, 0.62) 68%,
+		rgba(29, 32, 39, 0.86) 82%,
+		var(--card-bg) 94%
+	);
+	opacity: 0.94;
+}
+
+/* ---------- 文章头：分类 label-pill + 标题，压在题图渐变尾上 ---------- */
+.fp-article-header {
+	position: relative;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+
+/* 有题图时标题区上移压图（照搬 --article-top-img-overlap 机制，数值按
+   本站 header 只装 pill+h1（meta 行在外）折算） */
+.fp-article-header--overlap {
+	margin-top: -96px;
+	min-height: 96px;
+	text-shadow: 0 1px 14px var(--card-bg);
+}
+
+.fp-article-header .label-pill {
+	align-self: flex-start;
+	margin-bottom: 14px;
+}
+
+.fp-article-title {
+	margin: 0;
+	font-size: 28px;
+	line-height: 1.4;
+	font-weight: 800;
+	letter-spacing: 0;
+}
+
+@media (min-width: 768px) {
+	.fp-article-title {
+		font-size: 30px;
+	}
+}
+
+/* ---------- 「最新文章」卡（latest-posts.ejs；复用 recent-card 基础样式） ---------- */
+.latest-posts-card h2 {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.latest-posts-card .recent-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.latest-posts-card .recent-item strong {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.latest-posts-card .recent-item em {
+	font-style: normal;
+	font-size: 12px;
+	opacity: 0.75;
+}
