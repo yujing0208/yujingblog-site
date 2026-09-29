@@ -13,6 +13,7 @@ import Categories from "../widgets/categories/Categories.astro";
 import Hitokoto from "../widgets/hitokoto/Hitokoto.astro";
 import MusicPlayer from "../widgets/music-player/MusicPlayer.svelte";
 import { MusicSidebarWidget } from "../widgets/music-sidebar";
+import PaperLatestCard from "../widgets/sidebar/PaperLatestCard.astro";
 import PaperProfileCard from "../widgets/sidebar/PaperProfileCard.astro";
 import PaperCategoriesCard from "../widgets/sidebar/PaperCategoriesCard.astro";
 import PaperTagsCard from "../widgets/sidebar/PaperTagsCard.astro";
@@ -55,6 +56,7 @@ const componentMap: Record<string, unknown> = {
 	"paper-profile": PaperProfileCard,
 	"paper-categories": PaperCategoriesCard,
 	"paper-tags": PaperTagsCard,
+	"paper-latest": PaperLatestCard,
 	toc: SidebarTOC,
 	"card-toc": CardTOC,
 	"music-player": MusicPlayer,
@@ -76,18 +78,67 @@ const mobileStickyComponents = showMobile
 	? widgetManager.getComponentsByPosition("sticky", side, "mobile")
 	: [];
 
+// FlatPaper 对齐（r15 差距 #2）：文章页左栏 = profile + toc-card + latest-posts
+// （flatpaper sidebar-right.ejs 的 is_post 分支：分类/标签卡在文章页让位给目录+最新文章）。
+// 仅作用于 tablet/desktop 桌面左栏；mobile 走 drawer 组、right 组不参与，均不受影响。
+const isPostPage = Astro.url.pathname.startsWith("/posts/");
+
+function pickPostLeftComponents(
+	comps: ReturnType<typeof widgetManager.getComponentsByPosition>,
+	position: "top" | "sticky",
+): ReturnType<typeof widgetManager.getComponentsByPosition> {
+	if (!isPostPage || side !== "left") {
+		return comps;
+	}
+	const order = [
+		"paper-profile",
+		"card-toc",
+		"paper-latest",
+	] as const;
+	return order
+		.map((type) => {
+			const found = comps.find((c) => c.type === type);
+			if (found) {
+				return found;
+			}
+			// paper-latest 不在 components.left，构造兜底条目（properties 已注册）
+			if (type === "paper-latest") {
+				return {
+					type,
+					position,
+					class: "onload-animation",
+					animationDelay: 150,
+				} as (typeof comps)[number];
+			}
+			return null;
+		})
+		.filter(Boolean) as ReturnType<typeof widgetManager.getComponentsByPosition>;
+}
+
 const tabletTopComponents = showTablet
-	? widgetManager.getComponentsByPosition("top", side, "tablet")
+	? pickPostLeftComponents(
+			widgetManager.getComponentsByPosition("top", side, "tablet"),
+			"top",
+		)
 	: [];
 const tabletStickyComponents = showTablet
-	? widgetManager.getComponentsByPosition("sticky", side, "tablet")
+	? pickPostLeftComponents(
+			widgetManager.getComponentsByPosition("sticky", side, "tablet"),
+			"sticky",
+		)
 	: [];
 
 const desktopTopComponents = showDesktop
-	? widgetManager.getComponentsByPosition("top", side, "desktop")
+	? pickPostLeftComponents(
+			widgetManager.getComponentsByPosition("top", side, "desktop"),
+			"top",
+		)
 	: [];
 const desktopStickyComponents = showDesktop
-	? widgetManager.getComponentsByPosition("sticky", side, "desktop")
+	? pickPostLeftComponents(
+			widgetManager.getComponentsByPosition("sticky", side, "desktop"),
+			"sticky",
+		)
 	: [];
 
 // paper-profile 的站点统计（构建期算一次，flatpaper site_info 三列）
