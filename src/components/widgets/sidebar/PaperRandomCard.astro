@@ -1,0 +1,71 @@
+---
+/**
+ * PaperRandomCard —— 手账风「随机文章」侧栏卡片
+ *
+ * 移植基础：flatpaper layout/_partial/random-posts.ejs + _components/random-posts.styl
+ *   .side-card.recent-card  右上角黄胶带（#sidebar .card-base::before 机制）
+ *   .recent-list            li + li 虚线分隔
+ *   .recent-item            标题 + 日期，悬停右移变强调色
+ *
+ * 对齐点（r16 差距 #1②③）：
+ *   · 标题「随机文章」+ shuffle 图标（flatpaper common.random_posts 语义）
+ *   · 取数 = 全部文章随机取 limit 篇（构建期 Fisher–Yates 洗牌，
+ *     每次构建产生新随机顺序，对齐 ref 的随机语义；ref 另有客户端
+ *     flatpaper-random-posts.json 二次随机，属增强，暂不做）
+ *   · 「最近动态」聚合卡保留在 PaperRecentCard（本组件不替代其文件本体）
+ */
+import { Icon } from "astro-icon/components";
+
+import { getSortedPosts } from "../../../utils/content-utils";
+import { getPostUrl } from "../../../utils/url-utils";
+
+interface Props {
+	/** 条数上限（flatpaper random_posts 默认 5） */
+	limit?: number;
+	/** 排除的页面路径（flatpaper 有排除当前页逻辑） */
+	excludePath?: string;
+}
+
+const { limit = 5, excludePath = "" } = Astro.props;
+
+const posts = await getSortedPosts();
+const pool = posts.filter((e: any) => !excludePath || getPostUrl(e) !== excludePath);
+
+/* 构建期洗牌（Fisher–Yates） */
+for (let i = pool.length - 1; i > 0; i--) {
+	const j = Math.floor(Math.random() * (i + 1));
+	const tmp = pool[i];
+	pool[i] = pool[j];
+	pool[j] = tmp;
+}
+
+const items = pool.slice(0, limit).map((entry: any) => {
+	const d = entry.data ?? {};
+	const dt = d.published ? new Date(d.published) : null;
+	const rawTitle = String(d.title ?? entry.slug ?? "").trim() || "未命名";
+	return {
+		title: rawTitle,
+		date: dt && !Number.isNaN(dt.getTime()) ? dt.toISOString().slice(0, 10) : "",
+		url: getPostUrl(entry),
+	};
+});
+---
+
+<section class="side-card recent-card">
+	<h2>
+		<Icon name="material-symbols:shuffle" class="side-card-icon" is:inline />
+		随机文章
+	</h2>
+	<ul class="recent-list">
+		{
+			items.map((item) => (
+				<li>
+					<a class="recent-item" href={item.url}>
+						<strong>{item.title}</strong>
+						<em>{item.date}</em>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</section>
