@@ -4,6 +4,7 @@
 import { commentConfig } from "@/config";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import Twikoo from "@components/comment/Twikoo.astro";
+import "../styles/paper-page.css";
 
 export const prerender = true;
 
@@ -20,49 +21,55 @@ const avatarFallback = "/images/icon-error.webp";
 	<link slot="head" rel="stylesheet" href="/paper-guestbook-wall.css" />
 
 	<!-- 留言墙（照搬 homulilly /comment/ 的 DOM 结构） -->
-	<article
-		class="article-paper guestbook-page article-paper--with-top-img article-paper--page-top-img"
-	>
-		<div class="article-content guestbook-intro">
-			<p class="guestbook-subtitle">欢迎在这里留下足迹，说点什么吧～</p>
-		</div>
-
-		<section
-			class="guestbook-wall"
-			data-guestbook-system="twikoo"
-			data-guestbook-env={twikooEnvId}
-			data-page-size={String(pageSize)}
-			data-avatar-fallback={avatarFallback}
-			aria-label="留言板"
+	<div class="article-tape-wrap w-full relative">
+		<span class="tape tape--top-right" aria-hidden="true"></span>
+		<article
+			class="article-paper guestbook-page card-base relative z-10 w-full"
 		>
-			<div class="guestbook-wall__summary" hidden>
-				<span class="guestbook-wall__stat" data-guestbook-stat="total"></span>
-				<span class="guestbook-wall__stat" data-guestbook-stat="shown" hidden></span>
+			<!-- 页面头：label-pill + h1（flatpaper guestbook.ejs article-header） -->
+			<header class="article-header">
+				<span class="label-pill">留言板</span>
+				<h1>{title}</h1>
+				<p class="guestbook-subtitle">欢迎在这里留下足迹，说点什么吧～</p>
+			</header>
+
+			<section
+				class="guestbook-wall"
+				data-guestbook-system="twikoo"
+				data-guestbook-env={twikooEnvId}
+				data-page-size={String(pageSize)}
+				data-avatar-fallback={avatarFallback}
+				aria-label="留言板"
+			>
+				<div class="guestbook-wall__summary" hidden>
+					<span class="guestbook-wall__stat" data-guestbook-stat="total"></span>
+					<span class="guestbook-wall__stat" data-guestbook-stat="shown" hidden></span>
+					<button
+						class="guestbook-wall__sort"
+						type="button"
+						data-guestbook-sort
+						hidden
+					>
+					</button>
+					<a class="guestbook-wall__write" href="#tcomment">
+						在下方留言，刷新后就会贴到墙上
+					</a>
+				</div>
+				<p class="guestbook-wall__state" data-guestbook-state aria-live="polite">
+					正在铺开留言墙…
+				</p>
+				<ul class="guestbook-wall__list" data-guestbook-list></ul>
 				<button
-					class="guestbook-wall__sort"
+					class="guestbook-wall__more"
 					type="button"
-					data-guestbook-sort
+					data-guestbook-more
 					hidden
 				>
+					展开更多留言
 				</button>
-				<a class="guestbook-wall__write" href="#tcomment">
-					在下方留言，刷新后就会贴到墙上
-				</a>
-			</div>
-			<p class="guestbook-wall__state" data-guestbook-state aria-live="polite">
-				正在铺开留言墙…
-			</p>
-			<ul class="guestbook-wall__list" data-guestbook-list></ul>
-			<button
-				class="guestbook-wall__more"
-				type="button"
-				data-guestbook-more
-				hidden
-			>
-				展开更多留言
-			</button>
-		</section>
-	</article>
+			</section>
+		</article>
+	</div>
 
 	<!-- 下方评论区：Twikoo（复用骨架自带组件：懒加载 + Swup 钩子 + 本地 SDK） -->
 	<section class="comments-section" aria-label="评论">
