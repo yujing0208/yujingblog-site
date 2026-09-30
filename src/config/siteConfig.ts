@@ -153,10 +153,11 @@ export const siteConfig: SiteConfig = {
 		},
 
 		waves: {
-			enable: true,
+			// 2026-09-30 按需求全站关闭水波纹（含 banner 模式下的滚动波浪动画）
+			enable: false,
 			performanceMode: false,
 			mobileDisable: false,
-			switchable: true,
+			switchable: false,
 		},
 
 		// PicFlow API支持(智能图片API)
