@@ -18,15 +18,18 @@ interface Props {
 	class?: string;
 	style?: string;
 	headings?: MarkdownHeading[];
+	/** 由 SidebarColumn 注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
+	isPost?: boolean;
 }
 
-const { class: className, style } = Astro.props;
+const { class: className, style, isPost } = Astro.props;
 const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 
 // FlatPaper 对齐（2026-09-27 Round 5）：toc-card 只在文章页出现
 // （flatpaper sidebar-right.ejs：文章页换 toc-card+latest-posts，列表页无目录卡）。
 // 非文章路径渲染空占位，避免归档/标签页出现「当前页面没有目录」的空卡。
-const isPostPage = Astro.url.pathname.startsWith("/posts/");
+// Round 19：站点启用根路径永久链接（/posts/ 前缀不存在），优先信任布局层注入的 isPost。
+const isPostPage = isPost ?? Astro.url.pathname.startsWith("/posts/");
 ---
 
 {isPostPage ? (
