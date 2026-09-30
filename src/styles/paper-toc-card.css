@@ -21,7 +21,7 @@
  *
  *  两处必要改写（与 paper-sidebar-right.css 同规则）：
  *    .dark-mode → :root.dark；--color-accent* / --line / --paper / --dash
- *    → var(--primary) / oklch(0.55 0.12 var(--hue)) / --paper-line / --card-bg / --paper-dash
+ *    → var(--primary) / var(--color-accent-strong) / --paper-line / --card-bg / --paper-dash
  * ========================================================================= */
 
 /* ==========================================================================
@@ -110,7 +110,7 @@
 }
 
 .toc-card .toc-toggle-all:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	border-color: var(--primary);
 	background-color: var(--fp-accent-soft);
 	background-image: var(--nav-tape-stripes);
@@ -119,7 +119,7 @@
 }
 
 :root.dark .toc-card .toc-toggle-all:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 /* 展开态：图标翻转 180°（照搬 '.toc-card.is-expanded .toc-toggle-all .lucide'） */
@@ -207,16 +207,16 @@
 }
 
 :root.dark .toc-card .fp-toc-content a::before {
-	background: oklch(0.78 0.08 var(--hue));
+	background: var(--color-accent);
 }
 
 .toc-card .fp-toc-content a:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	transform: translateX(6px);
 }
 
 :root.dark .toc-card .fp-toc-content a:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 .toc-card .fp-toc-content a:hover::before,
@@ -226,12 +226,12 @@
 }
 
 .toc-card .fp-toc-content a.is-active {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	font-weight: 600;
 }
 
 :root.dark .toc-card .fp-toc-content a.is-active {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 /* 二级 / 三级缩进（嵌套 ol 控制层级） */

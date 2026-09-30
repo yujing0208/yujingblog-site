@@ -155,9 +155,9 @@ body.is-hero-active::before {
 
 .home-hero__tools .home-hero__tool:hover,
 .home-hero__tools .home-hero__tool:focus-visible {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	border-color: var(--primary);
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	outline: none;
 	transform: translateY(-1px);
 }
@@ -281,7 +281,7 @@ body.is-hero-active::before {
 	align-items: center;
 	gap: 8px;
 	margin: 0 0 8px;
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	font-size: 14px;
 	font-weight: 800;
 }
@@ -789,7 +789,7 @@ body.is-hero-active::before {
 .hero-visit-confirm button:focus-visible {
 	color: var(--deep-text);
 	border-color: var(--primary);
-	background-color: oklch(0.9 0.05 var(--hue));
+	background-color: var(--color-accent-soft);
 	box-shadow: 3px 5px 0 rgba(82, 64, 38, 0.14);
 	outline: none;
 	transform: rotate(0deg) translateY(-2px);
@@ -845,7 +845,7 @@ body.is-hero-active::before {
 	}
 
 	.home-hero--image:not(.home-hero--mobile-image) .home-hero__eyebrow {
-		color: oklch(0.55 0.12 var(--hue));
+		color: var(--color-accent-strong);
 	}
 
 	.home-hero h1 {

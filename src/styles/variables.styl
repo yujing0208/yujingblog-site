@@ -42,17 +42,17 @@ define(vars)
         {key}: value[1]
 
 define({
-  /* ---------- 强调色：仍然跟随 --hue ---------- */
-  --primary: oklch(0.70 0.14 var(--hue)) oklch(0.75 0.14 var(--hue))
+  /* ---------- 强调色：指向演示站 --color-accent* 令牌 ---------- */
+  --primary: var(--color-accent) var(--color-accent)
 
-  /* ---------- 纸张底色 ---------- */
+  /* ---------- 纸张底色（抄演示站真值） ---------- */
   /* 亮：米黄纸底 #f7f3e9  →  暗：深墨蓝黑 #15171c */
-  --page-bg: oklch(0.962 0.014 85) oklch(0.205 0.012 265)
+  --page-bg: #f7f3e9 #15171c
   /* 亮：奶白纸面 #fffdf6  →  暗：深色牛皮纸 #1d2027 */
-  --card-bg: oklch(0.994 0.008 90) oklch(0.256 0.012 265)
+  --card-bg: #fffdf6 #1d2027
   --card-bg-transparent: rgba(255, 253, 246, 0.82) rgba(29, 32, 39, 0.82)
   /* 更暖的第二层纸（嵌套卡片 / 侧栏用） */
-  --paper-warm: oklch(0.975 0.018 88) oklch(0.283 0.014 265)
+  --paper-warm: #f8f2e2 #272b34
   /* 纸张纹理线条色 */
   --paper-line: rgba(89, 62, 30, 0.055) rgba(255, 255, 255, 0.05)
   --paper-line-strong: rgba(89, 62, 30, 0.09) rgba(255, 255, 255, 0.08)
@@ -68,7 +68,7 @@ define({
   /* ---------- 纸张投影：暖棕、低透明、大扩散 ---------- */
   --paper-shadow: rgba(82, 64, 38, 0.13) rgba(0, 0, 0, 0.35)
 
-  --btn-content: oklch(0.55 0.12 var(--hue)) oklch(0.75 0.1 var(--hue))
+  --btn-content: var(--color-accent-strong) var(--color-accent)
 
   --btn-regular-bg: oklch(0.955 0.02 88) oklch(0.33 0.02 265)
   --btn-regular-bg-hover: oklch(0.92 0.035 88) oklch(0.38 0.025 265)
@@ -85,13 +85,13 @@ define({
   --enter-btn-bg-active: var(--btn-regular-bg-active)
 
   /* 墨色：偏暖的深棕灰，不用纯黑 */
-  --deep-text: oklch(0.26 0.018 80) oklch(0.30 0.05 var(--hue))
+  --deep-text: #2c3531 var(--color-accent-soft)
 
   --text-color: oklch(0.36 0.02 80) oklch(0.92 0.008 265)
   --text-muted: oklch(0.575 0.022 80) oklch(0.70 0.012 265)
   --text-strong: oklch(0.26 0.018 80) oklch(0.97 0.006 265)
 
-  --title-active: oklch(0.6 0.1 var(--hue))
+  --title-active: var(--color-accent-strong)
 
   --line-divider: rgba(89, 62, 30, 0.12) white(0.09)
 
@@ -133,17 +133,17 @@ define({
   --display-dark-icon: 0 1
 
   /* admonition 换成手账色系（纸胶带五色） */
-  --admonitions-color-tip: oklch(0.68 0.10 165) oklch(0.75 0.10 165)
-  --admonitions-color-note: oklch(0.68 0.10 250) oklch(0.75 0.10 250)
-  --admonitions-color-important: oklch(0.68 0.10 300) oklch(0.75 0.10 300)
-  --admonitions-color-warning: oklch(0.76 0.12 75) oklch(0.78 0.11 75)
-  --admonitions-color-caution: oklch(0.64 0.15 28) oklch(0.68 0.14 28)
+  --admonitions-color-tip: var(--green) var(--green)
+  --admonitions-color-note: var(--blue) var(--blue)
+  --admonitions-color-important: var(--violet) var(--violet)
+  --admonitions-color-warning: var(--yellow) var(--yellow)
+  --admonitions-color-caution: var(--red) var(--red)
 
   --toc-badge-bg: oklch(0.90 0.04 88) var(--btn-regular-bg)
   --toc-btn-hover: oklch(0.935 0.018 88) oklch(0.22 0.012 265)
   --toc-btn-active: oklch(0.905 0.018 88) oklch(0.25 0.012 265)
   --toc-width: calc((100vw - var(--page-width)) / 2 - 1rem)
-  --toc-item-active: oklch(0.70 0.13 var(--hue)) oklch(0.35 0.05 265)
+  --toc-item-active: var(--color-accent-strong) var(--color-accent-soft)
 })
 
 /* 非全屏壁纸模式下，--card-bg-transparent 应该和 --card-bg 一致（不透明） */

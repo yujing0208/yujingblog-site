@@ -75,9 +75,9 @@
 }
 
 .featured-carousel .carousel-arrow:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	border-color: var(--primary);
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	transform: scale(1.05);
 }
 
@@ -183,7 +183,7 @@
 	font-size: 12px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
-	background: linear-gradient(135deg, var(--primary), oklch(0.55 0.12 var(--hue)));
+	background: linear-gradient(135deg, var(--primary), var(--color-accent-strong));
 	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
 }
 
@@ -242,12 +242,12 @@
 
 .meta-tag-link:hover,
 .meta-cat-link:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 }
 
 :root.dark .meta-tag-link:hover,
 :root.dark .meta-cat-link:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 .meta-line-icon {
@@ -309,12 +309,12 @@
 }
 
 .read-more:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	transform: translateY(-1px);
 }
 
 .read-more:hover::before {
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	box-shadow: inset 0 0 0 1px var(--primary);
 }
 

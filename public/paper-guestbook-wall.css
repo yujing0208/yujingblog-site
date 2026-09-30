@@ -37,21 +37,15 @@
 	--paper: var(--paper-solid);
 	--ink: var(--ink-soft);
 
-	/* 强调色：对应 paper-theme.css 的 --fp-accent* */
+	/* 强调色：对应 paper-theme.css 的 --fp-accent*
+	   （强力档已改为指演示站 --color-accent-strong 令牌，明暗自动切换） */
 	--color-accent: var(--fp-accent);
-	--color-accent-strong: oklch(0.52 0.12 var(--hue));
+	--color-accent-strong: var(--fp-accent-strong);
 	--color-accent-soft: var(--fp-accent-soft);
 	--color-accent-muted: var(--fp-accent-muted);
 
 	/* 虚线颜色：对应 paper-theme.css 的 --paper-dash */
 	--dash: var(--paper-dash);
-}
-
-:root.dark .guestbook-wall,
-:root.dark .comments-section,
-.dark-mode .guestbook-wall,
-.dark-mode .comments-section {
-	--color-accent-strong: oklch(0.78 0.1 var(--hue));
 }
 
 /* ---------------------------------------------------------------------------

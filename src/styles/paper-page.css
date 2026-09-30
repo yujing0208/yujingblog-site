@@ -14,12 +14,12 @@
    ============================================================ */
 
 :root {
-	/* flatpaper --color-accent-strong 映射（跟随本站 --hue） */
-	--fp-page-accent-strong: oklch(0.52 0.12 var(--hue));
+	/* 演示站 --color-accent-strong 令牌（主题感知，明暗自动切换） */
+	--fp-page-accent-strong: var(--color-accent-strong);
 }
 
 :root.dark {
-	--fp-page-accent-strong: oklch(0.78 0.1 var(--hue));
+	--fp-page-accent-strong: var(--color-accent-strong);
 }
 
 /* ---------- 胶带定位上下文（照搬 article.styl .article-tape-wrap） ---------- */

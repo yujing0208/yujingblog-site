@@ -518,12 +518,14 @@ html {
   }
 
   .btn-regular-dark {
+    /* 演示站没有多档色阶，这里用 4 令牌做「实色→主色→柔和」的悬停反馈，
+       避免三档全并成同一个 var(--color-accent-strong) 而丢掉 hover 变化 */
     @apply flex items-center justify-center
-        bg-[oklch(0.45_0.01_var(--hue))] hover:bg-[oklch(0.50_0.01_var(--hue))] active:bg-[oklch(0.55_0.01_var(--hue))]
-        dark:bg-[oklch(0.30_0.02_var(--hue))] dark:hover:bg-[oklch(0.35_0.03_var(--hue))] dark:active:bg-[oklch(0.40_0.03_var(--hue))];
+        bg-[var(--color-accent-strong)] hover:bg-[var(--color-accent)] active:bg-[var(--color-accent-muted)]
+        dark:bg-[var(--color-accent-strong)] dark:hover:bg-[var(--color-accent)] dark:active:bg-[var(--color-accent-muted)];
   }
   .btn-regular-dark.success {
-    @apply bg-[oklch(0.75_0.14_var(--hue))] dark:bg-[oklch(0.75_0.14_var(--hue))];
+    @apply bg-[var(--color-accent)] dark:bg-[var(--color-accent)];
   }
 }
 

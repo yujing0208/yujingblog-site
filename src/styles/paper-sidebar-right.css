@@ -8,7 +8,7 @@
  *
  *  仅两处改写：
  *    1. .dark-mode            → :root.dark   （本博客的暗色类名）
- *    2. --color-accent*       → --primary / oklch(0.55 0.12 var(--hue)) 等
+ *    2. --color-accent*       → --primary / var(--color-accent-strong) 等
  *       （本博客用 --hue 驱动强调色，语义一一对应）
  *  其余选择器、数值、动画、断点全部保持原样。
  * ========================================================================= */
@@ -157,7 +157,7 @@
 }
 
 :root.dark .side-card-icon {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 /* 右上角黄胶带（照搬 tape.styl 的 .side-card::before） */
@@ -307,7 +307,7 @@ a.site-info__item:focus-visible {
 
 a.site-info__item:hover strong,
 a.site-info__item:focus-visible strong {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 }
 
 /* --- 社交虚线圆按钮（照搬 .socials a） --- */
@@ -349,9 +349,9 @@ a.site-info__item:focus-visible strong {
 }
 
 .socials a:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	border-color: var(--primary);
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	transform: translateY(-1px);
 }
 
@@ -487,12 +487,12 @@ a.site-info__item:focus-visible strong {
 }
 
 .categories-card a:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	transform: translateX(3px);
 }
 
 .categories-card a:hover em {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 }
 
 .categories-card a:hover .dot {
@@ -501,11 +501,11 @@ a.site-info__item:focus-visible strong {
 }
 
 :root.dark .categories-card a:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 :root.dark .categories-card a:hover em {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 /* ==========================================================================
@@ -545,11 +545,11 @@ a.site-info__item:focus-visible strong {
 }
 
 .tag-card__more:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 }
 
 :root.dark .tag-card__more:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 /* 右上角粉胶带（照搬 .tag-card::before） */
@@ -744,12 +744,12 @@ a.site-info__item:focus-visible strong {
 }
 
 .recent-item:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	transform: translateX(2px);
 }
 
 :root.dark .recent-item:hover {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 .recent-item strong {

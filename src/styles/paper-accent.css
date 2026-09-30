@@ -25,9 +25,9 @@
 }
 
 .icon-button:hover {
-	color: oklch(0.55 0.12 var(--hue));
+	color: var(--color-accent-strong);
 	border-color: var(--primary);
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	transform: translateY(-1px);
 }
 
@@ -87,7 +87,7 @@
 .accent-option:hover,
 .accent-option[aria-checked="true"],
 .accent-option[aria-pressed="true"] {
-	background: oklch(0.9 0.05 var(--hue));
+	background: var(--color-accent-soft);
 	border-radius: 50%;
 	outline: 1px dashed var(--primary);
 	outline-offset: -3px;
@@ -122,10 +122,10 @@
 }
 
 :root.dark .icon-button {
-	color: oklch(0.78 0.08 var(--hue));
+	color: var(--color-accent);
 }
 
 :root.dark .icon-button:hover {
-	color: oklch(0.82 0.07 var(--hue));
-	background: oklch(0.35 0.04 var(--hue));
+	color: var(--color-accent-muted);
+	background: var(--color-accent-soft);
 }

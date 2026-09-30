@@ -30,18 +30,46 @@
  *  0. 设计 token（照搬 FlatPaper var.styl，色相改绑本博客 --hue）
  * ======================================================================== */
 :root {
+	/* ---- 基础令牌：逐字抄演示站 style.css 的 :root ---- */
+	--bg: #f7f3e9;
+	--paper: #fffdf6;
+	--ink: #2c3531;
+	--line: #ece3d0;
+	--dash: #ddd0b5;
+	/* 语义色（标签 chip / 提示块 / 图表用；与主题色 --color-accent* 是两套，别混） */
+	--yellow: #f0bd4d;
+	--yellow-rgb: 240, 189, 77;
+	--orange: #ec9b5b;
+	--blue: #6fa9d9;
+	--blue-rgb: 111, 169, 217;
+	--violet: #9c8feb;
+	--violet-rgb: 156, 143, 235;
+	--green: #6fa67c;
+	--green-rgb: 111, 166, 124;
+	--red: #d4716c;
+	--red-rgb: 212, 113, 108;
+	/* ---- 主题色 4 令牌：默认 green 档，逐字抄演示站 ---- */
+	--color-accent: #6fa67c;
+	--color-accent-strong: #4f8862;
+	--color-accent-soft: #d8e8d2;
+	--color-accent-muted: #8ab98d;
+	/* --hue 兜底：正常由 HeadTags 内联脚本按 data-accent 写入，
+	   这里给默认 green 档，避免没有内联脚本的页面 oklch(--hue) 失效 */
+	--hue: 140;
 	/* 纸张 */
 	--paper-line: rgba(89, 62, 30, 0.1);
 	--paper-dash: rgba(89, 62, 30, 0.24);
 	--paper-warm: #f8f2e2;
 	--paper-solid: #ffffff;
 	/* 墨 */
-	--ink-soft: oklch(0.42 0.02 80);
-	--muted: oklch(0.575 0.022 80);
-	/* 本博客强调色（跟随 --hue） */
-	--fp-accent: var(--primary);
-	--fp-accent-soft: oklch(0.9 0.05 var(--hue));
-	--fp-accent-muted: oklch(0.62 0.09 var(--hue));
+	--ink-soft: #4a5751;
+	--muted: #8a8678;
+	--muted-rgb: 138, 134, 120;
+	/* 本博客强调色：全链路改指演示站 4 令牌，不再走 oklch(--hue) 近似 */
+	--fp-accent: var(--color-accent);
+	--fp-accent-strong: var(--color-accent-strong);
+	--fp-accent-soft: var(--color-accent-soft);
+	--fp-accent-muted: var(--color-accent-muted);
 	/* 纸胶带（照搬值） */
 	--tape-yellow: rgba(238, 201, 110, 0.72);
 	--tape-pink: rgba(232, 168, 158, 0.62);
@@ -78,13 +106,31 @@
 	--paper-dash: rgba(225, 230, 245, 0.22);
 	--paper-warm: #272b34;
 	--paper-solid: #232732;
-	--ink-soft: oklch(0.68 0.012 265);
-	--muted: oklch(0.53 0.012 265);
-	--fp-accent-muted: oklch(0.78 0.08 var(--hue));
-	/* r17 暗色验收补：accent-soft 亮色值 oklch(0.9 ...) 是浅色底，
-	   暗色下作 hover 背景会刺眼；照搬原版 var.styl 暗色段语义
-	   （.dark-mode --color-accent-soft: #354a3a = 暗底柔和色） */
-	--fp-accent-soft: oklch(0.34 0.035 var(--hue));
+	/* ---- 基础令牌暗色档：抄演示站 .dark-mode ---- */
+	--bg: #15171c;
+	--paper: #1d2027;
+	--ink: #e6e8ee;
+	--line: rgba(225, 230, 245, 0.12);
+	--dash: rgba(225, 230, 245, 0.22);
+	--yellow: #e8c065;
+	--yellow-rgb: 232, 192, 101;
+	--orange: #e09b66;
+	--blue: #7db4dd;
+	--blue-rgb: 125, 180, 221;
+	--violet: #a89bef;
+	--violet-rgb: 168, 155, 239;
+	--green: #82bf90;
+	--green-rgb: 130, 191, 144;
+	--red: #df8580;
+	--red-rgb: 223, 133, 128;
+	/* 主题色暗色档：默认 green 档（演示站放在 .dark-mode 内） */
+	--color-accent: #82bf90;
+	--color-accent-strong: #6ba87c;
+	--color-accent-soft: #354a3a;
+	--color-accent-muted: #94c89a;
+	--ink-soft: #aab0bd;
+	--muted: #797f8c;
+	--muted-rgb: 121, 127, 140;
 	--tape-yellow: rgba(214, 168, 80, 0.5);
 	--tape-pink: rgba(196, 130, 118, 0.45);
 	--tape-green: rgba(120, 168, 130, 0.5);
@@ -110,52 +156,113 @@
 }
 
 /* ===========================================================================
- *  0.1 主题色映射（照搬 FlatPaper var.styl 49-89 行 html[data-accent] 段）
- *  FlatPaper 用 data-accent 覆写 --color-accent*；本站强调色全链路收敛到
- *  --hue（--primary/--fp-accent* 均由 oklch(--hue) 派生），故映射到 --hue。
- *  ⚠️ 必须 !important：HeadTags.astro 的内联脚本把 --hue 写在 html 的
- *  inline style 上，普通声明优先级低于 inline style，压不过它。
- *  black 特例：FlatPaper 的 black 是无彩色（#111 / dark #f5f5f5），oklch
- *  派生链 chroma 固定无法去色，故照搬其观感——核心 accent 变量直接覆盖为
- *  炭色/浅灰，低饱和内联色（chroma 0.05-0.12）用暖炭 hue 30 弱化处理。
+ *  0.1 主题色映射
+ *  基准改为主题演示站：逐字照抄 style.css 的 :root / .dark-mode 基础档与
+ *  html[data-accent] / .dark-mode[data-accent] 的 4 令牌 × 7 色 × 2 明暗。
+ *  本站此前把这一层压成「--hue + oklch() 近似」，色相还是手挑的，
+ *  strong / soft / muted 的明度彩度关系与演示站对不上；现全部改为真值。
+ *  --hue 仍由 HeadTags 内联脚本写入（Mizuki 底座残留的 oklch(--hue) 还要用），
+ *  本段不再覆写 --hue，因此也不再需要 !important。
  * ======================================================================== */
+/* ---- 亮色 7 套（抄演示站 html[data-accent] 段） ---- */
 html[data-accent="orange"] {
-	--hue: 60 !important;
+	--color-accent: #ec9b5b;
+	--color-accent-strong: #c9773d;
+	--color-accent-soft: #f7dfc8;
+	--color-accent-muted: #f0ad76;
 }
 
 html[data-accent="purple"] {
-	--hue: 290 !important;
+	--color-accent: #7b5fb4;
+	--color-accent-strong: #5b438f;
+	--color-accent-soft: #e5dcf5;
+	--color-accent-muted: #a58bd3;
 }
 
 html[data-accent="sakura"] {
-	--hue: 345 !important;
+	--color-accent: #ffc0cb;
+	--color-accent-strong: #d8748c;
+	--color-accent-soft: #ffe4e9;
+	--color-accent-muted: #ffccd5;
 }
 
 html[data-accent="blue"] {
-	--hue: 230 !important;
+	--color-accent: #6fa9d9;
+	--color-accent-strong: #4f84bd;
+	--color-accent-soft: #d6e9f7;
+	--color-accent-muted: #88bde4;
 }
 
 html[data-accent="pink"] {
-	--hue: 320 !important;
+	--color-accent: #df7f9b;
+	--color-accent-strong: #bf5f7d;
+	--color-accent-soft: #f5d6e0;
+	--color-accent-muted: #e994ac;
 }
 
 html[data-accent="green"] {
-	--hue: 140 !important;
+	--color-accent: #6fa67c;
+	--color-accent-strong: #4f8862;
+	--color-accent-soft: #d8e8d2;
+	--color-accent-muted: #8ab98d;
 }
 
 html[data-accent="black"] {
-	--hue: 30 !important;
-	--primary: oklch(0.35 0 0);
-	--fp-accent: oklch(0.35 0 0);
-	--fp-accent-soft: oklch(0.9 0 0);
-	--fp-accent-muted: oklch(0.5 0 0);
+	--color-accent: #111111;
+	--color-accent-strong: #111111;
+	--color-accent-soft: #e4e4e4;
+	--color-accent-muted: #111111;
+}
+
+/* ---- 暗色 7 套（抄演示站 .dark-mode[data-accent] 段） ---- */
+:root.dark[data-accent="orange"] {
+	--color-accent: #eda264;
+	--color-accent-strong: #d8874d;
+	--color-accent-soft: #503d2d;
+	--color-accent-muted: #f2b47e;
+}
+
+:root.dark[data-accent="purple"] {
+	--color-accent: #9d82d7;
+	--color-accent-strong: #c0a9f0;
+	--color-accent-soft: #3c3150;
+	--color-accent-muted: #b397e4;
+}
+
+:root.dark[data-accent="sakura"] {
+	--color-accent: #e8a5b6;
+	--color-accent-strong: #d6899d;
+	--color-accent-soft: #4a2c35;
+	--color-accent-muted: #f4bacb;
+}
+
+:root.dark[data-accent="blue"] {
+	--color-accent: #79b2e0;
+	--color-accent-strong: #5c9bcc;
+	--color-accent-soft: #314557;
+	--color-accent-muted: #91c3ea;
+}
+
+:root.dark[data-accent="pink"] {
+	--color-accent: #e38aa5;
+	--color-accent-strong: #cf7290;
+	--color-accent-soft: #4d333d;
+	--color-accent-muted: #ee9fb5;
+}
+
+:root.dark[data-accent="green"] {
+	--color-accent: #82bf90;
+	--color-accent-strong: #6ba87c;
+	--color-accent-soft: #354a3a;
+	--color-accent-muted: #94c89a;
 }
 
 :root.dark[data-accent="black"] {
-	--primary: oklch(0.88 0 0);
-	--fp-accent: oklch(0.88 0 0);
-	--fp-accent-soft: oklch(0.32 0 0);
-	--fp-accent-muted: oklch(0.75 0 0);
+	--color-accent: #f5f5f5;
+	--color-accent-strong: #e0e0e0;
+	--color-accent-soft: #333333;
+	--color-accent-muted: #f5f5f5;
+	--label-text: #161616;
 }
 
 /* ===========================================================================

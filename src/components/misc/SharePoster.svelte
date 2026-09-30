@@ -426,7 +426,7 @@ function portal(node: HTMLElement) {
 					<div class="flex flex-col items-center gap-3">
 						<div
 							class="w-8 h-8 border-2 rounded-full animate-spin"
-							style="border-color: oklch(0.35 0.02 var(--hue)); border-top-color: {themeColor};"
+							style="border-color: var(--color-accent-soft); border-top-color: {themeColor};"
 						></div>
 						<span
 							class="text-sm"

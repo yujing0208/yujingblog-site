@@ -4,7 +4,7 @@
  *  仅三处必要改写（脚本自动完成，已校验无残留）：
  *    1. .dark-mode          → :root.dark
  *    2. unquote('...')      → 内容
- *    3. --color-accent*     → --primary / oklch(0.55 0.12 var(--hue)) 等
+ *    3. --color-accent*     → --primary / var(--color-accent-strong) 等
  *
  *  涵盖：
  *    · 1200px 断点：三栏降两栏，隐藏视觉右栏（.paper-sidebar--left）
@@ -173,8 +173,8 @@
   }
 
   .brand-link-list a:hover {
-    color: oklch(0.55 0.12 var(--hue));
-    background-color: oklch(0.9 0.05 var(--hue));
+    color: var(--color-accent-strong);
+    background-color: var(--color-accent-soft);
     background-image: var(--nav-tape-stripes);
     border-radius: var(--radius-handdrawn);
     transform: scale(1.02) rotate(-1deg);
@@ -200,7 +200,7 @@
   }
 
   :root.dark .brand-link-list a:hover {
-    color: oklch(0.78 0.08 var(--hue));
+    color: var(--color-accent);
   }
 
   .site-nav-drawer {
@@ -240,8 +240,8 @@
   .site-nav-drawer a.active,
   .drawer-nav-parent:hover,
   .drawer-nav-group.active > .drawer-nav-parent {
-    color: oklch(0.55 0.12 var(--hue));
-    background-color: oklch(0.9 0.05 var(--hue));
+    color: var(--color-accent-strong);
+    background-color: var(--color-accent-soft);
     background-image: var(--nav-tape-stripes);
     border-radius: var(--radius-handdrawn);
     transform: scale(1.02) rotate(-1deg);
@@ -251,21 +251,21 @@
   .site-nav-drawer a.active .lucide,
   .drawer-nav-parent:hover .lucide,
   .drawer-nav-group.active > .drawer-nav-parent .lucide {
-    color: oklch(0.55 0.12 var(--hue));
+    color: var(--color-accent-strong);
   }
 
   :root.dark .site-nav-drawer a:hover,
   :root.dark .site-nav-drawer a.active,
   :root.dark .drawer-nav-parent:hover,
   :root.dark .drawer-nav-group.active > .drawer-nav-parent {
-    color: oklch(0.78 0.08 var(--hue));
+    color: var(--color-accent);
   }
 
   :root.dark .site-nav-drawer a:hover .lucide,
   :root.dark .site-nav-drawer a.active .lucide,
   :root.dark .drawer-nav-parent:hover .lucide,
   :root.dark .drawer-nav-group.active > .drawer-nav-parent .lucide {
-    color: oklch(0.78 0.08 var(--hue));
+    color: var(--color-accent);
   }
 
   .drawer-nav-parent::after {
@@ -493,12 +493,12 @@
   }
   :root.dark .article-content h2 .heading-anchor,
   :root.dark .article-content h3 .heading-anchor {
-    background-color: color-mix(in srgb, oklch(0.78 0.08 var(--hue)) 55%, #ffffff);
+    background-color: color-mix(in srgb, var(--color-accent) 55%, #ffffff);
   }
   .article-content h2:hover .heading-anchor,
   .article-content h3:hover .heading-anchor,
   .article-content .heading-anchor:hover {
-    background-color: oklch(0.55 0.12 var(--hue));
+    background-color: var(--color-accent-strong);
     transform: translateX(-2px);
   }
 
