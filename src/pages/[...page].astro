@@ -81,7 +81,8 @@ const featuredSlugs = featuredItems.map((it) => it.slug);
 			<PaperPostList page={page} heading="最新文章" />
 		</PaperHomeLayout>
 	) : (
-		<MainGridLayout paperListRail>
+		{/* 分页页（第 2 页起）：按 FlatPaper 规则只保留左侧栏，右栏仅首页/归档 */}
+		<MainGridLayout>
 			{showCategoryBar && <CategoryBar />}
 			<PostPage page={page} />
 			<Pagination
