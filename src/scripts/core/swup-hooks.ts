@@ -330,7 +330,13 @@ export class SwupHooksManager {
 	 */
 	private handleTOCReinit(): void {
 		const tocWrapper = this.getCachedElement(SWUP_SELECTORS.tocWrapper);
-		const isArticlePage = tocWrapper !== null;
+		// Round 19：右侧 toc-wrapper 已移除，改用 page-overlay-data 的 data-is-post
+		// 判定文章页（由 MainGridLayout 按 postSlug 写入，swup 换页后随容器更新）
+		const isArticlePage =
+			tocWrapper !== null ||
+			document
+				.getElementById("page-overlay-data")
+				?.getAttribute("data-is-post") === "true";
 
 		if (isArticlePage) {
 			const tocElement = this.getCachedElement(
