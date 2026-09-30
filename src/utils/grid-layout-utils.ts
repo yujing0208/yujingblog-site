@@ -19,6 +19,11 @@ export interface BannerImages {
 export interface GridLayoutConfig {
 	siteConfig: SiteConfig;
 	widgetManager: typeof widgetManager;
+	/**
+	 * 是否渲染桌面端右栏（FlatPaper 规则：仅首页/归档等列表页有右栏，
+	 * 其余页面只保留左侧栏）。缺省 true 保持原行为。
+	 */
+	rightRailEnabled?: boolean;
 }
 
 /**
@@ -99,12 +104,14 @@ export function calculateGridLayout(
 	// 检查侧边栏是否启用，动态调整网格布局
 	const mobileShowSidebar = hasMobileDrawerComponents;
 	const tabletShowSidebar = hasTabletLeftSidebarComponents;
+	// 右栏按页开关（2026-09-30：仅首页/归档显示右栏，其余页面只留左侧栏）
+	const showRightRail = hasRightSidebarComponents && config.rightRailEnabled !== false;
 	const desktopShowSidebar =
-		hasLeftSidebarComponents || hasRightSidebarComponents;
+		hasLeftSidebarComponents || showRightRail;
 
 	// 桌面端侧边栏最终显示状态（考虑是否有组件）
 	const desktopShowLeftSidebar = hasLeftSidebarComponents;
-	const desktopShowRightSidebar = hasRightSidebarComponents;
+	const desktopShowRightSidebar = showRightRail;
 
 	// 平板端侧边栏最终显示状态
 	const tabletShowLeftSidebar = hasTabletLeftSidebarComponents;
