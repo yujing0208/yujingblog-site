@@ -20,6 +20,8 @@ export const en: Translation = {
 	[Key.postList]: "Post List",
 	[Key.tableOfContents]: "Table of Contents",
 	[Key.tocEmpty]: "No table of contents",
+	[Key.tocExpandAll]: "Expand all",
+	[Key.tocCollapseAll]: "Collapse all",
 
 	// Announcement
 	[Key.announcement]: "Announcement",
