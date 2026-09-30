@@ -90,6 +90,9 @@ const {
 } = calculateGridLayout({
 	siteConfig,
 	widgetManager,
+	// FlatPaper 规则（2026-09-30）：右栏仅在首页/归档等传入 paperListRail 的页面渲染，
+	// 其余页面（标签/分类/文章/独立页）只保留左侧栏
+	rightRailEnabled: paperListRail,
 });
 
 const { hasRightSidebarComponents, hasMobileDrawerComponents } =
@@ -120,6 +123,8 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 	postSlug={postSlug}
 	coverImage={coverImage}
 >
+	<!-- 2026-09-30：内页不再响应壁纸模式切换/浏览器残留的 localStorage 模式，
+	     wallpaperEnabled=false 锁定为配置默认值（none）——顶部就是导航栏，与 FlatPaper 一致 -->
 	<GridScripts
 		navbarTransparentMode={siteConfig.banner?.navbar?.transparentMode ||
 			"semi"}
@@ -130,7 +135,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 		pageScaling={siteConfig.pageScaling}
 		wavesEnabled={siteConfig.banner?.waves?.enable ?? true}
 		bannerTitleEnabled={siteConfig.banner?.homeText?.enable ?? true}
-		wallpaperEnabled={fullscreenWallpaperConfig.enable ?? true}
+		wallpaperEnabled={false}
 		postListLayoutEnabled={siteConfig.postListLayout?.enable ?? true}
 	/>
 
@@ -153,13 +158,16 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 		</div>
 	</div>
 
-	<!-- Banner 组件 -->
-	<Banner
-		bannerImages={bannerImages}
-		mobileNonHomeBannerClass={mobileNonHomeBannerClass}
-		showTextOverlay={isHomePage &&
-			(siteConfig.banner.homeText?.enable ?? false)}
-	/>
+	<!-- Banner 组件（2026-09-30：首屏大图仅首页显示——首页走 PaperHomeLayout 自带 PaperHero；
+	     MainGridLayout 全部为内页，顶部就是导航栏，不再渲染 Banner，也避免隐藏状态下白白下载大图） -->
+	{isHomePage && (
+		<Banner
+			bannerImages={bannerImages}
+			mobileNonHomeBannerClass={mobileNonHomeBannerClass}
+			showTextOverlay={isHomePage &&
+				(siteConfig.banner.homeText?.enable ?? false)}
+		/>
+	)}
 
 	<!-- Main content -->
 	<div
@@ -226,17 +234,17 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 					}
 
 					{
-						hasRightSidebarComponents && (
-							<div
-								class={`right-sidebar-container ${rightSidebarClass} ${transparentClass}`}
-							>
-								<div class="hidden w-full flex-col gap-4 lg:flex">
-									{paperListRail && <PaperRandomCard limit={5} />}
-									<RightSideBar headings={headings} />
-								</div>
+						hasRightSidebarComponents && paperListRail && (
+						<div
+							class={`right-sidebar-container ${rightSidebarClass} ${transparentClass}`}
+						>
+							<div class="hidden w-full flex-col gap-4 lg:flex">
+								{paperListRail && <PaperRandomCard limit={5} />}
+								<RightSideBar headings={headings} />
 							</div>
-						)
-					}
+						</div>
+					)
+				}
 				</div>
 
 				<main
