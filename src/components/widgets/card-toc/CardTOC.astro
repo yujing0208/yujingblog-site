@@ -1,118 +1,139 @@
 ---
 /**
- * CardTOC - 卡片式目录组件
- * 使用 WidgetLayout (竖线+标题封装)
- * 复用 TOCManager 逻辑
+ * CardTOC —— 文章页左栏「文章目录」卡（1:1 对齐 hexo-theme-flatpaper）
+ *
+ * 参考站结构（homulilly.com/post/xxx.html）：
+ *   <section class="side-card toc-card">
+ *     <header class="toc-card__head">
+ *       <h2>〔lucide:table-of-contents〕文章目录</h2>
+ *       <button class="toc-toggle-all" data-action="toggle-toc" aria-pressed="false">
+ *         〔lucide:chevron-down〕
+ *       </button>
+ *     </header>
+ *     <div class="toc-content"><ol class="toc">…</ol></div>
+ *   </section>
+ *
+ * 样式：src/styles/paper-toc-card.css（照搬原版 CSS）
+ * 交互：src/utils/flatpaper-toc.ts（照搬原版 main.js 的 TOC scrollspy 段）
+ *
+ * Round 20（2026-09-30）：原实现是 Mizuki 的 widget-layout（左侧竖线标题 + 徽章式
+ * 条目 + 虚框指示器），与参考站 UI/交互都不同；本次换成与左栏其余卡一致的
+ * side-card 手账卡 + flatpaper 目录样式与交互。
  */
+import "@/styles/paper-toc-card.css";
 
-import "@/styles/toc.css";
-
-import type { MarkdownHeading } from "astro";
-import { siteConfig } from "@/config";
+import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
-import WidgetLayout from "../common/WidgetLayout.astro";
 
 interface Props {
 	class?: string;
 	style?: string;
-	headings?: MarkdownHeading[];
 	/** 由 SidebarColumn 注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
 	isPost?: boolean;
 }
 
 const { class: className, style, isPost } = Astro.props;
-const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 
-// FlatPaper 对齐（2026-09-27 Round 5）：toc-card 只在文章页出现
-// （flatpaper sidebar-right.ejs：文章页换 toc-card+latest-posts，列表页无目录卡）。
+// FlatPaper 对齐：toc-card 只在文章页出现（flatpaper sidebar-right.ejs 的 is_post 分支）。
 // 非文章路径渲染空占位，避免归档/标签页出现「当前页面没有目录」的空卡。
-// Round 19：站点启用根路径永久链接（/posts/ 前缀不存在），优先信任布局层注入的 isPost。
 const isPostPage = isPost ?? Astro.url.pathname.startsWith("/posts/");
+
+const tocTitle = i18n(I18nKey.tableOfContents);
+const labelExpand = i18n(I18nKey.tocExpandAll);
+const labelCollapse = i18n(I18nKey.tocCollapseAll);
+
+// 参考站 hexo toc 收录到 3 级（toc-level-2 / toc-level-3），这里同样保留三层。
+const tocDepth = 3;
 ---
 
-{isPostPage ? (
-<WidgetLayout
-	name={i18n(I18nKey.tableOfContents)}
-	id="card-toc"
-	class={"group " + (className || "")}
-	style={style}
->
-	<div data-card-toc-root data-japanese-badge={String(useJapaneseBadge)}>
-		<div class="toc-scroll-container">
-			<div class="toc-content" data-card-toc-content></div>
-		</div>
-	</div>
-</WidgetLayout>
-) : (
-	<div class="hidden" aria-hidden="true"></div>
-)}
-
-<style>
-	.toc-scroll-container {
-		/* FlatPaper 对齐（r15）：flatpaper toc-content 为
-		   max-height calc(100vh - 200px) + 细滚动条（6px --line） */
-		max-height: calc(100vh - 200px);
-		overflow-y: auto;
-		scrollbar-width: thin;
-		scrollbar-color: var(--paper-line, var(--line-divider)) transparent;
-	}
-
-	.toc-scroll-container::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-
-	.toc-scroll-container::-webkit-scrollbar-thumb {
-		background: var(--paper-line, var(--line-divider));
-		border-radius: 999px;
-	}
-
-	.toc-scroll-container::-webkit-scrollbar-track {
-		background: transparent;
-	}
-</style>
+{
+	isPostPage ? (
+		<section
+			class:list={["side-card toc-card", className]}
+			style={style}
+			data-card-toc-root
+			data-toc-label-expand={labelExpand}
+			data-toc-label-collapse={labelCollapse}
+			data-toc-depth={String(tocDepth)}
+		>
+			<header class="toc-card__head">
+				<h2>
+					<Icon
+						name="mdi:table-of-contents"
+						class="side-card-icon"
+						is:inline
+					/>
+					{tocTitle}
+				</h2>
+				<button
+					type="button"
+					class="toc-toggle-all"
+					data-action="toggle-toc"
+					aria-pressed="false"
+					aria-label={labelExpand}
+					title={labelExpand}
+				>
+					<Icon
+						name="mdi:chevron-down"
+						class="toc-toggle-all__icon"
+						is:inline
+					/>
+				</button>
+			</header>
+			<div class="toc-content" data-card-toc-content />
+		</section>
+	) : (
+		<div class="hidden" aria-hidden="true" />
+	)
+}
 
 <script>
-	import { TOCManager } from "@/utils/tocManager";
+	import { FlatpaperTOC } from "@/utils/flatpaper-toc";
 
-	const cardTocManagers = new WeakMap();
+	const cardTocInstances = new WeakMap<HTMLElement, FlatpaperTOC>();
 
 	/**
 	 * 为单个 card-toc 实例初始化目录。
-	 * 目录绑定当前组件自己的内容容器，避免左侧多断点并存时命中隐藏实例。
+	 * 目录绑定组件自己的内容容器，避免左侧多断点并存时命中隐藏实例。
 	 */
 	function initCardTOC(root: Element) {
 		if (!(root instanceof HTMLElement)) {
 			return;
 		}
 
-		const tocContent = root.querySelector("[data-card-toc-content]");
-		if (!(tocContent instanceof HTMLElement)) {
+		const content = root.querySelector("[data-card-toc-content]");
+		if (!(content instanceof HTMLElement)) {
 			return;
 		}
 
 		try {
-			const existingManager = cardTocManagers.get(root);
-			if (
-				existingManager &&
-				typeof existingManager.cleanup === "function"
-			) {
-				existingManager.cleanup();
-			}
+			cardTocInstances.get(root)?.destroy();
 
-			const useJapaneseBadge = root.dataset.japaneseBadge === "true";
-
-			const manager = new TOCManager({
-				contentElement: tocContent,
-				maxLevel: 3,
-				useJapaneseBadge,
-				scrollOffset: 80,
+			const toc = new FlatpaperTOC({
+				root,
+				content,
+				card: root,
+				labels: {
+					expand: root.dataset.tocLabelExpand ?? "展开全部目录",
+					collapse: root.dataset.tocLabelCollapse ?? "收起全部目录",
+				},
+				maxLevel: Number.parseInt(root.dataset.tocDepth ?? "3", 10) || 3,
 			});
 
-			cardTocManagers.set(root, manager);
-			manager.init();
+			if (!toc.init()) {
+				// 正文可能还在入场动画中，标题尚未就绪，短暂轮询重试
+				let retry = 0;
+				const timer = window.setInterval(() => {
+					retry += 1;
+					if (toc.init() || retry >= 5) {
+						window.clearInterval(timer);
+					}
+				}, 150);
+			}
+
+			cardTocInstances.set(root, toc);
 		} catch (error) {
 			if (typeof reportError === "function" && error instanceof Error) {
 				reportError(error);
@@ -121,8 +142,8 @@ const isPostPage = isPost ?? Astro.url.pathname.startsWith("/posts/");
 	}
 
 	/**
-	 * 页面内可能同时存在多个 card-toc 实例。
-	 * 统一批量初始化，确保可见和隐藏实例都各自绑定正确容器。
+	 * 页面内可能同时存在多个 card-toc 实例（tablet / desktop 各一份）。
+	 * 统一批量初始化，确保每个可见实例都绑定到自己的容器。
 	 */
 	function initAllCardTOCs() {
 		document.querySelectorAll("[data-card-toc-root]").forEach((root) => {
@@ -150,13 +171,6 @@ const isPostPage = isPost ?? Astro.url.pathname.startsWith("/posts/");
 
 	window.addEventListener("popstate", () => {
 		setTimeout(initAllCardTOCs, 200);
-	});
-
-	window.addEventListener("hashchange", () => {
-		if (!window.tocInternalNavigation) {
-			setTimeout(initAllCardTOCs, 100);
-		}
-		window.tocInternalNavigation = false;
 	});
 
 	document.addEventListener("password:decrypted", () => {
