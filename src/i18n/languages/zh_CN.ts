@@ -20,6 +20,8 @@ export const zh_CN: Translation = {
 	[Key.postList]: "文章列表",
 	[Key.tableOfContents]: "文章目录",
 	[Key.tocEmpty]: "当前页面没有目录",
+	[Key.tocExpandAll]: "展开全部目录",
+	[Key.tocCollapseAll]: "收起全部目录",
 
 	// 公告栏
 	[Key.announcement]: "公告",
