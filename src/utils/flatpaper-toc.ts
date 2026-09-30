@@ -9,6 +9,12 @@
  *       <ol>…</ol>            ← 子级嵌套
  *     </li></ol>
  *
+ * ⚠️ 类名加 fp- 前缀（fp-toc / fp-toc-item / fp-toc-link / fp-toc-text）：
+ *   本站另有全局定义的 .toc / .toc-content / .toc-item（旧 CardTOC 样式表
+ *   styles/toc.css 与 notebooks 页的目录样式），直接沿用原版类名会让
+ *   .toc-item{display:flex} 命中目录条目，把「链接 + 子级 ol」排成一行。
+ *   前缀化后与站内既有样式完全隔离，视觉与交互仍与原版逐条一致。
+ *
  * 原版行为逐条对应：
  *   · 未展开时只显示 active 所在分支（li.is-open），其余子级 CSS 折叠
  *   · toggle-all 按钮切换 .toc-card.is-expanded + aria-pressed / aria-label
@@ -140,7 +146,7 @@ export class FlatpaperTOC {
 		const items = all.filter((h) => this.levelOf(h) <= minDepth + this.maxLevel - 1);
 
 		const rootList = document.createElement("ol");
-		rootList.className = "toc";
+		rootList.className = "fp-toc";
 
 		// 用栈维护嵌套：stack[i].level 表示该层 ol 所属的标题层级
 		const stack: Array<{ level: number; list: HTMLOListElement }> = [
@@ -156,15 +162,15 @@ export class FlatpaperTOC {
 
 			const list = stack[stack.length - 1].list;
 			const li = document.createElement("li");
-			li.className = `toc-item toc-level-${level}`;
+			li.className = `fp-toc-item fp-toc-level-${level}`;
 
 			const anchor = document.createElement("a");
-			anchor.className = "toc-link";
+			anchor.className = "fp-toc-link";
 			anchor.href = `#${heading.id}`;
 			anchor.setAttribute("data-heading-id", heading.id);
 
 			const span = document.createElement("span");
-			span.className = "toc-text";
+			span.className = "fp-toc-text";
 			const text = this.getHeadingText(heading);
 			span.textContent = text || heading.id;
 
