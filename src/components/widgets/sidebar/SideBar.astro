@@ -7,9 +7,11 @@ import { widgetManager } from "@/utils/widget-manager";
 interface Props {
 	class?: string;
 	headings?: MarkdownHeading[];
+	/** 由布局层注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
+	isPost?: boolean;
 }
 
-const { class: className, headings } = Astro.props;
+const { class: className, headings, isPost } = Astro.props;
 
 const mobileTopComponents = widgetManager.getComponentsByPosition(
 	"top",
@@ -39,6 +41,7 @@ const tabletStickyComponents = widgetManager.getComponentsByPosition(
 	stickyId="sidebar-sticky"
 	rootClass={`${className ?? ""} w-full sidebar-root`}
 	headings={headings}
+	isPost={isPost}
 	showMobile={true}
 	showTablet={true}
 	showDesktop={true}
