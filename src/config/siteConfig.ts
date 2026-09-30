@@ -202,7 +202,7 @@ export const siteConfig: SiteConfig = {
 	toc: {
 		enable: true, // 总开关，启用目录功能
 		mobileTop: true, // 手机端顶部 TOC 按钮
-		desktopSidebar: true, // 电脑端右侧边栏 TOC
+		desktopSidebar: false, // 电脑端右侧边栏 TOC（Round 19 已删除右侧悬浮目录，目录在左栏 card-toc）
 		floating: true, // 悬浮 TOC 按钮
 		depth: 2, // 目录深度，1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推
 		useJapaneseBadge: true, // 使用日语假名标记（あいうえお...）代替数字，开启后会将 1、2、3... 改为 あ、い、う...
