@@ -20,6 +20,8 @@ export const ja: Translation = {
 	[Key.postList]: "投稿の一覧",
 	[Key.tableOfContents]: "目次",
 	[Key.tocEmpty]: "目次はありません",
+	[Key.tocExpandAll]: "すべて展開",
+	[Key.tocCollapseAll]: "すべて折りたたむ",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",
