@@ -33,6 +33,8 @@ interface Props {
 	showMobile?: boolean;
 	showTablet?: boolean;
 	showDesktop?: boolean;
+	/** 由布局层注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
+	isPost?: boolean;
 }
 
 const {
@@ -46,6 +48,7 @@ const {
 	showMobile = false,
 	showTablet = true,
 	showDesktop = true,
+	isPost,
 } = Astro.props;
 
 const componentMap: Record<string, unknown> = {
@@ -81,8 +84,13 @@ const mobileStickyComponents = showMobile
 // FlatPaper 对齐（r15 差距 #2）：文章页左栏 = profile + toc-card + latest-posts
 // （flatpaper sidebar-right.ejs 的 is_post 分支：分类/标签卡在文章页让位给目录+最新文章）。
 // 仅作用于 tablet/desktop 桌面左栏；mobile 走 drawer 组、right 组不参与，均不受影响。
-const isPostPage = Astro.url.pathname.startsWith("/posts/");
+// Round 19（2026-09-30）：站点启用根路径永久链接，文章 URL 不在 /posts/ 下，
+// pathname 判定永远为 false 导致目录卡从不渲染 —— 改由布局层传 isPost（postSlug 是否存在）。
+const isPostPage =
+	isPost ?? Astro.url.pathname.startsWith("/posts/");
 
+// 文章页左栏分组：普通流放名片，粘性组放目录卡 + 最新文章（视觉顺序 = 名片 → 目录 → 最新文章）。
+// 旧版两个 position 各自兜底 paper-latest 导致它渲染两次，此处一并修正。
 function pickPostLeftComponents(
 	comps: ReturnType<typeof widgetManager.getComponentsByPosition>,
 	position: "top" | "sticky",
@@ -90,11 +98,10 @@ function pickPostLeftComponents(
 	if (!isPostPage || side !== "left") {
 		return comps;
 	}
-	const order = [
-		"paper-profile",
-		"card-toc",
-		"paper-latest",
-	] as const;
+	const order =
+		position === "top"
+			? (["paper-profile"] as const)
+			: (["card-toc", "paper-latest"] as const);
 	return order
 		.map((type) => {
 			const found = comps.find((c) => c.type === type);
@@ -183,6 +190,11 @@ function renderComponent(
 		props.postCount = paperCounts.posts;
 		props.categoryCount = paperCounts.categories;
 		props.tagCount = paperCounts.tags;
+	}
+
+	// card-toc 需要文章页判定（根路径永久链接下组件自身无法从 URL 判断）
+	if (component.type === "card-toc") {
+		props.isPost = isPostPage;
 	}
 
 	return {
