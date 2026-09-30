@@ -26,12 +26,22 @@
 
 /* ==========================================================================
  * 一、卡片本体（原版 padding: 18px 18px 14px；文章页为 flex 纵向）
+ *
+ *  局部色 token：直接取参考站 --muted / --dash（style.css 第 8 / 11 行），
+ *  本站同语义 token 的色相不同，为保证「看起来一样」在卡片内局部覆盖。
  * ========================================================================== */
 .side-card.toc-card {
+	--toc-muted: #8a8678;
+	--toc-dash: #ddd0b5;
 	padding: 18px 18px 14px;
 	display: flex;
 	flex-direction: column;
 	overflow: visible;
+}
+
+:root.dark .side-card.toc-card {
+	--toc-muted: #797f8c;
+	--toc-dash: rgba(225, 230, 245, 0.22);
 }
 
 /* 顶部居中绿胶带（覆盖 .side-card::before 默认的右上黄胶带） */
@@ -79,10 +89,10 @@
 	height: 28px;
 	flex: 0 0 28px;
 	padding: 0;
-	border: 2px dashed var(--paper-dash);
+	border: 2px dashed var(--toc-dash);
 	border-radius: var(--radius-handdrawn);
 	background: color-mix(in srgb, var(--card-bg) 82%, transparent);
-	color: var(--muted);
+	color: var(--toc-muted);
 	cursor: pointer;
 	transform: rotate(-3deg);
 	transition:
@@ -170,7 +180,7 @@
 	padding: 5px 8px 5px 10px;
 	margin: 2px 0;
 	border-radius: 6px;
-	color: var(--muted);
+	color: var(--toc-muted);
 	font-size: 13px;
 	line-height: 1.5;
 	text-decoration: none;
@@ -235,7 +245,7 @@
 
 .toc-card .toc-content ol ol a,
 .toc-card .toc-content ul ul a {
-	color: var(--muted);
+	color: var(--toc-muted);
 	padding: 4px 8px 4px 10px;
 	font-size: 12.5px;
 }
