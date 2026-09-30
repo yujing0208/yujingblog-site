@@ -1,0 +1,1424 @@
+/* ============================================================================
+ *  FlatPaper 正文（Markdown）渲染层
+ *  基准：主题演示站文章页 https://flatpaper.nep.me/2026/06/11/theme-feature-overview/
+ *  真值来源：demo_style.css（.article-content 段 5986-6280 / 6614-7420）
+ *            demo_post.html （DOM 结构：note / tabs / 代码块 / 脚注）
+ *
+ *  选择器映射：
+ *    FlatPaper  .article-content  →  本站 .markdown-content.markdown-content
+ *    FlatPaper  .dark-mode        →  本站 :root.dark
+ *    FlatPaper  .heading-anchor   →  本站 .anchor（rehype-autolink-headings 追加）
+ *
+ *  本文件是「逐块对齐」的落地层：容器节奏 / 标题 / 段落 / 链接 / 行内代码 /
+ *  列表 / 引用 / 表格 / 图片 / 脚注 / hr / mark / note / tabs / 代码块。
+ *  所有值均逐字抄自演示站，未作近似。
+ * ========================================================================= */
+
+/* 等宽字体栈（演示站 --font-mono） */
+:root {
+	--fp-mono:
+		"JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco,
+		Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ *  1. 容器与垂直节奏
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content {
+	--fp-md-font-size: 15px;
+	--fp-md-line-height: 1.85;
+	padding: 8px 0 28px;
+	font-size: var(--fp-md-font-size);
+	line-height: var(--fp-md-line-height);
+	/* 容器字色 = 墨色（演示站 .article-content 同款）：
+	   让 ul / ol / 表格等未显式设色的元素继承墨色，
+	   而不是继承 Tailwind prose 的 --tw-prose-body。 */
+	color: var(--ink);
+	min-width: 0;
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+/* remark-sectionize 会包一层 <section>，参考站没有；把 section 抹平成透明容器，
+   节奏规则下沉到它内部的直接子元素，保证与参考站逐块一致。 */
+.markdown-content.markdown-content > section {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+/* 节奏：参考站是 `.article-content > * { margin: 1em 0 }`（单选择器、只作用于直接子元素）。
+   本地因为 remark-sectionize 多包了 <section>，需要把选择器下探到章节内部，
+   但 `> section > section > *` 这类选择器特异性会升到 (0,2,2)，反过来压过
+   标题规则 (0,2,1)，把 h3 边距改写成 1em。
+   所以前缀统一用 :where() 归零特异性，让节奏规则始终弱于具体块规则。 */
+:where(.markdown-content.markdown-content) > *,
+:where(.markdown-content.markdown-content) > section > *,
+:where(.markdown-content.markdown-content) > section > section > *,
+:where(.markdown-content.markdown-content) :where(section) > :where(*:not(section)) {
+	max-width: 100%;
+	min-width: 0;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+/* 被「抹平」的 section 自身不吃节奏间距 */
+:where(.markdown-content.markdown-content) :where(section) {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ *  2. 标题（h2 / h3 / h4）
+ *     手绘下划线由 paper-theme.css 的 h2::after / h3::after 提供，此处只补字号与字色。
+ *     字色必须显式声明：参考站靠「继承 body 的墨色」拿到颜色，本地却会被
+ *     Tailwind prose 的 .prose :where(h2){color:var(--tw-prose-headings)} 抢走。
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content h2,
+.markdown-content.markdown-content h3,
+.markdown-content.markdown-content h4 {
+	position: relative;
+	margin-top: 28px;
+	margin-bottom: 12px;
+	line-height: 1.4;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.markdown-content.markdown-content h2 {
+	font-size: 20px;
+}
+
+.markdown-content.markdown-content h3 {
+	font-size: 17px;
+}
+
+.markdown-content.markdown-content h4 {
+	font-size: 15px;
+}
+
+.markdown-content.markdown-content :is(h2, h3):target {
+	scroll-margin-top: 90px;
+	animation: flatpaper-anchor-flash 1.4s ease-out;
+	border-radius: 6px;
+	padding-right: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+ *  3. 标题锚点（参考站 .heading-anchor：绝对定位在标题左侧的手绘链接图标）
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content .anchor {
+	position: absolute;
+	display: inline-block;
+	background-color: var(--color-accent);
+	opacity: 0;
+	-webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><line x1='4' x2='20' y1='9' y2='9'/><line x1='4' x2='20' y1='15' y2='15'/><line x1='10' x2='8' y1='3' y2='21'/><line x1='16' x2='14' y1='3' y2='21'/></svg>");
+	mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><line x1='4' x2='20' y1='9' y2='9'/><line x1='4' x2='20' y1='15' y2='15'/><line x1='10' x2='8' y1='3' y2='21'/><line x1='16' x2='14' y1='3' y2='21'/></svg>");
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-size: contain;
+	mask-size: contain;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background-color 0.18s ease,
+		transform 0.18s ease,
+		opacity 0.18s ease;
+}
+
+/* 站点把图标放在 .anchor-icon 里，需要一并隐藏其原始文字 */
+.markdown-content.markdown-content .anchor .anchor-icon {
+	display: block;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	color: transparent;
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+
+.markdown-content.markdown-content h2 .anchor {
+	top: 6px;
+	left: -26px;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	padding: 0;
+}
+
+.markdown-content.markdown-content h3 .anchor {
+	top: 5px;
+	left: -22px;
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	padding: 0;
+}
+
+.markdown-content.markdown-content :is(h2, h3):hover .anchor,
+.markdown-content.markdown-content .anchor:hover {
+	opacity: 1;
+	background-color: var(--color-accent-strong);
+}
+
+.markdown-content.markdown-content :is(h2, h3):hover .anchor {
+	transform: translateX(-2px);
+}
+
+.markdown-content.markdown-content .anchor:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+:root.dark .markdown-content.markdown-content .anchor {
+	background-color: var(--color-accent-muted);
+}
+
+:root.dark .markdown-content.markdown-content .anchor:hover,
+:root.dark .markdown-content.markdown-content :is(h2, h3):hover .anchor {
+	background-color: var(--color-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ *  4. 段落 / 强调
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content p {
+	color: var(--ink-soft);
+}
+
+.markdown-content.markdown-content :is(strong, b) {
+	color: var(--color-accent-strong);
+}
+
+:root.dark .markdown-content.markdown-content :is(strong, b) {
+	color: var(--color-accent-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ *  5. 链接（墨绿波浪下划线）
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content a:not(.anchor):not(.no-styling):not(.no-styling *) {
+	position: relative;
+	color: var(--color-accent-strong);
+	font-weight: 600;
+	text-decoration-line: underline;
+	text-decoration-style: wavy;
+	text-decoration-color: color-mix(
+		in srgb,
+		var(--color-accent) 52%,
+		transparent
+	);
+	text-decoration-thickness: 1.5px;
+	text-underline-offset: 4px;
+	text-decoration-skip-ink: none;
+	background: none;
+	border-bottom: 0;
+	overflow-wrap: anywhere;
+	transition:
+		color 0.18s ease,
+		text-decoration-color 0.18s ease,
+		text-decoration-thickness 0.18s ease;
+}
+
+.markdown-content.markdown-content a:not(.anchor):not(.no-styling):hover,
+.markdown-content.markdown-content a:not(.anchor):not(.no-styling):focus-visible {
+	color: var(--color-accent-strong);
+	text-decoration-color: var(--color-accent-strong);
+	background: none;
+	border-bottom: 0;
+	outline: none;
+}
+
+:root.dark .markdown-content.markdown-content a:not(.anchor):not(.no-styling) {
+	color: var(--color-accent-muted);
+	text-decoration-color: color-mix(
+		in srgb,
+		var(--color-accent-muted) 38%,
+		transparent
+	);
+}
+
+:root.dark .markdown-content.markdown-content a:not(.anchor):not(.no-styling):hover,
+:root.dark .markdown-content.markdown-content a:not(.anchor):not(.no-styling):focus-visible {
+	color: var(--color-accent-muted);
+	text-decoration-color: var(--color-accent-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.markdown-content.markdown-content a:not(.anchor) {
+		transition: none;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ *  6. 荧光笔 mark
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content mark {
+	background: color-mix(
+		in srgb,
+		var(--color-accent-soft) 82%,
+		var(--color-accent) 18%
+	);
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+	padding: 0.06em 0.22em;
+	border-radius: 0.7em 0.35em 0.6em 0.3em / 0.35em 0.7em 0.3em 0.6em;
+	color: var(--ink);
+	text-decoration: none;
+}
+
+:root.dark .markdown-content.markdown-content mark {
+	background: color-mix(
+		in srgb,
+		var(--color-accent-soft) 70%,
+		var(--color-accent) 30%
+	);
+	color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+ *  7. 列表
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content ul,
+.markdown-content.markdown-content ol {
+	padding-left: 22px;
+}
+
+.markdown-content.markdown-content li {
+	margin: 6px 0;
+	/* 参考站 li 无左内边距；Tailwind prose 会加 padding-left:0.375em */
+	padding-left: 0;
+	color: var(--ink-soft);
+}
+
+.markdown-content.markdown-content li::marker {
+	color: inherit;
+}
+
+.markdown-content.markdown-content li > :is(ul, ol) {
+	margin-top: 6px;
+	margin-bottom: 6px;
+}
+
+/* 任务列表 */
+.markdown-content.markdown-content li > input[type="checkbox"] {
+	margin-right: 0.4em;
+	vertical-align: middle;
+	accent-color: var(--color-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ *  8. 分隔线（手绘波浪）
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content hr {
+	height: 10px;
+	margin: 30px auto;
+	border: 0;
+	background-color: var(--line);
+	-webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 10' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'><path d='M0 5 C 5 0 7 0 10 5 C 13 10 17 10 20 5 C 23 0 27 0 30 5 C 33 10 37 10 40 5'/></svg>");
+	mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 10' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'><path d='M0 5 C 5 0 7 0 10 5 C 13 10 17 10 20 5 C 23 0 27 0 30 5 C 33 10 37 10 40 5'/></svg>");
+	-webkit-mask-repeat: repeat-x;
+	mask-repeat: repeat-x;
+	-webkit-mask-size: 40px 10px;
+	mask-size: 40px 10px;
+	-webkit-mask-position: center;
+	mask-position: center;
+}
+
+/* ---------------------------------------------------------------------------
+ *  9. 引用块（顶部贴一段粉色胶带）
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content blockquote {
+	position: relative;
+	margin: 32px 0 26px;
+	padding: 18px 18px 16px;
+	border: 1px solid color-mix(in srgb, var(--color-accent) 22%, var(--paper-solid) 78%);
+	border-radius: 0;
+	background: color-mix(in srgb, var(--color-accent-soft) 50%, var(--paper-solid) 50%);
+	color: var(--ink-soft);
+	font-style: normal;
+	font-weight: inherit;
+	box-shadow: 1px 1px 3px rgba(var(--paper-shadow-rgb), 0.1);
+}
+
+.markdown-content.markdown-content blockquote::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	z-index: 1;
+	width: 70px;
+	height: 20px;
+	border-radius: 1px;
+	background:
+		repeating-linear-gradient(
+			45deg,
+			rgba(255, 255, 255, 0.18) 0 2px,
+			transparent 2px 7px
+		),
+		var(--tape-pink);
+	opacity: 0.6;
+	box-shadow: 0 2px 6px rgba(var(--paper-shadow-rgb), 0.14);
+	filter: saturate(0.92);
+	transform: translateX(-50%) rotate(-1deg);
+}
+
+.markdown-content.markdown-content blockquote > :first-child {
+	margin-top: 0;
+}
+
+.markdown-content.markdown-content blockquote > :last-child {
+	margin-bottom: 0;
+}
+
+.markdown-content.markdown-content blockquote p {
+	margin: 6px 0;
+	color: var(--ink-soft);
+}
+
+:root.dark .markdown-content.markdown-content blockquote {
+	border-color: color-mix(in srgb, var(--color-accent-muted) 28%, var(--line) 72%);
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+:root.dark .markdown-content.markdown-content blockquote::before {
+	box-shadow: 0 2px 7px rgba(0, 0, 0, 0.24);
+}
+
+/* ---------------------------------------------------------------------------
+ *  10. 表格
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content table {
+	width: 100%;
+	table-layout: auto;
+	border-collapse: separate;
+	border-spacing: 0;
+	margin: 22px 0;
+	border: 1px solid var(--line);
+	border-radius: 0;
+	box-shadow: none;
+	overflow: visible;
+	font-size: 14px;
+	background: transparent;
+}
+
+.markdown-content.markdown-content th,
+.markdown-content.markdown-content td {
+	min-width: 10ch;
+	padding: 10px 12px;
+	border: 0;
+	border-right: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+	text-align: left;
+	overflow-wrap: anywhere;
+	word-break: normal;
+	white-space: normal;
+	background: transparent;
+}
+
+.markdown-content.markdown-content table a:not(.anchor) {
+	overflow-wrap: anywhere;
+	word-break: normal;
+}
+
+.markdown-content.markdown-content th[align="center"],
+.markdown-content.markdown-content td[align="center"] {
+	text-align: center;
+}
+
+.markdown-content.markdown-content th[align="right"],
+.markdown-content.markdown-content td[align="right"] {
+	text-align: right;
+}
+
+.markdown-content.markdown-content th[align="left"],
+.markdown-content.markdown-content td[align="left"] {
+	text-align: left;
+}
+
+.markdown-content.markdown-content tr > :last-child {
+	border-right: 0;
+}
+
+.markdown-content.markdown-content tbody tr:last-child > th,
+.markdown-content.markdown-content tbody tr:last-child > td,
+.markdown-content.markdown-content tfoot tr:last-child > th,
+.markdown-content.markdown-content tfoot tr:last-child > td,
+.markdown-content.markdown-content table > tr:last-child > th,
+.markdown-content.markdown-content table > tr:last-child > td,
+.markdown-content.markdown-content thead:last-child tr:last-child > th {
+	border-bottom: 0;
+}
+
+.markdown-content.markdown-content th {
+	background: color-mix(in srgb, var(--color-accent-soft) 25%, var(--paper) 75%);
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.markdown-content.markdown-content tbody tr:nth-child(even) {
+	background-color: transparent;
+}
+
+.markdown-content.markdown-content tbody tr:hover td {
+	background-color: transparent;
+}
+
+/* rehype-wrap-table 包了一层滚动容器，保持参考站观感 */
+.markdown-content.markdown-content .table-wrapper {
+	overflow-x: auto;
+	border-radius: 0;
+	margin: 22px 0;
+}
+
+/* ---------------------------------------------------------------------------
+ *  11. 图片 / 图文块
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content img:not(.anchor-icon):not(.emoji):not(.no-paper-frame) {
+	display: block;
+	margin: 22px auto;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	max-width: 100%;
+	height: auto;
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.2s ease;
+}
+
+.markdown-content.markdown-content img:not(.anchor-icon):not(.emoji):not(.no-paper-frame):hover,
+.markdown-content.markdown-content
+	img:not(.anchor-icon):not(.emoji):not(.no-paper-frame):focus-visible {
+	box-shadow: 5px 5px 0 rgba(var(--paper-shadow-rgb), 0.1);
+	transform: translate(-5px, -5px);
+}
+
+:root.dark
+	.markdown-content.markdown-content
+	img:not(.anchor-icon):not(.emoji):not(.no-paper-frame):hover,
+:root.dark
+	.markdown-content.markdown-content
+	img:not(.anchor-icon):not(.emoji):not(.no-paper-frame):focus-visible {
+	box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.26);
+}
+
+.markdown-content.markdown-content figure {
+	margin: 22px 0;
+}
+
+.markdown-content.markdown-content figure img {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.markdown-content.markdown-content figcaption {
+	margin-top: 10px;
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.6;
+	text-align: center;
+}
+
+/* 双列图文（参考站 .gallery-preview-row） */
+.markdown-content.markdown-content .gallery-preview-row,
+.markdown-content.markdown-content .image-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin: 1.5rem 0;
+}
+
+.markdown-content.markdown-content .gallery-preview-row figure {
+	margin: 0;
+}
+
+.markdown-content.markdown-content .gallery-preview-row img {
+	width: 100%;
+	height: auto;
+}
+
+@media (max-width: 720px) {
+	.markdown-content.markdown-content .gallery-preview-row {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ *  12. 脚注
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content sup {
+	margin-left: 2px;
+	font-size: 0.78em;
+	line-height: 0;
+}
+
+.markdown-content.markdown-content sup a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	border-radius: 999px;
+	color: var(--color-accent-strong);
+	background: var(--color-accent-soft);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.markdown-content.markdown-content .footnotes {
+	margin-top: 32px;
+	padding-top: 18px;
+	border-top: 1px dashed var(--dash);
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.75;
+}
+
+.markdown-content.markdown-content .footnotes ol {
+	margin: 0;
+	padding-left: 22px;
+}
+
+.markdown-content.markdown-content .footnotes li {
+	padding-left: 4px;
+	color: var(--muted);
+}
+
+.markdown-content.markdown-content :is(sup[id], .footnotes li[id]) {
+	scroll-margin-top: 110px;
+}
+
+.markdown-content.markdown-content .footnote-backref {
+	margin-left: 6px;
+	color: var(--orange);
+	text-decoration: none;
+	font-weight: 400;
+}
+
+/* ---------------------------------------------------------------------------
+ *  13. 行内代码
+ * ------------------------------------------------------------------------ */
+.markdown-content.markdown-content :not(pre) > code {
+	font-family: var(--fp-mono);
+	font-feature-settings: "liga" 1, "calt" 1;
+	padding: 2px 7px;
+	margin: 0 2px;
+	border-radius: 0;
+	font-size: 0.86em;
+	font-weight: 500;
+	color: var(--color-accent-strong);
+	background: color-mix(in srgb, var(--color-accent-soft) 58%, var(--paper) 42%);
+	border: 1px solid color-mix(in srgb, var(--color-accent) 26%, transparent);
+	box-shadow: 0 0 0 2px
+		color-mix(in srgb, var(--color-accent-soft) 42%, transparent);
+	white-space: break-spaces;
+}
+
+:root.dark .markdown-content.markdown-content :not(pre) > code {
+	color: var(--color-accent-muted);
+	background: color-mix(in srgb, var(--color-accent-soft) 62%, var(--paper) 38%);
+	border-color: color-mix(in srgb, var(--color-accent-muted) 30%, transparent);
+	box-shadow: 0 0 0 2px
+		color-mix(in srgb, var(--color-accent-soft) 34%, transparent);
+}
+
+/* ===========================================================================
+ *  14. Note 提示块（flatpaper-note）
+ *      DOM：.flatpaper-note > .flatpaper-note__icon + .flatpaper-note__body
+ *      带标题时外层是 <details> + .flatpaper-note__title + __chevron
+ * ======================================================================== */
+.flatpaper-note {
+	--note-accent-rgb: var(--muted-rgb);
+	--note-bg-opacity: 0.08;
+	--note-border-opacity: 0.35;
+	--note-accent: rgb(var(--note-accent-rgb));
+	--note-bg: rgba(var(--note-accent-rgb), var(--note-bg-opacity));
+	--note-border: rgba(var(--note-accent-rgb), var(--note-border-opacity));
+	position: relative;
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	gap: 12px;
+	margin: 22px 0;
+	padding: 14px 18px 14px 16px;
+	border-left: 4px solid var(--note-accent);
+	border-radius: 0 10px 10px 0;
+	background: var(--note-bg);
+	color: var(--ink);
+}
+
+.flatpaper-note > .flatpaper-note__body > :first-child,
+.flatpaper-note__body > :first-child {
+	margin-top: 0;
+}
+
+.flatpaper-note > .flatpaper-note__body > :last-child,
+.flatpaper-note__body > :last-child {
+	margin-bottom: 0;
+}
+
+.flatpaper-note__icon {
+	display: inline-grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	margin-top: 2px;
+	border-radius: 50%;
+	background: var(--note-accent);
+	color: #fff;
+	flex-shrink: 0;
+}
+
+.flatpaper-note__icon::before {
+	content: "i";
+	color: #fff;
+	font-family: Georgia, "Times New Roman", serif;
+	font-style: italic;
+	font-weight: 700;
+	font-size: 13px;
+	line-height: 1;
+}
+
+.flatpaper-note--default {
+	--note-accent-rgb: var(--muted-rgb);
+	--note-bg-opacity: 0.1;
+	--note-border-opacity: 0.4;
+}
+
+.flatpaper-note--primary {
+	--note-accent-rgb: var(--violet-rgb);
+	--note-bg-opacity: 0.1;
+	--note-border-opacity: 0.45;
+}
+
+.flatpaper-note--success {
+	--note-accent-rgb: var(--green-rgb);
+	--note-bg-opacity: 0.12;
+	--note-border-opacity: 0.45;
+}
+
+.flatpaper-note--info {
+	--note-accent-rgb: var(--blue-rgb);
+	--note-bg-opacity: 0.12;
+	--note-border-opacity: 0.45;
+}
+
+.flatpaper-note--warning {
+	--note-accent-rgb: var(--yellow-rgb);
+	--note-bg-opacity: 0.14;
+	--note-border-opacity: 0.5;
+}
+
+.flatpaper-note--danger {
+	--note-accent-rgb: var(--red-rgb);
+	--note-bg-opacity: 0.13;
+	--note-border-opacity: 0.5;
+}
+
+.flatpaper-note--success .flatpaper-note__icon::before {
+	content: "✓";
+	font-family: inherit;
+	font-style: normal;
+	font-size: 13px;
+}
+
+.flatpaper-note--warning .flatpaper-note__icon::before,
+.flatpaper-note--danger .flatpaper-note__icon::before {
+	content: "!";
+	font-family: inherit;
+	font-style: normal;
+	font-size: 14px;
+}
+
+.flatpaper-note--primary .flatpaper-note__icon::before {
+	content: "★";
+	font-family: inherit;
+	font-style: normal;
+	font-size: 12px;
+}
+
+.flatpaper-note__body {
+	font-size: 14px;
+	line-height: 1.75;
+	color: var(--ink-soft);
+}
+
+.flatpaper-note__body p {
+	margin: 6px 0;
+	color: var(--ink-soft);
+}
+
+.flatpaper-note__body :not(pre) > code,
+.flatpaper-note__body code {
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.06);
+	border: 0;
+	box-shadow: none;
+	color: var(--note-accent);
+	font-size: 0.9em;
+}
+
+:root.dark .flatpaper-note__body code {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.flatpaper-note__body :is(ul, ol) {
+	padding-left: 22px;
+	margin: 6px 0;
+}
+
+.flatpaper-note__body li {
+	margin: 4px 0;
+	color: var(--ink-soft);
+}
+
+/* 可折叠 note */
+details.flatpaper-note {
+	display: block;
+	padding: 0;
+}
+
+details.flatpaper-note > .flatpaper-note__title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+	cursor: pointer;
+	list-style: none;
+	font-weight: 700;
+	font-size: 14px;
+	color: var(--note-accent);
+	user-select: none;
+}
+
+details.flatpaper-note > .flatpaper-note__title::-webkit-details-marker {
+	display: none;
+}
+
+details.flatpaper-note > .flatpaper-note__title::marker {
+	content: "";
+}
+
+details.flatpaper-note > .flatpaper-note__title .flatpaper-note__icon {
+	margin-top: 0;
+}
+
+details.flatpaper-note .flatpaper-note__label {
+	flex: 1;
+}
+
+details.flatpaper-note .flatpaper-note__chevron {
+	width: 9px;
+	height: 9px;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: rotate(45deg);
+	transition: transform 0.2s ease;
+	opacity: 0.7;
+}
+
+details.flatpaper-note[open] .flatpaper-note__chevron {
+	transform: rotate(225deg);
+}
+
+details.flatpaper-note > .flatpaper-note__body {
+	padding: 12px 18px 14px 48px;
+	border-top: 1px dashed var(--note-border);
+}
+
+details.flatpaper-note > .flatpaper-note__title:hover {
+	background: rgba(0, 0, 0, 0.03);
+}
+
+:root.dark details.flatpaper-note > .flatpaper-note__title:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+/* 变体：simple */
+body[data-note-style="simple"] .flatpaper-note {
+	padding: 10px 14px;
+	border: 1px solid var(--note-border);
+	border-left: 4px solid var(--note-accent);
+	border-radius: 6px;
+	background: transparent;
+}
+
+body[data-note-style="simple"] .flatpaper-note__icon {
+	width: 18px;
+	height: 18px;
+	margin-top: 1px;
+	background: transparent;
+	color: var(--note-accent);
+}
+
+body[data-note-style="simple"] .flatpaper-note__icon::before {
+	color: var(--note-accent);
+}
+
+body[data-note-style="simple"] details.flatpaper-note > .flatpaper-note__title {
+	padding: 6px 14px;
+}
+
+body[data-note-style="simple"] details.flatpaper-note > .flatpaper-note__body {
+	padding: 4px 14px 8px 44px;
+	border-top: 0;
+}
+
+/* 变体：modern */
+body[data-note-style="modern"] .flatpaper-note {
+	border-left: 0;
+	border-radius: 10px;
+	padding: 14px 18px;
+	background: var(--note-bg);
+	box-shadow: inset 0 0 0 1px var(--note-border);
+}
+
+body[data-note-style="modern"] details.flatpaper-note > .flatpaper-note__title {
+	padding: 12px 16px;
+}
+
+body[data-note-style="modern"] details.flatpaper-note > .flatpaper-note__body {
+	border-top: 1px solid var(--note-border);
+	padding: 12px 18px 14px 48px;
+}
+
+/* 变体：关闭图标 */
+body[data-note-icons="off"] .flatpaper-note {
+	grid-template-columns: 1fr;
+	gap: 0;
+}
+
+body[data-note-icons="off"] .flatpaper-note__icon {
+	display: none;
+}
+
+body[data-note-icons="off"] details.flatpaper-note > .flatpaper-note__body {
+	padding-left: 18px;
+}
+
+body[data-note-icons="off"][data-note-style="simple"]
+	details.flatpaper-note
+	> .flatpaper-note__body {
+	padding-left: 14px;
+}
+
+/* 变体：sticky（顶部胶带） */
+body[data-note-style="sticky"] .flatpaper-note {
+	margin: 32px 0 26px;
+	padding: 18px 18px 16px;
+	border: 1px solid color-mix(in srgb, var(--note-accent) 24%, var(--paper-solid) 76%);
+	border-radius: 0;
+	background: color-mix(in srgb, var(--note-accent) 12%, var(--paper-solid) 88%);
+	box-shadow: 1px 1px 3px rgba(var(--paper-shadow-rgb), 0.1);
+}
+
+body[data-note-style="sticky"] .flatpaper-note::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	z-index: 1;
+	width: 70px;
+	height: 20px;
+	border-radius: 1px;
+	background:
+		repeating-linear-gradient(
+			45deg,
+			rgba(255, 255, 255, 0.18) 0 2px,
+			transparent 2px 7px
+		),
+		color-mix(in srgb, var(--note-accent) 36%, transparent);
+	box-shadow: 0 2px 6px rgba(var(--paper-shadow-rgb), 0.14);
+	transform: translateX(-50%) rotate(-1deg);
+}
+
+body[data-note-style="sticky"] details.flatpaper-note {
+	padding: 0;
+}
+
+body[data-note-style="sticky"] details.flatpaper-note > .flatpaper-note__title {
+	padding: 14px 16px 12px;
+}
+
+body[data-note-style="sticky"]
+	details.flatpaper-note
+	> .flatpaper-note__body {
+	padding: 12px 18px 14px 46px;
+	border-top: 1px dashed var(--note-border);
+}
+
+:root.dark body[data-note-style="sticky"] .flatpaper-note {
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* 变体：disabled（退化为普通段落） */
+body[data-note-style="disabled"] .flatpaper-note {
+	display: block;
+	margin: 1em 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+body[data-note-style="disabled"] .flatpaper-note__icon {
+	display: none;
+}
+
+/* ===========================================================================
+ *  15. Tabs 选项卡（flatpaper-tabs）
+ * ======================================================================== */
+.flatpaper-tabs {
+	position: relative;
+	/* 参考站 .flatpaper-tabs 写的是 margin:32px 0，但它的 `.article-content > *`
+	   { margin:1em 0 } 出现得更晚，同权重下后者胜出 —— 实测渲染值就是 1em(=15px)。
+	   这里直接写成 1em 以复现同样的最终效果。 */
+	margin: 1em 0;
+	z-index: 1;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--paper);
+	box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.flatpaper-tabs__intro {
+	padding: 12px 16px;
+	border-bottom: 1px dashed var(--line);
+	color: var(--ink-soft);
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+.flatpaper-tabs__intro > :first-child {
+	margin-top: 0;
+}
+
+.flatpaper-tabs__intro > :last-child {
+	margin-bottom: 0;
+}
+
+.flatpaper-tabs__nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 12px 12px 0 12px;
+	background: var(--bg);
+	border-radius: 6px 6px 0 0;
+	border-bottom: 1px solid var(--line);
+	position: relative;
+	z-index: 2;
+}
+
+.flatpaper-tabs__nav-item {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 90px;
+	position: relative;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 4px 4px 0 0;
+	padding: 14px 24px 10px 24px;
+	margin: 0;
+	color: var(--ink);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.2px;
+	cursor: pointer;
+	overflow: hidden;
+	transition:
+		color 0.2s ease,
+		background-color 0.2s ease,
+		border-color 0.2s ease;
+}
+
+.flatpaper-tabs__nav-item:hover:not(.is-active) {
+	color: var(--ink);
+	background-color: color-mix(in srgb, var(--dash) 30%, transparent);
+}
+
+.flatpaper-tabs__nav-item::before {
+	content: "";
+	position: absolute;
+	top: -2px;
+	left: -5%;
+	right: -5%;
+	height: 12px;
+	background-color: var(--tape-pink, #f8a5c2);
+	opacity: 0.8;
+	transform: rotate(-1.5deg);
+}
+
+.flatpaper-tabs__nav-item:nth-child(2n)::before {
+	background-color: var(--tape-blue, #778beb);
+	transform: rotate(1deg);
+}
+
+.flatpaper-tabs__nav-item:nth-child(3n)::before {
+	background-color: var(--tape-green, #63cdda);
+	transform: rotate(-1deg);
+}
+
+.flatpaper-tabs__nav-item:nth-child(4n)::before {
+	background-color: var(--tape-yellow, #f7d794);
+	transform: rotate(1.5deg);
+}
+
+.flatpaper-tabs__nav-item.is-active {
+	background: var(--paper);
+	border-bottom-color: var(--paper);
+	margin-bottom: -1px;
+	color: var(--color-accent-strong);
+	font-weight: 700;
+	z-index: 3;
+}
+
+:root.dark .flatpaper-tabs__nav-item.is-active {
+	color: var(--color-accent-muted);
+}
+
+.flatpaper-tabs__nav-item.is-active::before {
+	height: 14px;
+	opacity: 1;
+}
+
+.flatpaper-tabs__panels {
+	position: relative;
+	z-index: 1;
+	padding: 20px;
+}
+
+.flatpaper-tabs__panel > :first-child {
+	margin-top: 0;
+}
+
+.flatpaper-tabs__panel > :last-child {
+	margin-bottom: 0;
+}
+
+.flatpaper-tabs__panel[hidden] {
+	display: none;
+}
+
+/* ===========================================================================
+ *  16. 代码块 —— 对齐演示站 `code.theme: simple`
+ *      DOM 映射：
+ *        FlatPaper .highlight            → .markdown-content.markdown-content .expressive-code .frame
+ *        FlatPaper .highlight .code-bar  → .frame > .header（EC 默认 display:none）
+ *        FlatPaper .highlight .code-lang → .frame[data-language]::after（语言徽标插件）
+ *        FlatPaper .highlight .code-copy → .frame > .copy-btn
+ *        FlatPaper td.gutter             → .ec-line > .gutter
+ *        FlatPaper td.code               → .ec-line > .code
+ * ======================================================================== */
+
+/* 16.1 外框：纸面 + 2px 墨色实线 + 无圆角（simple 主题特征）
+ *
+ * 字号说明（易错点）：参考站 .highlight 本身写的是 13px，但它的
+ * `td.code pre / td.gutter pre` 都写了 `font: inherit`，于是向上继承
+ * `.article-content table { font-size: 14px }`——实测渲染出来是
+ * 14px / 21.7px（=14×1.55），代码块整体高度 178px（5 行）也印证了这点。
+ * 所以这里必须照抄「实测值 14px」，而不是照抄源码里的 13px。 */
+.markdown-content.markdown-content .expressive-code {
+	margin: 22px 0;
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+.markdown-content.markdown-content .expressive-code .frame {
+	position: relative !important;
+	display: block !important;
+	margin: 0 !important;
+	padding: 38px 0 0 !important;
+	border: 2px solid var(--ink) !important;
+	border-radius: 0 !important;
+	background: var(--paper-warm) !important;
+	color: var(--ink) !important;
+	box-shadow: none !important;
+	overflow: hidden !important;
+	font-size: 14px !important;
+	line-height: 1.55 !important;
+}
+
+/* 16.2 顶部条（参考站 .code-bar：整宽 + 2px 墨色下边线） */
+.markdown-content.markdown-content .expressive-code .frame > .header {
+	display: flex !important;
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	width: auto !important;
+	height: 38px !important;
+	align-items: center !important;
+	justify-content: flex-end !important;
+	padding: 0 16px !important;
+	margin: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-bottom: 2px solid var(--ink) !important;
+	border-radius: 0 !important;
+	z-index: 2 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame > .header::before,
+.markdown-content.markdown-content .expressive-code .frame > .header::after {
+	display: none !important;
+}
+
+/* 16.3 语言标签（参考站 .code-lang：左对齐、全大写、墨色、无底色） */
+.markdown-content.markdown-content
+	.expressive-code
+	.frame[data-language]:not(.has-title):not(.is-terminal)::after,
+.markdown-content.markdown-content
+	.expressive-code
+	.frame[data-language]:not(.has-title):not(.is-terminal):hover::after {
+	content: attr(data-language);
+	position: absolute !important;
+	top: 0 !important;
+	left: 16px !important;
+	right: auto !important;
+	z-index: 3 !important;
+	display: flex !important;
+	align-items: center !important;
+	height: 38px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	background-color: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	color: var(--ink) !important;
+	font-family: var(--fp-mono) !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.04em !important;
+	text-transform: uppercase !important;
+	opacity: 1 !important;
+	pointer-events: none;
+}
+
+/* 16.4 代码区 */
+.markdown-content.markdown-content .expressive-code .frame > pre {
+	display: block !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	overflow-x: auto !important;
+	overflow-y: hidden;
+}
+
+.markdown-content.markdown-content .expressive-code .frame > pre > code {
+	display: block !important;
+	padding: 14px 0 !important;
+	background: transparent !important;
+	color: var(--ink) !important;
+	font-family: var(--fp-mono) !important;
+	font-size: 14px !important;
+	font-weight: 400 !important;
+	line-height: 1.55 !important;
+}
+
+/* 16.5 行号列（参考站 td.gutter：透明底 + 虚线右边界 + 灰色数字） */
+.markdown-content.markdown-content .expressive-code .ec-line .gutter {
+	position: sticky;
+	left: 0;
+	z-index: 2;
+	width: 48px;
+	padding: 0 14px 0 18px !important;
+	background: transparent !important;
+	border-right: 1px dashed var(--dash) !important;
+	color: var(--muted) !important;
+	text-align: right;
+	font-family: var(--fp-mono) !important;
+	font-size: 14px !important;
+	line-height: 1.55 !important;
+	user-select: none;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line .gutter .ln {
+	color: inherit !important;
+}
+
+/* 16.6 代码列 */
+.markdown-content.markdown-content .expressive-code .ec-line .code {
+	padding: 0 20px !important;
+	min-width: 0;
+	color: var(--ink) !important;
+	font-family: var(--fp-mono) !important;
+	font-size: 14px !important;
+	line-height: 1.55 !important;
+}
+
+/* 16.7 复制按钮（参考站 .code-action：无底色、无边框、墨灰色） */
+.markdown-content.markdown-content .expressive-code .frame .copy-btn {
+	all: unset;
+	position: absolute !important;
+	top: 0 !important;
+	right: 50px !important;
+	z-index: 4 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 26px !important;
+	height: 38px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--ink-soft) !important;
+	cursor: pointer;
+	opacity: 1 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn:hover {
+	color: var(--ink) !important;
+	background: transparent !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn .copy-btn-icon {
+	position: static !important;
+	transform: none !important;
+	/* 参考站 .code-copy .lucide 实测 13px */
+	width: 13px !important;
+	height: 13px !important;
+	transition: opacity 0.2s ease;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn svg {
+	width: 13px !important;
+	height: 13px !important;
+	fill: currentColor !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn .copy-icon {
+	opacity: 1 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn .success-icon {
+	opacity: 0 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn.success .copy-icon {
+	opacity: 0 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn.success .success-icon {
+	opacity: 1 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame .copy-btn.success {
+	color: var(--color-accent) !important;
+}
+
+/* 16.8 折叠按钮挪进顶部条 */
+.markdown-content.markdown-content .expressive-code.collapsible .collapse-toggle-btn {
+	all: unset;
+	position: absolute !important;
+	top: 0 !important;
+	right: 16px !important;
+	z-index: 4 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 26px !important;
+	height: 38px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--ink-soft) !important;
+	cursor: pointer;
+	opacity: 1 !important;
+}
+
+.markdown-content.markdown-content .expressive-code.collapsible .collapse-toggle-btn:hover {
+	color: var(--ink) !important;
+	background: transparent !important;
+}
+
+.markdown-content.markdown-content .expressive-code.collapsible .collapse-toggle-btn svg {
+	width: 13px !important;
+	height: 13px !important;
+	fill: currentColor !important;
+	/* 参考站折叠按钮用的是 lucide-chevron-up：展开态朝上，
+	   折叠时才 rotate(180deg)（见 demo_style.css:6763-6768）。
+	   Expressive Code 自带的字形默认朝下，所以这里反过来先转 180°。 */
+	transform: rotate(180deg) !important;
+	transition: transform 0.22s ease;
+}
+
+.markdown-content.markdown-content .expressive-code.collapsed .collapse-toggle-btn svg {
+	transform: rotate(0deg) !important;
+}
+
+/* 折叠态渐隐用纸面底色 */
+.markdown-content.markdown-content .expressive-code.collapsed .frame pre::after {
+	background: linear-gradient(to bottom, transparent 0%, var(--paper-warm) 90%) !important;
+}
+
+/* 16.9 滚动条（simple 主题：var(--dash)，直角） */
+.markdown-content.markdown-content .expressive-code .frame > pre::-webkit-scrollbar {
+	height: 8px;
+}
+
+.markdown-content.markdown-content .expressive-code .frame > pre::-webkit-scrollbar-thumb {
+	background: var(--dash) !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+}
+
+.markdown-content.markdown-content .expressive-code .frame > pre::-webkit-scrollbar-track {
+	background: transparent !important;
+}
+
+/* 16.10 token 配色回指站点语义令牌
+ *   Shiki 主题里写死的是「语义令牌在本站亮/暗档的真值 hex」，
+ *   这里把每个 hex 反过来指回对应的 CSS 变量，7 套主题色切换时
+ *   代码块（参考站同样吃 --color-accent / --orange / --blue / --muted / --ink）
+ *   就能一起变色。
+ *   注意：EC 把亮暗两套 hex 同时写在同一个 style 上，所以同一个 token 的
+ *   亮/暗 hex 必须映射到同一个变量。 */
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#8a8678" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#797f8c" i] {
+	color: var(--muted) !important;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#6fa67c" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#82bf90" i] {
+	color: var(--color-accent) !important;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#ec9b5b" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#e09b66" i] {
+	color: var(--orange) !important;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#6fa9d9" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#7db4dd" i] {
+	color: var(--blue) !important;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#d4716c" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#df8580" i] {
+	color: var(--red) !important;
+}
+
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#2c3531" i],
+.markdown-content.markdown-content .expressive-code .ec-line span[style*="#e6e8ee" i] {
+	color: var(--ink) !important;
+}
+
+/* 字体连字 */
+.markdown-content.markdown-content .expressive-code pre,
+.markdown-content.markdown-content .expressive-code code {
+	font-feature-settings: "liga" 1, "calt" 1;
+}

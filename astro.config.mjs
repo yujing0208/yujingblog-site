@@ -21,6 +21,10 @@ import remarkSectionize from "remark-sectionize";
 
 import { buildIconInclude } from "./src/plugins/astro-icon-include.mjs";
 import { siteConfig } from "./src/config/index.ts";
+import {
+	flatpaperCodeThemeDark,
+	flatpaperCodeThemeLight,
+} from "./src/config/flatpaperCodeTheme.ts";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
@@ -31,6 +35,7 @@ import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypeWrapTable } from "./src/plugins/rehype-wrap-table.mjs";
 import { remarkContent } from "./src/plugins/remark-content.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
+import { rehypeFlatpaperTabs } from "./src/plugins/rehype-flatpaper-tabs.mjs";
 import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-colons.mjs";
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
@@ -154,7 +159,11 @@ export default defineConfig({
 		    },
 		}),
 		expressiveCode({
-			themes: ["github-light", "github-dark"],
+			// 代码块配色改为 FlatPaper 演示站 `code.theme: simple` 的语义令牌映射，
+			// 主题由 src/config/flatpaperCodeTheme.ts 提供（亮/暗各一套真值）
+			themes: [flatpaperCodeThemeLight, flatpaperCodeThemeDark],
+			// 关掉对比度自动校正，否则橙色/蓝色 token 会被 EC 改亮度，与演示站对不上
+			minSyntaxHighlightingColorContrast: 0,
 			plugins: [
 				pluginCollapsibleSections(),
 				pluginLineNumbers(),
@@ -230,6 +239,7 @@ export default defineConfig({
 				],
 				rehypeSlug,
 				rehypeWrapTable,
+				rehypeFlatpaperTabs,
 				rehypeMermaid,
 				[
 					rehypeComponents,
@@ -237,7 +247,13 @@ export default defineConfig({
 						components: {
 							github: GithubCardComponent,
 							grid: ImageGridComponent,
+							// FlatPaper 演示站的 6 种 note 变体 + 兼容别名
 							note: (x, y) => AdmonitionComponent(x, y, "note"),
+							primary: (x, y) => AdmonitionComponent(x, y, "primary"),
+							info: (x, y) => AdmonitionComponent(x, y, "info"),
+							success: (x, y) => AdmonitionComponent(x, y, "success"),
+							danger: (x, y) => AdmonitionComponent(x, y, "danger"),
+							error: (x, y) => AdmonitionComponent(x, y, "danger"),
 							tip: (x, y) => AdmonitionComponent(x, y, "tip"),
 							important: (x, y) =>
 								AdmonitionComponent(x, y, "important"),

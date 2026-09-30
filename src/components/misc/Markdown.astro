@@ -16,6 +16,67 @@ const className = Astro.props.class;
 </div>
 
 <script>
+	/**
+	 * FlatPaper 选项卡（flatpaper-tabs）交互
+	 * 用事件委托挂在 document 上，Swup 换页后无需重新绑定。
+	 * 标记 → 面板的三种状态：
+	 *   点未激活项   → 激活该项（收起其它项）
+	 *   点已激活项   → 若整块带 .is-collapsible，则收起该项（其余保持收起）
+	 *   其余情况     → 保持至少一项展开
+	 */
+	document.addEventListener("click", function (e: MouseEvent) {
+		const target = (e.target as Element | null)?.closest(
+			".flatpaper-tabs__nav-item",
+		) as HTMLElement | null;
+		if (!target) return;
+
+		const tabsRoot = target.closest(".flatpaper-tabs") as HTMLElement | null;
+		if (!tabsRoot) return;
+
+		const collapsible = tabsRoot.classList.contains("is-collapsible");
+		const wasActive = target.classList.contains("is-active");
+
+		const navItems = Array.from(
+			tabsRoot.querySelectorAll<HTMLElement>(".flatpaper-tabs__nav-item"),
+		);
+		const panels = Array.from(
+			tabsRoot.querySelectorAll<HTMLElement>(".flatpaper-tabs__panel"),
+		);
+
+		const activate = (index: number) => {
+			navItems.forEach((item, i) => {
+				const on = i === index;
+				item.classList.toggle("is-active", on);
+				item.setAttribute("aria-selected", String(on));
+			});
+			panels.forEach((panel, i) => {
+				const on = i === index;
+				panel.classList.toggle("is-active", on);
+				if (on) {
+					panel.removeAttribute("hidden");
+				} else {
+					panel.setAttribute("hidden", "");
+				}
+			});
+			if (index >= 0) {
+				tabsRoot.classList.remove("is-collapsible");
+			}
+		};
+
+		const index = Number.parseInt(target.dataset.index ?? "0", 10);
+
+		if (wasActive && collapsible) {
+			// 折叠态下点当前项 = 全部收起
+			activate(-1);
+			tabsRoot.classList.add("is-collapsible");
+			return;
+		}
+
+		if (wasActive && !collapsible) return;
+
+		activate(index);
+	});
+
 	document.addEventListener("click", function (e: MouseEvent) {
 		const target = e.target as Element | null;
 		if (target && target.classList.contains("copy-btn")) {

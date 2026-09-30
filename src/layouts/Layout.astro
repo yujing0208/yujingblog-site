@@ -254,6 +254,9 @@ const bannerOffset =
 	<body
 		class={`min-h-screen${enableBanner ? " enable-banner" : ""}${siteConfig.card?.border ? " enable-card-border" : ""}${isPaperLayout ? " paper-layout" : ""}`}
 
+		data-note-style="sticky"
+		data-note-icons="on"
+
 		data-overlayscrollbars-initialize
 		data-edit={EDIT_PAGE || undefined}
 	>
