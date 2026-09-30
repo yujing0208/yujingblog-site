@@ -130,7 +130,7 @@
 /* ==========================================================================
  * 三、目录内容区
  * ========================================================================== */
-.toc-card .toc-content {
+.toc-card .fp-toc-content {
 	position: relative;
 	flex: 1;
 	min-height: 0;
@@ -143,24 +143,24 @@
 	scrollbar-color: var(--paper-line) transparent;
 }
 
-.toc-card .toc-content::-webkit-scrollbar {
+.toc-card .fp-toc-content::-webkit-scrollbar {
 	width: 6px;
 }
 
-.toc-card .toc-content::-webkit-scrollbar-thumb {
+.toc-card .fp-toc-content::-webkit-scrollbar-thumb {
 	background: var(--paper-line);
 	border-radius: 999px;
 }
 
-.toc-card .toc-content::-webkit-scrollbar-track {
+.toc-card .fp-toc-content::-webkit-scrollbar-track {
 	background: transparent;
 }
 
 /* ==========================================================================
  * 四、目录条目
  * ========================================================================== */
-.toc-card .toc-content ol,
-.toc-card .toc-content ul {
+.toc-card .fp-toc-content ol,
+.toc-card .fp-toc-content ul {
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -168,13 +168,13 @@
 	counter-reset: toc-item;
 }
 
-.toc-card .toc-content li {
+.toc-card .fp-toc-content li {
 	position: relative;
 	margin: 0;
 	counter-increment: toc-item;
 }
 
-.toc-card .toc-content a {
+.toc-card .fp-toc-content a {
 	position: relative;
 	display: block;
 	padding: 5px 8px 5px 10px;
@@ -190,7 +190,7 @@
 }
 
 /* 左侧强调色竖条：hover / active 时滑入 */
-.toc-card .toc-content a::before {
+.toc-card .fp-toc-content a::before {
 	content: "";
 	position: absolute;
 	left: 0;
@@ -206,60 +206,60 @@
 		opacity 0.2s ease;
 }
 
-:root.dark .toc-card .toc-content a::before {
+:root.dark .toc-card .fp-toc-content a::before {
 	background: oklch(0.78 0.08 var(--hue));
 }
 
-.toc-card .toc-content a:hover {
+.toc-card .fp-toc-content a:hover {
 	color: oklch(0.55 0.12 var(--hue));
 	transform: translateX(6px);
 }
 
-:root.dark .toc-card .toc-content a:hover {
+:root.dark .toc-card .fp-toc-content a:hover {
 	color: oklch(0.78 0.08 var(--hue));
 }
 
-.toc-card .toc-content a:hover::before,
-.toc-card .toc-content a.is-active::before {
+.toc-card .fp-toc-content a:hover::before,
+.toc-card .fp-toc-content a.is-active::before {
 	opacity: 1;
 	transform: translateX(0);
 }
 
-.toc-card .toc-content a.is-active {
+.toc-card .fp-toc-content a.is-active {
 	color: oklch(0.55 0.12 var(--hue));
 	font-weight: 600;
 }
 
-:root.dark .toc-card .toc-content a.is-active {
+:root.dark .toc-card .fp-toc-content a.is-active {
 	color: oklch(0.78 0.08 var(--hue));
 }
 
 /* 二级 / 三级缩进（嵌套 ol 控制层级） */
-.toc-card .toc-content ol ol,
-.toc-card .toc-content ul ul {
+.toc-card .fp-toc-content ol ol,
+.toc-card .fp-toc-content ul ul {
 	padding-left: 14px;
 	margin-top: 2px;
 	margin-bottom: 2px;
 	font-size: 12.5px;
 }
 
-.toc-card .toc-content ol ol a,
-.toc-card .toc-content ul ul a {
+.toc-card .fp-toc-content ol ol a,
+.toc-card .fp-toc-content ul ul a {
 	color: var(--toc-muted);
 	padding: 4px 8px 4px 10px;
 	font-size: 12.5px;
 }
 
-.toc-card .toc-content ol ol ol,
-.toc-card .toc-content ul ul ol,
-.toc-card .toc-content ol ol ul,
-.toc-card .toc-content ul ul ul {
+.toc-card .fp-toc-content ol ol ol,
+.toc-card .fp-toc-content ul ul ol,
+.toc-card .fp-toc-content ol ol ul,
+.toc-card .fp-toc-content ul ul ul {
 	font-size: 12px;
 }
 
 /* 未展开时只显示当前 active 分支（其余子级折叠） */
-.toc-card:not(.is-expanded) .toc-content li:not(.is-open) > ol,
-.toc-card:not(.is-expanded) .toc-content li:not(.is-open) > ul {
+.toc-card:not(.is-expanded) .fp-toc-content li:not(.is-open) > ol,
+.toc-card:not(.is-expanded) .fp-toc-content li:not(.is-open) > ul {
 	display: none;
 }
 
@@ -284,14 +284,14 @@
 
 /* 减少动态偏好：关掉闪烁与位移 */
 @media (prefers-reduced-motion: reduce) {
-	.toc-card .toc-content a,
-	.toc-card .toc-content a::before,
+	.toc-card .fp-toc-content a,
+	.toc-card .fp-toc-content a::before,
 	.toc-card .toc-toggle-all,
 	.toc-card .toc-toggle-all__icon {
 		transition: none;
 	}
 
-	.toc-card .toc-content a:hover {
+	.toc-card .fp-toc-content a:hover {
 		transform: none;
 	}
 
