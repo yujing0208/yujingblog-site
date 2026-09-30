@@ -1,0 +1,280 @@
+/* ============================================================================
+ *  手账目录卡（toc-card）—— 1:1 照搬 hexo-theme-flatpaper
+ *
+ *  源码依据（原文已核对）：
+ *    homulilly.com/css/style.css  .toc-card 段（1569-1726 行）
+ *    同文件文章页覆盖段（863-875 行）
+ *    同文件锚点段（6080-6089 / 6354-6361 行）
+ *    结构来源：homulilly.com/post/xxx.html 的
+ *      <section class="side-card toc-card">
+ *        <header class="toc-card__head"><h2>图标+标题</h2>
+ *          <button class="toc-toggle-all" data-action="toggle-toc">chevron-down</button>
+ *        </header>
+ *        <div class="toc-content"><ol class="toc">…</ol></div>
+ *      </section>
+ *
+ *  仅做两处必要改写（与 paper-sidebar-right.css 同规则）：
+ *    1. .dark-mode          → :root.dark（本博客暗色类名）
+ *    2. --color-accent* / --line / --paper
+ *       → var(--primary) / oklch(0.55 0.12 var(--hue)) / --paper-line / --card-bg
+ *  其余选择器、数值、动效曲线、断点全部保持原样。
+ * ========================================================================= */
+
+/* ==========================================================================
+ * 一、卡片本体
+ * ========================================================================== */
+.toc-card {
+	padding: 18px 18px 14px;
+	/* 文章页：整卡纵向弹性，内容区自己滚动（照搬 863-875 行） */
+	display: flex;
+	flex-direction: column;
+	overflow: visible;
+}
+
+/* 顶部居中绿胶带（覆盖 .side-card::before 默认的右上黄胶带） */
+.toc-card::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	right: auto;
+	z-index: 4;
+	width: 70px;
+	height: 20px;
+	background-color: var(--tape-green);
+	background-image: var(--tape-stripes);
+	filter: saturate(0.9);
+	transform: translateX(-50%);
+	pointer-events: none;
+}
+
+.toc-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+	flex-shrink: 0;
+}
+
+.toc-card__head h2 {
+	margin: 0;
+}
+
+/* ==========================================================================
+ * 二、展开/收起全部按钮（圆形虚线）
+ * ========================================================================== */
+.toc-toggle-all {
+	position: relative;
+	z-index: 5;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	flex: 0 0 28px;
+	padding: 0;
+	border: 1px dashed var(--paper-line);
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+	color: var(--muted);
+	cursor: pointer;
+	transition:
+		color 0.16s ease,
+		border-color 0.16s ease,
+		background 0.16s ease,
+		transform 0.16s ease;
+}
+
+.toc-toggle-all__icon {
+	width: 15px;
+	height: 15px;
+	transition: transform 0.18s ease;
+}
+
+.toc-toggle-all:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	border-color: var(--primary);
+	background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+}
+
+:root.dark .toc-toggle-all:hover {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+/* 展开态：图标翻转 180°（照搬 '.toc-card.is-expanded .toc-toggle-all .lucide'） */
+.toc-card.is-expanded .toc-toggle-all__icon {
+	transform: rotate(180deg);
+}
+
+/* ==========================================================================
+ * 三、目录内容区
+ * ========================================================================== */
+.toc-content {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+	max-height: calc(100vh - 200px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-left: 14px;
+	padding-right: 8px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--paper-line) transparent;
+}
+
+.toc-content::-webkit-scrollbar {
+	width: 6px;
+}
+
+.toc-content::-webkit-scrollbar-thumb {
+	background: var(--paper-line);
+	border-radius: 999px;
+}
+
+.toc-content::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+/* ==========================================================================
+ * 四、目录条目
+ * ========================================================================== */
+.toc-content ol,
+.toc-content ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: 13px;
+	counter-reset: toc-item;
+}
+
+.toc-content li {
+	position: relative;
+	margin: 0;
+	counter-increment: toc-item;
+}
+
+.toc-content a {
+	position: relative;
+	display: block;
+	padding: 5px 8px 5px 10px;
+	margin: 2px 0;
+	border-radius: 6px;
+	color: var(--muted);
+	line-height: 1.5;
+	text-decoration: none;
+	transition:
+		color 0.18s ease,
+		transform 0.25s cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+/* 左侧强调色竖条：hover / active 时滑入 */
+.toc-content a::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 6px;
+	bottom: 6px;
+	width: 3px;
+	border-radius: 999px;
+	background: var(--primary);
+	opacity: 0;
+	transform: translateX(-10px);
+	transition:
+		transform 0.28s cubic-bezier(0.34, 1.6, 0.64, 1),
+		opacity 0.2s ease;
+}
+
+:root.dark .toc-content a::before {
+	background: oklch(0.78 0.08 var(--hue));
+}
+
+.toc-content a:hover {
+	color: oklch(0.55 0.12 var(--hue));
+	transform: translateX(6px);
+}
+
+:root.dark .toc-content a:hover {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+.toc-content a:hover::before,
+.toc-content a.is-active::before {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.toc-content a.is-active {
+	color: oklch(0.55 0.12 var(--hue));
+	font-weight: 600;
+}
+
+:root.dark .toc-content a.is-active {
+	color: oklch(0.78 0.08 var(--hue));
+}
+
+/* 二级 / 三级缩进（嵌套 ol 控制层级） */
+.toc-content ol ol,
+.toc-content ul ul {
+	padding-left: 14px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	font-size: 12.5px;
+}
+
+.toc-content ol ol a,
+.toc-content ul ul a {
+	color: var(--muted);
+	padding: 4px 8px 4px 10px;
+}
+
+.toc-content ol ol ol,
+.toc-content ul ul ol,
+.toc-content ol ol ul,
+.toc-content ul ul ul {
+	font-size: 12px;
+}
+
+/* 未展开时只显示当前 active 分支（其余子级折叠） */
+.toc-card:not(.is-expanded) .toc-content li:not(.is-open) > ol,
+.toc-card:not(.is-expanded) .toc-content li:not(.is-open) > ul {
+	display: none;
+}
+
+/* ==========================================================================
+ * 五、正文锚点：定位偏移 + 闪烁提示
+ *   照搬 '.article-content :is(h2,h3):target'（6080-6089 行）
+ * ========================================================================== */
+.markdown-content :is(h1, h2, h3, h4, h5, h6):target {
+	scroll-margin-top: 90px;
+	border-radius: 6px;
+	padding-right: 6px;
+	animation: flatpaper-anchor-flash 1.4s ease-out;
+}
+
+@keyframes flatpaper-anchor-flash {
+	0% {
+		background-color: rgba(241, 193, 84, 0.35);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+/* 减少动态偏好：关掉闪烁与位移 */
+@media (prefers-reduced-motion: reduce) {
+	.toc-content a,
+	.toc-content a::before,
+	.toc-toggle-all,
+	.toc-toggle-all__icon {
+		transition: none;
+	}
+
+	.toc-content a:hover {
+		transform: none;
+	}
+
+	.markdown-content :is(h1, h2, h3, h4, h5, h6):target {
+		animation: none;
+	}
+}
