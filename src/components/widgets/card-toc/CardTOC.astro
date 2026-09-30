@@ -19,9 +19,10 @@
  * Round 20（2026-09-30）：原实现是 Mizuki 的 widget-layout（左侧竖线标题 + 徽章式
  * 条目 + 虚框指示器），与参考站 UI/交互都不同；本次换成与左栏其余卡一致的
  * side-card 手账卡 + flatpaper 目录样式与交互。
+ *
+ * 样式走全局 main.css 的 @import（不放组件内，避免组件级 CSS 异步加载
+ * 造成首访时高亮样式缺失）。
  */
-import "@/styles/paper-toc-card.css";
-
 import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
