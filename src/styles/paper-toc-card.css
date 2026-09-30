@@ -4,35 +4,38 @@
  *  源码依据（原文已核对）：
  *    homulilly.com/css/style.css  .toc-card 段（1569-1726 行）
  *    同文件文章页覆盖段（863-875 行）
+ *    同文件 tape 按钮段（5802-5867 行，实机 body[data-button-style="tape"]）
  *    同文件锚点段（6080-6089 / 6354-6361 行）
- *    结构来源：homulilly.com/post/xxx.html 的
- *      <section class="side-card toc-card">
- *        <header class="toc-card__head"><h2>图标+标题</h2>
- *          <button class="toc-toggle-all" data-action="toggle-toc">chevron-down</button>
- *        </header>
- *        <div class="toc-content"><ol class="toc">…</ol></div>
- *      </section>
+ *    结构：<section class="side-card toc-card">
+ *            <header class="toc-card__head"><h2>图标+文章目录</h2>
+ *              <button class="toc-toggle-all" data-action="toggle-toc">chevron-down</button>
+ *            </header>
+ *            <div class="toc-content"><ol class="toc">…</ol></div>
+ *          </section>
  *
- *  仅做两处必要改写（与 paper-sidebar-right.css 同规则）：
- *    1. .dark-mode          → :root.dark（本博客暗色类名）
- *    2. --color-accent* / --line / --paper
- *       → var(--primary) / oklch(0.55 0.12 var(--hue)) / --paper-line / --card-bg
- *  其余选择器、数值、动效曲线、断点全部保持原样。
+ *  为什么选择器都带 .toc-card 前缀：
+ *    本博客已有 `.side-card` / `.side-card h2`（paper-sidebar-right.css）等
+ *    同特异性规则，且打包顺序不可控 —— 实测不带前缀时 padding / 标题 margin /
+ *    内容 padding 全被吃掉（线上 CDP 审计确认）。加一层 .toc-card 提高特异性，
+ *    与原版渲染结果一致。
+ *
+ *  两处必要改写（与 paper-sidebar-right.css 同规则）：
+ *    .dark-mode → :root.dark；--color-accent* / --line / --paper / --dash
+ *    → var(--primary) / oklch(0.55 0.12 var(--hue)) / --paper-line / --card-bg / --paper-dash
  * ========================================================================= */
 
 /* ==========================================================================
- * 一、卡片本体
+ * 一、卡片本体（原版 padding: 18px 18px 14px；文章页为 flex 纵向）
  * ========================================================================== */
-.toc-card {
+.side-card.toc-card {
 	padding: 18px 18px 14px;
-	/* 文章页：整卡纵向弹性，内容区自己滚动（照搬 863-875 行） */
 	display: flex;
 	flex-direction: column;
 	overflow: visible;
 }
 
 /* 顶部居中绿胶带（覆盖 .side-card::before 默认的右上黄胶带） */
-.toc-card::before {
+.side-card.toc-card::before {
 	content: "";
 	position: absolute;
 	top: -10px;
@@ -48,7 +51,7 @@
 	pointer-events: none;
 }
 
-.toc-card__head {
+.toc-card .toc-card__head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -57,14 +60,16 @@
 	flex-shrink: 0;
 }
 
-.toc-card__head h2 {
+.toc-card .toc-card__head h2 {
 	margin: 0;
 }
 
 /* ==========================================================================
- * 二、展开/收起全部按钮（圆形虚线）
+ * 二、展开/收起全部按钮
+ *    基础形（1569-1626 行）+ 实机 tape 覆盖（5802-5867 行）：
+ *    2px 虚线 + 手绘圆角 + 静置 -3° 倾斜，hover 回正上浮
  * ========================================================================== */
-.toc-toggle-all {
+.toc-card .toc-toggle-all {
 	position: relative;
 	z-index: 5;
 	display: inline-flex;
@@ -74,31 +79,36 @@
 	height: 28px;
 	flex: 0 0 28px;
 	padding: 0;
-	border: 1px dashed var(--paper-line);
-	border-radius: 50%;
+	border: 2px dashed var(--paper-dash);
+	border-radius: var(--radius-handdrawn);
 	background: color-mix(in srgb, var(--card-bg) 82%, transparent);
 	color: var(--muted);
 	cursor: pointer;
+	transform: rotate(-3deg);
 	transition:
-		color 0.16s ease,
-		border-color 0.16s ease,
-		background 0.16s ease,
-		transform 0.16s ease;
+		color 0.2s ease,
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.22s ease,
+		box-shadow 0.2s ease;
 }
 
-.toc-toggle-all__icon {
+.toc-card .toc-toggle-all__icon {
 	width: 15px;
 	height: 15px;
 	transition: transform 0.18s ease;
 }
 
-.toc-toggle-all:hover {
+.toc-card .toc-toggle-all:hover {
 	color: oklch(0.55 0.12 var(--hue));
 	border-color: var(--primary);
-	background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+	background-color: var(--fp-accent-soft);
+	background-image: var(--nav-tape-stripes);
+	transform: rotate(0deg) translateY(-2px) scale(1.06);
+	box-shadow: var(--soft-shadow);
 }
 
-:root.dark .toc-toggle-all:hover {
+:root.dark .toc-card .toc-toggle-all:hover {
 	color: oklch(0.78 0.08 var(--hue));
 }
 
@@ -110,7 +120,7 @@
 /* ==========================================================================
  * 三、目录内容区
  * ========================================================================== */
-.toc-content {
+.toc-card .toc-content {
 	position: relative;
 	flex: 1;
 	min-height: 0;
@@ -123,24 +133,24 @@
 	scrollbar-color: var(--paper-line) transparent;
 }
 
-.toc-content::-webkit-scrollbar {
+.toc-card .toc-content::-webkit-scrollbar {
 	width: 6px;
 }
 
-.toc-content::-webkit-scrollbar-thumb {
+.toc-card .toc-content::-webkit-scrollbar-thumb {
 	background: var(--paper-line);
 	border-radius: 999px;
 }
 
-.toc-content::-webkit-scrollbar-track {
+.toc-card .toc-content::-webkit-scrollbar-track {
 	background: transparent;
 }
 
 /* ==========================================================================
  * 四、目录条目
  * ========================================================================== */
-.toc-content ol,
-.toc-content ul {
+.toc-card .toc-content ol,
+.toc-card .toc-content ul {
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -148,19 +158,20 @@
 	counter-reset: toc-item;
 }
 
-.toc-content li {
+.toc-card .toc-content li {
 	position: relative;
 	margin: 0;
 	counter-increment: toc-item;
 }
 
-.toc-content a {
+.toc-card .toc-content a {
 	position: relative;
 	display: block;
 	padding: 5px 8px 5px 10px;
 	margin: 2px 0;
 	border-radius: 6px;
 	color: var(--muted);
+	font-size: 13px;
 	line-height: 1.5;
 	text-decoration: none;
 	transition:
@@ -169,7 +180,7 @@
 }
 
 /* 左侧强调色竖条：hover / active 时滑入 */
-.toc-content a::before {
+.toc-card .toc-content a::before {
 	content: "";
 	position: absolute;
 	left: 0;
@@ -185,53 +196,54 @@
 		opacity 0.2s ease;
 }
 
-:root.dark .toc-content a::before {
+:root.dark .toc-card .toc-content a::before {
 	background: oklch(0.78 0.08 var(--hue));
 }
 
-.toc-content a:hover {
+.toc-card .toc-content a:hover {
 	color: oklch(0.55 0.12 var(--hue));
 	transform: translateX(6px);
 }
 
-:root.dark .toc-content a:hover {
+:root.dark .toc-card .toc-content a:hover {
 	color: oklch(0.78 0.08 var(--hue));
 }
 
-.toc-content a:hover::before,
-.toc-content a.is-active::before {
+.toc-card .toc-content a:hover::before,
+.toc-card .toc-content a.is-active::before {
 	opacity: 1;
 	transform: translateX(0);
 }
 
-.toc-content a.is-active {
+.toc-card .toc-content a.is-active {
 	color: oklch(0.55 0.12 var(--hue));
 	font-weight: 600;
 }
 
-:root.dark .toc-content a.is-active {
+:root.dark .toc-card .toc-content a.is-active {
 	color: oklch(0.78 0.08 var(--hue));
 }
 
 /* 二级 / 三级缩进（嵌套 ol 控制层级） */
-.toc-content ol ol,
-.toc-content ul ul {
+.toc-card .toc-content ol ol,
+.toc-card .toc-content ul ul {
 	padding-left: 14px;
 	margin-top: 2px;
 	margin-bottom: 2px;
 	font-size: 12.5px;
 }
 
-.toc-content ol ol a,
-.toc-content ul ul a {
+.toc-card .toc-content ol ol a,
+.toc-card .toc-content ul ul a {
 	color: var(--muted);
 	padding: 4px 8px 4px 10px;
+	font-size: 12.5px;
 }
 
-.toc-content ol ol ol,
-.toc-content ul ul ol,
-.toc-content ol ol ul,
-.toc-content ul ul ul {
+.toc-card .toc-content ol ol ol,
+.toc-card .toc-content ul ul ol,
+.toc-card .toc-content ol ol ul,
+.toc-card .toc-content ul ul ul {
 	font-size: 12px;
 }
 
@@ -242,8 +254,7 @@
 }
 
 /* ==========================================================================
- * 五、正文锚点：定位偏移 + 闪烁提示
- *   照搬 '.article-content :is(h2,h3):target'（6080-6089 行）
+ * 五、正文锚点：定位偏移 + 闪烁提示（照搬 6080-6089 / 6354-6361 行）
  * ========================================================================== */
 .markdown-content :is(h1, h2, h3, h4, h5, h6):target {
 	scroll-margin-top: 90px;
@@ -263,14 +274,14 @@
 
 /* 减少动态偏好：关掉闪烁与位移 */
 @media (prefers-reduced-motion: reduce) {
-	.toc-content a,
-	.toc-content a::before,
-	.toc-toggle-all,
-	.toc-toggle-all__icon {
+	.toc-card .toc-content a,
+	.toc-card .toc-content a::before,
+	.toc-card .toc-toggle-all,
+	.toc-card .toc-toggle-all__icon {
 		transition: none;
 	}
 
-	.toc-content a:hover {
+	.toc-card .toc-content a:hover {
 		transform: none;
 	}
 
