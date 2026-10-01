@@ -20,14 +20,14 @@ for (const c of allCategories) {
 	<div class="booknav-page" data-booknav-page>
 		<header class="booknav-header">
 			<div class="booknav-title-wrap">
-				<Icon name="material-symbols:bookmark-outline" class="booknav-title-icon" />
+				<Icon name="lucide:bookmark" class="booknav-title-icon" />
 				<h1 class="booknav-title">{booknavConfig.title}</h1>
 			</div>
 			<p class="booknav-subtitle">{booknavConfig.subtitle}</p>
 		</header>
 
 		<div class="booknav-search-wrap">
-			<Icon name="material-symbols:search" class="booknav-search-icon" />
+			<Icon name="lucide:search" class="booknav-search-icon" />
 			<input
 				type="text"
 				class="booknav-search"
@@ -38,7 +38,7 @@ for (const c of allCategories) {
 
 		<nav class="booknav-category-tabs" data-booknav-tabs>
 			<button class="booknav-tab is-active" data-category="all">
-				<Icon name="material-symbols:apps" class="booknav-tab-icon" />
+				<Icon name="lucide:layout-grid" class="booknav-tab-icon" />
 				<span>全部</span>
 				<span class="booknav-tab-count" data-count-all>{totalCount}</span>
 			</button>
@@ -107,7 +107,7 @@ for (const c of allCategories) {
 		</div>
 
 		<div class="booknav-empty" data-booknav-empty hidden>
-			<Icon name="material-symbols:search-off" class="booknav-empty-icon" />
+			<Icon name="lucide:search-x" class="booknav-empty-icon" />
 			<p>没有找到匹配的书签</p>
 		</div>
 	</div>
