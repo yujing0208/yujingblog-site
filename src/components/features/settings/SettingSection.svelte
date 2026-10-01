@@ -36,7 +36,7 @@ function handleReset() {
 			class="chevron transition-transform duration-200 shrink-0"
 			class:rotate-90={isOpen}
 		>
-			<Icon icon="material-symbols:chevron-right-rounded" class="text-[1rem] opacity-50"></Icon>
+			<Icon icon="lucide:chevron-right" class="text-[1rem] opacity-50"></Icon>
 		</div>
 		<span class="text-sm font-bold text-(--deep-text) dark:text-neutral-100 flex-1">{title}</span>
 		</button>
@@ -47,7 +47,7 @@ function handleReset() {
 				onclick={handleReset}
 				aria-label="Reset section"
 			>
-				<Icon icon="fa7-solid:arrow-rotate-left" class="text-[0.7rem] text-(--btn-content)"></Icon>
+				<Icon icon="lucide:rotate-ccw" class="text-[0.7rem] text-(--btn-content)"></Icon>
 			</button>
 		{/if}
 	</div>
