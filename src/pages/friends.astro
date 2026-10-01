@@ -1,10 +1,10 @@
 ---
 import Comment from "@components/comment/index.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { Icon } from "astro-icon/components";
 import "../styles/paper-page.css";
+import "../styles/paper-friends.css";
 import { siteConfig } from "../config";
-import { getShuffledFriendsList } from "../data/friends";
+import { getFriendsList } from "../data/friends";
 
 export const prerender = true;
 
@@ -15,8 +15,34 @@ if (!siteConfig.featurePages.friends) {
 const title = "友情链接";
 const description = "这里收录了一些我喜欢的站点，欢迎互相交流走访。";
 
-const items = getShuffledFriendsList();
-const allTags = [...new Set(items.flatMap((item) => item.tags || []))].sort();
+// 稳定顺序（与 FlatPaper links.yml 一致，不做随机洗牌）
+const items = getFriendsList();
+
+// 按主标签分组，对应 FlatPaper 的 class_name 分组（friends-group__head）
+const GROUP_DESCS: Record<string, string> = {
+	博客: "收录的博客站点，欢迎互相走访。",
+	社团: "校园技术社团与组织。",
+	博客园: "中文独立博客聚合与发现。",
+};
+type Group = { name: string; desc?: string; items: typeof items };
+const groups: Group[] = [];
+for (const item of items) {
+	const name = item.tags?.[0] ?? "其他";
+	let g = groups.find((x) => x.name === name);
+	if (!g) {
+		g = { name, desc: GROUP_DESCS[name], items: [] };
+		groups.push(g);
+	}
+	g.items.push(item);
+}
+
+// 头像加载失败时的占位图（内联 SVG，不需要静态资源）
+const FALLBACK_AVATAR =
+	"data:image/svg+xml," +
+	encodeURIComponent(
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><rect width="50" height="50" fill="#d8e8d2"/><g fill="none" stroke="#4f8862" stroke-width="2.6" stroke-linecap="round"><path d="M20 30 L14 36 M36 20 L30 26 M22 22 l6 6 M15 25 a7 7 0 0 1 0-10 l3-3 a7 7 0 0 1 10 0 M35 25 a7 7 0 0 1 0 10 l-3 3 a7 7 0 0 1-10 0" transform="translate(0,-3)"/></g></svg>`,
+	);
+const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 ---
 
 <MainGridLayout title={title} description={description}>
@@ -31,235 +57,52 @@ const allTags = [...new Set(items.flatMap((item) => item.tags || []))].sort();
 				{description && <p class="friends-subtitle">{description}</p>}
 			</header>
 
-			<!-- 搜索框 -->
+			<!-- FlatPaper friends-group / friends-grid / friend-card--tape -->
 			{
-				items.length > 0 && (
-					<friend-filter class="mb-6">
-						<div class="relative mb-3">
-							<Icon is:inline
-								name="material-symbols:search"
-								class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-lg pointer-events-none"
-							/>
-							<input
-								type="text"
-								data-search
-								placeholder="搜索友链..."
-								class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-(--line-divider) bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:border-(--primary) focus:ring-1 focus:ring-(--primary) outline-none transition-all duration-200 text-sm"
-							/>
+				groups.map((group) => (
+					<section class="friends-group">
+						<div class="friends-group__head">
+							<h2>
+								<span class="green-dot" />
+								{group.name}
+							</h2>
+							{group.desc && <span class="friends-group__desc">{group.desc}</span>}
 						</div>
-						<div class="flex flex-wrap gap-2">
-							<button
-								data-tag="all"
-								class="category-pill px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
-								data-active
-							>
-								全部
-							</button>
-							{allTags.map((tag) => (
-								<button
-									data-tag={tag}
-									class="category-pill px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
-								>
-									{tag}
-								</button>
+
+						<ul class="friends-grid">
+							{group.items.map((item) => (
+								<li class="friend-card friend-card--tape">
+									<a
+										class="friend-card__link"
+										href={item.siteurl}
+										target="_blank"
+										rel="noopener noreferrer"
+										title={`${item.title} · ${item.desc}`}
+									>
+										<div class="friend-card__avatar-wrap">
+											<img
+												class="friend-card__avatar"
+												src={item.imgurl}
+												alt={item.title}
+												loading="lazy"
+												referrerpolicy="no-referrer"
+												onerror={onAvatarError}
+											/>
+										</div>
+										<div class="friend-card__body">
+											<strong class="friend-card__name">{item.title}</strong>
+											<span class="friend-card__desc">{item.desc}</span>
+										</div>
+									</a>
+								</li>
 							))}
-						</div>
-					</friend-filter>
-				)
+						</ul>
+					</section>
+				))
 			}
-
-			<div class="friends-grid my-4">
-				{
-					items.length === 0 && (
-						<div class="col-span-full flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
-							<Icon is:inline name="material-symbols:group-off-outline" class="text-4xl mb-3" />
-							<div class="text-sm">暂无友链</div>
-						</div>
-					)
-				}
-				{
-					items.map((item) => (
-						<a
-							href={item.siteurl}
-							target="_blank"
-							rel="noopener noreferrer"
-							data-tags={item.tags?.join(",")}
-							class="friend-card group flex items-center gap-3 p-2.5 rounded-xl border border-(--line-divider) hover:border-(--primary) hover:bg-(--card-bg) transition-all duration-300 hover:shadow-lg relative overflow-hidden"
-						>
-							{/* 背景装饰 - 仅悬停显示 */}
-							<div class="absolute inset-0 bg-(--primary) opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-
-							{/* 头像 */}
-							<div class="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 group-hover:scale-105 transition-transform duration-300">
-								<img
-									src={item.imgurl}
-									alt={item.title}
-									loading="lazy"
-									referrerpolicy="no-referrer"
-									class="w-full h-full object-cover"
-								/>
-							</div>
-
-							{/* 内容 */}
-							<div class="grow min-w-0 flex flex-col justify-center gap-0.5">
-								<div class="flex items-center justify-between">
-									<div class="font-bold text-base text-neutral-900 dark:text-neutral-100 group-hover:text-(--primary) transition-colors truncate pr-4">
-										{item.title}
-									</div>
-									{/* 外部链接图标 */}
-									<Icon is:inline
-										name="material-symbols:arrow-outward-rounded"
-										class="text-(--primary) text-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
-									/>
-								</div>
-
-								<div
-									class="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1"
-									title={item.desc}
-								>
-									{item.desc}
-								</div>
-
-								{/* 标签 */}
-								<div class="flex flex-wrap gap-1 mt-1">
-									{item.tags && item.tags.length > 0
-										? item.tags
-												.slice(0, 3)
-												.map((tag) => (
-													<span class="text-[0.65rem] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors duration-300">
-														{tag}
-													</span>
-												))
-										: null}
-								</div>
-							</div>
-						</a>
-					))
-				}
-			</div>
-
-			{/* 搜索无结果提示 */}
-			<div class="friends-empty hidden flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
-				<Icon is:inline name="material-symbols:search-off-rounded" class="text-4xl mb-3" />
-				<div class="text-sm">没有找到匹配的友链</div>
-			</div>
 		</article>
 	</div>
 
 	<!-- 评论区 -->
 	<Comment path="/friends" />
-
-	<script slot="head" is:inline>
-		if (!customElements.get("friend-filter")) {
-			class FriendFilter extends HTMLElement {
-				selectedTag = "all";
-
-				constructor() {
-					super();
-				}
-
-				connectedCallback() {
-					this.addEventListener("click", this.handleClick);
-					const input = this.querySelector("[data-search]");
-					if (input) {
-						input.addEventListener("input", () => this.applyFilters());
-					}
-				}
-
-				disconnectedCallback() {
-					this.removeEventListener("click", this.handleClick);
-				}
-
-				handleClick(e) {
-					const target = e.target;
-					const button = target.closest("button");
-					if (!button) return;
-
-					this.selectedTag = button.dataset.tag;
-					const filters = this.querySelectorAll("button");
-
-					filters.forEach((f) => {
-						f.removeAttribute("data-active");
-					});
-					button.setAttribute("data-active", "");
-
-					this.applyFilters();
-				}
-
-				applyFilters() {
-					const container = this.closest(".card-base");
-					if (!container) return;
-
-					const input = this.querySelector("[data-search]");
-					const query = (input?.value || "").toLowerCase().trim();
-					const cards = container.querySelectorAll(".friend-card");
-
-					let hasVisible = false;
-
-					cards.forEach((card) => {
-						const cardEl = card;
-						const tags = (cardEl.dataset.tags || "").split(",");
-						const name = (cardEl.querySelector(".font-bold")?.textContent || "").toLowerCase();
-						const desc = (cardEl.querySelector(".line-clamp-1")?.textContent || "").toLowerCase();
-
-						const tagMatch =
-							this.selectedTag === "all" ||
-							(this.selectedTag && tags.includes(this.selectedTag));
-						const searchMatch =
-							!query ||
-							name.includes(query) ||
-							desc.includes(query) ||
-							tags.some((t) => t.toLowerCase().includes(query));
-
-						if (tagMatch && searchMatch) {
-							cardEl.style.display = "";
-							cardEl.classList.add("animate-fade-in-up");
-							hasVisible = true;
-						} else {
-							cardEl.style.display = "none";
-							cardEl.classList.remove("animate-fade-in-up");
-						}
-					});
-
-					const emptyEl = container.querySelector(".friends-empty");
-					if (emptyEl) {
-						emptyEl.classList.toggle("hidden", hasVisible);
-						emptyEl.classList.toggle("flex", !hasVisible);
-					}
-				}
-			}
-			customElements.define("friend-filter", FriendFilter);
-		}
-	</script>
-
-	<style is:global>
-		.friends-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-			gap: 0.75rem;
-		}
-
-		/* 分类标签选中态 */
-		.category-pill {
-			background: var(--card-bg);
-			color: var(--content-meta);
-			border: 1px solid var(--line-divider);
-		}
-		.category-pill:hover {
-			color: var(--primary);
-		}
-		.category-pill[data-active] {
-			background: var(--primary);
-			color: #fff;
-			border-color: var(--primary);
-		}
-		:global(.dark) .category-pill[data-active] {
-			color: #000;
-		}
-
-		/* Firefly 悬停淡入动画 */
-		.animate-fade-in-up {
-			animation: fade-in-up var(--transition-duration, 0.5s) ease-out;
-		}
-	</style>
 </MainGridLayout>
