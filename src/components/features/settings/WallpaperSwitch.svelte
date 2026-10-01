@@ -20,17 +20,17 @@ const wallpaperOptions: {
 }[] = [
 	{
 		mode: WALLPAPER_BANNER,
-		icon: "material-symbols:image-outline",
+		icon: "lucide:image",
 		label: I18nKey.wallpaperBanner,
 	},
 	{
 		mode: WALLPAPER_FULLSCREEN,
-		icon: "material-symbols:wallpaper",
+		icon: "lucide:image",
 		label: I18nKey.wallpaperFullscreen,
 	},
 	{
 		mode: WALLPAPER_NONE,
-		icon: "material-symbols:hide-image-outline",
+		icon: "lucide:image-off",
 		label: I18nKey.wallpaperNone,
 	},
 ];
