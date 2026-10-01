@@ -94,7 +94,7 @@ export function generatePostItems(): PostItem[] {
 	postCards.forEach((card) => {
 		const titleLink = card.querySelector('a[href*="/posts/"].transition.group');
 		const categoryLink = card.querySelector('a[href*="/categories/"].link-lg');
-		const pinnedIcon = titleLink?.querySelector('svg[data-icon="mdi:pin"]');
+		const pinnedIcon = titleLink?.querySelector('svg[data-icon="lucide:pin"]');
 
 		if (titleLink) {
 			const href = titleLink.getAttribute("href");
