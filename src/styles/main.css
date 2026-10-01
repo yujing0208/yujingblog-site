@@ -246,10 +246,12 @@ html {
   }
 
   .card-base {
-    @apply rounded-(--radius-large) overflow-hidden bg-(--card-bg) transition-colors duration-150;
+    /* 全站卡片圆角统一为 4px（与纸层撕边弧角一致） */
+    @apply rounded-[4px] overflow-hidden bg-(--card-bg) transition-colors duration-150;
   }
   .card-base-transparent {
-    @apply rounded-(--radius-large) overflow-hidden bg-(--card-bg-transparent) backdrop-blur-sm transition-colors duration-150;
+    /* 全站卡片圆角统一为 4px（与纸层撕边弧角一致） */
+    @apply rounded-[4px] overflow-hidden bg-(--card-bg-transparent) backdrop-blur-sm transition-colors duration-150;
   }
 
   /* 卡片边框和微阴影效果 */
@@ -725,13 +727,13 @@ html {
   padding: 0.85rem;
   text-decoration: none;
   color: inherit;
-  border-radius: var(--radius-large, 1rem);
+  border-radius: 4px;
 }
 .wiki-card-cover {
   flex: 0 0 7.5rem;
   width: 7.5rem;
   min-height: 7.5rem;
-  border-radius: calc(var(--radius-large, 1rem) - 0.35rem);
+  border-radius: 4px;
   background-size: cover;
   background-position: center;
   background-color: var(--card-bg-transparent, rgba(128, 128, 128, 0.12));
@@ -819,7 +821,7 @@ html {
   text-decoration: none !important;
   color: var(--text-color) !important;
   border: 1px solid var(--line-color) !important;
-  border-radius: var(--radius-large) !important;
+  border-radius: 4px !important;
   padding: 1rem 1.25rem !important;
   margin: 1rem 0 !important;
   background: var(--card-bg) !important;
