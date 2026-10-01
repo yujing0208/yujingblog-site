@@ -343,13 +343,15 @@ a.site-info__item:focus-visible strong {
 	color: var(--color-accent-strong);
 }
 
-/* --- 社交虚线圆按钮（照搬 .socials a） --- */
+/* --- 社交虚线圆按钮（照搬 .socials a） ---
+   2026-10-01：改单行排列——去掉 216px 宽度上限并禁止换行
+   （5 个 34px 按钮 + 间距 ≈226px，名片内宽足够；换行是旧上限造成的） */
 .socials {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: center;
 	gap: 10px 14px;
-	max-width: 216px;
+	max-width: none;
 	margin: 0 auto;
 }
 
