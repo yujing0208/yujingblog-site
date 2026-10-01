@@ -7,25 +7,26 @@
  * 原版结构：
  *   section.welcome-card
  *     .welcome-thumb[--image]        ← 缩略图：有图=拍立得照片(7deg)；无图=手绘风景
- *     p.hello > .green-dot            ← Hello! + 绿点
+ *     p.hello > .green-dot            ← 问候语 + 绿点（原 Hello!）
  *     h1                              ← 标题（带黄色荧光笔下划线）
- *     p.welcome-text                  ← 说明文字
+ *     p.welcome-text                  ← 说明文字（现为每日一言）
  *     a.welcome-cta                   ← 纸片按钮（撕纸边 + 箭头）
  *
- * 内容取本博客现有配置：profileConfig.avatar / siteConfig.title / profileConfig.bio
+ * 2026-10-01 动态化改造：
+ *   1. 缩略图 = 9 张手账水彩风景（早/午/夜 × 晴/多云/雨），
+ *      按访客本地时间 + 访客当地实时天气（IP 定位 + Open-Meteo）自动切换；
+ *   2. label = 问候语 + 当地天气（如「早上好 · 晴 26°C」）；
+ *   3. welcome-text = 每日一言（Hitokoto API），按天缓存，失败回退 profileConfig.bio。
+ *   全部在客户端运行，任一 API 失败都有降级；天气缓存 1h（失败 10min），一言按天缓存。
  */
 import { Icon } from "astro-icon/components";
 
 import { profileConfig, siteConfig } from "../../../config";
 
 interface Props {
-	/** 缩略图：留空则渲染手绘风景（照搬原版无图分支） */
-	image?: string;
-	/** 问候语 */
-	label?: string;
 	/** 标题 */
 	title?: string;
-	/** 说明文字 */
+	/** 说明文字（一言接口失败时的回退文案） */
 	text?: string;
 	/** CTA 文案 */
 	ctaText?: string;
@@ -34,49 +35,216 @@ interface Props {
 }
 
 const {
-	image = profileConfig.avatar ?? "",
-	label = "Hello!",
 	title = siteConfig.title,
 	text = profileConfig.bio ?? "",
 	ctaText = "开始阅读",
 	ctaLink = "/archive/",
 } = Astro.props;
-
-const hasImage = typeof image === "string" && image.length > 0;
 ---
 
 <section class="welcome-card side-card">
-	<!-- 缩略图：有图走拍立得（--image），无图走手绘风景 -->
-	<div
-		class:list={["welcome-thumb", hasImage && "welcome-thumb--image"]}
-		aria-hidden="true"
-	>
-		{
-			hasImage ? (
-				<img
-					src={image}
-					alt=""
-					loading="lazy"
-					referrerpolicy="no-referrer"
-				/>
-			) : (
-				<>
-					<div class="sun"></div>
-					<div class="cloud cloud-a"></div>
-					<div class="cloud cloud-b"></div>
-					<div class="mountain mountain-a"></div>
-					<div class="mountain mountain-b"></div>
-				</>
-			)
-		}
+	<!-- 拍立得缩略图：水彩风景按 时间×天气 动态切换 -->
+	<div class="welcome-thumb welcome-thumb--image" aria-hidden="true">
+		<img
+			data-welcome-img
+			src="https://img.yujingblog.top/file/1790843688946_morning-sunny.webp"
+			alt=""
+			loading="eager"
+			referrerpolicy="no-referrer"
+		/>
 	</div>
 
-	<p class="hello"><span class="green-dot"></span>{label}</p>
+	<p class="hello"><span class="green-dot"></span><span data-welcome-label>Hello!</span></p>
 	<h1>{title}</h1>
-	{text && <p class="welcome-text">{text}</p>}
+	{text && <p class="welcome-text" data-welcome-text>{text}</p>}
 
 	<a class="welcome-cta" href={ctaLink}>
 		<span>{ctaText}</span>
 		<Icon name="material-symbols:arrow-forward-rounded" class="welcome-cta-icon" is:inline />
 	</a>
 </section>
+
+<script>
+	/* 欢迎卡动态逻辑：时间×天气切图 + 问候语 + 每日一言 */
+	(function () {
+		"use strict";
+
+		var IMG_BASE = "https://img.yujingblog.top/file";
+		var IMAGES = {
+			"morning-sunny": "1790843688946_morning-sunny.webp",
+			"morning-cloudy": "1790843686872_morning-cloudy.webp",
+			"morning-rain": "1790843695307_morning-rain.webp",
+			"noon-sunny": "1790843701789_noon-sunny.webp",
+			"noon-cloudy": "1790843705121_noon-cloudy.webp",
+			"noon-rain": "1790843700328_noon-rain.webp",
+			"night-sunny": "1790843705623_night-sunny.webp",
+			"night-cloudy": "1790843710456_night-cloudy.webp",
+			"night-rain": "1790843716547_night-rain.webp",
+		};
+		var WEATHER_TEXT = { sunny: "晴", cloudy: "多云", rain: "雨" };
+		var LS_WEATHER = "yuj_welcome_weather_v1";
+		var LS_QUOTE = "yuj_welcome_quote_v1";
+
+		function timeBucket(h) {
+			if (h >= 5 && h < 11) return "morning";
+			if (h >= 11 && h < 18) return "noon";
+			return "night";
+		}
+
+		function greeting(h) {
+			if (h >= 5 && h < 8) return "早上好";
+			if (h >= 8 && h < 11) return "上午好";
+			if (h >= 11 && h < 13) return "中午好";
+			if (h >= 13 && h < 18) return "下午好";
+			if (h >= 18 && h < 23) return "晚上好";
+			return "夜深了";
+		}
+
+		/* Open-Meteo weather_code → 晴 / 多云 / 雨（雪、雷暴、阵雨等一并归入雨天） */
+		function weatherKey(code) {
+			if (code == null) return null;
+			if (code <= 2) return "sunny";
+			if (code === 3 || code === 45 || code === 48) return "cloudy";
+			return "rain";
+		}
+
+		function readCache(key) {
+			try {
+				return JSON.parse(localStorage.getItem(key) || "null");
+			} catch (e) {
+				return null;
+			}
+		}
+
+		function writeCache(key, val) {
+			try {
+				localStorage.setItem(key, JSON.stringify(val));
+			} catch (e) {
+				/* 隐私模式等场景忽略 */
+			}
+		}
+
+		function fetchIpGeo() {
+			/* IP 定位：geojs 主，ipapi.co 备，拿不到返回 null */
+			return fetch("https://get.geojs.io/v1/ip/geo.json")
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (j) {
+					var lat = parseFloat(j.latitude);
+					var lng = parseFloat(j.longitude);
+					if (!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
+					throw new Error("geojs no coords");
+				})
+				.catch(function () {
+					return fetch("https://ipapi.co/json/")
+						.then(function (r) {
+							return r.json();
+						})
+						.then(function (j) {
+							if (j && j.latitude && j.longitude) return { lat: j.latitude, lng: j.longitude };
+							throw new Error("ipapi no coords");
+						});
+				})
+				.catch(function () {
+					return null;
+				});
+		}
+
+		function getWeather() {
+			var cached = readCache(LS_WEATHER);
+			var ttl = cached && cached.code != null ? 3600e3 : 600e3; /* 成功缓存 1h，失败 10min */
+			if (cached && Date.now() - cached.ts < ttl) return Promise.resolve(cached);
+			return fetchIpGeo().then(function (geo) {
+				if (!geo) {
+					var miss = { ts: Date.now(), code: null, temp: null };
+					writeCache(LS_WEATHER, miss);
+					return miss;
+				}
+				var url =
+					"https://api.open-meteo.com/v1/forecast?latitude=" +
+					geo.lat +
+					"&longitude=" +
+					geo.lng +
+					"&current=weather_code,temperature_2m&timezone=auto";
+				return fetch(url)
+					.then(function (r) {
+						return r.json();
+					})
+					.then(function (j) {
+						var w = {
+							ts: Date.now(),
+							code: j && j.current ? j.current.weather_code : null,
+							temp: j && j.current && j.current.temperature_2m != null ? Math.round(j.current.temperature_2m) : null,
+						};
+						writeCache(LS_WEATHER, w);
+						return w;
+					})
+					.catch(function () {
+						var miss = { ts: Date.now(), code: null, temp: null };
+						writeCache(LS_WEATHER, miss);
+						return miss;
+					});
+			});
+		}
+
+		function getQuote() {
+			var today = new Date().toDateString();
+			var cached = readCache(LS_QUOTE);
+			if (cached && cached.date === today) return Promise.resolve(cached);
+			return fetch("https://v1.hitokoto.cn/?c=a&c=b&c=c&c=d&c=i&encode=json")
+				.then(function (r) {
+					return r.json();
+				})
+				.then(function (j) {
+					if (!j || !j.hitokoto) throw new Error("no quote");
+					var q = { date: today, text: j.hitokoto, from: j.from || "" };
+					writeCache(LS_QUOTE, q);
+					return q;
+				})
+				.catch(function () {
+					return null;
+				});
+		}
+
+		function apply() {
+			var img = document.querySelector("[data-welcome-img]");
+			var label = document.querySelector("[data-welcome-label]");
+			var textEl = document.querySelector("[data-welcome-text]");
+			if (!img || !label) return;
+
+			var h = new Date().getHours();
+			var bucket = timeBucket(h);
+
+			/* 先用缓存天气立即切图（避免闪错图），无缓存时按晴兜底 */
+			var cachedKey = weatherKey(readCache(LS_WEATHER)?.code) || "sunny";
+			img.src = IMG_BASE + "/" + IMAGES[bucket + "-" + cachedKey];
+
+			/* 问候语 + 实时天气 */
+			getWeather().then(function (w) {
+				var wk = weatherKey(w ? w.code : null);
+				var temp = w && w.temp != null ? " " + w.temp + "°C" : "";
+				label.textContent = wk ? greeting(h) + " · " + WEATHER_TEXT[wk] + temp : greeting(h);
+			});
+
+			/* 每日一言 */
+			if (textEl) {
+				getQuote().then(function (q) {
+					if (q && q.text) textEl.textContent = q.from ? q.text + " —— " + q.from : q.text;
+				});
+			}
+		}
+
+		apply();
+		/* Swup 站内导航回到首页时重挂 */
+		document.addEventListener("swup:page:view", apply);
+		document.addEventListener("swup:content:replace", apply);
+	})();
+</script>
+
+<style>
+	/* 切图淡入，避免生硬跳变 */
+	.welcome-card [data-welcome-img] {
+		transition: opacity 0.3s ease;
+	}
+</style>
