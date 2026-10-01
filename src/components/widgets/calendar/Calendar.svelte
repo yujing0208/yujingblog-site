@@ -259,7 +259,7 @@ onMount(() => {
 				aria-label="Back to today"
 			>
 				<Icon
-					icon="material-symbols:restart-alt-rounded"
+					icon="lucide:rotate-ccw"
 					class="text-xl"
 				/>
 			</button>
@@ -273,7 +273,7 @@ onMount(() => {
 			onclick={handlePrevMonth}
 			aria-label="Previous month"
 		>
-			<Icon icon="material-symbols:arrow-back-ios-new" class="text-lg" />
+			<Icon icon="lucide:chevron-left" class="text-lg" />
 		</button>
 		<button
 			type="button"
@@ -285,7 +285,7 @@ onMount(() => {
 			aria-label="Next month"
 		>
 			<Icon
-				icon="material-symbols:arrow-back-ios-new"
+				icon="lucide:chevron-left"
 				class="text-lg rotate-180"
 			/>
 		</button>
