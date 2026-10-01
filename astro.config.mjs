@@ -70,6 +70,8 @@ export default defineConfig({
 			cssVariable: "--font-cjk",
 			provider: fontProviders.fontsource(),
 			styles: ["normal"],
+			// 关键：默认只拉 latin 子集，必须显式声明中文字面子集，否则中文回退系统字体
+			subsets: ["latin", "chinese-simplified"],
 			// The final system fallback belongs to --font-sans, not this partial
 			// CJK font stack.
 			fallbacks: [],
@@ -81,6 +83,8 @@ export default defineConfig({
 			cssVariable: "--font-hand",
 			provider: fontProviders.fontsource(),
 			styles: ["normal"],
+			// 关键：默认只拉 latin 子集，站题中文必须有 chinese-simplified 子集才会渲染楷书
+			subsets: ["latin", "chinese-simplified"],
 			fallbacks: [],
 			optimizedFallbacks: false,
 		},
