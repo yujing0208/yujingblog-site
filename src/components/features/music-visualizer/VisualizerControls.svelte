@@ -209,7 +209,7 @@ onDestroy(() => {
 				{#if currentTrack?.cover}
 					<img src={getAssetPath(currentTrack.cover)} alt="" />
 				{:else}
-					<Icon icon="material-symbols:music-note-rounded" size="lg" />
+					<Icon icon="lucide:music" size="lg" />
 				{/if}
 			</div>
 			<div class="music-controls-track-info">
@@ -229,7 +229,7 @@ onDestroy(() => {
 				title="上一首"
 				aria-label="上一首"
 			>
-				<Icon icon="material-symbols:skip-previous-rounded" size="2xl" />
+				<Icon icon="lucide:skip-back" size="2xl" />
 			</button>
 
 			<button
@@ -239,9 +239,9 @@ onDestroy(() => {
 				aria-label={isPlaying ? "暂停" : "播放"}
 			>
 				{#if isPlaying}
-					<Icon icon="material-symbols:pause-rounded" size="2xl" />
+					<Icon icon="lucide:pause" size="2xl" />
 				{:else}
-					<Icon icon="material-symbols:play-arrow-rounded" size="2xl" />
+					<Icon icon="lucide:play" size="2xl" />
 				{/if}
 			</button>
 
@@ -251,7 +251,7 @@ onDestroy(() => {
 				title="下一首"
 				aria-label="下一首"
 			>
-				<Icon icon="material-symbols:skip-next-rounded" size="2xl" />
+				<Icon icon="lucide:skip-forward" size="2xl" />
 			</button>
 
 			<button
@@ -261,11 +261,11 @@ onDestroy(() => {
 				aria-label="播放模式"
 			>
 				{#if playerState.isShuffled}
-					<Icon icon="material-symbols:shuffle-rounded" size="lg" />
+					<Icon icon="lucide:shuffle" size="lg" />
 				{:else if playMode === 1}
-					<Icon icon="material-symbols:repeat-one-rounded" size="lg" />
+					<Icon icon="lucide:repeat-1" size="lg" />
 				{:else}
-					<Icon icon="material-symbols:repeat-rounded" size="lg" />
+					<Icon icon="lucide:repeat" size="lg" />
 				{/if}
 			</button>
 		</div>
@@ -278,9 +278,9 @@ onDestroy(() => {
 				aria-label={colorMode === "dynamic" ? "当前：跟随封面取色，点击切换为主题色" : "当前：使用主题色，点击切换为跟随封面取色"}
 			>
 				{#if colorMode === "dynamic"}
-					<Icon icon="material-symbols:colorize-rounded" size="lg" />
+					<Icon icon="lucide:pipette" size="lg" />
 				{:else}
-					<Icon icon="material-symbols:palette" size="lg" />
+					<Icon icon="lucide:palette" size="lg" />
 				{/if}
 			</button>
 
@@ -290,7 +290,7 @@ onDestroy(() => {
 				title="切换歌单"
 				aria-label="切换歌单"
 			>
-				<Icon icon="material-symbols:playlist-play-rounded" size="lg" />
+				<Icon icon="lucide:list-music" size="lg" />
 			</button>
 
 			<button
@@ -300,7 +300,7 @@ onDestroy(() => {
 				title={isPlaylistOpen ? "关闭歌单" : "打开歌单"}
 				aria-label={isPlaylistOpen ? "关闭歌单" : "打开歌单"}
 			>
-				<Icon icon="material-symbols:queue-music-rounded" size="lg" />
+				<Icon icon="lucide:list-plus" size="lg" />
 			</button>
 
 			<div class="music-controls-volume">
@@ -311,9 +311,9 @@ onDestroy(() => {
 					aria-label="音量"
 				>
 					{#if isMuted || volume === 0}
-						<Icon icon="material-symbols:volume-off-rounded" size="lg" />
+						<Icon icon="lucide:volume-x" size="lg" />
 					{:else}
-						<Icon icon="material-symbols:volume-up-rounded" size="lg" />
+						<Icon icon="lucide:volume-2" size="lg" />
 					{/if}
 				</button>
 				<div
@@ -370,7 +370,7 @@ onDestroy(() => {
 							{#if track.cover}
 								<img src={getAssetPath(track.cover)} alt="" loading="lazy" />
 							{:else}
-								<Icon icon="material-symbols:music-note-rounded" size="sm" />
+								<Icon icon="lucide:music" size="sm" />
 							{/if}
 						</div>
 						<div class="music-visualizer__playlist-meta">
@@ -413,7 +413,7 @@ onDestroy(() => {
 					onclick={closeSwitchDialog}
 					aria-label="关闭"
 				>
-					<Icon icon="material-symbols:close-rounded" size="lg" />
+					<Icon icon="lucide:x" size="lg" />
 				</button>
 			</div>
 			<div class="music-switch-body">
