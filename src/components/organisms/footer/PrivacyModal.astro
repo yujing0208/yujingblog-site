@@ -1,0 +1,333 @@
+---
+/**
+ * 隐私政策弹窗（页脚「隐私政策」按钮触发）。
+ * 挂载在 Layout.astro 的 <slot /> 之后（Swup 容器之外），整个会话只存在一份 DOM。
+ * 文案按本站实际情况编写：Twikoo 评论 / 留言墙、Umami 匿名统计、Vercel + GitHub 托管。
+ */
+---
+
+<dialog id="privacy-modal" class="paper-modal" aria-labelledby="privacy-modal-title">
+	<div class="paper-modal__overlay" data-close-modal></div>
+	<div class="paper-modal__panel">
+		<div class="paper-modal__header">
+			<h2 class="paper-modal__title" id="privacy-modal-title">隐私政策</h2>
+			<button class="paper-modal__close" type="button" data-close-modal aria-label="关闭">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+		</div>
+		<div class="paper-modal__body">
+			<p class="paper-modal__meta"><strong>更新日期：</strong>2026 年 10 月 1 日<br /><strong>生效日期：</strong>2026 年 10 月 1 日</p>
+
+			<h2>适用范围</h2>
+			<p>本政策适用于<strong>「YuJing的记忆终端」（yujingblog.top）</strong>（以下简称“本站”）。本站是个人博客，用于记录和分享内容；不提供账户注册、支付、定位或广告投放服务。访问本站、发表文章评论或使用留言墙前，请阅读本政策。</p>
+
+			<h2>信息收集与使用</h2>
+			<p>本站只在提供内容、评论和留言功能，以及维护站点安全所需的范围内处理信息。</p>
+			<ul>
+				<li><strong>访问与统计信息</strong>：访问页面时，本站使用的匿名统计服务（Umami）可能处理访问时间、页面地址、来源页、浏览器和设备相关信息，用于了解内容访问情况、排查故障和改进站点。该统计为匿名汇总，不用于识别个人身份。</li>
+				<li><strong>评论与留言信息</strong>：使用文章评论或留言墙功能时，评论服务（Twikoo）可能处理您主动提交的昵称、邮箱、网站链接和评论内容；还可能处理 IP 地址、浏览器信息等必要数据，用于防止垃圾评论和滥用。评论内容、昵称和网站链接（如填写）会公开展示在页面上；<strong>邮箱和 IP 地址不会公开展示</strong>。</li>
+			</ul>
+			<p>请不要在评论或留言中提交身份证件、银行卡、住址、密码或其他不必要的敏感个人信息。</p>
+
+			<h2>第三方服务</h2>
+			<p>为实现本站功能，以下第三方会在各自服务范围内处理相关数据：</p>
+			<ul>
+				<li><strong>Twikoo</strong>（twikoo.yujingblog.top）：文章评论与留言墙服务，部署在 Vercel，数据保存于其配置的数据库中。</li>
+				<li><strong>Umami</strong>：匿名化的网站访问统计，帮助站长了解本站的使用情况。</li>
+				<li><strong>Vercel</strong>：为本站提供静态托管与服务端函数。</li>
+				<li><strong>GitHub</strong>：存放本站源码与部分静态资源；访问相关资源时，您的浏览器会与 GitHub 建立连接。</li>
+			</ul>
+			<p>第三方服务可能有独立的隐私政策和数据保存规则，请在使用相关功能前查阅其规则；本站无法控制其独立的数据处理活动。</p>
+
+			<h2>Cookie 及本地存储的使用</h2>
+			<p>本站主要使用浏览器本地存储（Local Storage / Session Storage）保存使用偏好，例如明暗模式与主题色、评论时填写的昵称 / 邮箱 / 网站链接（便于下次自动填充）、音乐播放器的播放状态等。本站不主动设置用于广告定向的 Cookie。您可以通过浏览器设置查看、删除或限制 Cookie 和本地存储；清除后，部分偏好可能会恢复为默认值。</p>
+
+			<h2>信息公开、保存与安全</h2>
+			<p>评论和留言属于公开互动内容，提交后可能被搜索引擎收录、被他人引用或在缓存中短暂保留，请谨慎决定发布内容。除非您提出删除请求、内容违反规则或法律法规另有要求，公开内容会持续保留以维持讨论上下文。</p>
+			<p>本站会采取合理措施保护数据安全，包括使用 HTTPS 传输和必要的输入校验。但互联网传输和第三方服务均无法保证绝对安全，请理解并自行承担公开发布信息的相应风险。</p>
+
+			<h2>你的权利</h2>
+			<p>你可以通过 <a href="https://github.com/yujing0208" target="_blank" rel="noreferrer">GitHub</a> 或本站评论区联系站长，申请查询、更正或删除你发布的评论、留言或相关公开内容。请在请求中提供足以定位内容的信息；必要时可能需要进行合理核验。删除公开评论后，搜索引擎索引或他人转载的副本可能无法立即同步删除。</p>
+
+			<h2>未成年人条款</h2>
+			<p>未满 14 周岁的未成年人应在监护人同意和指导下使用本站的评论、留言等互动功能。监护人如发现未成年人未经同意提交了个人信息，请通过上述方式联系站长，会在合理范围内协助处理。</p>
+
+			<h2>政策更新与联系</h2>
+			<p>本站可能因功能或适用规则变化更新本政策，更新后的版本将在本站公布并标明日期。继续使用相关功能即表示你已阅读并理解更新后的政策。如对本政策或数据处理有疑问，欢迎通过 GitHub 或评论区联系。</p>
+		</div>
+		<div class="paper-modal__footer">
+			<button class="paper-modal__confirm" type="button" data-close-modal>我知道了</button>
+		</div>
+	</div>
+</dialog>
+
+<script>
+	// 挂载在 Swup 容器之外，DOM 持久存在；重复执行是安全的（幂等）
+	function initPrivacyModal() {
+		const modal = document.getElementById("privacy-modal") as HTMLDialogElement | null;
+		if (!modal || modal.dataset.init === "1") return;
+		modal.dataset.init = "1";
+
+		const openModal = () => {
+			modal.showModal();
+			document.body.style.overflow = "hidden";
+		};
+		const closeModal = () => {
+			modal.close();
+			document.body.style.overflow = "";
+		};
+
+		modal.querySelectorAll("[data-close-modal]").forEach((element) => {
+			element.addEventListener("click", closeModal);
+		});
+		modal.addEventListener("click", (event) => {
+			if (event.target === modal) closeModal();
+		});
+		modal.addEventListener("close", () => {
+			document.body.style.overflow = "";
+		});
+		modal.addEventListener("cancel", (event) => {
+			event.preventDefault();
+			closeModal();
+		});
+
+		window.addEventListener("privacy:open", openModal);
+		(window as unknown as Record<string, unknown>).openPrivacyModal = openModal;
+	}
+
+	initPrivacyModal();
+	document.addEventListener("astro:page-load", initPrivacyModal);
+</script>
+
+<style>
+	/* 纸质风格弹窗：与站点 paper 主题令牌保持一致 */
+	.paper-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
+		padding: 1rem;
+		border: none;
+		background: transparent;
+		overflow: visible;
+	}
+
+	.paper-modal[open] {
+		display: flex;
+	}
+
+	.paper-modal::backdrop {
+		background: transparent;
+	}
+
+	.paper-modal__overlay {
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		background: rgba(44, 53, 49, 0.42);
+		backdrop-filter: blur(3px);
+		animation: paper-modal-fade-in 0.2s ease-out;
+	}
+
+	:global(html.dark) .paper-modal__overlay {
+		background: rgba(0, 0, 0, 0.55);
+	}
+
+	.paper-modal__panel {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: 40rem;
+		max-height: 85vh;
+		background: var(--paper, #fffdf6);
+		border: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+		border-radius: 14px;
+		box-shadow: var(--shadow, 0 18px 38px rgba(82, 64, 38, 0.18));
+		color: var(--ink, #2c3531);
+		animation: paper-modal-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes paper-modal-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes paper-modal-slide-in {
+		from {
+			opacity: 0;
+			transform: translateY(-0.75rem) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	.paper-modal__header {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.1rem 1.4rem;
+		border-bottom: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.paper-modal__title {
+		margin: 0;
+		color: var(--ink, #2c3531);
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+
+	.paper-modal__close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.1rem;
+		height: 2.1rem;
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--muted, #8a8678);
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s,
+			border-color 0.15s;
+	}
+
+	.paper-modal__close:hover {
+		border-color: var(--paper-dash, rgba(89, 62, 30, 0.24));
+		background: var(--paper-warm, #f8f2e2);
+		color: var(--ink, #2c3531);
+	}
+
+	.paper-modal__close svg {
+		width: 1.15rem;
+		height: 1.15rem;
+	}
+
+	.paper-modal__body {
+		flex: 1;
+		padding: 1.4rem 1.5rem;
+		overflow-y: auto;
+		color: var(--ink-soft, #4a5751);
+		line-height: 1.85;
+	}
+
+	.paper-modal__meta {
+		margin: 0 0 1rem;
+		font-size: 0.85rem;
+		color: var(--muted, #8a8678);
+	}
+
+	.paper-modal__body h2 {
+		position: relative;
+		margin: 1.6rem 0 0.7rem;
+		padding-left: 0.7rem;
+		color: var(--ink, #2c3531);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.4;
+	}
+
+	.paper-modal__body h2::before {
+		position: absolute;
+		top: 0.2em;
+		bottom: 0.2em;
+		left: 0;
+		width: 3px;
+		border-radius: 2px;
+		background: var(--fp-accent, var(--color-accent, #6fa67c));
+		content: "";
+	}
+
+	.paper-modal__body h2:first-child {
+		margin-top: 0;
+	}
+
+	.paper-modal__body p {
+		margin: 0 0 0.75rem;
+		font-size: 0.875rem;
+	}
+
+	.paper-modal__body ul {
+		margin: 0 0 0.75rem;
+		padding-left: 1.25rem;
+	}
+
+	.paper-modal__body li {
+		margin-bottom: 0.4rem;
+		font-size: 0.875rem;
+	}
+
+	.paper-modal__body strong {
+		color: var(--ink, #2c3531);
+		font-weight: 600;
+	}
+
+	.paper-modal__body a {
+		color: var(--fp-accent-strong, var(--color-accent-strong, #4f8862));
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.paper-modal__body a:hover {
+		color: var(--fp-accent, var(--color-accent, #6fa67c));
+	}
+
+	.paper-modal__footer {
+		display: flex;
+		flex-shrink: 0;
+		justify-content: flex-end;
+		padding: 1rem 1.4rem;
+		border-top: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.paper-modal__confirm {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.55rem 1.25rem;
+		border: none;
+		border-radius: 9px;
+		background: var(--color-accent, #6fa67c);
+		color: #fff;
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			opacity 0.15s;
+	}
+
+	.paper-modal__confirm:hover {
+		background: var(--color-accent-strong, #4f8862);
+	}
+
+	@media (max-width: 640px) {
+		.paper-modal__panel {
+			max-width: calc(100% - 1rem);
+			max-height: 90vh;
+		}
+
+		.paper-modal__body {
+			padding: 1rem 1.1rem;
+		}
+
+		.paper-modal__header,
+		.paper-modal__footer {
+			padding: 0.85rem 1.1rem;
+		}
+	}
+</style>
