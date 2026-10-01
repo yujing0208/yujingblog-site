@@ -141,6 +141,11 @@ const OWNER_DISPLAY_NICK = "YuJing";
 				return;
 			}
 
+			// 改名观察器必须在 twikoo.init() 之前挂上：init 的 Promise 在部分环境
+			// （无头/弱网）迟迟不 resolve，而评论列表已经先渲染出来了，
+			// 挂在 await 之后会漏掉首批评论（2026-10-01 无头实测踩过）。
+			startOwnerRename(commentEl);
+
 			try {
 				await loadTwikooScript();
 
@@ -152,7 +157,6 @@ const OWNER_DISPLAY_NICK = "YuJing";
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
-				startOwnerRename(commentEl);
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
 			}
