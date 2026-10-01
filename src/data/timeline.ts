@@ -14,7 +14,7 @@ export const timelineData: TimelineItem[] = [
 		achievements: [
 			"获得了优异的学习成绩",
 		],
-		icon: "material-symbols:school",
+		icon: "lucide:graduation-cap",
 		color: "#59f0cf",
 	},
 	{
@@ -32,7 +32,7 @@ export const timelineData: TimelineItem[] = [
 			"青年志愿者协会成员",
 			"学习状态堪忧，成绩一落千丈，整天发呆",
 		],
-		icon: "material-symbols:school",
+		icon: "lucide:graduation-cap",
 		color: "#9a6bf1",
 	},
 	{
@@ -49,7 +49,7 @@ export const timelineData: TimelineItem[] = [
 			"物化生素养班学生",
 			"",
 		],
-		icon: "material-symbols:school",
+		icon: "lucide:graduation-cap",
 		color: "#3983f1",
 	},
 ];
