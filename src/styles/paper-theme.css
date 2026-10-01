@@ -392,9 +392,20 @@ html.paper-style-cross body::before {
 	}
 }
 
-/* 嵌套纸片 */
+/* 中间主内容区的大卡片不参与悬停上浮（2026-10-01 用户要求关闭）。
+   #swup-container 是 MainGridLayout 的主内容栏 <main>，文章页主卡、
+   独立页主卡都在其中；侧栏 widget 卡片（#sidebar 等）不受影响，
+   纸影渐显保留，仅去掉 -3px 位移。ID 选择器优先级高于上面的类选择器。 */
+@media (hover: hover) and (pointer: fine) {
+	#swup-container .card-base:hover,
+	#swup-container .card-base.onload-animation:hover {
+		translate: none;
+	}
+}
+
+/* 嵌套纸片：圆角同样统一为 4px（2026-10-01：与外层卡片一致，不再用 3px） */
 .card-base .card-base::after {
-	border-radius: 3px;
+	border-radius: 4px;
 }
 
 /* ===========================================================================
