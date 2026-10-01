@@ -98,8 +98,8 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 			>
 				<Icon
 					icon={isMuted || volume === 0
-						? "material-symbols:volume-off-rounded"
-						: "material-symbols:volume-up-rounded"}
+						? "lucide:volume-x"
+						: "lucide:volume-2"}
 					class="text-base"
 				/>
 			</button>
