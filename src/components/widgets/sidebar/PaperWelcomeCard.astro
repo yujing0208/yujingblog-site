@@ -220,11 +220,12 @@ const {
 			var cachedKey = weatherKey(readCache(LS_WEATHER)?.code) || "sunny";
 			img.src = IMG_BASE + "/" + IMAGES[bucket + "-" + cachedKey];
 
-			/* 问候语 + 实时天气 */
+			/* 问候语 + 实时天气（天气到位后再校正一次图片） */
 			getWeather().then(function (w) {
 				var wk = weatherKey(w ? w.code : null);
 				var temp = w && w.temp != null ? " " + w.temp + "°C" : "";
 				label.textContent = wk ? greeting(h) + " · " + WEATHER_TEXT[wk] + temp : greeting(h);
+				if (wk) img.src = IMG_BASE + "/" + IMAGES[bucket + "-" + wk];
 			});
 
 			/* 每日一言 */
