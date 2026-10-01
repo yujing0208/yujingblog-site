@@ -22,6 +22,19 @@ import type { ChangelogItem } from "../types/changelog";
 
 export const changelogData: ChangelogItem[] = [
 	{
+		id: "2026-10-01-01-welcome-card-dynamic",
+		date: "2026-10-01 16:40:05",
+		version: "2026.10.1",
+		type: "feature",
+		category: "首页",
+		module: "侧边栏",
+		title: "欢迎卡动态化：时间×天气水彩图 + 问候语 + 每日一言",
+		description:
+			"欢迎卡拍立得图换为 9 张手账水彩风景（早/午/夜 × 晴/多云/雨），按访客本地时间与当地实时天气（IP 定位 + Open-Meteo）自动切换；Hello! 标签改为「问候语 · 天气+温度」；说明文字接入 Hitokoto 每日一言（按天缓存，失败回退原简介）。全部客户端运行，天气缓存 1 小时、接口失败自动降级。",
+		commits: ["0f59cc2", "ba9b819"],
+	},
+
+	{
 		id: "2026-09-25-waline-keepwarm",
 		date: "2026-09-25 17:35:11",
 		version: "2026.09.25",
