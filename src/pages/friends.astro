@@ -46,62 +46,71 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 ---
 
 <MainGridLayout title={title} description={description}>
-	<!-- FlatPaper link.ejs 壳层：article-tape-wrap + tape + article-paper 纸卡 -->
-	<div class="article-tape-wrap w-full relative min-h-32">
-		<span class="tape tape--top-right" aria-hidden="true"></span>
-		<article class="article-paper friends-page card-base relative z-10 w-full">
-			<!-- 页面头：label-pill + h1 + 副标题（flatpaper article-header） -->
-			<header class="article-header">
-				<span class="label-pill">友链</span>
-				<h1>{title}</h1>
-				{description && <p class="friends-subtitle">{description}</p>}
-			</header>
+	<!-- FlatPaper link.ejs 壳层：article-paper--with-top-img（顶图出血 + 标题上移压图） -->
+	<article class="article-paper friends-page article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full">
+		<!-- 顶图：与参考站同款拼贴图（自托管 /images/links-top.webp） -->
+		<figure class="article-top-img article-top-img--page" aria-label="友情链接">
+			<img
+				src="/images/links-top.webp"
+				alt=""
+				loading="eager"
+				fetchpriority="high"
+				referrerpolicy="no-referrer"
+				draggable="false"
+			/>
+		</figure>
 
-			<!-- FlatPaper friends-group / friends-grid / friend-card--tape -->
-			{
-				groups.map((group) => (
-					<section class="friends-group">
-						<div class="friends-group__head">
-							<h2>
-								<span class="green-dot" />
-								{group.name}
-							</h2>
-							{group.desc && <span class="friends-group__desc">{group.desc}</span>}
-						</div>
+		<!-- 页面头：label-pill + h1 + 副标题（flatpaper article-header，压在顶图下缘） -->
+		<header class="article-header">
+			<span class="label-pill">友链</span>
+			<h1>{title}</h1>
+			{description && <p class="friends-subtitle">{description}</p>}
+		</header>
 
-						<ul class="friends-grid">
-							{group.items.map((item) => (
-								<li class="friend-card friend-card--tape">
-									<a
-										class="friend-card__link"
-										href={item.siteurl}
-										target="_blank"
-										rel="noopener noreferrer"
-										title={`${item.title} · ${item.desc}`}
-									>
-										<div class="friend-card__avatar-wrap">
-											<img
-												class="friend-card__avatar"
-												src={item.imgurl}
-												alt={item.title}
-												loading="lazy"
-												referrerpolicy="no-referrer"
-												onerror={onAvatarError}
-											/>
-										</div>
-										<div class="friend-card__body">
-											<strong class="friend-card__name">{item.title}</strong>
-											<span class="friend-card__desc">{item.desc}</span>
-										</div>
-									</a>
-								</li>
-							))}
-						</ul>
-					</section>
-				))
-			}
+		<!-- FlatPaper friends-group / friends-grid / friend-card--tape -->
+		{
+			groups.map((group) => (
+				<section class="friends-group">
+					<div class="friends-group__head">
+						<h2>
+							<span class="green-dot" />
+							{group.name}
+						</h2>
+						{group.desc && <span class="friends-group__desc">{group.desc}</span>}
+					</div>
+
+					<ul class="friends-grid">
+						{group.items.map((item) => (
+							<li class="friend-card friend-card--tape">
+								<a
+									class="friend-card__link"
+									href={item.siteurl}
+									target="_blank"
+									rel="noopener noreferrer"
+									title={`${item.title} · ${item.desc}`}
+								>
+									<div class="friend-card__avatar-wrap">
+										<img
+											class="friend-card__avatar"
+											src={item.imgurl}
+											alt={item.title}
+											loading="lazy"
+											referrerpolicy="no-referrer"
+											onerror={onAvatarError}
+										/>
+									</div>
+									<div class="friend-card__body">
+										<strong class="friend-card__name">{item.title}</strong>
+										<span class="friend-card__desc">{item.desc}</span>
+									</div>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			))
+		}
 		</article>
-	</div>
 
 	<!-- 评论区 -->
 	<Comment path="/friends" />

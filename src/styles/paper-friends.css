@@ -47,10 +47,8 @@
 /* ---------- 网格 ---------- */
 .friends-grid {
 	display: grid;
-	/* 参考站源码是 minmax(240px,1fr)，但其内容列较窄只排得出 2 列宽卡；
-	   本站 article-paper 内容列更宽，照抄 240 会变 3 列窄卡、观感不符。
-	   这里用 300px 断点复现参考站的「一行 2 张宽卡」视觉效果。 */
-	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	/* 用户要求三列（参考站源码即 minmax(240px,1fr)；本站内容列更宽，实际排 3 列） */
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 	gap: 14px;
 	margin: 0;
 	padding: 0;
@@ -275,6 +273,100 @@ img.friend-card__avatar {
 :root.dark .friend-card--tape .friend-card__link::after {
 	border-color: rgba(225, 230, 245, 0.1);
 	box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.16);
+}
+
+/* ---------- 顶图（照搬 .article-paper--with-top-img / .article-top-img--page 桌面基础段；
+   960px / 600px 断点覆盖已在 paper-responsive.css，只差这份桌面规则激活） ---------- */
+.article-paper--with-top-img {
+	--article-top-img-overlap: 208px;
+	--article-top-img-header-height: 148px;
+	overflow-x: clip;
+}
+
+.article-paper--page-top-img {
+	--article-top-img-overlap: 126px;
+	--article-top-img-header-height: 108px;
+}
+
+.article-top-img {
+	position: relative;
+	width: calc(100% + var(--article-top-img-pad-x) + var(--article-top-img-pad-x));
+	max-width: none;
+	height: clamp(220px, 31vw, 360px);
+	margin: calc(-1 * var(--article-top-img-pad-top)) 0 0 calc(-1 * var(--article-top-img-pad-x));
+	overflow: hidden;
+	border-radius: 4px 4px 0 0;
+	background: var(--paper-warm);
+}
+
+.article-top-img--page {
+	aspect-ratio: 4 / 1;
+	height: auto;
+	min-height: 148px;
+	max-height: 260px;
+}
+
+.article-top-img::before,
+.article-top-img::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.article-top-img::before {
+	z-index: 1;
+	background:
+		linear-gradient(to bottom, rgba(255, 253, 246, 0.04) 0%, rgba(255, 253, 246, 0.18) 30%, rgba(255, 253, 246, 0.66) 56%, var(--paper) 76%, var(--paper) 100%),
+		radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.18), transparent 32%);
+}
+
+.article-top-img::after {
+	z-index: 2;
+	background: linear-gradient(to bottom, transparent 0%, transparent 24%, var(--paper) 56%);
+	opacity: 0.96;
+	transform: translateY(22%);
+}
+
+.article-top-img img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	filter: saturate(0.94) contrast(0.98);
+	user-select: none;
+	pointer-events: none;
+	-webkit-user-drag: none;
+	-webkit-mask-image: linear-gradient(to bottom, #fff 0%, #fff 34%, rgba(255, 255, 255, 0.5) 56%, rgba(255, 255, 255, 0.14) 70%, transparent 80%);
+	mask-image: linear-gradient(to bottom, #fff 0%, #fff 34%, rgba(255, 255, 255, 0.5) 56%, rgba(255, 255, 255, 0.14) 70%, transparent 80%);
+}
+
+:root.dark .article-top-img::before {
+	background:
+		linear-gradient(to bottom, rgba(29, 32, 39, 0.08) 0%, rgba(29, 32, 39, 0.15) 16%, rgba(29, 32, 39, 0.28) 32%, rgba(29, 32, 39, 0.46) 48%, rgba(29, 32, 39, 0.64) 62%, rgba(29, 32, 39, 0.8) 74%, rgba(29, 32, 39, 0.92) 84%, var(--paper) 96%, var(--paper) 100%),
+		radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.08), transparent 32%);
+}
+
+:root.dark .article-top-img::after {
+	background: linear-gradient(to bottom, transparent 0%, rgba(29, 32, 39, 0.08) 20%, rgba(29, 32, 39, 0.2) 36%, rgba(29, 32, 39, 0.38) 52%, rgba(29, 32, 39, 0.62) 68%, rgba(29, 32, 39, 0.86) 82%, var(--paper) 94%);
+	opacity: 0.94;
+}
+
+.article-paper--with-top-img .article-header {
+	z-index: 3;
+	margin-top: calc(-1 * var(--article-top-img-overlap));
+	min-height: var(--article-top-img-header-height);
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	color: var(--ink);
+	border-bottom-color: color-mix(in srgb, var(--line) 68%, transparent);
+	text-shadow: 0 1px 14px var(--paper);
+}
+
+.article-paper--with-top-img .article-header h1 {
+	color: var(--ink);
 }
 
 /* ---------- 窄屏 ---------- */
