@@ -64,6 +64,18 @@
 	gap: 22px;
 }
 
+/* ⚠️ 侧栏「组件之间」必须等距（2026-10-01 需求：保持等距）
+   SidebarColumn 内部是 Mizuki 原生的 .sidebar-column-root > div.flex.flex-col.gap-4
+   —— Tailwind 的 gap-4(16px) + mb-4(16px) 会让 widget 列与外层卡片(paper-sidebar
+   的 22px)不等距，出现「22 / 16 / 16」混排的呼吸差。
+   这里统一压成与 FlatPaper 一致的 22px，并把多余的 mb-4 归零。 */
+.sidebar-column-root > div,
+.sidebar-column-root .sidebar-content,
+.sidebar-column-root > div > div {
+	gap: 22px !important;
+	margin-bottom: 0 !important;
+}
+
 /* 文章页侧栏：TOC 与文章相关卡片成组吸顶 */
 .paper-shell--article .paper-sidebar .post-sticky-stack {
 	position: sticky;
@@ -110,6 +122,7 @@
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 	transition:
 		transform 0.22s ease,
+		translate 0.22s ease,
 		box-shadow 0.22s ease;
 }
 
@@ -128,10 +141,13 @@
 	pointer-events: none;
 }
 
-/* 悬停上浮 + 纸影（照搬） */
+/* 悬停上浮 + 纸影（照搬 post-card.styl / side-card.styl 的 -3px + --shadow）
+   位移走 translate（与 paper-theme.css 的 .card-base 同一套做法，见那里的注释）：
+   带 .onload-animation 的 side-card 入场动画只动 transform，用 transform 做位移
+   会被动画末帧压掉/退化成瞬跳，translate 才能保持 0.22s ease 的丝滑过渡。 */
 .side-card:hover {
-	transform: translateY(-3px);
-	box-shadow: 0 18px 38px rgba(82, 64, 38, 0.13);
+	translate: 0 -3px;
+	box-shadow: var(--shadow);
 }
 
 :root.dark .side-card:hover {
@@ -158,6 +174,23 @@
 
 :root.dark .side-card-icon {
 	color: var(--color-accent);
+}
+
+/* ⚠️ welcome-card 不挂胶带（2026-10-01 需求：删去多余胶带）
+   参考站 flatpaper 的 .welcome-card 没有 ::before 胶带 —— 它的纸层在 ::after，
+   ::before 是空白；本站把 welcome-card 也标了 .side-card，于是被
+   .side-card::before 的黄胶带规则命中，卡右上角多出一条胶带（截图实证）。
+   这里只对 welcome-card 关掉，其余 side-card（nav/profile/categories/tag/
+   recent）保持参考站的右上胶带不变。 */
+/* 注意：必须用「双类提权」而不是单类 —— welcome-card 在 DOM 上同时带 .side-card，
+   而 .side-card::before{content:""} 就在下面（同特异性、后者胜出），
+   单类 .welcome-card::before 会被它盖掉、胶带删不掉（已实证）。
+   这里 .welcome-card.side-card::before 特异性 (0,2,0) 必胜。 */
+.welcome-card.side-card::before,
+.welcome-card::before {
+	content: none !important;
+	background: none !important;
+	display: none !important;
 }
 
 /* 右上角黄胶带（照搬 tape.styl 的 .side-card::before） */
@@ -800,5 +833,6 @@ widget-layout.card-base::before,
 	.recent-item:hover {
 		transition: none;
 		transform: none;
+		translate: none;
 	}
 }

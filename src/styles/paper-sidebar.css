@@ -290,7 +290,13 @@
 	position: relative;
 	z-index: 1;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-	transition: transform 0.22s ease;
+	/* 悬停位移走 translate（与 paper-theme.css / paper-sidebar-right.css 同一套）：
+	   内页侧栏 widget 也带 .onload-animation（fade-in-up，只动 transform），
+	   用 transform 做位移会被入场动画压掉/退化成瞬跳。 */
+	transition:
+		transform 0.22s ease,
+		translate 0.22s ease,
+		box-shadow 0.22s ease;
 }
 
 /* 纸面层：铺纸 + 撕纸边（照搬 .side-card::before 的铺纸手法） */
@@ -310,7 +316,7 @@
 
 @media (hover: hover) and (pointer: fine) {
 	.side-card:hover {
-		transform: translateY(-3px);
+		translate: 0 -3px;
 	}
 }
 

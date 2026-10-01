@@ -50,9 +50,15 @@ interface Props {
 	title?: string;
 	description?: string;
 	headings?: MarkdownHeading[];
+	/**
+	 * 是否渲染首屏大图（PaperHero）。
+	 * 2026-10-01 需求：首屏那张大横幅图只在首页（第 1 页）出现，
+	 * 分页页（/2/、/3/…）不保留 —— 否则每翻一页都要重看一遍 100vh 的 hero。
+	 */
+	showHero?: boolean;
 }
 
-const { title, description, headings = [] } = Astro.props;
+const { title, description, headings = [], showHero = true } = Astro.props;
 
 const paperHeroConfig = siteConfig.paperHero ?? {};
 const paperHeroImages = (paperHeroConfig.images ?? []).filter(
@@ -90,7 +96,8 @@ const tagCount = tagList.length;
 	<!-- 全局图标加载器 -->
 	<IconifyLoader />
 
-	<!-- 首屏（照搬 flatpaper：hero 在最前） -->
+	<!-- 首屏（照搬 flatpaper：hero 在最前）；仅首页渲染（showHero） -->
+	{showHero && (
 	<PaperHero
 		image={paperHeroImages[0] ?? ""}
 		images={paperHeroImages}
@@ -102,6 +109,7 @@ const tagCount = tagList.length;
 		ctaText={paperHeroConfig.ctaText ?? "开始阅读"}
 		ctaTarget="paper-home-content"
 	/>
+	)}
 
 	<!-- 导航（照搬 FlatPaper .site-header：width min(94%,1300px) + margin-inline auto + sticky top 16px）
 	     宽度用 94%（非 94vw）：本站 html 有 scrollbar-gutter: stable 占 15px，

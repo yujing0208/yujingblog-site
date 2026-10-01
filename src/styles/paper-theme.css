@@ -335,10 +335,20 @@ html.paper-style-cross body::before {
 	position: relative;
 	z-index: 1;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-	transition: transform 0.22s ease;
+	/* 照搬参考站 .post-card/.side-card 的 0.22s ease；另外补 translate ——
+	   入场动画 fade-in-up 只动 transform，悬停位移改走 translate 就绝对不会被
+	   动画「吃掉」，也不会被动画压掉 transition（详见下方悬停段注释）。 */
+	transition:
+		transform 0.22s ease,
+		translate 0.22s ease,
+		box-shadow 0.22s ease;
 }
 
-/* 铺纸层：置于内容之下 */
+/* 铺纸层：置于内容之下
+   照搬参考站 .post-card::after / .welcome-card::after 的手法：
+   纸层常驻 box-shadow + opacity:0，hover 时 opacity 渐显到 1（0.22s）。
+   之前是 hover 直接切 box-shadow，没有过渡 → 卡片上浮「硬切」阴影，手感发涩
+   （实测就是「不够丝滑」的根因）。 */
 .card-base::after {
 	content: "";
 	position: absolute;
@@ -350,32 +360,35 @@ html.paper-style-cross body::before {
 	z-index: -1;
 	border-radius: 4px;
 	filter: url(#paper-edge);
+	box-shadow: var(--shadow);
+	opacity: 0;
+	transition: opacity 0.22s ease;
 	pointer-events: none;
 }
 
-/* 悬停：轻微上浮 + 纸影（照搬 post-card.styl 的 -3px） */
-@media (hover: hover) and (pointer: fine) {
-	.card-base:hover {
-		transform: translateY(-3px);
-	}
-}
-
-/* ⚠️ 入场动画会吃掉悬停上浮（2026-10-01 实测根因）
+/* 悬停：轻微上浮 + 纸影（照搬 post-card.styl 的 -3px）
+   ⚠️ 为什么位移用 translate 而不是 transform（2026-10-01 实测根因）：
    侧栏 widget 由 SidebarColumn 注入 .onload-animation，其 animation
-   （fade-in-up）用 fill-mode: forwards 收尾；而按 CSS 层叠规则，「CSS 动画」
-   优先级高于普通声明 —— 悬停时 :hover 的 transform: translateY(-3px) 会被
-   动画末帧 to{transform:translateY(0)} 盖掉。
-   CDP 实测：鼠标移到音乐卡上，computed transform 仍是 matrix(1,0,0,1,0,0)。
-   用 !important 抬回（!important 普通声明 > CSS 动画），恢复 -3px 上浮手感。 */
+   （fade-in-up，fill-mode: forwards）只动 transform/opacity。按 CSS 层叠，
+   「CSS 动画」优先级高于普通声明，也高于 transition 输出 —— 若悬停用
+   transform: translateY(-3px)，会被动画末帧 to{transform:translateY(0)} 压掉；
+   即便加 !important 绕过动画，也是「瞬间跳位」而非过渡（动画会压制 transition
+   的 transform 输出），上浮就没有丝滑感。
+   translate 是独立的变换属性（动画完全不碰它），因此 :hover 一改就能正常走
+   0.22s ease 过渡，视觉与参考站的 translateY(-3px) 完全一致。 */
 @media (hover: hover) and (pointer: fine) {
+	.card-base:hover,
 	.card-base.onload-animation:hover,
+	.side-card:hover,
 	.side-card.onload-animation:hover {
-		transform: translateY(-3px) !important;
+		translate: 0 -3px;
 	}
-}
 
-.card-base:hover::after {
-	box-shadow: var(--shadow);
+	.card-base:hover::after,
+	.side-card:hover::after,
+	.welcome-card:hover::after {
+		opacity: 1;
+	}
 }
 
 /* 嵌套纸片 */
@@ -846,5 +859,6 @@ body.is-hero-active .top-gradient-highlight {
 	#nav-menu-switch {
 		transition: none;
 		transform: none;
+		translate: none;
 	}
 }

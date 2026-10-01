@@ -78,7 +78,11 @@ const featuredSlugs = featuredItems.map((it) => it.slug);
 
 {
 	paperMode ? (
-		<PaperHomeLayout title={siteConfig.title} description={siteConfig.subtitle}>
+		<PaperHomeLayout
+			title={siteConfig.title}
+			description={siteConfig.subtitle}
+			showHero={isFirstPage}
+		>
 			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）：仅第 1 页显示。
 			    第 2 页起 page.data 里没有置顶文章（getRawSortedPosts 把 pinned 排在最前），
 			    显式用 isFirstPage 关掉，保证分页页与首页的差异只有「列表内容」。 */}
