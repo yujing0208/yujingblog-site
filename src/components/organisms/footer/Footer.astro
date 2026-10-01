@@ -196,13 +196,13 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 			<div class="site-footer__status">
 				{startTimestamp !== null && (
 					<p class="site-footer__status-line">
-						<Icon name="material-symbols:calendar-clock-outline" aria-hidden="true" />
+						<Icon name="lucide:calendar-clock" aria-hidden="true" />
 						<span data-footer-running-time>{initialRunningTime}</span>
 					</p>
 				)}
 				{lastPostDate && (
 					<p class="site-footer__status-line">
-						<Icon name="material-symbols:favorite-outline" aria-hidden="true" />
+						<Icon name="lucide:heart" aria-hidden="true" />
 						<span data-footer-last-update>{initialLastUpdateText}</span>
 					</p>
 				)}
