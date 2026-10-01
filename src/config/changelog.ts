@@ -22,6 +22,19 @@ import type { ChangelogItem } from "../types/changelog";
 
 export const changelogData: ChangelogItem[] = [
 	{
+		id: "2026-10-01-02-hero-title-marker",
+		date: "2026-10-01 17:30:00",
+		version: "2026.10.1",
+		type: "improvement",
+		category: "首页",
+		module: "开屏",
+		title: "首页大标题加荧光笔记号",
+		description:
+			"照搬 FlatPaper 的记号笔画法：大标题文字下半部 38% 高度铺一条黄色半透明荧光笔（linear-gradient 62% 分割），h1 内包一层 .home-hero__title-mark。暗色模式同样生效。",
+		commits: ["08f18d8", "23cd996"],
+	},
+
+	{
 		id: "2026-10-01-01-welcome-card-dynamic",
 		date: "2026-10-01 16:40:05",
 		version: "2026.10.1",
