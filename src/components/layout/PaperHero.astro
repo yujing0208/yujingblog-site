@@ -78,11 +78,13 @@ const heroImagesAttr =
 // 下拉纸签背景：random = 内置 9 张（与 homulilly.com 线上一致：内联样式给 01，
 // data-hero-cta-backgrounds 给全部 9 张由脚本随机轮换）
 const CTA_BUILTIN_COUNT = 9;
+// ?v=2：该目录 CDN 是 immutable 一年缓存，替换图片必须换 URL 才能立即生效
+// （2026-10-01 用 FlatPaper 原版 9 张药丸贴纸替换过一批错误素材）。
 const ctaBackgrounds =
 	ctaBackground === "random"
 		? Array.from(
 				{ length: CTA_BUILTIN_COUNT },
-				(_, i) => `/assets/home/cta/cta-bg-0${i + 1}.webp`,
+				(_, i) => `/assets/home/cta/cta-bg-0${i + 1}.webp?v=2`,
 			)
 		: ctaBackground
 			? [ctaBackground]
@@ -90,7 +92,7 @@ const ctaBackgrounds =
 const ctaBgAttr =
 	ctaBackgrounds.length > 1 ? JSON.stringify(ctaBackgrounds) : undefined;
 const ctaBgStyle = `--hero-cta-bg: url("${
-	ctaBackgrounds[0] ?? "/assets/home/cta/cta-bg-01.webp"
+	ctaBackgrounds[0] ?? "/assets/home/cta/cta-bg-01.webp?v=2"
 }");`;
 
 const heroTitle = siteConfig.title;
