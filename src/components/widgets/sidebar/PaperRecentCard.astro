@@ -57,7 +57,7 @@ for (const entry of posts.slice(0, 4)) {
 	entries.push({
 		type: "post",
 		label: "文章",
-		icon: "material-symbols:article-outline",
+		icon: "lucide:file-text",
 		title: String(rawTitle).trim() || "未命名",
 		date: dt && !Number.isNaN(dt.getTime()) ? dt.toISOString().slice(0, 10) : "",
 		url: getPostUrl(entry as any),
@@ -78,7 +78,7 @@ for (const item of diary as any[]) {
 	entries.push({
 		type: "diary",
 		label: "动态",
-		icon: "material-symbols:chat-outline",
+		icon: "lucide:message-circle",
 		title: raw.slice(0, 40) || "（图片动态）",
 		date: String(item.date ?? "").slice(0, 10),
 		url: "/diary/",
@@ -93,7 +93,7 @@ for (const item of footprints.slice(0, 2)) {
 	entries.push({
 		type: "footprint",
 		label: "足迹",
-		icon: "material-symbols:location-on-outline",
+		icon: "lucide:map-pin",
 		title: String(item.name ?? ""),
 		date: String(item.date ?? ""),
 		url: "/footprint/",
@@ -106,7 +106,7 @@ for (const item of animeList.slice(0, 2)) {
 	entries.push({
 		type: "anime",
 		label: "番剧",
-		icon: "material-symbols:movie-outline",
+		icon: "lucide:clapperboard",
 		title: String(item.title ?? ""),
 		date: String(item.year ?? ""),
 		url: "/anime/",
@@ -124,7 +124,7 @@ try {
 		albumEntries.push({
 			type: "album",
 			label: "相册",
-			icon: "material-symbols:photo-library-outline",
+			icon: "lucide:images",
 			title: rawTitle || "相册",
 			// AlbumGroup.date 存在时是日期，可能带时间，截到 10 位
 			date: String(a.date ?? "").slice(0, 10),
@@ -152,7 +152,7 @@ const items = [...dated.slice(0, datedQuota), ...reserved].slice(0, limit);
 
 <section class="side-card recent-card">
 	<h2>
-		<Icon name="material-symbols:bolt-outline" class="side-card-icon" is:inline />
+		<Icon name="lucide:zap" class="side-card-icon" is:inline />
 		最近动态
 	</h2>
 	<ul class="recent-list">
