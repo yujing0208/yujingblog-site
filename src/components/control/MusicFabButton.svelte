@@ -23,7 +23,7 @@ const ariaLabel = $derived(
 const statusIcon = $derived(
 	playerState.isLoading
 		? "svg-spinners:90-ring-with-bg"
-		: "material-symbols:music-note-rounded",
+		: "lucide:music",
 );
 
 onMount(() => {
