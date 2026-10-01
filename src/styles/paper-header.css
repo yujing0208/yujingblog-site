@@ -58,8 +58,11 @@
 body:not(.paper-layout) #top-row {
 	position: fixed;
 	top: 16px;
-	left: auto;
-	right: auto;
+	/* ⚠️ 必须写 left/right：定位元素在 left/right 都为 auto 时，
+	   margin-inline:auto 会被归零（实测 headerLeft 掉到 0，导航贴最左），
+	   写了 left:0;right:0 之后 auto 外边距才真正水平居中（实测 x=81，与首页一致）。 */
+	left: 0;
+	right: 0;
 	margin-top: 0;
 	z-index: 50;
 }
