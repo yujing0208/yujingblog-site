@@ -3,6 +3,8 @@ import { commentConfig } from "@/config";
 
 interface Props {
 	path: string;
+	/** 留言板用：不显示站长自己的评论（按头像哈希 / 昵称过滤） */
+	hideOwner?: boolean;
 }
 
 const config = {
@@ -10,13 +12,21 @@ const config = {
 	el: "#tcomment",
 	path: Astro.props.path,
 };
+
+// 站长身份（2026-10-01 确认）：
+//   邮箱 2803673194@qq.com 的 weavatar 头像哈希 = sha256(邮箱)
+//   昵称兜底：站长常用「余京 / YuJing」两个马甲
+const OWNER_NICKS = ["余京", "YuJing"];
+const OWNER_AVATAR_HASHES = [
+	"9735dc7774c6444b2647f25b595d67d5668e1d0ad38aa11557f3a7a4954a1abb",
+];
 ---
 
 <div id="twikoo-container" class="twikoo-container">
 	<div id="tcomment"></div>
 </div>
 
-<script is:inline define:vars={{ config }}>
+<script is:inline define:vars={{ config, hideOwner: Astro.props.hideOwner ?? false, OWNER_NICKS, OWNER_AVATAR_HASHES }}>
 	(function () {
 		const TWIKOO_CONTAINER_ID = "twikoo-container";
 		const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js?v=1.7.14";
@@ -24,6 +34,42 @@ const config = {
 
 		let observer = null;
 		let twikooLoaded = false;
+		let ownerFilterObserver = null;
+
+		// ---- 站长评论过滤（仅留言板 hideOwner 时启用）----
+		function isOwnerCommentNode(node) {
+			if (!node || node.nodeType !== 1) return false;
+			const avatar = node.querySelector(".tk-avatar img");
+			const src = avatar ? avatar.getAttribute("src") || "" : "";
+			for (const hash of OWNER_AVATAR_HASHES) {
+				if (src.indexOf(hash) !== -1) return true;
+			}
+			const nickEl = node.querySelector(".tk-nick");
+			const nick = nickEl ? (nickEl.textContent || "").trim() : "";
+			return OWNER_NICKS.indexOf(nick) !== -1;
+		}
+
+		function applyOwnerFilter(root) {
+			if (!root || !hideOwner) return;
+			root
+				.querySelectorAll(".tk-comment:not([data-owner-hidden])")
+				.forEach((node) => {
+					if (isOwnerCommentNode(node)) {
+						node.dataset.ownerHidden = "1";
+						node.style.display = "none";
+					}
+				});
+		}
+
+		function startOwnerFilter(commentEl) {
+			if (!hideOwner) return;
+			if (ownerFilterObserver) ownerFilterObserver.disconnect();
+			ownerFilterObserver = new MutationObserver(() => {
+				applyOwnerFilter(commentEl);
+			});
+			ownerFilterObserver.observe(commentEl, { childList: true, subtree: true });
+			applyOwnerFilter(commentEl);
+		}
 
 		function getCurrentPath() {
 			const pathname = window.location.pathname;
@@ -78,6 +124,7 @@ const config = {
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
+				startOwnerFilter(commentEl);
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
 			}
@@ -87,6 +134,10 @@ const config = {
 			if (observer) {
 				observer.disconnect();
 				observer = null;
+			}
+			if (ownerFilterObserver) {
+				ownerFilterObserver.disconnect();
+				ownerFilterObserver = null;
 			}
 			if (window.swup?.hooks) {
 				window.swup.hooks.off("content:replace", initTwikoo);
