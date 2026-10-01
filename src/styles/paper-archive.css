@@ -107,7 +107,7 @@
 	min-height: 70px;
 	padding: 16px;
 	border: 1px dashed var(--paper-line);
-	border-radius: 10px;
+	border-radius: 4px;
 	background: var(--paper-warm);
 	font-size: 14px;
 }
