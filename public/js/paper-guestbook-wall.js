@@ -81,8 +81,9 @@
 			var pageSize = parseInt(wall.dataset.pageSize, 10);
 			if (!pageSize || pageSize < 1) pageSize = 12;
 
-			// 站长评论过滤（2026-10-01）：data-guestbook-owner-nicks / data-guestbook-owner-hashes
-			// 由 guestbook.astro 注入；命中昵称或头像哈希的留言不上墙
+			// 站长评论改名（2026-10-01 定稿）：不隐藏，站长留言照常上墙，
+			// 但昵称统一显示为 data-guestbook-owner-display（默认 YuJing）。
+			// 识别：data-guestbook-owner-nicks（昵称兜底）/ data-guestbook-owner-hashes（头像哈希）
 			var ownerNicks = String(wall.dataset.guestbookOwnerNicks || "")
 				.split(",")
 				.map(function (s) { return s.trim(); })
@@ -91,6 +92,8 @@
 				.split(",")
 				.map(function (s) { return s.trim(); })
 				.filter(Boolean);
+			var ownerDisplay =
+				String(wall.dataset.guestbookOwnerDisplay || "").trim() || "YuJing";
 
 			function isOwnerItem(nick, avatar) {
 				var n = String(nick || "").trim();
@@ -436,8 +439,8 @@
 										if (typeof created !== "number") created = parseInt(created, 10) || 0;
 										var nick = String(item.nick || "").trim() || t("anonymous");
 										var avatar = safeRemoteUrl(item.avatar, "image");
-										// 站长自己的留言不上墙
-										if (isOwnerItem(nick, avatar)) return null;
+										// 站长的留言照常上墙，昵称统一显示
+										if (isOwnerItem(nick, avatar)) nick = ownerDisplay;
 										return {
 											anchorId: String(item.id || ""),
 											nick: nick,
