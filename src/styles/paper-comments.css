@@ -1,0 +1,63 @@
+/* ============================================================================
+ *  手账评论区外壳（照搬 flatpaper comments-section）
+ * ----------------------------------------------------------------------------
+ *  参考源：homulilly.com /css/style.css（hexo-theme-flatpaper）
+ *    .comments-section            —— 相对定位 + 内边距
+ *    .comments-section::before    —— 常驻纸层（--paper + 4px 撕边 + 纸影）
+ *    .comments-section::after     —— 顶部中央粉色胶带
+ *    .comments-section__head h2   —— 「评论」标题（lucide 图标 + 18px 粗体）
+ *  配合 comment/index.astro 的 FlatPaper 同款 DOM 使用；全站文章 / 关于 / 友链 /
+ *  追番 / 留言板的评论区统一走这一套外壳。
+ * ========================================================================= */
+
+.comments-section {
+  position: relative;
+  padding: 26px 30px;
+  margin-block: 26px 8px;
+  z-index: 1;
+}
+
+.comments-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--paper);
+  z-index: -1;
+  border-radius: 4px;
+  filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
+}
+
+.comments-section::after {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  z-index: 2;
+  width: 90px;
+  height: 22px;
+  background-color: var(--tape-pink);
+  background-image: var(--tape-stripes);
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.comments-section__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.comments-section__head h2 .lucide {
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent);
+}
+
+html.dark .comments-section__head h2 .lucide {
+  color: var(--color-accent-muted);
+}
