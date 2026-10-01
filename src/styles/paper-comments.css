@@ -24,7 +24,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--paper);
+  /* ⚠️ 必须用 --card-bg（与上方卡片同源同色），不能用 --paper：
+     留言板页 paper-guestbook-wall.css 的 token 桥接层会把
+     .comments-section 上的 --paper 重定义为 --paper-solid（纯白 #fff），
+     实测导致评论区比卡片白（2026-10-01 CDP 实测 rgb(255,255,255)）。 */
+  background: var(--card-bg);
   z-index: -1;
   border-radius: 4px;
   filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
