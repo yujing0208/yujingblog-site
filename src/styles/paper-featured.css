@@ -394,7 +394,7 @@
 .paper-thumb--large {
 	height: 100%;
 	min-height: 160px;
-	border-radius: 10px;
+	border-radius: 4px;
 }
 
 .paper-thumb__img {
