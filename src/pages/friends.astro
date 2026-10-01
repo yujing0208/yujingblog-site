@@ -105,6 +105,34 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 										<span class="friend-card__desc">{item.desc}</span>
 									</div>
 								</a>
+								{item.rss && (
+									<a
+										class="friend-card__rss"
+										href={item.rss}
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label={`${item.title} 的 RSS`}
+										title="RSS"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="1em"
+											height="1em"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.8"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="lucide lucide-rss"
+											aria-hidden="true"
+										>
+											<path d="M4 11a9 9 0 0 1 9 9" />
+											<path d="M4 4a16 16 0 0 1 16 16" />
+											<circle cx="5" cy="19" r="1" />
+										</svg>
+									</a>
+								)}
 							</li>
 						))}
 					</ul>
@@ -112,6 +140,103 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 			))
 		}
 		</article>
+
+	<!-- 本站信息 / 申请模板 / 友链申请要求（照抄 homulilly.com /links/ 的 friends-intro） -->
+	<div class="friends-intro">
+		<p><strong>本站信息</strong> : </p>
+		<figure class="highlight yaml">
+			<span class="code-bar">
+				<span class="code-lang">YAML</span>
+				<button type="button" class="code-action code-copy" aria-label="复制代码">
+					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+				</button>
+				<button type="button" class="code-action code-fold" aria-label="折叠代码">
+					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
+				</button>
+			</span>
+			<table>
+				<tr>
+					<td class="gutter"><pre><span class="line">1</span><br /><span class="line">2</span><br /><span class="line">3</span><br /><span class="line">4</span><br /><span class="line">5</span><br /></pre></td>
+					<td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">YuJing的记忆终端</span></span><br /><span class="line"><span class="attr">link:</span> <span class="string">https://yujingblog.top</span></span><br /><span class="line"><span class="attr">descr:</span> <span class="string">记一些无用的日常，和有光的时刻。</span></span><br /><span class="line"><span class="attr">avatar:</span> <span class="string">https://yujingblog.top/assets/home/avatar.webp</span></span><br /><span class="line"><span class="attr">rss:</span> <span class="string">https://yujingblog.top/atom.xml</span></span><br /></pre></td>
+				</tr>
+			</table>
+		</figure>
+		<figure class="highlight yaml">
+			<span class="code-bar">
+				<span class="code-lang">YAML</span>
+				<button type="button" class="code-action code-copy" aria-label="复制代码">
+					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+				</button>
+				<button type="button" class="code-action code-fold" aria-label="折叠代码">
+					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
+				</button>
+			</span>
+			<table>
+				<tr>
+					<td class="gutter"><pre><span class="line">1</span><br /><span class="line">2</span><br /><span class="line">3</span><br /><span class="line">4</span><br /><span class="line">5</span><br /></pre></td>
+					<td class="code"><pre><span class="line"><span class="attr">name:</span> </span><br /><span class="line"><span class="attr">link:</span> </span><br /><span class="line"><span class="attr">descr:</span> </span><br /><span class="line"><span class="attr">avatar:</span> </span><br /><span class="line"><span class="attr">rss:</span> </span><br /></pre></td>
+				</tr>
+			</table>
+		</figure>
+		<details class="flatpaper-note flatpaper-note--info flatpaper-note--sticky" open>
+			<summary class="flatpaper-note__title">
+				<span class="flatpaper-note__icon" aria-hidden="true"></span>
+				<span class="flatpaper-note__label">友链申请要求</span>
+				<span class="flatpaper-note__chevron" aria-hidden="true"></span>
+			</summary>
+			<div class="flatpaper-note__body">
+				<ol>
+					<li>网站需全站启用 HTTPS，访问稳定。</li>
+					<li>接受博客、笔记、生活记录等类型的个人网站。</li>
+					<li>网站需已发布 10 篇以上原创文章，并保持长期更新与维护。</li>
+					<li>内容应具有一定价值，避免大量转载、采集或低质量内容。</li>
+					<li>暂不接受免费域名、临时域名或无法长期稳定访问的网站申请友链。</li>
+				</ol>
+			</div>
+		</details>
+	</div>
+
+	<!-- 复制 / 折叠按钮交互（document 级委托，swup 换页后依然有效） -->
+	<script is:inline>
+		(function () {
+			if (window.__fpFriendsCodeWired) return;
+			window.__fpFriendsCodeWired = true;
+			document.addEventListener("click", function (e) {
+				var t = e.target;
+				if (!t || !t.closest) return;
+				var scope = document.querySelector(".friends-intro");
+				if (!scope) return;
+				var copyBtn = t.closest(".friends-intro .code-copy");
+				if (copyBtn) {
+					var fig = copyBtn.closest("figure.highlight");
+					if (!fig) return;
+					var lines = fig.querySelectorAll("td.code .line");
+					var text = Array.prototype.map.call(lines, function (l) { return l.textContent; }).join("\n");
+					var done = function () {
+						copyBtn.classList.add("is-copied");
+						setTimeout(function () { copyBtn.classList.remove("is-copied"); }, 1200);
+					};
+					if (navigator.clipboard && navigator.clipboard.writeText) {
+						navigator.clipboard.writeText(text).then(done, done);
+					} else {
+						var ta = document.createElement("textarea");
+						ta.value = text;
+						document.body.appendChild(ta);
+						ta.select();
+						try { document.execCommand("copy"); } catch (err) {}
+						ta.remove();
+						done();
+					}
+					return;
+				}
+				var foldBtn = t.closest(".friends-intro .code-fold");
+				if (foldBtn) {
+					var f = foldBtn.closest("figure.highlight");
+					if (f) f.classList.toggle("is-folded");
+				}
+			});
+		})();
+	</script>
 
 	<!-- 评论区 -->
 	<Comment path="/friends" />

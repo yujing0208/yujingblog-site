@@ -6,5 +6,7 @@ export interface FriendItem {
 	imgurl: string;
 	desc: string;
 	siteurl: string;
+	/** RSS/Atom 订阅地址（友链卡片右上角的 RSS 按钮）；缺省则不显示 */
+	rss?: string;
 	tags: string[];
 }

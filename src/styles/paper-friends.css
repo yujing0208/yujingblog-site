@@ -369,6 +369,432 @@ img.friend-card__avatar {
 	color: var(--ink);
 }
 
+/* ============================================================
+   卡片 RSS 按钮（FlatPaper friend-card__rss，逐条照搬）
+   ============================================================ */
+.friend-card__rss {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 2;
+	display: inline-grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	color: var(--muted);
+	background: transparent;
+	transition: color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.friend-card__rss .lucide {
+	width: 13px;
+	height: 13px;
+	transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.friend-card__rss::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	border: 1.5px solid currentColor;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.friend-card:hover .friend-card__rss {
+	color: var(--color-accent-strong);
+	background: var(--color-accent-soft);
+}
+
+.friend-card:hover .friend-card__rss .lucide {
+	animation: flatpaper-rss-wiggle 0.7s ease;
+}
+
+.friend-card:hover .friend-card__rss::before {
+	animation: flatpaper-rss-pulse 1.1s ease-out;
+}
+
+.friend-card__rss:hover {
+	transform: scale(1.1);
+}
+
+:root.dark .friend-card:hover .friend-card__rss {
+	color: var(--color-accent-muted);
+	background: var(--color-accent-soft);
+}
+
+@keyframes flatpaper-rss-wiggle {
+	0% { transform: rotate(0) scale(1); }
+	25% { transform: rotate(-8deg) scale(1.08); }
+	50% { transform: rotate(6deg) scale(1.12); }
+	75% { transform: rotate(-3deg) scale(1.06); }
+	100% { transform: rotate(0) scale(1); }
+}
+
+@keyframes flatpaper-rss-pulse {
+	0% { opacity: 0.45; transform: scale(1); }
+	100% { opacity: 0; transform: scale(1.9); }
+}
+
+/* ============================================================
+   friends-intro：本站信息 YAML 代码块（FlatPaper simple 代码主题）
+   来源：homulilly.com /links/ 的 style.css，逐条照搬后收敛到
+   .friends-intro 作用域；body[data-code-theme="simple"] 前缀去掉
+   （本页固定用 simple 风格）。
+   ============================================================ */
+.friends-intro {
+	margin-top: 30px;
+	font-size: 15px;
+	color: var(--ink);
+}
+
+.friends-intro > p {
+	margin: 0 0 6px;
+}
+
+.friends-intro > p strong {
+	color: var(--blue);
+}
+
+.friends-intro .highlight {
+	position: relative;
+	margin: 22px 0;
+	padding-top: 38px;
+	background: var(--paper-warm);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: none;
+	font-size: 13px;
+	line-height: 1.55;
+	overflow: hidden;
+}
+
+.friends-intro .highlight table {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+.friends-intro .highlight tr,
+.friends-intro .highlight td {
+	border: 0;
+	padding: 0;
+	background: transparent;
+}
+
+.friends-intro .highlight td.code {
+	width: 100%;
+}
+
+.friends-intro .highlight td.code pre {
+	margin: 0;
+	padding: 14px 16px 14px 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	line-height: inherit;
+	overflow-x: auto;
+}
+
+/* 行号列（gutter）：虚线分隔，simple 主题 */
+.friends-intro .highlight td.gutter {
+	width: 48px;
+	padding: 14px 0;
+	text-align: right;
+	user-select: none;
+	background: transparent;
+	border-right: 1px dashed var(--dash);
+}
+
+.friends-intro .highlight td.gutter pre {
+	margin: 0;
+	padding: 0 14px 0 18px;
+	background: transparent;
+	color: var(--muted);
+	font: inherit;
+	line-height: inherit;
+}
+
+/* Hexo 渲染是 .line + <br>：隐藏 br、.line 块化 */
+.friends-intro .highlight pre br {
+	display: none;
+}
+
+.friends-intro .highlight .line {
+	display: block;
+	min-height: 1.55em;
+}
+
+/* simple 主题 token 色（attr=橙、string=accent 蓝、bullet=黄） */
+.friends-intro .highlight .attr,
+.friends-intro .highlight .variable {
+	color: var(--orange);
+}
+
+.friends-intro .highlight .string,
+.friends-intro .highlight .meta-string {
+	color: var(--blue);
+}
+
+.friends-intro .highlight .bullet,
+.friends-intro .highlight .number {
+	color: var(--yellow);
+}
+
+.friends-intro .highlight .comment {
+	color: var(--muted);
+	font-style: italic;
+}
+
+/* 代码块顶栏：code-lang + 复制 / 折叠按钮（simple 主题） */
+.friends-intro .highlight .code-bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	padding: 0 16px;
+	height: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	border-bottom: 2px solid var(--ink);
+	z-index: 3;
+}
+
+.friends-intro .highlight .code-lang {
+	background: transparent;
+	color: var(--ink);
+	font-weight: 700;
+	font-size: 13px;
+	text-transform: uppercase;
+	padding: 0;
+	margin-right: auto;
+}
+
+.friends-intro .highlight .code-action {
+	display: inline-grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: none;
+	border-radius: 6px;
+	color: var(--muted);
+	background: transparent;
+	cursor: pointer;
+	transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.friends-intro .highlight .code-action:hover {
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.friends-intro .highlight .code-copy.is-copied {
+	color: var(--blue);
+}
+
+.friends-intro .highlight .code-copy .lucide,
+.friends-intro .highlight .code-fold .lucide {
+	width: 13px;
+	height: 13px;
+	stroke-width: 2;
+}
+
+.friends-intro .highlight .code-fold .lucide {
+	transition: transform 0.22s ease;
+}
+
+.friends-intro .highlight.is-folded .code-fold .lucide {
+	transform: rotate(180deg);
+}
+
+.friends-intro .highlight.is-folded table {
+	display: none;
+}
+
+.friends-intro .highlight.is-folded {
+	padding-top: 38px;
+}
+
+:root.dark .friends-intro .highlight .code-action:hover {
+	background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* ============================================================
+   flatpaper-note 提示块（base + --info + details 折叠 + sticky 胶带风格）
+   来源：homulilly.com style.css，逐条照搬；.dark-mode → :root.dark
+   ============================================================ */
+.flatpaper-note {
+	--note-accent-rgb: var(--muted-rgb);
+	--note-bg-opacity: 0.08;
+	--note-border-opacity: 0.35;
+	--note-accent: rgb(var(--note-accent-rgb));
+	--note-bg: rgba(var(--note-accent-rgb), var(--note-bg-opacity));
+	--note-border: rgba(var(--note-accent-rgb), var(--note-border-opacity));
+	position: relative;
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	gap: 12px;
+	margin: 22px 0;
+	padding: 14px 18px 14px 16px;
+	border-left: 4px solid var(--note-accent);
+	border-radius: 0 10px 10px 0;
+	background: var(--note-bg);
+	color: var(--ink);
+}
+
+.flatpaper-note--info {
+	--note-accent-rgb: var(--blue-rgb);
+	--note-bg-opacity: 0.12;
+	--note-border-opacity: 0.45;
+}
+
+.flatpaper-note__icon {
+	display: inline-grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	margin-top: 2px;
+	border-radius: 50%;
+	background: var(--note-accent);
+	color: #fff;
+	flex-shrink: 0;
+}
+
+.flatpaper-note__icon::before {
+	content: "i";
+	color: #fff;
+	font-family: Georgia, "Times New Roman", serif;
+	font-style: italic;
+	font-weight: 700;
+	font-size: 13px;
+	line-height: 1;
+}
+
+.flatpaper-note__body {
+	font-size: 14px;
+	line-height: 1.75;
+	color: var(--ink-soft);
+}
+
+.flatpaper-note__body code {
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--note-accent);
+}
+
+:root.dark .flatpaper-note__body code {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+details.flatpaper-note {
+	display: block;
+	padding: 0;
+}
+
+details.flatpaper-note > .flatpaper-note__title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+	cursor: pointer;
+	list-style: none;
+	font-weight: 700;
+	font-size: 14px;
+	color: var(--note-accent);
+	user-select: none;
+}
+
+details.flatpaper-note > .flatpaper-note__title::-webkit-details-marker {
+	display: none;
+}
+
+details.flatpaper-note > .flatpaper-note__title::marker {
+	content: "";
+}
+
+details.flatpaper-note > .flatpaper-note__title .flatpaper-note__icon {
+	margin-top: 0;
+}
+
+details.flatpaper-note .flatpaper-note__label {
+	flex: 1;
+}
+
+details.flatpaper-note .flatpaper-note__chevron {
+	width: 9px;
+	height: 9px;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: rotate(45deg);
+	transition: transform 0.2s ease;
+	opacity: 0.7;
+}
+
+details.flatpaper-note[open] .flatpaper-note__chevron {
+	transform: rotate(225deg);
+}
+
+details.flatpaper-note > .flatpaper-note__body {
+	padding: 12px 18px 14px 48px;
+	border-top: 1px dashed var(--note-border);
+}
+
+details.flatpaper-note > .flatpaper-note__title:hover {
+	background: rgba(0, 0, 0, 0.03);
+}
+
+:root.dark details.flatpaper-note > .flatpaper-note__title:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+/* sticky 变体：顶部胶带 + 方角描边（截图同款） */
+.flatpaper-note--sticky {
+	margin: 32px 0 26px;
+	padding: 18px 18px 16px;
+	border: 1px solid color-mix(in srgb, var(--note-accent) 24%, var(--paper-solid) 76%);
+	border-radius: 0;
+	background: color-mix(in srgb, var(--note-accent) 12%, var(--paper-solid) 88%);
+	box-shadow: 1px 1px 3px rgba(var(--paper-shadow-rgb), 0.1);
+}
+
+.flatpaper-note--sticky::before {
+	content: "";
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	z-index: 1;
+	width: 70px;
+	height: 20px;
+	border-radius: 1px;
+	background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 7px), color-mix(in srgb, var(--note-accent) 36%, transparent);
+	box-shadow: 0 2px 6px rgba(var(--paper-shadow-rgb), 0.14);
+	transform: translateX(-50%) rotate(-1deg);
+}
+
+.flatpaper-note--sticky details.flatpaper-note {
+	padding: 0;
+}
+
+.flatpaper-note--sticky details.flatpaper-note > .flatpaper-note__title {
+	padding: 14px 16px 12px;
+}
+
+.flatpaper-note--sticky details.flatpaper-note > .flatpaper-note__body {
+	padding: 12px 18px 14px 46px;
+	border-top: 1px dashed var(--note-border);
+}
+
+:root.dark .flatpaper-note--sticky {
+	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 /* ---------- 窄屏 ---------- */
 @media (max-width: 640px) {
 	.friend-card--tape .friend-card__link::before {
