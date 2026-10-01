@@ -50,8 +50,18 @@
 	z-index: 50;
 }
 
+/* 内页（MainGridLayout）：主内容容器是 absolute，body 的实际高度只有导航那 72px，
+   sticky 的可滚动空间为零 —— 实测 /archive/ 滚动后 header rectTop = -1083（整条滚走）。
+   这里改用 position: fixed —— 视觉上与「钉住」完全一致，且任何滚动位置都不会消失。
+   不写 left/right：保持 static position + margin-inline:auto 居中，
+   宽度仍取 min(94%, var(--page-width))，与首页对齐。 */
 body:not(.paper-layout) #top-row {
-	margin-top: 28px;
+	position: fixed;
+	top: 16px;
+	left: auto;
+	right: auto;
+	margin-top: 0;
+	z-index: 50;
 }
 
 body:not(.paper-layout) #top-row .site-header {

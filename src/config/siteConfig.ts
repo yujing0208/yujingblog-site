@@ -43,8 +43,14 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 页面自动缩放配置
+	// 2026-10-01：全站关闭整页缩放。
+	//   内页原本按 clientWidth/2000（下限 0.85）把 html 字号压到 85%，
+	//   --page-width(81.25rem) 跟着缩成 1105px；而手账首页 body.paper-layout 会跳过
+	//   缩放（缩放会把三栏压扁），导航就变成「首页 1300px / 内页 1105px」两种尺寸。
+	//   参考站 FlatPaper 也没有整页缩放（固定 min(94%,1300px) 容器），
+	//   关掉后所有页面的导航与内容宽度、字号完全一致。
 	pageScaling: {
-		enable: true, // 是否开启自动缩放
+		enable: false, // 是否开启自动缩放
 		targetWidth: 2000, // 目标宽度，低于此宽度时开始缩放
 	},
 
