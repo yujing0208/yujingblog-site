@@ -646,15 +646,15 @@ const bannerFormats = getImageFormats();
 			<h2 id="page-overlay-title" class="page-overlay-title text-3xl lg:text-5xl text-white font-bold drop-shadow-lg px-4"></h2>
 			<div id="page-overlay-meta" class="page-overlay-meta hidden flex-wrap items-center justify-center gap-x-5 gap-y-2 text-white/80 text-sm md:text-base mt-4">
 				<span class="inline-flex items-center gap-1.5">
-					<Icon name="material-symbols:calendar-month-outline-rounded" class="text-[1.05em]" />
+					<Icon name="lucide:calendar" class="text-[1.05em]" />
 					<span id="page-overlay-date"></span>
 				</span>
 				<span class="inline-flex items-center gap-1.5">
-					<Icon name="material-symbols:folder-outline" class="text-[1.05em]" />
+					<Icon name="lucide:folder" class="text-[1.05em]" />
 					<span id="page-overlay-category"></span>
 				</span>
 				<span class="inline-flex items-center gap-1.5">
-					<Icon name="material-symbols:ink-pen-outline-rounded" class="text-[1.05em]" />
+					<Icon name="lucide:pen-tool" class="text-[1.05em]" />
 					<span id="page-overlay-words"></span>
 				</span>
 			</div>
@@ -733,7 +733,7 @@ const bannerFormats = getImageFormats();
 		>
 			<Icon
 				class="text-white/75 text-[1.25rem] mr-1"
-				name="material-symbols:copyright-outline-rounded"
+				name="lucide:copyright"
 			/>
 			<div class="text-white/75 text-xs">{siteConfig.banner.credit.text}</div>
 			<Icon
@@ -741,7 +741,7 @@ const bannerFormats = getImageFormats();
 					"transition absolute text-[var(--color-accent)] right-4 text-[0.75rem] opacity-0",
 					{ "group-hover:opacity-100": hasBannerLink },
 				]}
-				name="fa7-solid:arrow-up-right-from-square"
+				name="lucide:external-link"
 			>
 			</Icon>
 		</a>
