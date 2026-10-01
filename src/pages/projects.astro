@@ -39,15 +39,15 @@ const getCategoryText = (category: string) => {
 const getCategoryIcon = (category: string) => {
 	switch (category) {
 		case "web":
-			return "material-symbols:language";
+			return "lucide:globe";
 		case "mobile":
-			return "material-symbols:smartphone";
+			return "lucide:smartphone";
 		case "desktop":
-			return "material-symbols:desktop-windows";
+			return "lucide:monitor";
 		case "other":
-			return "material-symbols:widgets";
+			return "lucide:layout-grid";
 		default:
-			return "material-symbols:folder";
+			return "lucide:folder";
 	}
 };
 
@@ -55,7 +55,7 @@ const filterTabs = [
 	{
 		value: "all",
 		label: i18n(I18nKey.friendsFilterAll),
-		icon: "material-symbols:apps",
+		icon: "lucide:layout-grid",
 		count: projectsData.length,
 	},
 	...categories.map((category) => ({
@@ -105,7 +105,7 @@ const subtitle = i18n(I18nKey.projectsSubtitle);
 
 			<div id="no-results" class="hidden text-center py-16">
 				<Icon
-					name="material-symbols:search-off-rounded"
+					name="lucide:search-x"
 					class="text-6xl text-black/15 dark:text-white/15 mb-4"
 				/>
 				<p class="text-black/40 dark:text-white/40 text-lg">
