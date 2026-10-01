@@ -14,10 +14,11 @@ const config = {
 // 站长评论昵称统一显示（2026-10-01 定稿）：不隐藏、不改数据，仅前端把站长
 // 评论的昵称（含「回复 @xxx」提及）统一改写为 YuJing。全站评论区生效。
 // 识别依据：
-//   · 头像哈希：站长邮箱 2803673194@qq.com 的 sha256（weavatar/geekzu 头像 URL 特征）
+//   · 头像哈希：站长邮箱 2803673194@qq.com（weavatar 线上同时出现 md5 与 sha256 两种形式）
 //   · 昵称兜底：站长用过的「余京 / YuJing」马甲
 const OWNER_NICKS = ["余京", "YuJing"];
 const OWNER_AVATAR_HASHES = [
+	"46d038eb362227469c0145d278dc3dbf",
 	"9735dc7774c6444b2647f25b595d67d5668e1d0ad38aa11557f3a7a4954a1abb",
 ];
 const OWNER_DISPLAY_NICK = "YuJing";
@@ -80,8 +81,10 @@ const OWNER_DISPLAY_NICK = "YuJing";
 		}
 
 		function applyOwnerRename(root) {
-			if (!root) return;
-			root
+			// 扫描范围用 document：twikoo.init() 会用自建根节点 replace 掉
+			// #tcomment（2026-10-01 无头实测），挂死在旧节点上永远收不到变更。
+			const scope = root || document;
+			scope
 				.querySelectorAll(".tk-comment:not([data-owner-renamed])")
 				.forEach((node) => {
 					node.dataset.ownerRenamed = "1";
@@ -90,13 +93,14 @@ const OWNER_DISPLAY_NICK = "YuJing";
 				});
 		}
 
-		function startOwnerRename(commentEl) {
+		function startOwnerRename() {
 			if (ownerRenameObserver) ownerRenameObserver.disconnect();
 			ownerRenameObserver = new MutationObserver(() => {
-				applyOwnerRename(commentEl);
+				applyOwnerRename(document);
 			});
-			ownerRenameObserver.observe(commentEl, { childList: true, subtree: true });
-			applyOwnerRename(commentEl);
+			// 挂在 body 上：#tcomment 会被 twikoo 替换，只有 body 是稳定锚点
+			ownerRenameObserver.observe(document.body, { childList: true, subtree: true });
+			applyOwnerRename(document);
 		}
 
 		function getCurrentPath() {
@@ -144,7 +148,7 @@ const OWNER_DISPLAY_NICK = "YuJing";
 			// 改名观察器必须在 twikoo.init() 之前挂上：init 的 Promise 在部分环境
 			// （无头/弱网）迟迟不 resolve，而评论列表已经先渲染出来了，
 			// 挂在 await 之后会漏掉首批评论（2026-10-01 无头实测踩过）。
-			startOwnerRename(commentEl);
+			startOwnerRename();
 
 			try {
 				await loadTwikooScript();
@@ -157,6 +161,8 @@ const OWNER_DISPLAY_NICK = "YuJing";
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
+				// init 完成后补扫一次，兜住 init 内部同步渲染的首屏评论
+				applyOwnerRename(document);
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
 			}
