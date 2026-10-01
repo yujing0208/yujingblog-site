@@ -19,15 +19,15 @@ const types = ["education", "work", "project", "achievement"] as const;
 const getTypeIcon = (type: string) => {
 	switch (type) {
 		case "education":
-			return "material-symbols:school";
+			return "lucide:graduation-cap";
 		case "work":
-			return "material-symbols:work";
+			return "lucide:briefcase";
 		case "project":
-			return "material-symbols:code";
+			return "lucide:code";
 		case "achievement":
-			return "material-symbols:emoji-events";
+			return "lucide:trophy";
 		default:
-			return "material-symbols:apps";
+			return "lucide:layout-grid";
 	}
 };
 
@@ -50,7 +50,7 @@ const filterTabs = [
 	{
 		value: "all",
 		label: i18n(I18nKey.friendsFilterAll),
-		icon: "material-symbols:apps",
+		icon: "lucide:layout-grid",
 		count: timelineData.length,
 	},
 	...types.map((type) => ({
@@ -93,7 +93,7 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
 
 			<div id="no-results" class="hidden text-center py-16">
 				<Icon
-					name="material-symbols:search-off-rounded"
+					name="lucide:search-x"
 					class="text-6xl text-black/15 dark:text-white/15 mb-4"
 				/>
 				<p class="text-black/40 dark:text-white/40 text-lg">
