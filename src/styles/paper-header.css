@@ -28,6 +28,47 @@
 /* 顶部 36px 渐隐纸色（照搬，但本博客已有 .top-gradient-highlight，
    为避免与 body::before 纸张底纹冲突，这里不重定义 body::before） */
 
+/* ============================================================================
+ *  吸顶（2026-10-01 需求：导航栏在每个页面都一样，且滚动时始终钉在屏幕最上方，不会消失）
+ *
+ *  根因（实测）：参考站 flatpaper 的 .site-header 是 <body> 的直接子元素 ——
+ *  父级是整页高度，所以它的 position:sticky 有足够的滚动余地。
+ *  本站多包了两层：#top-row > #navbar-wrapper > .site-header，
+ *  后两层的高度都恰好等于导航自身（72px），sticky 放在 .site-header 上等于
+ *  没有可滚动空间 —— 实测 /archive/、/about/ 滚动后 rectTop 直接变 -872（整条滚走）。
+ *  首页之所以能吸顶，是因为 #top-row.paper-hero-layout 单独写了 sticky。
+ *
+ *  修正：sticky 上提到最外层 #top-row（它的父级是 body，整页高），钉在 top:16px
+ *  （与参考站 .site-header 的 top 值一致：首屏在 28px 处，钉住后到 16px）。
+ *  顶部那 28px 留白改由 #top-row 的 margin-top 提供 —— 留在 .site-header 上会在
+ *  钉住时叠成 44px（margin 参与 sticky 定位，参考站是靠「margin 被 sticky 吸收」
+ *  才做到 28→16 的，本站多一层，只能把 margin 上移一层）。
+ * ========================================================================= */
+#top-row {
+	position: sticky;
+	top: 16px;
+	z-index: 50;
+}
+
+body:not(.paper-layout) #top-row {
+	margin-top: 28px;
+}
+
+body:not(.paper-layout) #top-row .site-header {
+	margin-top: 0;
+}
+
+/* 永不隐藏：swup 切页（swup-hooks）与 back-to-top 处理器会给 #navbar-wrapper
+   加 .navbar-hidden（opacity:0 + -translate-y-16）。需求要求导航栏任何时刻都可见，
+   这里直接反制，JS 那侧的加类逻辑不用动。 */
+#navbar-wrapper.navbar-hidden,
+#top-row.navbar-hidden,
+#top-row .navbar-hidden {
+	opacity: 1 !important;
+	transform: none !important;
+	translate: none !important;
+}
+
 .site-header {
 	position: sticky;
 	top: 16px;

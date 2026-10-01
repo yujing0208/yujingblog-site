@@ -28,7 +28,7 @@ import PaperHero from "@components/layout/PaperHero.astro";
 import RightSideBar from "@components/layout/RightSideBar.astro";
 import IconifyLoader from "@components/misc/IconifyLoader.astro";
 import Footer from "@components/organisms/footer/Footer.astro";
-import Navbar from "@components/organisms/navigation/Navbar.astro";
+import PaperHeader from "@components/organisms/navigation/PaperHeader.astro";
 import PaperProfileCard from "@components/widgets/sidebar/PaperProfileCard.astro";
 import PaperCategoriesCard from "@components/widgets/sidebar/PaperCategoriesCard.astro";
 import PaperTagsCard from "@components/widgets/sidebar/PaperTagsCard.astro";
@@ -111,20 +111,20 @@ const tagCount = tagList.length;
 	/>
 	)}
 
-	<!-- 导航（照搬 FlatPaper .site-header：width min(94%,1300px) + margin-inline auto + sticky top 16px）
+	<!-- 导航（与内页 MainGridLayout 完全一致：同一个 PaperHeader = FlatPaper .site-header）
+	     2026-10-01 需求：首页导航重做，按其它页面的来 —— 之前首页用的是 Mizuki 原生
+	     Navbar（带 paperHeader 变体），与内页 PaperHeader 长得不一样；现在全站统一
+	     到 PaperHeader（brand + site-nav + 搜索/配色/主题 + 移动端面板齐备）。
 	     宽度用 94%（非 94vw）：本站 html 有 scrollbar-gutter: stable 占 15px，
-	     vw 含滚动条宽度会让导航整体偏 7px；百分比基于内容盒计算才准。 -->
+	     vw 含滚动条宽度会让导航整体偏 7px；百分比基于内容盒计算才准。
+	     吸顶由 paper-header.css 的 #top-row 规则统一承担（top:16px，永不消失）。 -->
 	<div
 		id="top-row"
 		class="paper-hero-layout z-50 pointer-events-none relative"
 		style="width: min(94%, var(--page-width)); margin-inline: auto;"
 	>
-		<div
-			id="navbar-wrapper"
-			class="pointer-events-auto sticky transition-all"
-			style="top: 16px;"
-		>
-			<Navbar paperHeader={true} />
+		<div id="navbar-wrapper" class="pointer-events-auto">
+			<PaperHeader />
 		</div>
 	</div>
 
