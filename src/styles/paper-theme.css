@@ -360,6 +360,20 @@ html.paper-style-cross body::before {
 	}
 }
 
+/* ⚠️ 入场动画会吃掉悬停上浮（2026-10-01 实测根因）
+   侧栏 widget 由 SidebarColumn 注入 .onload-animation，其 animation
+   （fade-in-up）用 fill-mode: forwards 收尾；而按 CSS 层叠规则，「CSS 动画」
+   优先级高于普通声明 —— 悬停时 :hover 的 transform: translateY(-3px) 会被
+   动画末帧 to{transform:translateY(0)} 盖掉。
+   CDP 实测：鼠标移到音乐卡上，computed transform 仍是 matrix(1,0,0,1,0,0)。
+   用 !important 抬回（!important 普通声明 > CSS 动画），恢复 -3px 上浮手感。 */
+@media (hover: hover) and (pointer: fine) {
+	.card-base.onload-animation:hover,
+	.side-card.onload-animation:hover {
+		transform: translateY(-3px) !important;
+	}
+}
+
 .card-base:hover::after {
 	box-shadow: var(--shadow);
 }

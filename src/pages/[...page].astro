@@ -36,8 +36,11 @@ const { page } = Astro.props;
 const len = page.data.length;
 const isFirstPage = (page.currentPage ?? 1) === 1;
 
-// 仅首页第 1 页用手账布局；第 2 页起沿用原布局，避免分页样式割裂
-const paperMode = usePaperHome && isFirstPage;
+// 手账布局对分页全量生效（2026-10-01 需求）：
+// 「首页点下一页后的所有页面都要和首页保持一样的文章卡片布局，都是双侧边栏」。
+// 旧逻辑只在第 1 页用纸片布局，第 2 页起回落 MainGridLayout，
+// 导致卡片样式与侧栏（单/双栏）跟首页完全不一样。现在统一走 PaperHomeLayout。
+const paperMode = usePaperHome;
 
 // 置顶文章（照搬 flatpaper 的 featured：取 frontmatter pinned 的文章，
 // 按时间倒序，最多 4 篇 —— 对应原版 keys.slice(0, 4)）
@@ -76,8 +79,10 @@ const featuredSlugs = featuredItems.map((it) => it.slug);
 {
 	paperMode ? (
 		<PaperHomeLayout title={siteConfig.title} description={siteConfig.subtitle}>
-			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）；原分类条 CategoryBar 已按需求移除 */}
-			<PaperFeaturedCarousel items={featuredItems} autoplay={5000} />
+			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）：仅第 1 页显示。
+			    第 2 页起 page.data 里没有置顶文章（getRawSortedPosts 把 pinned 排在最前），
+			    显式用 isFirstPage 关掉，保证分页页与首页的差异只有「列表内容」。 */}
+			{isFirstPage && <PaperFeaturedCarousel items={featuredItems} autoplay={5000} />}
 			<PaperPostList page={page} heading="最新文章" />
 		</PaperHomeLayout>
 	) : (

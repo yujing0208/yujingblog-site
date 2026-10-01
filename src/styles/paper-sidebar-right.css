@@ -689,7 +689,21 @@ a.site-info__item:focus-visible strong {
  *     左栏胶带规则在 paper-theme.css 只覆盖 #sidebar，这里是右栏对应版本。
  *     音乐组件按需求要有「胶带便签」感：右上角黄胶带 + 纸片基座（纸面层
  *     由 paper-theme.css 的 .card-base::after 已提供）。
+ *
+ *     ⚠️ 为什么还要写 widget-layout.card-base（2026-10-01 实测根因）
+ *     同一张音乐卡在三种容器里出现，容器类名各不相同，只按容器写必然漏：
+ *       · 内页（archive/tags/…）→ .right-sidebar-container   ✅ 原本能中
+ *       · 手账首页（PaperHomeLayout 视觉右栏 .paper-sidebar--left）
+ *         → 里面挂的是 #right-sidebar，class 只有 sidebar-column-root，
+ *           完全没有 .right-sidebar-container            ❌ 原本漏了
+ *       · 移动端抽屉（SideBar 的 showMobile 组）→ 抽屉容器     ❌ 原本也漏
+ *     CDP 实测：首页音乐卡 ::before content = none（没有胶带）。
+ *     因此这里直接锚定组件渲染出的元素名 widget-layout.card-base（该元素只由
+ *     src/components/widgets/common/WidgetLayout.astro 产出，命中面精确），
+ *     容器选择器保留不动，三种场景一次性覆盖。
  * ========================================================================== */
+widget-layout.card-base::before,
+.paper-sidebar--left .card-base::before,
 .right-sidebar-container .card-base::before,
 #paper-home-content .right-sidebar-container .card-base::before {
 	content: "";
