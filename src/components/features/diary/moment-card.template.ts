@@ -167,7 +167,7 @@ function renderMomentCard(
 	}
 
 	const locationHtml = moment.location
-		? `<span class="flex items-center gap-1"><iconify-icon icon="material-symbols:location-on" class="text-xs w-3.5 h-3.5"></iconify-icon>${escapeHtml(moment.location)}</span>`
+		? `<span class="flex items-center gap-1"><iconify-icon icon="lucide:map-pin" class="text-xs w-3.5 h-3.5"></iconify-icon>${escapeHtml(moment.location)}</span>`
 		: "";
 
 	return `
@@ -179,7 +179,7 @@ function renderMomentCard(
 			<hr class="border-t border-black/5 dark:border-white/5 my-3" />
 			<div class="flex items-center justify-between text-xs text-black/50 dark:text-white/50 flex-wrap gap-2">
 				<div class="flex items-center gap-1.5">
-					<iconify-icon icon="material-symbols:schedule" class="text-xs w-3.5 h-3.5"></iconify-icon>
+					<iconify-icon icon="lucide:clock" class="text-xs w-3.5 h-3.5"></iconify-icon>
 					<time datetime="${escapeHtml(moment.date)}">${relativeTime}</time>
 				</div>
 				<div class="flex items-center gap-3">
