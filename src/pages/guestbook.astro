@@ -15,10 +15,10 @@ const description = "在这里给我留言，畅所欲言～";
 const twikooEnvId = String(commentConfig.twikoo?.envId ?? "").replace(/\/+$/, "");
 const pageSize = 15;
 const avatarFallback = "/images/icon-error.webp";
-// 站长评论过滤（2026-10-01）：只作用于上方留言墙 —— 站长的留言不贴墙。
+// 站长评论改名（2026-10-01 定稿）：不隐藏任何评论；站长留言照常上墙/展示，
+//   但昵称统一显示为 YuJing（下方 Twikoo 评论区的改名逻辑在 Twikoo.astro，全站生效）。
 //   owner-hashes = sha256(站长邮箱 2803673194@qq.com)（weavatar 头像 URL 特征）
 //   owner-nicks  = 站长常用昵称兜底
-// 下方 Twikoo 评论区不受影响，站长评论正常展示（用户 2026-10-01 定稿）。
 ---
 
 <MainGridLayout title={title} description={description}>
@@ -45,6 +45,7 @@ const avatarFallback = "/images/icon-error.webp";
 				data-avatar-fallback={avatarFallback}
 				data-guestbook-owner-nicks="余京,YuJing"
 				data-guestbook-owner-hashes="9735dc7774c6444b2647f25b595d67d5668e1d0ad38aa11557f3a7a4954a1abb"
+				data-guestbook-owner-display="YuJing"
 				aria-label="留言板"
 			>
 				<div class="guestbook-wall__summary" hidden>
@@ -78,7 +79,7 @@ const avatarFallback = "/images/icon-error.webp";
 	</div>
 
 	<!-- 下方评论区：Twikoo（复用骨架自带组件：懒加载 + Swup 钩子 + 本地 SDK）
-	     注意：站长评论只在上方留言墙隐藏（data-guestbook-owner-*），下方评论区正常展示 -->
+	     站长评论正常展示，昵称统一显示为 YuJing（改名逻辑在 Twikoo.astro） -->
 	<section class="comments-section" aria-label="评论">
 		<header class="comments-section__head">
 			<h2>
