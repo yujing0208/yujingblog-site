@@ -345,10 +345,12 @@ html.paper-style-cross body::before {
 }
 
 /* 铺纸层：置于内容之下
-   照搬参考站 .post-card::after / .welcome-card::after 的手法：
-   纸层常驻 box-shadow + opacity:0，hover 时 opacity 渐显到 1（0.22s）。
-   之前是 hover 直接切 box-shadow，没有过渡 → 卡片上浮「硬切」阴影，手感发涩
-   （实测就是「不够丝滑」的根因）。 */
+   2026-10-01 修正：纸层必须「常驻」。之前为了做阴影淡入把它设成 opacity:0、
+   hover 才淡入 —— 结果静止态露出的是宿主自身的背景（Mizuki widget-layout 是
+   16px 大圆角），悬停才被这张 4px 撕边纸盖住，看起来就是「静止弧角不对、
+   悬停才恢复」（参考站 .side-card 本体就是 4px 圆角）。
+   现在纸层常驻保证四角始终是撕边小圆角；「纸影渐显」改由 box-shadow 过渡承担
+   （静止 none，hover 渐到 var(--shadow)，同样 0.22s ease 丝滑）。 */
 .card-base::after {
 	content: "";
 	position: absolute;
@@ -360,9 +362,8 @@ html.paper-style-cross body::before {
 	z-index: -1;
 	border-radius: 4px;
 	filter: url(#paper-edge);
-	box-shadow: var(--shadow);
-	opacity: 0;
-	transition: opacity 0.22s ease;
+	box-shadow: none;
+	transition: box-shadow 0.22s ease;
 	pointer-events: none;
 }
 
@@ -387,7 +388,7 @@ html.paper-style-cross body::before {
 	.card-base:hover::after,
 	.side-card:hover::after,
 	.welcome-card:hover::after {
-		opacity: 1;
+		box-shadow: var(--shadow);
 	}
 }
 
