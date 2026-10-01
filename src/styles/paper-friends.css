@@ -682,6 +682,18 @@ img.friend-card__avatar {
 	color: var(--ink-soft);
 }
 
+/* Tailwind preflight 会重置 ol 序号，这里恢复（参考站列表有编号） */
+.friends-intro .flatpaper-note__body ol {
+	margin: 6px 0;
+	padding-left: 24px;
+	list-style: decimal;
+}
+
+.friends-intro .flatpaper-note__body ol li {
+	margin: 4px 0;
+	padding-left: 2px;
+}
+
 .flatpaper-note__body code {
 	padding: 1px 6px;
 	border-radius: 4px;
