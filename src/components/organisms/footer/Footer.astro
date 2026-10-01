@@ -286,7 +286,10 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 <style>
 	.site-footer {
 		box-sizing: border-box;
+		/* 与参考站一致：内容宽度上限 64rem，居中，不通栏 */
 		width: 100%;
+		max-width: 64rem;
+		margin-inline: auto;
 		margin-top: 2.5rem;
 		background: var(--paper);
 		border: 1px dashed var(--paper-dash);
