@@ -15,14 +15,15 @@ import { profileConfig, siteConfig } from "../../../config";
 
 const currentYear = new Date().getFullYear();
 
-// ---- 备案信息（先留空，填写后自动显示；policeIcon 为公安备案图标路径）----
-const beian = {
-	icp: "", // 例如：粤ICP备XXXXXXXX号
-	police: "", // 例如：粤公网安备XXXXXXXXXXXXX号
-	policeIcon: "", // 例如：/assets/images/beian.png
-	icpUrl: "https://beian.miit.gov.cn/#/Integrated/index",
-	policeUrl: "",
-};
+// ---- 备案信息（条目列表：label + 链接 + 可选官方图标，填写后自动显示）----
+const beianList = [
+	{ label: "萌ICP备20262110号", href: "https://icp.gov.moe/?keyword=20262110", icon: "" },
+	{
+		label: "茶ICP备2026100394号",
+		href: "https://icp.redcha.cn/beian/ICP-2026100394.html",
+		icon: "https://icp.redcha.cn/static/picture/icplogoi.png",
+	},
+];
 
 // ---- 签名区（svg 先留空）：把自己的签名 SVG 放进 .site-footer__signature 即可 ----
 const hasSignature = false;
@@ -193,23 +194,17 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 						</>
 					))}
 				</div>
-				{(beian.icp || beian.police) && (
+				{beianList.length > 0 && (
 					<div class="site-footer__beian">
-						{beian.icp && (
-							<a href={beian.icpUrl} target="_blank" rel="noreferrer">{beian.icp}</a>
-						)}
-						{beian.icp && beian.police && <span aria-hidden="true">/</span>}
-						{beian.police && (
-							<a
-								class="site-footer__police-link"
-								href={beian.policeUrl || "https://beian.mps.gov.cn/"}
-								target="_blank"
-								rel="noreferrer"
-							>
-								{beian.policeIcon && <img src={beian.policeIcon} alt="公安备案图标" />}
-								<span>{beian.police}</span>
-							</a>
-						)}
+						{beianList.map((item, index) => (
+							<>
+								{index > 0 && <span aria-hidden="true">/</span>}
+								<a href={item.href} target="_blank" rel="noreferrer">
+									{item.icon && <img src={item.icon} alt="备案图标" loading="lazy" />}
+									<span>{item.label}</span>
+								</a>
+							</>
+						))}
 					</div>
 				)}
 			</div>
@@ -318,7 +313,7 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		width: 100vw;
 		margin-left: -50vw;
 		margin-top: 4rem;
-		background: color-mix(in oklch, var(--paper) 94%, var(--ink));
+		background: var(--paper); /* 与组件卡片同色 */
 		color: var(--ink);
 	}
 
@@ -562,15 +557,16 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		gap: 0.25rem;
 	}
 
-	.site-footer__police-link {
+	.site-footer__beian a {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
 	}
 
-	.site-footer__police-link img {
-		width: 1rem;
-		height: 1rem;
+	/* 备案官方图标：按备案局要求高约 20px，随行内文字对齐 */
+	.site-footer__beian img {
+		width: auto;
+		height: 1.25rem;
 		object-fit: contain;
 	}
 
