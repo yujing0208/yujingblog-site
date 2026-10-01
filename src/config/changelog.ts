@@ -22,6 +22,18 @@ import type { ChangelogItem } from "../types/changelog";
 
 export const changelogData: ChangelogItem[] = [
 	{
+		id: "2026-10-01-21-fonts-icons-flatpaper",
+		date: "2026-10-01 21:43:00",
+		version: "2026.10.1",
+		type: "improvement",
+		category: "外观",
+		module: "全站字体、全站图标",
+		title: "全站字体与图标对齐 FlatPaper 演示站",
+		description:
+			"字体：正文拉丁字符迁移到 New Tegomin、中文迁移到 Noto Sans SC（fontsource 自托管），等宽字体保持 JetBrains Mono，--font-sans/--font-mono 栈与 homulilly.com 一致。图标：全站约 330 处 Material Symbols/MDI 线性图标迁移为 Lucide 线条图标（新增 @iconify-json/lucide 并注册进 buildIconInclude），品牌类图标（GitHub/B站/微信/TikTok/技术栈 logo）保持原样。",
+	},
+
+	{
 		id: "2026-10-01-02-hero-title-marker",
 		date: "2026-10-01 17:30:00",
 		version: "2026.10.1",
