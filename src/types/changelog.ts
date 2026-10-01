@@ -38,17 +38,17 @@ export const CHANGELOG_TYPE_META: Record<
 	ChangelogType,
 	{ label: string; icon: string; color: string }
 > = {
-	feature: { label: "新增", icon: "mdi:plus-circle", color: "var(--green)" },
+	feature: { label: "新增", icon: "lucide:circle-plus", color: "var(--green)" },
 	improvement: {
 		label: "优化",
-		icon: "mdi:trending-up",
+		icon: "lucide:trending-up",
 		color: "var(--primary)",
 	},
-	fix: { label: "修复", icon: "mdi:bug", color: "var(--orange)" },
-	removal: { label: "删除", icon: "mdi:minus-circle", color: "var(--red)" },
+	fix: { label: "修复", icon: "lucide:bug", color: "var(--orange)" },
+	removal: { label: "删除", icon: "lucide:circle-minus", color: "var(--red)" },
 	other: {
 		label: "其他",
-		icon: "mdi:dots-horizontal-circle",
+		icon: "lucide:ellipsis",
 		color: "var(--grey)",
 	},
 };
