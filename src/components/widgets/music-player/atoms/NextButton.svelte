@@ -15,5 +15,5 @@ const { onclick, disabled = false }: Props = $props();
 	{onclick}
 	{disabled}
 >
-	<Icon icon="material-symbols:skip-next" class="text-xl" />
+	<Icon icon="lucide:skip-forward" class="text-xl" />
 </button>
