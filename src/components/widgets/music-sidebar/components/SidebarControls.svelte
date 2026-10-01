@@ -29,10 +29,10 @@ const {
 
 const repeatIcon = $derived(
 	isShuffled
-		? "material-symbols:shuffle-rounded"
+		? "lucide:shuffle"
 		: repeatMode === 1
-			? "material-symbols:repeat-one-rounded"
-			: "material-symbols:repeat-rounded",
+			? "lucide:repeat-1"
+			: "lucide:repeat",
 );
 
 const modeActive = $derived(isShuffled || repeatMode > 0);
@@ -55,7 +55,7 @@ const modeActive = $derived(isShuffled || repeatMode > 0);
 		onclick={onTogglePlaylist}
 		aria-label="Playlist"
 	>
-		<Icon icon="material-symbols:queue-music-rounded" />
+		<Icon icon="lucide:list-plus" />
 	</button>
 </div>
 
