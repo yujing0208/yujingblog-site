@@ -1225,13 +1225,23 @@ body[data-note-style="disabled"] .flatpaper-note__icon {
 	line-height: 1.55 !important;
 }
 
-/* 16.5 行号列（参考站 td.gutter：透明底 + 虚线右边界 + 灰色数字） */
+/* 16.5 行号列（参考站 td.gutter：透明底 + 虚线右边界 + 灰色数字）
+ *
+ * 关键（易错点）：参考站的左右内边距写在 `td.gutter pre` 上，`td.gutter`
+ * 自身只有 `padding: 14px 0`。这里必须照抄这个分层 —— 如果像早先那样把
+ * `padding: 0 14px 0 18px` 加在 `.gutter` 上，Expressive Code 自带的
+ * `.ln`（inline-flex + 自带 padding/min-width）会按内边距盒再算一次宽度，
+ * 结果 `.ln` 溢出到 46px，数字右缘直接压到虚线（实测间距 -0.8px）。
+ * 改成「.gutter padding:0 + .ln 承担 padding」后，数字右缘距虚线恢复 14px
+ * （与参考站实测 14.5px 一致）。 */
 .markdown-content.markdown-content .expressive-code .ec-line .gutter {
 	position: sticky;
 	left: 0;
 	z-index: 2;
-	width: 48px;
-	padding: 0 14px 0 18px !important;
+	box-sizing: border-box !important;
+	width: 48px !important;
+	min-width: 48px !important;
+	padding: 0 !important;
 	background: transparent !important;
 	border-right: 1px dashed var(--dash) !important;
 	color: var(--muted) !important;
@@ -1242,8 +1252,20 @@ body[data-note-style="disabled"] .flatpaper-note__icon {
 	user-select: none;
 }
 
+/* 等价于参考站 `td.gutter pre { padding: 0 14px 0 18px }` */
 .markdown-content.markdown-content .expressive-code .ec-line .gutter .ln {
-	color: inherit !important;
+	display: block !important;
+	box-sizing: border-box !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	padding: 0 14px 0 18px !important;
+	text-align: right !important;
+	font-family: var(--fp-mono) !important;
+	font-size: inherit !important;
+	line-height: inherit !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
 }
 
 /* 16.6 代码列 */
@@ -1284,19 +1306,50 @@ body[data-note-style="disabled"] .flatpaper-note__icon {
 	background: transparent !important;
 }
 
-.markdown-content.markdown-content .expressive-code .frame .copy-btn .copy-btn-icon {
-	position: static !important;
-	transform: none !important;
-	/* 参考站 .code-copy .lucide 实测 13px */
+/* 图标：Expressive Code 的包装层与两个 svg 同名（都带 .copy-btn-icon），
+ * 早先一条 `.copy-btn .copy-btn-icon { position: static }` 把包装层和 svg
+ * 一起改坏，导致 svg 失去定位基准、图标整体偏到按钮左上角外（实测图标
+ * 中心比 38px 顶栏中心高 13px）。正确做法是分层：
+ *   包装层 → 13×13 相对定位基准（由顶栏 flex 居中）
+ *   两个 svg → 绝对定位叠在同一格，仅靠 opacity 切换「复制/已复制」
+ *
+ * 另一个坑：`expressive-code.css` 里 `@apply ... -translate-x-1/2 -translate-y-1/2`
+ * 在 Tailwind v4 下编译成的是独立 `translate` 属性（不是 `transform`），
+ * 只写 `transform: none` 清不掉，必须同时 `translate: none`。
+ * 否则包装层被额外平移 -6.5px,-6.5px，图标就落到按钮左上角外面。 */
+.markdown-content.markdown-content
+	.expressive-code
+	.frame
+	.copy-btn
+	> .copy-btn-icon {
+	position: relative !important;
+	inset: auto !important;
+	display: block !important;
 	width: 13px !important;
 	height: 13px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	transform: none !important;
+	translate: none !important;
 	transition: opacity 0.2s ease;
 }
 
-.markdown-content.markdown-content .expressive-code .frame .copy-btn svg {
+.markdown-content.markdown-content
+	.expressive-code
+	.frame
+	.copy-btn
+	.copy-btn-icon
+	> svg {
+	position: absolute !important;
+	inset: 0 !important;
+	display: block !important;
 	width: 13px !important;
 	height: 13px !important;
+	margin: 0 !important;
+	transform: none !important;
+	translate: none !important;
 	fill: currentColor !important;
+	transition: opacity 0.2s ease;
 }
 
 .markdown-content.markdown-content .expressive-code .frame .copy-btn .copy-icon {

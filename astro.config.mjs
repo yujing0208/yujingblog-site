@@ -39,6 +39,7 @@ import { rehypeFlatpaperTabs } from "./src/plugins/rehype-flatpaper-tabs.mjs";
 import { remarkEscapeNumericColons } from "./src/plugins/remark-escape-numeric-colons.mjs";
 import { remarkFixGithubAdmonitions } from "./src/plugins/remark-fix-github-admonitions.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
+import { remarkStripLeadingTitle } from "./src/plugins/remark-strip-leading-title.mjs";
 import { remarkWikiLink } from "./src/plugins/remark-wiki-link.mjs";
 
 // https://astro.build/config
@@ -218,6 +219,9 @@ export default defineConfig({
 	markdown: {
 		processor: unified({
 			remarkPlugins: [
+				// 必须最先跑：在 sectionize / directive 改造 AST 之前，
+				// 把正文开头的 `# 标题` 摘掉（避免与文章头 H1 重复）
+				remarkStripLeadingTitle,
 				remarkMath,
 				remarkContent,
 				remarkFixGithubAdmonitions,
@@ -226,7 +230,7 @@ export default defineConfig({
 				remarkSectionize,
 				parseDirectiveNode,
 				remarkMermaid,
-			remarkWikiLink,
+				remarkWikiLink,
 			],
 			rehypePlugins: [
 				rehypeKatex,

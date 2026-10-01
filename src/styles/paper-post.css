@@ -6,7 +6,11 @@
    仅由 src/pages/posts/[...slug].astro 引入（文章页专属）
    ============================================================ */
 
-/* ---------- 题图：出血到卡顶左右边缘，底部渐隐融入纸色 ---------- */
+/* ---------- 题图：出血到卡顶左右边缘，底部渐隐融入纸色 ----------
+   几何全部照搬演示站 .article-top-img / .article-paper--with-top-img：
+     图高 clamp(220px,31vw,360px)（≤960px → clamp(190px,42vw,300px)；
+     ≤600px → clamp(170px,52vw,240px)）
+     标题区上移 208px 压图（≤960px → 174px；≤600px → clamp(132px,44vw,188px)） */
 .fp-article-top-img {
 	position: relative;
 	/* 抵消 card-base 的 pt-6(1.5rem) / px-6(1.5rem)；md 断点横向 padding 为 px-9(2.25rem) */
@@ -19,6 +23,18 @@
 @media (min-width: 768px) {
 	.fp-article-top-img {
 		margin: -1.5rem -2.25rem 0;
+	}
+}
+
+@media (max-width: 960px) {
+	.fp-article-top-img {
+		height: clamp(190px, 42vw, 300px);
+	}
+}
+
+@media (max-width: 600px) {
+	.fp-article-top-img {
+		height: clamp(170px, 52vw, 240px);
 	}
 }
 
@@ -90,12 +106,33 @@
 	justify-content: flex-end;
 }
 
-/* 有题图时标题区上移压图（照搬 --article-top-img-overlap 机制，数值按
-   本站 header 只装 pill+h1（meta 行在外）折算） */
+/* 有题图时标题区上移压图（照搬 --article-top-img-overlap 机制）。
+   演示站 header = 「分类 + 标题 + meta 行 + padding-bottom 18px + 1px 虚线」，
+   本站 meta 行在 header 之外，所以要扣掉这段「尾巴」18+1+14+21 = 54px：
+     header 高度 = max(min-height, 内容高) − 54 才是标题底边的落点
+   于是 min-height 取「演示站 header 高度 − 54」：
+     ≥961px：208 / (148−54)=94      ≤960px：174 / (146−54)=92
+     ≤600px：clamp(132px,44vw,188px) / (174−54)=120
+   实测（1280 视口，图高 360）：标题底边落在卡顶下 273px，演示站 272px，
+   差 1px 来自本站卡片自身的 1px 边框。 */
 .fp-article-header--overlap {
-	margin-top: -96px;
-	min-height: 96px;
+	margin-top: -208px;
+	min-height: 94px;
 	text-shadow: 0 1px 14px var(--card-bg);
+}
+
+@media (max-width: 960px) {
+	.fp-article-header--overlap {
+		margin-top: -174px;
+		min-height: 92px;
+	}
+}
+
+@media (max-width: 600px) {
+	.fp-article-header--overlap {
+		margin-top: calc(-1 * clamp(132px, 44vw, 188px));
+		min-height: 120px;
+	}
 }
 
 .fp-article-header .label-pill {
@@ -103,18 +140,15 @@
 	margin-bottom: 14px;
 }
 
+/* 对齐演示站 `.article-header h1`：全断点 28px / 1.4 / margin-top 4px / var(--ink)
+   （本站原本 md 以上放大到 30px，会让压图后的落点与演示站差 2px 且多占一行高度） */
 .fp-article-title {
-	margin: 0;
+	margin: 4px 0 0;
 	font-size: 28px;
 	line-height: 1.4;
 	font-weight: 800;
 	letter-spacing: 0;
-}
-
-@media (min-width: 768px) {
-	.fp-article-title {
-		font-size: 30px;
-	}
+	color: var(--ink);
 }
 
 /* ---------- 「最新文章」卡（latest-posts.ejs；复用 recent-card 基础样式） ---------- */
