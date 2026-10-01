@@ -47,6 +47,9 @@
   /* 等宽栈同 FlatPaper：JetBrains Mono 打头 */
   --font-mono: var(--font-jetbrains-mono), "Fira Code", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", "Cascadia Code", monospace;
 
+  /* 展示型大标题栈：英文 → New Tegomin（手账风），中文 → Ma Shan Zheng 楷书（手写风），风格统一 */
+  --font-display: var(--font-body), var(--font-hand), var(--font-cjk), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", serif;
+
   --breakpoint-md: 768px;
   --breakpoint-lg: 1280px;
   --breakpoint-xl: 1920px;
