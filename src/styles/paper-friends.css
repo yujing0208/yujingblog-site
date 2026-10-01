@@ -47,7 +47,10 @@
 /* ---------- 网格 ---------- */
 .friends-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	/* 参考站源码是 minmax(240px,1fr)，但其内容列较窄只排得出 2 列宽卡；
+	   本站 article-paper 内容列更宽，照抄 240 会变 3 列窄卡、观感不符。
+	   这里用 300px 断点复现参考站的「一行 2 张宽卡」视觉效果。 */
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 	gap: 14px;
 	margin: 0;
 	padding: 0;
