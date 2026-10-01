@@ -77,7 +77,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 								{getLocalizedName(link.name)}
 							</div>
 							<Icon
-								name="material-symbols:keyboard-arrow-down-rounded"
+								name="lucide:chevron-down"
 								is:inline
 								class="transition text-[1.25rem] text-[var(--primary)] mobile-dropdown-arrow duration-200"
 							/>
@@ -107,7 +107,7 @@ const processedLinks: ProcessedNavBarLink[] = (
 									</div>
 									{child.external && (
 										<Icon
-											name="fa7-solid:arrow-up-right-from-square"
+											name="lucide:external-link"
 											is:inline
 											class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
 										/>
@@ -137,14 +137,14 @@ const processedLinks: ProcessedNavBarLink[] = (
 						</div>
 						{!link.external && (
 							<Icon
-								name="material-symbols:chevron-right-rounded"
+								name="lucide:chevron-right"
 								is:inline
 								class="transition text-[1.25rem] text-[var(--primary)]"
 							/>
 						)}
 						{link.external && (
 							<Icon
-								name="fa7-solid:arrow-up-right-from-square"
+								name="lucide:external-link"
 								is:inline
 								class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
 							/>
