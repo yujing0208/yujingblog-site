@@ -1,0 +1,332 @@
+---
+/**
+ * 用户协议弹窗（页脚「用户协议」按钮触发）。
+ * 挂载在 Layout.astro 的 <slot /> 之后（Swup 容器之外），整个会话只存在一份 DOM。
+ * 弹窗样式与 PrivacyModal 保持一致（paper 主题）。
+ */
+---
+
+<dialog id="user-agreement-modal" class="paper-modal" aria-labelledby="user-agreement-modal-title">
+	<div class="paper-modal__overlay" data-close-modal></div>
+	<div class="paper-modal__panel">
+		<div class="paper-modal__header">
+			<h2 class="paper-modal__title" id="user-agreement-modal-title">用户协议</h2>
+			<button class="paper-modal__close" type="button" data-close-modal aria-label="关闭">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+		</div>
+		<div class="paper-modal__body">
+			<p class="paper-modal__meta"><strong>更新日期：</strong>2026 年 10 月 1 日<br /><strong>生效日期：</strong>2026 年 10 月 1 日</p>
+
+			<h2>适用范围</h2>
+			<p>本协议适用于你访问<strong>「YuJing的记忆终端」（yujingblog.top）</strong>，以及使用文章评论、留言墙等互动功能的行为。继续浏览本站或提交评论、留言，即表示你已阅读、理解并同意遵守本协议及本站的隐私政策。</p>
+
+			<h2>评论及留言规则</h2>
+			<p>请在交流中保持友善、理性和尊重。你不得利用本站发布、传播或实施以下行为：</p>
+			<ul>
+				<li>发布任何违反中华人民共和国法律法规的内容。</li>
+				<li>发布任何侵犯他人合法权益的内容，包括但不限于隐私、名誉、肖像、著作权、商标权和其他知识产权。</li>
+				<li>恶意攻击、辱骂、骚扰、威胁、歧视其他用户或任何第三方。</li>
+				<li>发布垃圾广告、恶意推广、刷屏、灌水，或与讨论主题明显无关的重复内容。</li>
+				<li>利用本站进行网络诈骗、钓鱼、传播恶意软件，或发布可能危害网络和信息安全的内容。</li>
+				<li>绕越或试图绕越本站的审核、限流、封禁等管理措施。</li>
+				<li>冒充他人、伪造身份，或收集、公开他人的个人信息。</li>
+			</ul>
+
+			<h2>内容与访问管理</h2>
+			<p>你应对自己发布的评论和留言负责，并保证拥有发布该等内容所需的合法权利。站长有权在不另行通知的情况下删除违规内容，或限制违规者继续使用本站的互动功能。</p>
+			<p>如发现涉嫌违法违规、严重侵权或危及本站安全的内容，本站可保留相关记录，并在法律法规要求或必要时向有关部门提供协助。对管理措施有疑问时，可通过文末联系方式说明情况；本站会结合实际情况处理，但不承诺恢复已删除内容或访问权限。</p>
+
+			<h2>知识产权与内容授权</h2>
+			<p>本站原创文章、页面设计和其他受保护内容的权利归站长所有。未经授权，请勿复制、转载、镜像或用于商业用途；法律法规允许的合理使用除外。如需转载，请先联系并注明出处。</p>
+			<p>你发布评论或留言时，即授予本站为展示、存储、备份、审核、删除和维护互动功能所必需的非独占、免费的使用许可。该许可不改变你对原创内容依法享有的权利。</p>
+
+			<h2>免责声明</h2>
+			<p>本站内容仅用于个人记录、学习交流和一般信息参考，不构成任何专业意见、承诺或担保。你应结合自身情况独立判断，并对据此采取的行动负责。</p>
+			<p>评论、留言和外部链接中的内容由其发布者或运营者负责，不代表本站立场。本站会在合理范围内处理明显违规内容，但不保证所有内容均能及时发现，也不对第三方网站的可用性、内容、安全性或隐私实践承担责任。</p>
+			<p>因网络故障、不可抗力、第三方服务异常、维护升级或超出合理控制范围的原因导致本站暂时无法访问、内容延迟或数据丢失的，本站会尽力恢复，但不承担由此产生的间接损失。</p>
+
+			<h2>未成年人条款</h2>
+			<p>未满 14 周岁的未成年人应在监护人同意和指导下使用评论、留言等互动功能。监护人应协助未成年人理解本协议，并对其使用行为进行必要的引导。</p>
+
+			<h2>其他条款</h2>
+			<p>本站可以根据功能、管理需要或法律法规变化更新本协议，更新后的版本将在本站公布并标明日期。继续使用本站即视为接受更新后的协议。</p>
+			<p>本协议的订立、执行和解释适用中华人民共和国法律。因本协议或使用本站产生争议时，双方应先友好协商；协商不成的，依法向有管辖权的人民法院解决。</p>
+			<p>如对本协议或内容管理有疑问，欢迎通过 <a href="https://github.com/yujing0208" target="_blank" rel="noreferrer">GitHub</a> 或本站评论区联系。</p>
+		</div>
+		<div class="paper-modal__footer">
+			<button class="paper-modal__confirm" type="button" data-close-modal>我知道了</button>
+		</div>
+	</div>
+</dialog>
+
+<script>
+	// 与 PrivacyModal 相同：容器外持久 DOM，幂等初始化
+	function initUserAgreementModal() {
+		const modal = document.getElementById("user-agreement-modal") as HTMLDialogElement | null;
+		if (!modal || modal.dataset.init === "1") return;
+		modal.dataset.init = "1";
+
+		const openModal = () => {
+			modal.showModal();
+			document.body.style.overflow = "hidden";
+		};
+		const closeModal = () => {
+			modal.close();
+			document.body.style.overflow = "";
+		};
+
+		modal.querySelectorAll("[data-close-modal]").forEach((element) => {
+			element.addEventListener("click", closeModal);
+		});
+		modal.addEventListener("click", (event) => {
+			if (event.target === modal) closeModal();
+		});
+		modal.addEventListener("close", () => {
+			document.body.style.overflow = "";
+		});
+		modal.addEventListener("cancel", (event) => {
+			event.preventDefault();
+			closeModal();
+		});
+
+		window.addEventListener("user-agreement:open", openModal);
+		(window as unknown as Record<string, unknown>).openUserAgreementModal = openModal;
+	}
+
+	initUserAgreementModal();
+	document.addEventListener("astro:page-load", initUserAgreementModal);
+</script>
+
+<style>
+	/* 与 PrivacyModal.astro 完全一致的纸质风格弹窗样式 */
+	.paper-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
+		padding: 1rem;
+		border: none;
+		background: transparent;
+		overflow: visible;
+	}
+
+	.paper-modal[open] {
+		display: flex;
+	}
+
+	.paper-modal::backdrop {
+		background: transparent;
+	}
+
+	.paper-modal__overlay {
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		background: rgba(44, 53, 49, 0.42);
+		backdrop-filter: blur(3px);
+		animation: paper-modal-fade-in 0.2s ease-out;
+	}
+
+	:global(html.dark) .paper-modal__overlay {
+		background: rgba(0, 0, 0, 0.55);
+	}
+
+	.paper-modal__panel {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: 40rem;
+		max-height: 85vh;
+		background: var(--paper, #fffdf6);
+		border: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+		border-radius: 14px;
+		box-shadow: var(--shadow, 0 18px 38px rgba(82, 64, 38, 0.18));
+		color: var(--ink, #2c3531);
+		animation: paper-modal-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes paper-modal-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes paper-modal-slide-in {
+		from {
+			opacity: 0;
+			transform: translateY(-0.75rem) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	.paper-modal__header {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.1rem 1.4rem;
+		border-bottom: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.paper-modal__title {
+		margin: 0;
+		color: var(--ink, #2c3531);
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+
+	.paper-modal__close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.1rem;
+		height: 2.1rem;
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--muted, #8a8678);
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			color 0.15s,
+			border-color 0.15s;
+	}
+
+	.paper-modal__close:hover {
+		border-color: var(--paper-dash, rgba(89, 62, 30, 0.24));
+		background: var(--paper-warm, #f8f2e2);
+		color: var(--ink, #2c3531);
+	}
+
+	.paper-modal__close svg {
+		width: 1.15rem;
+		height: 1.15rem;
+	}
+
+	.paper-modal__body {
+		flex: 1;
+		padding: 1.4rem 1.5rem;
+		overflow-y: auto;
+		color: var(--ink-soft, #4a5751);
+		line-height: 1.85;
+	}
+
+	.paper-modal__meta {
+		margin: 0 0 1rem;
+		font-size: 0.85rem;
+		color: var(--muted, #8a8678);
+	}
+
+	.paper-modal__body h2 {
+		position: relative;
+		margin: 1.6rem 0 0.7rem;
+		padding-left: 0.7rem;
+		color: var(--ink, #2c3531);
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.4;
+	}
+
+	.paper-modal__body h2::before {
+		position: absolute;
+		top: 0.2em;
+		bottom: 0.2em;
+		left: 0;
+		width: 3px;
+		border-radius: 2px;
+		background: var(--fp-accent, var(--color-accent, #6fa67c));
+		content: "";
+	}
+
+	.paper-modal__body h2:first-child {
+		margin-top: 0;
+	}
+
+	.paper-modal__body p {
+		margin: 0 0 0.75rem;
+		font-size: 0.875rem;
+	}
+
+	.paper-modal__body ul {
+		margin: 0 0 0.75rem;
+		padding-left: 1.25rem;
+	}
+
+	.paper-modal__body li {
+		margin-bottom: 0.4rem;
+		font-size: 0.875rem;
+	}
+
+	.paper-modal__body strong {
+		color: var(--ink, #2c3531);
+		font-weight: 600;
+	}
+
+	.paper-modal__body a {
+		color: var(--fp-accent-strong, var(--color-accent-strong, #4f8862));
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.paper-modal__body a:hover {
+		color: var(--fp-accent, var(--color-accent, #6fa67c));
+	}
+
+	.paper-modal__footer {
+		display: flex;
+		flex-shrink: 0;
+		justify-content: flex-end;
+		padding: 1rem 1.4rem;
+		border-top: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.paper-modal__confirm {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.55rem 1.25rem;
+		border: none;
+		border-radius: 9px;
+		background: var(--color-accent, #6fa67c);
+		color: #fff;
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			opacity 0.15s;
+	}
+
+	.paper-modal__confirm:hover {
+		background: var(--color-accent-strong, #4f8862);
+	}
+
+	@media (max-width: 640px) {
+		.paper-modal__panel {
+			max-width: calc(100% - 1rem);
+			max-height: 90vh;
+		}
+
+		.paper-modal__body {
+			padding: 1rem 1.1rem;
+		}
+
+		.paper-modal__header,
+		.paper-modal__footer {
+			padding: 0.85rem 1.1rem;
+		}
+	}
+</style>
