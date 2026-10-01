@@ -268,7 +268,7 @@ onDestroy(() => {
 		}}
 	>
 		<Icon
-			icon="material-symbols:search"
+			icon="lucide:search"
 			class="absolute text-[1.25rem] pointer-events-none {isDesktopSearchExpanded
 				? 'left-3'
 				: 'left-1/2 -translate-x-1/2'} transition top-1/2 -translate-y-1/2 {isDesktopSearchExpanded
@@ -302,7 +302,7 @@ onDestroy(() => {
 	id="search-switch"
 	class="btn-plain scale-animation lg:hidden! rounded-lg w-11 h-11 active:scale-90"
 >
-	<Icon icon="material-symbols:search" class="text-[1.25rem]"></Icon>
+	<Icon icon="lucide:search" class="text-[1.25rem]"></Icon>
 </button>
 
 <!-- search panel -->
@@ -319,7 +319,7 @@ onDestroy(() => {
   "
 	>
 		<Icon
-			icon="material-symbols:search"
+			icon="lucide:search"
 			class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"
 		></Icon>
 		<input
@@ -341,7 +341,7 @@ onDestroy(() => {
 				class="transition text-90 inline-flex font-bold group-hover:text-(--primary)"
 			>
 				{item.meta.title}<Icon
-					icon="fa7-solid:chevron-right"
+					icon="lucide:chevron-right"
 					class="transition text-[0.75rem] translate-x-1 my-auto text-(--primary)"
 				></Icon>
 			</div>
