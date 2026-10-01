@@ -23,7 +23,7 @@ const filterTabs = [
 	{
 		value: "all",
 		label: i18n(I18nKey.albumsFilterAll),
-		icon: "material-symbols:apps",
+		icon: "lucide:layout-grid",
 		count: albumsData.length,
 	},
 	...allTags.map((tag) => ({
@@ -69,7 +69,7 @@ const subtitle = i18n(I18nKey.albumsSubtitle);
 
 			<div id="no-results" class="hidden text-center py-16">
 				<Icon
-					name="material-symbols:search-off-rounded"
+					name="lucide:search-x"
 					class="text-6xl text-black/15 dark:text-white/15 mb-4"
 				/>
 				<p class="text-black/40 dark:text-white/40 text-lg">
@@ -81,7 +81,7 @@ const subtitle = i18n(I18nKey.albumsSubtitle);
 				albumsData.length === 0 && (
 					<div class="text-center py-16">
 						<Icon
-							name="material-symbols:photo-library"
+							name="lucide:images"
 							is:inline
 							class="text-6xl text-black/15 dark:text-white/15 mb-4"
 						/>
