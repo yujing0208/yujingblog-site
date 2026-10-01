@@ -61,7 +61,7 @@ const title = $derived(
 				aria-label="Back to today"
 			>
 				<Icon
-					icon="material-symbols:restart-alt-rounded"
+					icon="lucide:rotate-ccw"
 					class="text-xl"
 				/>
 			</button>
@@ -75,7 +75,7 @@ const title = $derived(
 			onclick={onPrevMonth}
 			aria-label="Previous month"
 		>
-			<Icon icon="material-symbols:arrow-back-ios-new" class="text-lg" />
+			<Icon icon="lucide:chevron-left" class="text-lg" />
 		</button>
 		<button
 			type="button"
@@ -87,7 +87,7 @@ const title = $derived(
 			aria-label="Next month"
 		>
 			<Icon
-				icon="material-symbols:arrow-back-ios-new"
+				icon="lucide:chevron-left"
 				class="text-lg rotate-180"
 			/>
 		</button>
