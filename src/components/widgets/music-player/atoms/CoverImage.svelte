@@ -71,7 +71,7 @@ const containerClasses = {
 			</div>
 		{:else}
 			<Icon
-				icon="lucide:music"
+				icon="material-symbols:music-note"
 				class="text-white text-lg"
 			/>
 		{/if}
@@ -108,12 +108,12 @@ const containerClasses = {
 				<Icon icon="eos-icons:loading" class="text-white text-xl" />
 			{:else if isPlaying}
 				<Icon
-					icon="lucide:pause"
+					icon="material-symbols:pause"
 					class="text-white text-xl"
 				/>
 			{:else}
 				<Icon
-					icon="lucide:play"
+					icon="material-symbols:play-arrow"
 					class="text-white text-xl"
 				/>
 			{/if}
