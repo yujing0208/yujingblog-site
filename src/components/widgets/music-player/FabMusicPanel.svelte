@@ -93,7 +93,7 @@ function setVolume(volume: number) {
 			aria-label="打开 3D 音乐可视化"
 			data-swup-ignore
 		>
-			<Icon icon="material-symbols:view-in-ar" class="text-lg" />
+			<Icon icon="lucide:box" class="text-lg" />
 		</a>
 	</div>
 
