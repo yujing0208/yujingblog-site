@@ -82,10 +82,10 @@ const dateLabel = published
 	<div class="post-card-copy">
 		<h3>
 			<a href={url}>
-				{pinned && <Icon name="mdi:pin" class="post-card-pin" />}
+				{pinned && <Icon name="lucide:pin" class="post-card-pin" />}
 				{title}
 				{encrypted && password && (
-					<Icon name="material-symbols:lock-outline" class="post-card-lock" is:inline />
+					<Icon name="lucide:lock" class="post-card-lock" is:inline />
 				)}
 			</a>
 		</h3>
@@ -96,7 +96,7 @@ const dateLabel = published
 			tags && tags.length > 0 && (
 				<div class="meta-line meta-line--tags">
 					<span class="meta-tags">
-						<Icon name="material-symbols:tag" class="meta-icon" is:inline />
+						<Icon name="lucide:tag" class="meta-icon" is:inline />
 						{tags.map((tag) => (
 							<a class="meta-tag-link" href={getTagUrl(tag)}>
 								#{tag.trim()}
@@ -110,13 +110,13 @@ const dateLabel = published
 		<div class="meta-line meta-line--tax">
 			{dateLabel && (
 				<span class="meta-date">
-					<Icon name="material-symbols:calendar-month-outline" class="meta-icon" is:inline />
+					<Icon name="lucide:calendar" class="meta-icon" is:inline />
 					{dateLabel}
 				</span>
 			)}
 			{category && (
 				<span class="meta-cat">
-					<Icon name="material-symbols:folder-outline" class="meta-icon" is:inline />
+					<Icon name="lucide:folder" class="meta-icon" is:inline />
 					<a class="meta-cat-link" href={`/categories/${category}/`}>
 						{category}
 					</a>
