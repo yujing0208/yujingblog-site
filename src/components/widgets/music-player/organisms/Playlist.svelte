@@ -39,7 +39,7 @@ const {
 				{i18n(Key.musicPlayerPlaylist)}
 			</h3>
 			<button class="btn-plain w-8 h-8 rounded-lg" onclick={onClose}>
-				<Icon icon="lucide:x" class="text-lg" />
+				<Icon icon="material-symbols:close" class="text-lg" />
 			</button>
 		</div>
 		<div
