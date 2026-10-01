@@ -56,7 +56,7 @@ const {
     {!hideUpdateDate && updated && updated.getTime() !== published.getTime() && (
         <div class="flex items-center">
             <div class="meta-icon">
-                <Icon name="material-symbols:edit-calendar-outline-rounded" class="text-xl"></Icon>
+                <Icon name="lucide:calendar-check" class="text-xl"></Icon>
             </div>
             <span class="text-50 text-sm font-medium">{formatDateToYYYYMMDD(updated)}</span>
         </div>
@@ -76,7 +76,7 @@ const {
     {!showOnlyBasicMeta && (
         <div class:list={["items-center", {"flex": !hideTagsForMobile, "hidden md:flex": hideTagsForMobile}]}>
             <div class="meta-icon">
-                <Icon name="material-symbols:tag-rounded" class="text-xl"></Icon>
+                <Icon name="lucide:tag" class="text-xl"></Icon>
             </div>
             <div class="flex flex-row flex-nowrap items-center">
                 {(tags && tags.length > 0) && tags.map((tag, i) => (
@@ -97,7 +97,7 @@ const {
     {!isHome && id && (
         <div class="flex items-center umami-page-views hidden" data-id={id}>
             <div class="meta-icon">
-                <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
+                <Icon name="lucide:eye" class="text-xl"></Icon>
             </div>
             <span class="text-50 text-sm font-medium page-views-display">{i18n(I18nKey.pageViewsLoading)}</span>
         </div>
