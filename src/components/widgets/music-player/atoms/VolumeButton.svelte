@@ -12,10 +12,10 @@ const { volume, isMuted, onclick }: Props = $props();
 
 <button class="btn-plain w-8 h-8 rounded-lg" {onclick}>
 	{#if isMuted || volume === 0}
-		<Icon icon="material-symbols:volume-off" class="text-lg" />
+		<Icon icon="lucide:volume-x" class="text-lg" />
 	{:else if volume < 0.5}
-		<Icon icon="material-symbols:volume-down" class="text-lg" />
+		<Icon icon="lucide:volume-1" class="text-lg" />
 	{:else}
-		<Icon icon="material-symbols:volume-up" class="text-lg" />
+		<Icon icon="lucide:volume-2" class="text-lg" />
 	{/if}
 </button>
