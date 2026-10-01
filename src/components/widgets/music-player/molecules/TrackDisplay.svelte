@@ -78,7 +78,7 @@ const {
 				}}
 				title={i18n(Key.musicPlayerHide)}
 			>
-				<Icon icon="lucide:eye-off" class="text-lg" />
+				<Icon icon="material-symbols:visibility-off" class="text-lg" />
 			</button>
 			<button
 				class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
@@ -87,7 +87,7 @@ const {
 					onExpandClick?.();
 				}}
 			>
-				<Icon icon="lucide:chevron-up" class="text-lg" />
+				<Icon icon="material-symbols:expand-less" class="text-lg" />
 			</button>
 		</div>
 	{:else}
@@ -106,7 +106,7 @@ const {
 					title={i18n(Key.musicPlayerHide)}
 				>
 					<Icon
-						icon="lucide:eye-off"
+						icon="material-symbols:visibility-off"
 						class="text-lg"
 					/>
 				</button>
@@ -116,7 +116,7 @@ const {
 					onclick={onPlaylistClick}
 					title={i18n(Key.musicPlayerPlaylist)}
 				>
-					<Icon icon="lucide:list-plus" class="text-lg" />
+					<Icon icon="material-symbols:queue-music" class="text-lg" />
 				</button>
 				<a
 					href="/music/"
@@ -125,7 +125,7 @@ const {
 					aria-label="打开 3D 音乐可视化"
 					data-swup-ignore
 				>
-					<Icon icon="lucide:box" class="text-lg" />
+					<Icon icon="material-symbols:view-in-ar" class="text-lg" />
 				</a>
 			</div>
 		{/if}
