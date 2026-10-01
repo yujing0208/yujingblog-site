@@ -75,6 +75,15 @@ export default defineConfig({
 			fallbacks: [],
 			optimizedFallbacks: false,
 		},
+		{
+			// 中文手写楷书（站题/大标题用，--font-display）：与 New Tegomin 的手账气质配套
+			name: "Ma Shan Zheng",
+			cssVariable: "--font-hand",
+			provider: fontProviders.fontsource(),
+			styles: ["normal"],
+			fallbacks: [],
+			optimizedFallbacks: false,
+		},
 	],
 
 	site: siteConfig.siteURL,
