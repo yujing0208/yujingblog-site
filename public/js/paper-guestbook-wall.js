@@ -81,6 +81,27 @@
 			var pageSize = parseInt(wall.dataset.pageSize, 10);
 			if (!pageSize || pageSize < 1) pageSize = 12;
 
+			// 站长评论过滤（2026-10-01）：data-guestbook-owner-nicks / data-guestbook-owner-hashes
+			// 由 guestbook.astro 注入；命中昵称或头像哈希的留言不上墙
+			var ownerNicks = String(wall.dataset.guestbookOwnerNicks || "")
+				.split(",")
+				.map(function (s) { return s.trim(); })
+				.filter(Boolean);
+			var ownerHashes = String(wall.dataset.guestbookOwnerHashes || "")
+				.split(",")
+				.map(function (s) { return s.trim(); })
+				.filter(Boolean);
+
+			function isOwnerItem(nick, avatar) {
+				var n = String(nick || "").trim();
+				if (n && ownerNicks.indexOf(n) !== -1) return true;
+				var a = String(avatar || "");
+				for (var i = 0; i < ownerHashes.length; i++) {
+					if (a.indexOf(ownerHashes[i]) !== -1) return true;
+				}
+				return false;
+			}
+
 			var shown = 0;
 			var messages = [];
 			var originalMessages = [];
@@ -413,10 +434,14 @@
 										if (!text && !images.length) return null;
 										var created = item.created;
 										if (typeof created !== "number") created = parseInt(created, 10) || 0;
+										var nick = String(item.nick || "").trim() || t("anonymous");
+										var avatar = safeRemoteUrl(item.avatar, "image");
+										// 站长自己的留言不上墙
+										if (isOwnerItem(nick, avatar)) return null;
 										return {
 											anchorId: String(item.id || ""),
-											nick: String(item.nick || "").trim() || t("anonymous"),
-											avatar: safeRemoteUrl(item.avatar, "image"),
+											nick: nick,
+											avatar: avatar,
 											text: text,
 											images: images,
 											created: created,
