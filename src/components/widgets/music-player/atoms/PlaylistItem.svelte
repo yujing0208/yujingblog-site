@@ -50,11 +50,11 @@ function getAssetPath(path: string): string {
 	<div class="w-6 h-6 flex items-center justify-center">
 		{#if isCurrent && isPlaying}
 			<Icon
-				icon="material-symbols:graphic-eq"
+				icon="lucide:audio-lines"
 				class="text-[var(--primary)] animate-pulse"
 			/>
 		{:else if isCurrent}
-			<Icon icon="material-symbols:pause" class="text-[var(--primary)]" />
+			<Icon icon="lucide:pause" class="text-[var(--primary)]" />
 		{:else}
 			<span class="text-sm text-[var(--content-meta)]">{index + 1}</span>
 		{/if}
