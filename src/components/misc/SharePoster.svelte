@@ -454,14 +454,14 @@ function portal(node: HTMLElement) {
 				>
 					{#if copied}
 						<Icon
-							icon="material-symbols:check"
+							icon="lucide:check"
 							width="20"
 							height="20"
 						/>
 						<span>{i18n(I18nKey.copied)}</span>
 					{:else}
 						<Icon
-							icon="material-symbols:link"
+							icon="lucide:link"
 							width="20"
 							height="20"
 						/>
@@ -475,7 +475,7 @@ function portal(node: HTMLElement) {
 					disabled={!posterImage}
 				>
 					<Icon
-						icon="material-symbols:download"
+						icon="lucide:download"
 						width="20"
 						height="20"
 					/>
