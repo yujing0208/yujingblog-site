@@ -142,10 +142,14 @@
 			link.addEventListener("click", function (event) {
 				var href = link.getAttribute("href") || "";
 				if (href.charAt(0) !== "#") return;
-				var target = document.getElementById(href.slice(1));
-				if (!target) return;
-				event.preventDefault();
-				scrollToHome();
+			var target = document.getElementById(href.slice(1));
+			if (!target) return;
+			event.preventDefault();
+			// Swup listens on document and rewrites the URL (history.replaceState)
+			// for same-page hash links. Stop propagation so it never sees the click:
+			// the reference site is plain Hexo (no Swup) and keeps a clean URL.
+			if (event.stopPropagation) event.stopPropagation();
+			scrollToHome();
 			});
 		});
 

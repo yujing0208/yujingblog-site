@@ -320,6 +320,10 @@
 				var target = id ? document.getElementById(id) : null;
 				if (!target) return;
 				event.preventDefault();
+				// Swup listens on document and rewrites the URL for same-page hash
+				// links (history.replaceState), which adds #paper-home-content to
+				// the address bar. Stop propagation so Swup never sees the click.
+				if (event.stopPropagation) event.stopPropagation();
 				var header = document.querySelector(".site-header");
 				var offset = header ? header.getBoundingClientRect().height + 56 : 56;
 				window.scrollTo({
