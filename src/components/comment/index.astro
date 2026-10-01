@@ -32,10 +32,31 @@ const commentEnabled = post ? (post.data.comment ?? true) : true;
 
 {
 	commentConfig?.enable && commentEnabled && path && (
-		<div id="comments" class="card-base p-6 mb-4">
+		/* 照搬 flatpaper 的评论区外壳（.comments-section，样式见 paper-comments.css）：
+		   独立纸卡 + 顶部胶带 + 「评论」标题，与参考博客一模一样 */
+		<section id="comments" class="comments-section" aria-label="评论">
+			<header class="comments-section__head">
+				<h2>
+					<svg
+						class="lucide"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.8"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path
+							d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+						></path>
+					</svg>
+					评论
+				</h2>
+			</header>
 			{commentService === "twikoo" && <Twikoo path={path} />}
 			{commentService === "giscus" && <Giscus path={path} />}
 			{commentService === "" && null}
-		</div>
+		</section>
 	)
 }
