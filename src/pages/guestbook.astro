@@ -15,10 +15,10 @@ const description = "在这里给我留言，畅所欲言～";
 const twikooEnvId = String(commentConfig.twikoo?.envId ?? "").replace(/\/+$/, "");
 const pageSize = 15;
 const avatarFallback = "/images/icon-error.webp";
-// 站长评论过滤（2026-10-01）：留言墙 + 下方评论区都不显示站长自己的留言。
+// 站长评论过滤（2026-10-01）：只作用于上方留言墙 —— 站长的留言不贴墙。
 //   owner-hashes = sha256(站长邮箱 2803673194@qq.com)（weavatar 头像 URL 特征）
 //   owner-nicks  = 站长常用昵称兜底
-// 改动这两个值时，Twikoo.astro 里 hideOwner 的同名常量要一起改。
+// 下方 Twikoo 评论区不受影响，站长评论正常展示（用户 2026-10-01 定稿）。
 ---
 
 <MainGridLayout title={title} description={description}>
@@ -77,7 +77,8 @@ const avatarFallback = "/images/icon-error.webp";
 		</article>
 	</div>
 
-	<!-- 下方评论区：Twikoo（复用骨架自带组件：懒加载 + Swup 钩子 + 本地 SDK） -->
+	<!-- 下方评论区：Twikoo（复用骨架自带组件：懒加载 + Swup 钩子 + 本地 SDK）
+	     注意：站长评论只在上方留言墙隐藏（data-guestbook-owner-*），下方评论区正常展示 -->
 	<section class="comments-section" aria-label="评论">
 		<header class="comments-section__head">
 			<h2>
@@ -97,6 +98,6 @@ const avatarFallback = "/images/icon-error.webp";
 				评论
 			</h2>
 		</header>
-		<Twikoo path="/guestbook/" hideOwner />
+		<Twikoo path="/guestbook/" />
 	</section>
 </MainGridLayout>
