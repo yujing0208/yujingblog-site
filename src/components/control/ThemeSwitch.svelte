@@ -90,7 +90,7 @@ function toggleScheme() {
 		class:rotate-180={mode !== LIGHT_MODE}
 	>
 		<Icon
-			icon="material-symbols:wb-sunny-outline-rounded"
+			icon="lucide:sun"
 			class="text-[1.25rem]"
 		></Icon>
 	</div>
@@ -100,7 +100,7 @@ function toggleScheme() {
 		class:rotate-180={mode !== DARK_MODE}
 	>
 		<Icon
-			icon="material-symbols:dark-mode-outline-rounded"
+			icon="lucide:moon"
 			class="text-[1.25rem]"
 		></Icon>
 	</div>
