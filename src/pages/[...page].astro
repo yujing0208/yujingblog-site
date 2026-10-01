@@ -27,7 +27,11 @@ export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
 	// 初始化文章 ID 映射（用于 permalink 功能）
 	initPostIdMap(allBlogPosts);
-	return paginate(allBlogPosts, { pageSize: PAGE_SIZE });
+	// 置顶文章已在首页轮播展示，「最新文章」列表按发布时间正常排序（不在列表置顶）
+	const listPosts = allBlogPosts
+		.slice()
+		.sort((a, b) => (new Date(a.data.published) > new Date(b.data.published) ? -1 : 1));
+	return paginate(listPosts, { pageSize: PAGE_SIZE });
 }) satisfies GetStaticPaths;
 // https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
 
@@ -43,10 +47,14 @@ const isFirstPage = (page.currentPage ?? 1) === 1;
 const paperMode = usePaperHome;
 
 // 置顶文章（照搬 flatpaper 的 featured：取 frontmatter pinned 的文章，
-// 按时间倒序，最多 4 篇 —— 对应原版 keys.slice(0, 4)）
+// 按时间倒序，最多 4 篇 —— 对应原版 keys.slice(0, 4)）。
+// 从全量文章中取，而不是 page.data：列表已按时间排序后，
+// 置顶文章可能落在第 2 页及以后，轮播不应受分页影响。
 const featuredItems = paperMode
 	? await (async () => {
-			const pinned = page.data.filter((e: any) => e.data.pinned === true).slice(0, 4);
+			const pinned = (await getSortedPosts())
+				.filter((e: any) => e.data.pinned === true)
+				.slice(0, 4);
 			const items = [];
 			for (const entry of pinned) {
 				const { remarkPluginFrontmatter } = await render(entry);
@@ -72,8 +80,6 @@ const featuredItems = paperMode
 			return items;
 		})()
 	: [];
-// 置顶文章已进轮播，从「最新文章」列表排除，避免重复
-const featuredSlugs = featuredItems.map((it) => it.slug);
 ---
 
 {
@@ -84,8 +90,8 @@ const featuredSlugs = featuredItems.map((it) => it.slug);
 			showHero={isFirstPage}
 		>
 			{/* 置顶文章轮播（照搬 flatpaper featured-carousel）：仅第 1 页显示。
-			    第 2 页起 page.data 里没有置顶文章（getRawSortedPosts 把 pinned 排在最前），
-			    显式用 isFirstPage 关掉，保证分页页与首页的差异只有「列表内容」。 */}
+			    轮播单独取全量置顶文章；「最新文章」列表已按时间正常排序，
+			    置顶文章只按其发布日期出现在列表中的正常位置。 */}
 			{isFirstPage && <PaperFeaturedCarousel items={featuredItems} autoplay={5000} />}
 			<PaperPostList page={page} heading="最新文章" />
 		</PaperHomeLayout>
