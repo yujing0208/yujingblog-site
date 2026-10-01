@@ -28,7 +28,7 @@ const {
 		{onclick}
 		{disabled}
 	>
-		<Icon icon="material-symbols:shuffle" class="text-lg" />
+		<Icon icon="lucide:shuffle" class="text-lg" />
 	</button>
 {:else}
 	<button
@@ -38,11 +38,11 @@ const {
 		{onclick}
 	>
 		{#if repeatMode === 1}
-			<Icon icon="material-symbols:repeat-one" class="text-lg" />
+			<Icon icon="lucide:repeat-1" class="text-lg" />
 		{:else if repeatMode === 2}
-			<Icon icon="material-symbols:repeat" class="text-lg" />
+			<Icon icon="lucide:repeat" class="text-lg" />
 		{:else}
-			<Icon icon="material-symbols:repeat" class="text-lg opacity-50" />
+			<Icon icon="lucide:repeat" class="text-lg opacity-50" />
 		{/if}
 	</button>
 {/if}
