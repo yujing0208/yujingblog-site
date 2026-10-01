@@ -21,37 +21,37 @@ const categoryMeta: CategoryMeta[] = [
 		id: "dev",
 		name: "开发",
 		description: "写代码时离不开的站点",
-		icon: "material-symbols:code",
+		icon: "lucide:code",
 	},
 	{
 		id: "project",
 		name: "项目",
 		description: "好用的开源项目",
-		icon: "material-symbols:folder",
+		icon: "lucide:folder",
 	},
 	{
 		id: "design",
 		name: "设计",
 		description: "配色、图标与灵感来源",
-		icon: "material-symbols:brush",
+		icon: "lucide:brush",
 	},
 	{
 		id: "ai",
 		name: "AI",
 		description: "大模型与 AI 工具",
-		icon: "material-symbols:smart-toy",
+		icon: "lucide:bot",
 	},
 	{
 		id: "tool",
 		name: "工具",
 		description: "顺手的在线小工具",
-		icon: "material-symbols:build",
+		icon: "lucide:wrench",
 	},
 	{
 		id: "resource",
 		name: "资源",
 		description: "文档、教程、阅读与下载",
-		icon: "material-symbols:menu-book",
+		icon: "lucide:book-open",
 	},
 ];
 
