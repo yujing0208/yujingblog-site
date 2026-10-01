@@ -52,18 +52,12 @@ export default defineConfig({
 			styles: ["normal", "italic"],
 		},
 		{
-			name: "ZenMaruGothic-Medium",
+			// 对齐 homulilly.com（FlatPaper 演示站）的字体方案：
+			// 拉丁字符用 New Tegomin，中文回退到 --font-cjk（Noto Sans SC）。
+			name: "New Tegomin",
 			cssVariable: "--font-body",
-			provider: fontProviders.local(),
-			options: {
-				variants: [
-					{
-						src: ["./src/assets/fonts/ZenMaruGothic-Medium.ttf"],
-						weight: "500",
-						style: "normal",
-					},
-				],
-			},
+			provider: fontProviders.fontsource(),
+			styles: ["normal"],
 			// These variables are composed into --font-sans below. Keep their
 			// fallback lists empty; otherwise a system fallback after this Latin
 			// font prevents the following CJK font from ever being considered.
@@ -71,18 +65,11 @@ export default defineConfig({
 			optimizedFallbacks: false,
 		},
 		{
-			name: "Loli",
+			// 中文正文：Noto Sans SC（fontsource 自托管，构建期下载、按 unicode-range 子集加载）
+			name: "Noto Sans SC",
 			cssVariable: "--font-cjk",
-			provider: fontProviders.local(),
-			options: {
-				variants: [
-					{
-						src: ["./src/assets/fonts/loli.ttf"],
-						weight: "400",
-						style: "normal",
-					},
-				],
-			},
+			provider: fontProviders.fontsource(),
+			styles: ["normal"],
 			// The final system fallback belongs to --font-sans, not this partial
 			// CJK font stack.
 			fallbacks: [],
