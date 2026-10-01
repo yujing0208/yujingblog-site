@@ -556,7 +556,7 @@ body:not(.paper-layout) #top-row .site-header {
 }
 
 /* ---- theme-toggle（照搬 header.styl 549-602） ----
-   2026-10-01：tape 方框化（2px 虚线 + 手绘圆角）+ 静止倾角 -2deg
+   2026-10-01：tape 方框化（2px 虚线 + 手绘圆角）+ 静止倾角 -2deg（复刻 flatpaper 实机）
    （参考站实机 matrix -2deg）；hover 回正上浮微放大。 */
 .theme-toggle {
 	display: inline-grid;
