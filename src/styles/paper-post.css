@@ -3,7 +3,7 @@
    移植基础：flatpaper source/css/_partials/_page/article.styl
    —— 题图（article-top-img）+ 文章头（article-header / label-pill）
    token 映射：--paper → --card-bg（Mizuki 卡片纸色）
-   仅由 src/pages/posts/[...slug].astro 引入（文章页专属）
+   仅由 src/pages/posts/[...slug].astro 与 src/pages/[...permalink].astro 引入（文章页专属）
    ============================================================ */
 
 /* ---------- 题图：出血到卡顶左右边缘，底部渐隐融入纸色 ----------

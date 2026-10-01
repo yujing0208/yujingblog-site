@@ -1202,6 +1202,37 @@ body[data-note-style="disabled"] .flatpaper-note__icon {
 	pointer-events: none;
 }
 
+/* 16.3b 代码块文件名标题（首行注释是文件路径时，EC 生成 .frame.has-title
+ *        + .header > span.title）
+ *
+ * 关键（易错点）：16.2 把 `.header` 设成 `justify-content: flex-end`，
+ * 于是文件名标题会右对齐、直接压到右侧的复制按钮上（实测长文件名如
+ * `src/types/config.ts` 与复制图标重叠）。参考站的做法是给标签
+ * `margin-right: auto` 顶到最左（demo_style.css .code-lang），按钮靠右。
+ * 所以这里：有标题时标题左对齐（与语言徽标同位），并限宽省略。 */
+.markdown-content.markdown-content .expressive-code .frame.has-title > .header {
+	justify-content: flex-start !important;
+}
+
+.markdown-content.markdown-content
+	.expressive-code
+	.frame.has-title
+	> .header
+	.title {
+	margin: 0 auto 0 0 !important;
+	padding: 0 !important;
+	max-width: calc(100% - 72px) !important;
+	color: var(--ink) !important;
+	font-family: var(--fp-mono) !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.02em !important;
+	text-transform: none !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
 /* 16.4 代码区 */
 .markdown-content.markdown-content .expressive-code .frame > pre {
 	display: block !important;

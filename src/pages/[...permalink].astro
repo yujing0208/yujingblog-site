@@ -19,8 +19,6 @@ import {
 } from "@components/features/posts";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import {
@@ -29,7 +27,8 @@ import {
 	initPostIdMap,
 } from "@utils/permalink-utils";
 import { getPostPublicDescription } from "@utils/post-card-content";
-import { getFileDirFromPath } from "@utils/url-utils";
+import { getCategoryUrl, getFileDirFromPath } from "@utils/url-utils";
+import "@/styles/paper-post.css";
 import { Icon } from "astro-icon/components";
 import { licenseConfig, shareConfig } from "src/config";
 
@@ -141,68 +140,71 @@ let posterAvatarUrl = profileConfig.avatar;
 				{},
 			]}
 		>
-			<!-- word count and reading time -->
-			<div
-				class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation"
-			>
-				<div class="flex flex-row items-center">
-					<div
-						class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
-					>
-						<Icon name="material-symbols:notes-rounded" />
-					</div>
-					<div class="text-sm">
-						{remarkPluginFrontmatter.words}
-						{" " + i18n(I18nKey.wordsCount)}
-					</div>
-				</div>
-				<div class="flex flex-row items-center">
-					<div
-						class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2"
-					>
-						<Icon
-							name="material-symbols:schedule-outline-rounded"
+			<!-- FlatPaper 题图（对齐演示站 article-top-img）：卡顶出血 + 底部渐隐融合 -->
+			{
+				entry.data.image && siteConfig.showCoverInContent && (
+					<figure class="fp-article-top-img onload-animation">
+						<Image
+							id="post-cover"
+							src={entry.data.image}
+							basePath={getFileDirFromPath(entry.filePath || "")}
+							class="fp-article-cover-img"
+							widths={[640, 1024, 1536, 2048]}
+							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
 						/>
-					</div>
-					<div class="text-sm">
-						{remarkPluginFrontmatter.minutes}
-						{
-							" " +
-								i18n(
-									remarkPluginFrontmatter.minutes === 1
-										? I18nKey.minuteCount
-										: I18nKey.minutesCount,
-								)
-						}
-					</div>
-				</div>
-			</div>
+					</figure>
+				)
+			}
 
-			<!-- title -->
-			<div class="relative onload-animation">
-				<div
+			<!-- FlatPaper 文章头：分类 label-pill + 标题，压在题图渐变尾上 -->
+			<div
+				class:list={[
+					"fp-article-header onload-animation",
+					{
+						"fp-article-header--overlap":
+							entry.data.image && siteConfig.showCoverInContent,
+					},
+				]}
+			>
+				{
+					entry.data.category && (
+						<a
+							class="label-pill"
+							href={getCategoryUrl(entry.data.category)}
+							aria-label={entry.data.category}
+						>
+							<Icon
+								name="material-symbols:folder-outline"
+								class="text-[14px]"
+								is:inline
+							/>
+							{entry.data.category}
+						</a>
+					)
+				}
+				<h1
 					data-pagefind-body
 					data-pagefind-weight="10"
 					data-pagefind-meta="title"
-					class="transition w-full block font-bold mb-3
-                    text-3xl md:text-[2.25rem]/[2.75rem]
-                    text-black/90 dark:text-white/90
-                    md:before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
-                    before:absolute before:top-3 before:-left-4.5"
+					class="fp-article-title transition w-full block font-bold text-black/90 dark:text-white/90"
 				>
 					{entry.data.title}
-				</div>
+				</h1>
 			</div>
 
-			<!-- metadata -->
+			<!-- metadata（字数/阅读时长并入 meta 行，对应 flatpaper meta-line 位） -->
 			<div class="onload-animation">
 				<PostMeta
 					className="mb-5"
 					published={entry.data.published}
 					updated={entry.data.updated}
 					tags={entry.data.tags}
-					category={entry.data.category || undefined}
 					id={entry.id}
+					showEncrypted={isEncrypted}
+					words={remarkPluginFrontmatter.words}
+					minutes={remarkPluginFrontmatter.minutes}
+					showWordCount={true}
+					showReadingTime={true}
 				/>
 				{
 					(!entry.data.image ||
@@ -212,22 +214,6 @@ let posterAvatarUrl = profileConfig.avatar;
 					)
 				}
 			</div>
-
-			{
-				entry.data.image && siteConfig.showCoverInContent && (
-					<>
-						<div class="mt-4" />
-						<Image
-							id="post-cover"
-							src={entry.data.image}
-							basePath={getFileDirFromPath(entry.filePath || "")}
-							class="mb-8 rounded-xl banner-container onload-animation"
-							widths={[640, 1024, 1536, 2048]}
-							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-						/>
-					</>
-				)
-			}
 
 			{
 				isEncrypted ? (
