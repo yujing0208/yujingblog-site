@@ -36,17 +36,17 @@ const getCategoryText = (category: string) => {
 const getCategoryIcon = (category: string) => {
 	switch (category) {
 		case "frontend":
-			return "material-symbols:web";
+			return "lucide:globe";
 		case "backend":
-			return "material-symbols:dns";
+			return "lucide:server";
 		case "database":
-			return "material-symbols:storage";
+			return "lucide:database";
 		case "tools":
-			return "material-symbols:build";
+			return "lucide:wrench";
 		case "other":
-			return "material-symbols:widgets";
+			return "lucide:layout-grid";
 		default:
-			return "material-symbols:category";
+			return "lucide:tags";
 	}
 };
 
@@ -54,7 +54,7 @@ const filterTabs = [
 	{
 		value: "all",
 		label: i18n(I18nKey.friendsFilterAll),
-		icon: "material-symbols:apps",
+		icon: "lucide:layout-grid",
 		count: skillsData.length,
 	},
 	...categories.map((category) => ({
@@ -97,7 +97,7 @@ const subtitle = i18n(I18nKey.skillsSubtitle);
 
 			<div id="no-results" class="hidden text-center py-16">
 				<Icon
-					name="material-symbols:search-off-rounded"
+					name="lucide:search-x"
 					class="text-6xl text-black/15 dark:text-white/15 mb-4"
 				/>
 				<p class="text-black/40 dark:text-white/40 text-lg">
