@@ -15,8 +15,6 @@
  * 1. 卡片容器（照搬 .welcome-card）
  * ------------------------------------------------------------------------ */
 .welcome-card {
-	position: relative;
-	z-index: 1; /* 照搬原版：让卡片成为层叠上下文，h1::after 的 z-index:-1 才不会沉到卡片背景后面 */
 	padding: 18px;
 }
 
@@ -187,6 +185,11 @@
 
 .welcome-card h1 {
 	position: relative;
+	/* 关键：h1 自身成为层叠上下文（z-index:0），整体提升到纸面层（.side-card::after,
+	   z-index:-1，树序在 h1 之后）之上；h1::after 的荧光笔再在其内部沉到文字之下。
+	   原版 FlatPaper 纸面用 ::before（树序在前）所以 -1 平级即可，我们移植版改成
+	   ::after 后必须靠这行修正绘制顺序。 */
+	z-index: 0;
 	display: inline;
 	margin: 0;
 	padding: 0 4px;
