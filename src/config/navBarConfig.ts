@@ -5,24 +5,24 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "首页",
 			url: "/",
-			icon: "material-symbols:home",
+			icon: "lucide:house",
 		},
 		{
 			name: "归档",
 			url: "/archive/",
-			icon: "material-symbols:archive",
+			icon: "lucide:archive",
 		},
 
 		// 自定义一级下拉菜单示例：外部链接集合
 		{
 			name: "链接",
 			url: "/links/",
-			icon: "material-symbols:link",
+			icon: "lucide:link",
 			children: [
 				{
 					name: "网站",
 					url: "/websites/",
-					icon: "material-symbols:public",
+					icon: "lucide:globe",
 				},
 				{
 					name: "抖音",
@@ -52,7 +52,7 @@ export const navBarConfig: NavBarConfig = {
 					name: "Umami.",
 					url: "https://cloud.umami.is/analytics/us/websites",
 					external: true,
-					icon: "bitcoin-icons:cloud-outline",
+					icon: "lucide:cloud",
 				},
 			],
 		},
@@ -61,29 +61,29 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "我的",
 			url: "/content/",
-			icon: "material-symbols:person",
+			icon: "lucide:user",
 			children: [
 				{
 					name: "动态",
 					url: "/diary/",
-					icon: "material-symbols:chat",
+					icon: "lucide:message-circle",
 				},
 				LinkPreset.Anime,
 				LinkPreset.Albums,
 				{
 					name: "设备",
 					url: "/devices/",
-					icon: "material-symbols:devices",
+					icon: "lucide:monitor-smartphone",
 				},
 				{
 					name: "足迹",
 					url: "/footprint/",
-					icon: "material-symbols:map",
+					icon: "lucide:map",
 				},
 				{
 					name: "笔记本",
 					url: "/notebooks/",
-					icon: "material-symbols:menu-book",
+					icon: "lucide:book-open",
 				},
 			],
 		},
@@ -92,27 +92,27 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "关于",
 			url: "/content/",
-			icon: "material-symbols:info",
+			icon: "lucide:info",
 			children: [
 				{
 					name: "关于",
 					url: "/about/",
-					icon: "material-symbols:person",
+					icon: "lucide:user",
 				},
 				{
 					name: "友链",
 					url: "/friends/",
-					icon: "material-symbols:group",
+					icon: "lucide:users",
 				},
 				{
 					name: "时间线",
 					url: "/timeline/",
-					icon: "material-symbols:timeline",
+					icon: "lucide:chart-line",
 				},
 				{
 					name: "更新日志",
 					url: "/changelog/",
-					icon: "material-symbols:history",
+					icon: "lucide:history",
 				},
 			],
 		},
@@ -121,34 +121,34 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "其他",
 			url: "#",
-			icon: "material-symbols:more-horiz",
+			icon: "lucide:ellipsis",
 			children: [
 				{
 					name: "3D 主页",
 					url: "https://home.yujingblog.top",
 					external: true,
-					icon: "material-symbols:home",
+					icon: "lucide:house",
 				},
 				{
 					name: "项目",
 					url: "/projects/",
-					icon: "material-symbols:work",
+					icon: "lucide:briefcase",
 				},
 				{
 					name: "便签墙",
 					url: "https://notes.yujingblog.top/",
 					external: true,
-					icon: "material-symbols:sticky-note",
+					icon: "lucide:sticky-note",
 				},
 				{
 					name: "留言板",
 					url: "/guestbook/",
-					icon: "material-symbols:chat-bubble",
+					icon: "lucide:message-square",
 				},
 				{
 					name: "音乐",
 					url: "/music/",
-					icon: "material-symbols:music-note",
+					icon: "lucide:music",
 				},
 			],
 		},
