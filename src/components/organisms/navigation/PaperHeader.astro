@@ -240,7 +240,10 @@ const brandTitle = siteConfig.title || "FlatPaper";
 <style is:global>
 	/* 隐藏载体：Search 的浮层（#search-panel）与 MobileTOC 浮层是 absolute
 	   定位，需保留在布局内；仅隐藏其按钮本体。⚠️ 不能用 display:none 挂在
-	   载体容器上——那会把浮层一起藏掉。 */
+	   载体容器上——那会把浮层一起藏掉。
+	   2026-10-01：client:only 组件实际包在 astro-island（display:contents）里，
+	   原 `> div:first-child / > button` 匹配不到（隔了一层），导致桌面搜索按钮
+	   (#search-bar) 漏出来叠在导航下缘；补 astro-island 路径。 */
 	.paper-search-carrier,
 	.paper-theme-carrier {
 		position: absolute;
@@ -250,7 +253,10 @@ const brandTitle = siteConfig.title || "FlatPaper";
 	}
 	.paper-search-carrier > div:first-child,
 	.paper-search-carrier > button,
-	.paper-theme-carrier > button {
+	.paper-search-carrier astro-island > div:first-child,
+	.paper-search-carrier astro-island > button,
+	.paper-theme-carrier > button,
+	.paper-theme-carrier astro-island > button {
 		display: none !important;
 	}
 	/* 窄屏 CSS 给 .site-header 定宽（min(94vw,760px)），补居中 */
