@@ -310,6 +310,12 @@ body.is-hero-active::before {
 	letter-spacing: 0;
 }
 
+/* 大标题下的荧光笔记号（照搬 FlatPaper featured-paper h1 a 的画法：
+   文字下半部 38% 高度铺一条黄色半透明记号笔） */
+.home-hero__title-mark {
+	background-image: linear-gradient(180deg, transparent 62%, rgba(241, 193, 84, 0.45) 62%);
+}
+
 /* 简介（照搬） */
 .home-hero__bio {
 	max-width: 36em;
