@@ -123,7 +123,10 @@ const {
 
 		bannerWrapper?.classList.remove("mobile-hide-banner");
 		mainContent.classList.add("no-banner-layout");
-		mainContent.style.setProperty("top", "5.5rem", "important");
+		// 2026-10-01：5.5rem(88px) 正好贴住 fixed 导航栏底缘（top16+高72=88），
+		// 内页首张侧栏卡与导航栏零间距（截图实证）。FlatPaper 参考站
+		// header 底→首卡 = 28px → 88+28=116px=7.25rem。
+		mainContent.style.setProperty("top", "7.25rem", "important");
 	}
 
 	function applyWallpaperVisualSettings(mode) {

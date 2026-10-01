@@ -76,6 +76,64 @@
 	margin-bottom: 0 !important;
 }
 
+/* ⚠️ 普通流组 ↔ 吸顶组之间必须恢复 22px（2026-10-01 需求：文章页
+   个人名片与目录卡重叠）—— 上面那条把顶层两个组的 mb-4 一并归零，
+   在文章页 SidebarColumn 顶层（名片组 → 目录/最新组）之间没有任何
+   间隔，目录卡胶带(top:-10px)直接压在名片的社交按钮上（CDP 实测
+   两组边界 gap=0；参考站 = 22px）。
+   只给「有内容的吸顶组」补 22px 顶距：空组（:has 不命中）不占位，
+   首页/内页原有等距排版不受影响。 */
+.sidebar-column-root > .sidebar-sticky-column:has(> .sidebar-content) {
+	margin-top: 22px;
+}
+
+/* ⚠️ 吸顶组必须钉在导航栏下方而不是钻进去（2026-10-01 需求：阅读文章
+   上滑时目录卡吸附在导航栏下并留间距）。
+   内页导航栏是 fixed（top:16px + 高 72px → 底缘 88px），而吸顶组用
+   Tailwind 的 sticky top-4(16px) → 滚动后整组滑进导航栏背后（CDP 实测
+   scrollY=600 时组顶 y=16）。
+   参考站 .post-sticky-stack { top: 110px } = 导航底 88 + 22 间距，照搬。
+   仅 ≥1024px（侧栏成为真正的侧栏）生效；窄屏维持 Tailwind top-4。 */
+@media (min-width: 1024px) {
+	.sidebar-column-root > .sidebar-sticky-column {
+		top: 110px;
+	}
+}
+
+/* 文章页吸顶组（对齐参考站 .post-sticky-stack 整组行为）：
+   限高 + 目录卡内部滚动。toc-card 允许收缩（min-height:0），内容层
+   .fp-toc-content 接管剩余高度并自身滚动（overflow-y:auto 已有），
+   「最新文章」卡不参与收缩。 */
+body:has(#page-overlay-data[data-is-post="true"]) .sidebar-column-root > .sidebar-sticky-column {
+	z-index: 2;
+	max-height: calc(100dvh - 130px);
+}
+
+/* 收缩链路：吸顶组(flex col, max-height) → .sidebar-content → 卡片，
+   中间层必须 min-height:0 才能把限高传导到目录卡 */
+body:has(#page-overlay-data[data-is-post="true"]) .sidebar-column-root .sidebar-sticky-column > .sidebar-content {
+	min-height: 0;
+}
+
+body:has(#page-overlay-data[data-is-post="true"]) .sidebar-column-root .toc-card {
+	display: flex;
+	flex-direction: column;
+	overflow: visible;
+	min-height: 0;
+}
+
+body:has(#page-overlay-data[data-is-post="true"]) .toc-card .fp-toc-content {
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+}
+
+/* 目录卡以外的吸顶组件（最新文章 latest-posts-card 等）不参与收缩，
+   超出部分由目录内滚消化 */
+body:has(#page-overlay-data[data-is-post="true"]) .sidebar-column-root .sidebar-content > .side-card:not(.toc-card) {
+	flex-shrink: 0;
+}
+
 /* 文章页侧栏：TOC 与文章相关卡片成组吸顶 */
 .paper-shell--article .paper-sidebar .post-sticky-stack {
 	position: sticky;
