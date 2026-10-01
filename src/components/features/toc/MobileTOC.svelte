@@ -241,7 +241,7 @@ const getActivePadding = (level: number): string => {
 	id="mobile-toc-switch"
 	class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 lg:hidden! theme-switch-btn"
 >
-	<Icon icon="material-symbols:format-list-bulleted" class="text-[1.25rem]" />
+	<Icon icon="lucide:list" class="text-[1.25rem]" />
 </button>
 
 <div
@@ -259,7 +259,7 @@ const getActivePadding = (level: number): string => {
 			aria-label="Close TOC"
 			class="btn-plain rounded-lg h-8 w-8 active:scale-90 theme-switch-btn"
 		>
-			<Icon icon="material-symbols:close" class="text-[1rem]" />
+			<Icon icon="lucide:x" class="text-[1rem]" />
 		</button>
 	</div>
 
@@ -267,7 +267,7 @@ const getActivePadding = (level: number): string => {
 		{#if postItems.length === 0}
 			<div class="text-center py-8 text-black/50 dark:text-white/50">
 				<Icon
-					icon="material-symbols:article-outline"
+					icon="lucide:file-text"
 					class="text-2xl mb-2"
 				/>
 				<p>暂无文章</p>
@@ -281,7 +281,7 @@ const getActivePadding = (level: number): string => {
 					>
 						<div class="post-title">
 							{#if post.pinned}
-								<Icon icon="mdi:pin" class="pinned-icon" />
+								<Icon icon="lucide:pin" class="pinned-icon" />
 							{/if}
 							{post.title}
 						</div>
