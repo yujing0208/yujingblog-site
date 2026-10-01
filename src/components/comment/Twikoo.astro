@@ -3,8 +3,6 @@ import { commentConfig } from "@/config";
 
 interface Props {
 	path: string;
-	/** 留言板用：不显示站长自己的评论（按头像哈希 / 昵称过滤） */
-	hideOwner?: boolean;
 }
 
 const config = {
@@ -13,20 +11,23 @@ const config = {
 	path: Astro.props.path,
 };
 
-// 站长身份（2026-10-01 确认）：
-//   邮箱 2803673194@qq.com 的 weavatar 头像哈希 = sha256(邮箱)
-//   昵称兜底：站长常用「余京 / YuJing」两个马甲
+// 站长评论昵称统一显示（2026-10-01 定稿）：不隐藏、不改数据，仅前端把站长
+// 评论的昵称（含「回复 @xxx」提及）统一改写为 YuJing。全站评论区生效。
+// 识别依据：
+//   · 头像哈希：站长邮箱 2803673194@qq.com 的 sha256（weavatar/geekzu 头像 URL 特征）
+//   · 昵称兜底：站长用过的「余京 / YuJing」马甲
 const OWNER_NICKS = ["余京", "YuJing"];
 const OWNER_AVATAR_HASHES = [
 	"9735dc7774c6444b2647f25b595d67d5668e1d0ad38aa11557f3a7a4954a1abb",
 ];
+const OWNER_DISPLAY_NICK = "YuJing";
 ---
 
 <div id="twikoo-container" class="twikoo-container">
 	<div id="tcomment"></div>
 </div>
 
-<script is:inline define:vars={{ config, hideOwner: Astro.props.hideOwner ?? false, OWNER_NICKS, OWNER_AVATAR_HASHES }}>
+<script is:inline define:vars={{ config, OWNER_NICKS, OWNER_AVATAR_HASHES, OWNER_DISPLAY_NICK }}>
 	(function () {
 		const TWIKOO_CONTAINER_ID = "twikoo-container";
 		const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js?v=1.7.14";
@@ -34,41 +35,68 @@ const OWNER_AVATAR_HASHES = [
 
 		let observer = null;
 		let twikooLoaded = false;
-		let ownerFilterObserver = null;
+		let ownerRenameObserver = null;
 
-		// ---- 站长评论过滤（仅留言板 hideOwner 时启用）----
-		function isOwnerCommentNode(node) {
+		// ---- 站长评论昵称统一（全站生效）----
+		function isOwnerNode(node) {
 			if (!node || node.nodeType !== 1) return false;
+			// 注意：.tk-comment 可能嵌套（回复在 .tk-replies 里），
+			// querySelector 取到的第一个头像/昵称一定是该评论自己的
 			const avatar = node.querySelector(".tk-avatar img");
 			const src = avatar ? avatar.getAttribute("src") || "" : "";
 			for (const hash of OWNER_AVATAR_HASHES) {
 				if (src.indexOf(hash) !== -1) return true;
 			}
 			const nickEl = node.querySelector(".tk-nick");
-			const nick = nickEl ? (nickEl.textContent || "").trim() : "";
-			return OWNER_NICKS.indexOf(nick) !== -1;
+			if (nickEl) {
+				const nick = (nickEl.textContent || "").trim();
+				if (OWNER_NICKS.indexOf(nick) !== -1) return true;
+			}
+			return false;
 		}
 
-		function applyOwnerFilter(root) {
-			if (!root || !hideOwner) return;
-			root
-				.querySelectorAll(".tk-comment:not([data-owner-hidden])")
-				.forEach((node) => {
-					if (isOwnerCommentNode(node)) {
-						node.dataset.ownerHidden = "1";
-						node.style.display = "none";
+		function renameOwnerNick(node) {
+			const nickEl = node.querySelector(".tk-nick");
+			if (!nickEl) return;
+			const nick = (nickEl.textContent || "").trim();
+			if (OWNER_NICKS.indexOf(nick) === -1 && nick !== OWNER_DISPLAY_NICK)
+				return;
+			// .tk-nick 内是 <strong>昵称</strong>（或本身是 strong），保留原有加粗样式
+			const strong = nickEl.querySelector("strong");
+			const target = strong || nickEl;
+			target.textContent = OWNER_DISPLAY_NICK;
+		}
+
+		function renameOwnerMentions(node) {
+			node.querySelectorAll(".tk-ruser").forEach((el) => {
+				const text = (el.textContent || "").trim();
+				for (const nick of OWNER_NICKS) {
+					if (text === "@" + nick) {
+						el.textContent = "@" + OWNER_DISPLAY_NICK;
+						break;
 					}
+				}
+			});
+		}
+
+		function applyOwnerRename(root) {
+			if (!root) return;
+			root
+				.querySelectorAll(".tk-comment:not([data-owner-renamed])")
+				.forEach((node) => {
+					node.dataset.ownerRenamed = "1";
+					if (isOwnerNode(node)) renameOwnerNick(node);
+					renameOwnerMentions(node);
 				});
 		}
 
-		function startOwnerFilter(commentEl) {
-			if (!hideOwner) return;
-			if (ownerFilterObserver) ownerFilterObserver.disconnect();
-			ownerFilterObserver = new MutationObserver(() => {
-				applyOwnerFilter(commentEl);
+		function startOwnerRename(commentEl) {
+			if (ownerRenameObserver) ownerRenameObserver.disconnect();
+			ownerRenameObserver = new MutationObserver(() => {
+				applyOwnerRename(commentEl);
 			});
-			ownerFilterObserver.observe(commentEl, { childList: true, subtree: true });
-			applyOwnerFilter(commentEl);
+			ownerRenameObserver.observe(commentEl, { childList: true, subtree: true });
+			applyOwnerRename(commentEl);
 		}
 
 		function getCurrentPath() {
@@ -124,7 +152,7 @@ const OWNER_AVATAR_HASHES = [
 				commentEl.innerHTML = "";
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
-				startOwnerFilter(commentEl);
+				startOwnerRename(commentEl);
 			} catch (error) {
 				console.error("[Twikoo] 初始化失败:", error);
 			}
@@ -135,9 +163,9 @@ const OWNER_AVATAR_HASHES = [
 				observer.disconnect();
 				observer = null;
 			}
-			if (ownerFilterObserver) {
-				ownerFilterObserver.disconnect();
-				ownerFilterObserver = null;
+			if (ownerRenameObserver) {
+				ownerRenameObserver.disconnect();
+				ownerRenameObserver = null;
 			}
 			if (window.swup?.hooks) {
 				window.swup.hooks.off("content:replace", initTwikoo);
