@@ -206,7 +206,7 @@ onDestroy(() => {
 				class="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up"
 			>
 				<Icon
-					icon="material-symbols:error"
+					icon="lucide:circle-alert"
 					class="text-xl shrink-0"
 				/>
 				<span class="text-sm flex-1">{state.errorMessage}</span>
@@ -214,7 +214,7 @@ onDestroy(() => {
 					onclick={hideError}
 					class="text-white/80 hover:text-white transition-colors"
 				>
-					<Icon icon="material-symbols:close" class="text-lg" />
+					<Icon icon="lucide:x" class="text-lg" />
 				</button>
 			</div>
 		</div>
