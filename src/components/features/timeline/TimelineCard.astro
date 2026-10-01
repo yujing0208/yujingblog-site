@@ -12,15 +12,15 @@ const isCurrent = !item.endDate;
 const getTypeIcon = (type: string) => {
 	switch (type) {
 		case "education":
-			return "material-symbols:school";
+			return "lucide:graduation-cap";
 		case "work":
-			return "material-symbols:work";
+			return "lucide:briefcase";
 		case "project":
-			return "material-symbols:code";
+			return "lucide:code";
 		case "achievement":
-			return "material-symbols:emoji-events";
+			return "lucide:trophy";
 		default:
-			return "material-symbols:event";
+			return "lucide:calendar";
 	}
 };
 
@@ -42,13 +42,13 @@ const getTypeText = (type: string) => {
 const getLinkIcon = (type: string) => {
 	switch (type) {
 		case "certificate":
-			return "material-symbols:verified";
+			return "lucide:badge-check";
 		case "project":
-			return "material-symbols:open-in-new";
+			return "lucide:external-link";
 		case "website":
-			return "material-symbols:language";
+			return "lucide:globe";
 		default:
-			return "material-symbols:description";
+			return "lucide:file-text";
 	}
 };
 
@@ -119,7 +119,7 @@ const hasLinks = item.links && item.links.length > 0;
 						{
 							item.featured && (
 								<Icon
-									name="material-symbols:star-rounded"
+									name="lucide:star"
 									class="text-base w-4 h-4 text-(--primary) shrink-0"
 								/>
 							)
@@ -179,7 +179,7 @@ const hasLinks = item.links && item.links.length > 0;
 							{item.achievements.map((achievement) => (
 								<li class="text-sm text-black/70 dark:text-white/70 flex items-start gap-2">
 									<Icon
-										name="material-symbols:check-circle"
+										name="lucide:circle-check"
 										class="text-base w-4 h-4 text-green-500 shrink-0 mt-0.5"
 									/>
 									<span>{achievement}</span>
@@ -195,14 +195,14 @@ const hasLinks = item.links && item.links.length > 0;
 			>
 				<span class="flex items-center gap-1">
 					<Icon
-						name="material-symbols:calendar-month-outline"
+						name="lucide:calendar"
 						class="text-xs w-3.5 h-3.5"
 					/>
 					{dateRange}
 				</span>
 				<span class="flex items-center gap-1">
 					<Icon
-						name="material-symbols:schedule-outline"
+						name="lucide:clock"
 						class="text-xs w-3.5 h-3.5"
 					/>
 					{duration}
@@ -211,7 +211,7 @@ const hasLinks = item.links && item.links.length > 0;
 					item.location && (
 						<span class="flex items-center gap-1">
 							<Icon
-								name="material-symbols:location-on-outline"
+								name="lucide:map-pin"
 								class="text-xs w-3.5 h-3.5"
 							/>
 							{item.location}
