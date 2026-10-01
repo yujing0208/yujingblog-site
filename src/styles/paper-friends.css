@@ -487,11 +487,12 @@ img.friend-card__avatar {
 
 .friends-intro .highlight td.code {
 	width: 100%;
+	padding: 14px 0;
 }
 
 .friends-intro .highlight td.code pre {
 	margin: 0;
-	padding: 14px 16px 14px 0;
+	padding: 0 20px;
 	background: transparent;
 	color: inherit;
 	font: inherit;
