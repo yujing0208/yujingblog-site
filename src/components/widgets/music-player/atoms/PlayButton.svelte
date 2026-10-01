@@ -20,8 +20,8 @@ const { isPlaying, isLoading, onclick }: Props = $props();
 	{#if isLoading}
 		<Icon icon="eos-icons:loading" class="text-xl" />
 	{:else if isPlaying}
-		<Icon icon="material-symbols:pause" class="text-xl" />
+		<Icon icon="lucide:pause" class="text-xl" />
 	{:else}
-		<Icon icon="material-symbols:play-arrow" class="text-xl" />
+		<Icon icon="lucide:play" class="text-xl" />
 	{/if}
 </button>
