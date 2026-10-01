@@ -200,7 +200,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 						>
 							<Icon
 								class="text-white/75 text-[1.25rem] mr-1"
-								name="lucide:copyright"
+								name="material-symbols:copyright-outline-rounded"
 							/>
 							<div class="text-white/75 text-xs">
 								{siteConfig.banner.credit.text}
@@ -268,13 +268,19 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 						>
 						</div>
 						<slot />
-						<div
-							class="footer col-span-full onload-animation hidden lg:block"
-						>
-							<Footer />
-						</div>
 					</div>
 				</main>
+
+				<!-- 桌面页脚：必须是 #main-grid 的直接子元素（col-span-full），
+				     不能放进 main#swup-container —— main 只是三栏网格的中间列，
+				     页脚的 100vw 通栏色带需要以视口居中的容器为定位基准，
+				     放进中间列会导致内页页脚色带错位（看起来像卡片）。
+				     页脚内容全站一致，放在 Swup 容器外也不会在导航时丢失。 -->
+				<div
+					class="footer col-span-full onload-animation hidden lg:block"
+				>
+					<Footer />
+				</div>
 
 				<div
 					class="footer col-span-full onload-animation block lg:hidden"
