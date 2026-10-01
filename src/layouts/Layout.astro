@@ -4,6 +4,8 @@ import { PageProgressBar } from "@components/control/PageProgressBar";
 import Pio from "@components/features/pio/Pio.astro";
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
 import MusicPlayer from "@components/widgets/music-player/MusicPlayer.svelte";
+import PrivacyModal from "@components/organisms/footer/PrivacyModal.astro";
+import UserAgreementModal from "@components/organisms/footer/UserAgreementModal.astro";
 import { pioConfig, profileConfig, siteConfig } from "@/config";
 
 const BANNER_HEIGHT = 35;
@@ -289,6 +291,10 @@ const bannerOffset =
 			duration={siteConfig.pageProgressBar?.duration ?? 8000}
 		/>
 		<slot />
+
+		<!-- 页脚协议弹窗（隐私政策 / 用户协议）：挂在 Swup 容器之外，跨导航持久存在 -->
+		<PrivacyModal />
+		<UserAgreementModal />
 
 		<!-- Music Player - 核心始终加载（当enable=true），UI通过showFloatingPlayer控制 -->
 		<MusicPlayer client:idle />
