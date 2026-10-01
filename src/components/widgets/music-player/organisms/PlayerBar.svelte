@@ -122,7 +122,7 @@ const {
 			onclick={onCollapseClick}
 			title={i18n(Key.musicPlayerCollapse)}
 		>
-			<Icon icon="lucide:chevron-down" class="text-lg" />
+			<Icon icon="material-symbols:expand-more" class="text-lg" />
 		</button>
 	</VolumeControl>
 </div>
