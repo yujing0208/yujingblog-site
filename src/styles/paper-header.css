@@ -139,23 +139,31 @@ body:not(.paper-layout) #top-row .site-header {
 	height: 40px;
 	padding: 0;
 	cursor: pointer;
-	border: 1px dashed var(--paper-line);
-	border-radius: 50%;
+	border: 2px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn, 255px 15px 225px 15px / 15px 225px 15px 255px);
 	color: var(--ink-soft);
 	background: transparent;
+	transform: rotate(-3deg);
 	transition:
 		color 0.2s ease,
-		background 0.2s ease,
+		background-color 0.2s ease,
 		border-color 0.2s ease,
-		transform 0.2s ease;
+		transform 0.22s ease,
+		box-shadow 0.2s ease;
 }
 
 .brand-mark-wrapper:hover .brand-mark,
 .brand-mark:hover {
 	color: var(--fp-accent-muted);
 	border-color: var(--fp-accent);
-	background: var(--fp-accent-soft);
-	transform: translateY(-1px);
+	background-color: var(--fp-accent-soft);
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(255, 255, 255, 0.25) 0 2px,
+		transparent 2px 7px
+	);
+	transform: rotate(0deg) translateY(-2px) scale(1.06);
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
 }
 
 .brand-mark [astro-icon],
@@ -389,6 +397,18 @@ body:not(.paper-layout) #top-row .site-header {
 	display: none;
 }
 
+/* 搜索按钮静止倾角 -3deg（2026-10-01 参考站实机 matrix -3deg）。
+   ⚠️ 本文件在 paper-accent.css 之后加载，此规则 (0,3,0) 会压过
+   .icon-button:hover (0,2,0) 的 transform —— hover 形态须在此写全，
+   颜色/背景/阴影仍由 paper-accent.css 的 :hover 提供（本规则未覆盖）。 */
+.site-header .icon-button.js-search-open {
+	transform: rotate(-3deg);
+}
+
+.site-header .icon-button.js-search-open:hover {
+	transform: rotate(0deg) translateY(-2px) scale(1.06);
+}
+
 .site-nav a [astro-icon],
 .site-nav-link [astro-icon],
 .site-nav a svg,
@@ -535,30 +555,40 @@ body:not(.paper-layout) #top-row .site-header {
 	gap: 12px;
 }
 
-/* ---- theme-toggle（照搬 header.styl 549-602） ---- */
+/* ---- theme-toggle（照搬 header.styl 549-602） ----
+   2026-10-01：tape 方框化（2px 虚线 + 手绘圆角）+ 静止倾角 -2deg
+   （参考站实机 matrix -2deg）；hover 回正上浮微放大。 */
 .theme-toggle {
 	display: inline-grid;
 	place-items: center;
 	width: 40px;
 	height: 40px;
 	padding: 0;
-	border: 1px dashed var(--paper-line);
-	border-radius: 50%;
+	border: 2px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn, 255px 15px 225px 15px / 15px 225px 15px 255px);
 	color: var(--ink-soft);
 	background: transparent;
 	cursor: pointer;
+	transform: rotate(-2deg);
 	transition:
 		color 0.2s ease,
-		background 0.2s ease,
+		background-color 0.2s ease,
 		border-color 0.2s ease,
-		transform 0.2s ease;
+		transform 0.22s ease,
+		box-shadow 0.2s ease;
 }
 
 .theme-toggle:hover {
 	color: var(--fp-accent-muted);
 	border-color: var(--fp-accent);
-	background: var(--fp-accent-soft);
-	transform: translateY(-1px);
+	background-color: var(--fp-accent-soft);
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(255, 255, 255, 0.25) 0 2px,
+		transparent 2px 7px
+	);
+	transform: rotate(0deg) translateY(-2px) scale(1.06);
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
 }
 
 .theme-toggle [astro-icon],
@@ -591,7 +621,7 @@ body:not(.paper-layout) #top-row .site-header {
 :root.dark .theme-toggle:hover {
 	color: var(--fp-accent-muted);
 	border-color: var(--fp-accent);
-	background: var(--fp-accent-soft);
+	background-color: var(--fp-accent-soft);
 }
 
 :root.dark .theme-toggle .theme-icon--sun {

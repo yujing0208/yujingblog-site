@@ -5,30 +5,49 @@
  *  仅两处必要改写：.dark-mode→:root.dark；--color-accent*→--primary/oklch(--hue)
  * ========================================================================= */
 
-/* ---- icon-button（照搬 .icon-button） ---- */
+/* ---- icon-button（照搬 .icon-button） ----
+   2026-10-01：换成 tape 按钮风格（参考站 body[data-button-style="tape"]，
+   实机计算样式）：2px 虚线 + 手绘歪扭方框（--radius-handdrawn），
+   过渡含 transform .22s / box-shadow .2s，hover 放大回正（见下）。 */
 .icon-button {
 	display: inline-grid;
 	place-items: center;
 	width: 40px;
 	height: 40px;
 	padding: 0;
-	border: 1px dashed var(--paper-line, rgba(89, 62, 30, 0.1));
-	border-radius: 50%;
+	border: 2px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn, 255px 15px 225px 15px / 15px 225px 15px 255px);
 	color: var(--ink-soft, #4a5751);
 	background: transparent;
 	cursor: pointer;
 	transition:
 		color 0.2s ease,
-		background 0.2s ease,
+		background-color 0.2s ease,
 		border-color 0.2s ease,
-		transform 0.2s ease;
+		transform 0.22s ease,
+		box-shadow 0.2s ease;
 }
 
-.icon-button:hover {
+/* 调色板按钮静止倾角 +2deg（参考站实机 accent-toggle matrix +2deg）。
+   ⚠️ 必须放在 :hover 之前：同特异性下后者胜，hover 才能回正。 */
+.icon-button.accent-toggle {
+	transform: rotate(2deg);
+}
+
+/* hover：回正 + 上浮 + 微放大 + 强调色 + 斜纹胶带底 + 纸影
+   （照搬 tape 覆盖：rotate(0) translateY(-2px) scale(1.06)） */
+.icon-button:hover,
+.icon-button.accent-toggle:hover {
 	color: var(--color-accent-strong);
 	border-color: var(--primary);
-	background: var(--color-accent-soft);
-	transform: translateY(-1px);
+	background-color: var(--color-accent-soft);
+	background-image: repeating-linear-gradient(
+		45deg,
+		rgba(255, 255, 255, 0.25) 0 2px,
+		transparent 2px 7px
+	);
+	transform: rotate(0deg) translateY(-2px) scale(1.06);
+	box-shadow: 0 4px 14px rgba(82, 64, 38, 0.08);
 }
 
 .accent-toggle-icon {
@@ -127,5 +146,5 @@
 
 :root.dark .icon-button:hover {
 	color: var(--color-accent-muted);
-	background: var(--color-accent-soft);
+	background-color: var(--color-accent-soft);
 }
