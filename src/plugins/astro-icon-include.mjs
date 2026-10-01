@@ -32,6 +32,7 @@ const INSTALLED_COLLECTIONS = [
 	"fa7-brands",
 	"simple-icons",
 	"logos",
+	"lucide",
 ];
 
 const SCAN_DIR = "src";
