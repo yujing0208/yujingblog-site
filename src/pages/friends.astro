@@ -139,10 +139,9 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 				</section>
 			))
 		}
-		</article>
-
-	<!-- 本站信息 / 申请模板 / 友链申请要求（照抄 homulilly.com /links/ 的 friends-intro） -->
-	<div class="friends-intro">
+			<!-- 本站信息 / 申请模板 / 友链申请要求（照抄 homulilly.com /links/ 的 friends-intro）
+		     必须位于 article-paper 纸卡内部，和友链卡片同板 -->
+		<div class="friends-intro">
 		<p><strong>本站信息</strong> : </p>
 		<figure class="highlight yaml">
 			<span class="code-bar">
@@ -195,6 +194,7 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 			</div>
 		</details>
 	</div>
+	</article>
 
 	<!-- 复制 / 折叠按钮交互（document 级委托，swup 换页后依然有效） -->
 	<script is:inline>
