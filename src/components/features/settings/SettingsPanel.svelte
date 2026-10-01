@@ -322,7 +322,7 @@ $effect(() => {
 						onclick={resetHue}
 					>
 						<div class="text-(--btn-content)">
-							<Icon icon="material-symbols:refresh" class="text-[0.875rem]" />
+							<Icon icon="lucide:refresh-cw" class="text-[0.875rem]" />
 						</div>
 					</button>
 				</div>
@@ -367,7 +367,7 @@ $effect(() => {
 					onclick={resetWallpaperMode}
 				>
 					<div class="text-(--btn-content)">
-						<Icon icon="material-symbols:refresh" class="text-[0.875rem]" />
+						<Icon icon="lucide:refresh-cw" class="text-[0.875rem]" />
 					</div>
 				</button>
 			</div>
@@ -378,10 +378,10 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_BANNER}
 					onclick={() => switchWallpaperMode(WALLPAPER_BANNER)}
 				>
-					<Icon icon="material-symbols:image-outline" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:image" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.wallpaperBanner)}</span>
 					{#if wallpaperMode === WALLPAPER_BANNER}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 				<button
@@ -390,10 +390,10 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_FULLSCREEN}
 					onclick={() => switchWallpaperMode(WALLPAPER_FULLSCREEN)}
 				>
-					<Icon icon="material-symbols:wallpaper" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:image" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.wallpaperFullscreen)}</span>
 					{#if wallpaperMode === WALLPAPER_FULLSCREEN}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 				<button
@@ -402,10 +402,10 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_OVERLAY}
 					onclick={() => switchWallpaperMode(WALLPAPER_OVERLAY)}
 				>
-					<Icon icon="material-symbols:full-coverage-outline-rounded" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:scan" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.wallpaperOverlay)}</span>
 					{#if wallpaperMode === WALLPAPER_OVERLAY}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 				<button
@@ -414,10 +414,10 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={wallpaperMode === WALLPAPER_NONE}
 					onclick={() => switchWallpaperMode(WALLPAPER_NONE)}
 				>
-					<Icon icon="material-symbols:hide-image-outline" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:image-off" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.wallpaperNone)}</span>
 					{#if wallpaperMode === WALLPAPER_NONE}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 			</div>
@@ -439,7 +439,7 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={sakuraEnabled}
 					onclick={toggleSakuraEnabled}
 				>
-					<Icon icon="material-symbols:spa-outline-rounded" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:flower-2" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.sakuraEffect)}</span>
 					<div class="w-10 h-5 rounded-full transition-all duration-200 relative"
 						class:bg-(--primary)={sakuraEnabled}
@@ -469,7 +469,7 @@ $effect(() => {
 					onclick={resetOverlaySettings}
 				>
 					<div class="text-(--btn-content)">
-						<Icon icon="material-symbols:refresh" class="text-[0.875rem]" />
+						<Icon icon="lucide:refresh-cw" class="text-[0.875rem]" />
 					</div>
 				</button>
 			</div>
@@ -547,7 +547,7 @@ $effect(() => {
 					onclick={resetBannerSettings}
 				>
 					<div class="text-(--btn-content)">
-						<Icon icon="material-symbols:refresh" class="text-[0.875rem]" />
+						<Icon icon="lucide:refresh-cw" class="text-[0.875rem]" />
 					</div>
 				</button>
 			</div>
@@ -558,7 +558,7 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={bannerTitleEnabled}
 					onclick={toggleBannerTitleEnabled}
 				>
-					<Icon icon="material-symbols:titlecase-rounded" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:case-upper" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.bannerTitle)}</span>
 					<div class="w-10 h-5 rounded-full transition-all duration-200 relative"
 						class:bg-(--primary)={bannerTitleEnabled}
@@ -575,7 +575,7 @@ $effect(() => {
 					class:bg-(--btn-regular-bg-hover)={wavesEnabled}
 					onclick={toggleWavesEnabled}
 				>
-					<Icon icon="material-symbols:airwave-rounded" class="text-[1.25rem] shrink-0" />
+					<Icon icon="lucide:wind" class="text-[1.25rem] shrink-0" />
 					<span class="text-sm flex-1">{i18n(I18nKey.wavesAnimation)}</span>
 					<div class="w-10 h-5 rounded-full transition-all duration-200 relative"
 						class:bg-(--primary)={wavesEnabled}
@@ -606,7 +606,7 @@ $effect(() => {
 					onclick={resetLayout}
 				>
 					<div class="text-(--btn-content)">
-						<Icon icon="material-symbols:refresh" class="text-[0.875rem]" />
+						<Icon icon="lucide:refresh-cw" class="text-[0.875rem]" />
 					</div>
 				</button>
 			</div>
@@ -623,7 +623,7 @@ $effect(() => {
 					</svg>
 					<span class="text-xs font-medium">{i18n(I18nKey.postListLayoutList)}</span>
 					{#if currentLayout === "list"}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 				<button
@@ -638,7 +638,7 @@ $effect(() => {
 					</svg>
 					<span class="text-xs font-medium">{i18n(I18nKey.postListLayoutGrid)}</span>
 					{#if currentLayout === "grid"}
-						<Icon icon="material-symbols:check-circle" class="text-[1rem] shrink-0 text-(--primary)" />
+						<Icon icon="lucide:circle-check" class="text-[1rem] shrink-0 text-(--primary)" />
 					{/if}
 				</button>
 			</div>
@@ -652,9 +652,9 @@ $effect(() => {
 			aria-label="进入编辑页面"
 			onclick={() => (window as any).EditorLogin?.start?.()}
 		>
-			<Icon icon="material-symbols:edit-outline" class="text-[1.25rem] shrink-0 text-(--primary)" />
+			<Icon icon="lucide:pencil" class="text-[1.25rem] shrink-0 text-(--primary)" />
 			<span class="text-sm flex-1 font-medium">进入编辑页面</span>
-			<Icon icon="material-symbols:chevron-right-rounded" class="text-[1rem] shrink-0 opacity-50" />
+			<Icon icon="lucide:chevron-right" class="text-[1rem] shrink-0 opacity-50" />
 		</button>
 	</div>
 </div>
