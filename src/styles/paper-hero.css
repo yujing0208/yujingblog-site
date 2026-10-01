@@ -305,6 +305,8 @@ body.is-hero-active::before {
 	max-width: 13em;
 	margin: 0;
 	color: inherit;
+	/* 站题手写风：英文 New Tegomin + 中文楷书，见 main.css --font-display */
+	font-family: var(--font-display), inherit;
 	font-size: 64px;
 	line-height: 1.05;
 	letter-spacing: 0;
