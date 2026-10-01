@@ -37,6 +37,15 @@ const poweredBy = [
 // mailto:/tel:/weixin: 等非 http(s) 链接不在新标签打开
 const opensInNewTab = (href: string) => /^https?:/i.test(href);
 
+// 页脚「常用联系方式」只展示白名单里的这几项（其余链接侧边栏等处照常使用）
+const footerSocialNames = ["GitHub", "QQ", "抖音"];
+const socialLinks = profileConfig.links.filter((link) =>
+	footerSocialNames.includes(link.name),
+);
+
+// ---- 联系邮箱（留空则不显示；填入地址后自动出现在常用联系方式里）----
+const contactEmail = "2803673194@qq.com";
+
 // ---- 运行时间 / 最后更新（服务端先算一次，客户端每秒刷新）----
 const runningTimeTemplate = "本站已运行 {days} 天 {hours} 时 {minutes} 分 {seconds} 秒";
 const lastUpdateTemplate = "最后更新于 {days} 天前";
@@ -117,7 +126,7 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 			<nav class="site-footer__contact" aria-label="常用联系方式">
 				<p class="site-footer__eyebrow">常用联系方式</p>
 				<ul class="site-footer__social-list" role="list">
-					{profileConfig.links.map((link) => (
+					{socialLinks.map((link) => (
 						<li>
 							<a
 								class="site-footer__social-link"
@@ -127,10 +136,22 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 								aria-label={link.name}
 								data-tooltip={link.name}
 							>
-								<Icon name={link.icon} aria-hidden="true" />
+								<Icon name={link.icon} is:inline aria-hidden="true" />
 							</a>
 						</li>
 					))}
+					{contactEmail && (
+						<li>
+							<a
+								class="site-footer__social-link"
+								href={`mailto:${contactEmail}`}
+								aria-label="邮箱"
+								data-tooltip="邮箱"
+							>
+								<Icon name="material-symbols:mail-outline" is:inline aria-hidden="true" />
+							</a>
+						</li>
+					)}
 				</ul>
 				<div class="site-footer__utility-links">
 					<a href={url("sitemap-index.xml")} target="_blank" rel="noreferrer">Sitemap</a>
@@ -196,13 +217,13 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 			<div class="site-footer__status">
 				{startTimestamp !== null && (
 					<p class="site-footer__status-line">
-						<Icon name="lucide:calendar-clock" aria-hidden="true" />
+						<Icon name="material-symbols:calendar-clock-outline" is:inline aria-hidden="true" />
 						<span data-footer-running-time>{initialRunningTime}</span>
 					</p>
 				)}
 				{lastPostDate && (
 					<p class="site-footer__status-line">
-						<Icon name="lucide:heart" aria-hidden="true" />
+						<Icon name="heartbeat-line" is:inline aria-hidden="true" />
 						<span data-footer-last-update>{initialLastUpdateText}</span>
 					</p>
 				)}
@@ -284,24 +305,29 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 </script>
 
 <style>
+	/* 通栏色带：不用卡片边框，靠底色差与正文分隔（参考站做法）；
+	   内容宽度上限 64rem 居中。100vw + 负外边距逃出父级限宽容器。 */
+	:global(body) {
+		overflow-x: clip; /* 防止 100vw 含滚动条宽度产生横向滚动 */
+	}
+
 	.site-footer {
 		box-sizing: border-box;
-		/* 与参考站一致：内容宽度上限 64rem，居中，不通栏 */
-		width: 100%;
-		max-width: 64rem;
-		margin-inline: auto;
-		margin-top: 2.5rem;
-		background: var(--paper);
-		border: 1px dashed var(--paper-dash);
-		border-radius: 12px;
-		box-shadow: var(--soft-shadow);
+		position: relative;
+		left: 50%;
+		width: 100vw;
+		margin-left: -50vw;
+		margin-top: 4rem;
+		background: color-mix(in oklch, var(--paper) 94%, var(--ink));
 		color: var(--ink);
 	}
 
 	.site-footer__inner {
 		box-sizing: border-box;
 		width: 100%;
-		padding: 2.75rem 2.25rem 2.25rem;
+		max-width: 64rem;
+		margin-inline: auto;
+		padding: 3.5rem 1.5rem 2.5rem;
 	}
 
 	.site-footer__primary,
@@ -491,7 +517,7 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 	.site-footer__lower {
 		margin-top: 2rem;
 		padding-top: 2rem;
-		border-top: 1px dashed var(--paper-dash);
+		border-top: 1px solid var(--paper-line);
 	}
 
 	.site-footer__legal,
@@ -585,11 +611,11 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 
 	@media (max-width: 768px) {
 		.site-footer {
-			margin-top: 2rem;
+			margin-top: 3rem;
 		}
 
 		.site-footer__inner {
-			padding: 2rem 1.25rem 1.75rem;
+			padding: 3rem 1rem 2rem;
 		}
 
 		.site-footer__primary,
