@@ -7,56 +7,56 @@ export const LinkPresets: Record<LinkPreset, NavBarLink> = {
 	[LinkPreset.Home]: {
 		name: i18n(I18nKey.home),
 		url: "/",
-		icon: "material-symbols:home",
+		icon: "lucide:house",
 	},
 	[LinkPreset.About]: {
 		name: i18n(I18nKey.about),
 		url: "/about/",
-		icon: "material-symbols:person",
+		icon: "lucide:user",
 	},
 	[LinkPreset.Archive]: {
 		name: i18n(I18nKey.archive),
 		url: "/archive/",
-		icon: "material-symbols:archive",
+		icon: "lucide:archive",
 	},
 	[LinkPreset.Friends]: {
 		name: i18n(I18nKey.friends),
 		url: "/friends/",
-		icon: "material-symbols:group",
+		icon: "lucide:users",
 	},
 	[LinkPreset.Anime]: {
 		name: i18n(I18nKey.anime),
 		url: "/anime/",
-		icon: "material-symbols:movie",
+		icon: "lucide:clapperboard",
 	},
 	[LinkPreset.Diary]: {
 		name: i18n(I18nKey.diary),
 		url: "/diary/",
-		icon: "material-symbols:book",
+		icon: "lucide:book",
 	},
 	[LinkPreset.Albums]: {
 		name: i18n(I18nKey.albums),
 		url: "/albums/",
-		icon: "material-symbols:photo-library",
+		icon: "lucide:images",
 	},
 	[LinkPreset.Projects]: {
 		name: i18n(I18nKey.projects),
 		url: "/projects/",
-		icon: "material-symbols:work",
+		icon: "lucide:briefcase",
 	},
 	[LinkPreset.Skills]: {
 		name: i18n(I18nKey.skills),
 		url: "/skills/",
-		icon: "material-symbols:psychology",
+		icon: "lucide:brain",
 	},
 	[LinkPreset.Timeline]: {
 		name: i18n(I18nKey.timeline),
 		url: "/timeline/",
-		icon: "material-symbols:timeline",
+		icon: "lucide:chart-line",
 	},
 	[LinkPreset.AITools]: {
 		name: i18n(I18nKey.aiTools),
 		url: "/ai-tools/",
-		icon: "material-symbols:smart-toy",
+		icon: "lucide:bot",
 	},
 };
