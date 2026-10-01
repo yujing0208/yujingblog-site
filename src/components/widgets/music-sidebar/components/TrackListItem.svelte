@@ -52,7 +52,7 @@ function getAssetPath(path: string): string {
 	</div>
 	{#if isCurrent && isPlaying}
 		<Icon
-			icon="material-symbols:graphic-eq-rounded"
+			icon="lucide:audio-lines"
 			class="now-playing"
 			style="color: var(--primary);"
 		/>
