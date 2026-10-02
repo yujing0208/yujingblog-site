@@ -1,7 +1,7 @@
 ---
 /**
  * 全站统一页脚 —— 参考 Firefly-Mod（tblog.mmzhiku.xyz）的 site-footer 结构重写：
- *   左上：签名 SVG（暂留空）+ 标语
+ *   左上：签名 SVG（src/assets/footer-signature.svg，currentColor 自适应主题）+ 标语
  *   右上：常用联系方式（社交图标）+ Sitemap / RSS / 隐私政策 / 用户协议
  *   左下：版权行 · 框架 / 主题 + 备案行（暂留空）
  *   右下：本站已运行 ·· 天 ·· 时 ·· 分 ·· 秒 + 最后更新于 ·· 天前
@@ -12,6 +12,7 @@ import { Icon } from "astro-icon/components";
 import { getSortedPosts } from "@/utils/content-utils";
 import { url } from "@/utils/url-utils";
 import { profileConfig, siteConfig } from "../../../config";
+import signatureSvg from "@assets/footer-signature.svg?raw";
 
 const currentYear = new Date().getFullYear();
 
@@ -25,8 +26,8 @@ const beianList = [
 	{ label: "萌ICP备20262110号", href: "https://icp.gov.moe/?keyword=20262110", icon: "" },
 ];
 
-// ---- 签名区（svg 先留空）：把自己的签名 SVG 放进 .site-footer__signature 即可 ----
-const hasSignature = false;
+// ---- 签名区：内联 footer-signature.svg（currentColor 自适应明暗主题）----
+const hasSignature = true;
 
 // ---- Powered by 信息 ----
 const poweredBy = [
@@ -115,8 +116,7 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 			<section class="site-footer__brand" aria-label={profileConfig.name}>
 				<div class="site-footer__brand-copy">
 					<div class="site-footer__signature" data-footer-signature>
-						{hasSignature && <slot name="signature" />}
-						<!-- 签名 SVG 先留空：把你的签名 SVG（宽约 320×100）直接放进上面的容器即可 -->
+						{hasSignature && <Fragment set:html={signatureSvg} />}
 					</div>
 					{profileConfig.bio && (
 						<p class="site-footer__tagline">{profileConfig.bio}</p>
