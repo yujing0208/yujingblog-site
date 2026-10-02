@@ -359,11 +359,14 @@ body.is-hero-active::before {
 	gap: 12px;
 	margin: 0;
 	padding: 0 0 0 var(--hero-links-offset, 0px);
-	/* 照搬原版数值；z-index 由 -2 提升为 2：
-	   原版 -2 让书签条嵌进资料卡下沿，但会把 hover tooltip 一起压到
-	   资料卡纸面层(z:-1)之下，tooltip 下半被盖（实测截图"GitHub"显示不全）。
-	   提到 2 后书签条在纸面之上、资料卡内容(z:2)同级，tooltip 完整可见。 */
-	z-index: 2;
+	/* 照搬原版 z-index: -2 —— 书签条上半嵌进资料卡下沿（毛玻璃卡片下层，
+	   参照 FlatPaper/homulilly 原版效果）。
+	   ⚠️ 曾误诊：tooltip 显示不全被当成层叠问题把 z-index 提到 2（破坏嵌进效果且无效）。
+	   真凶是书签容器同时带 .socials 类，侧栏 tooltip 规则的
+	   bottom: calc(100%+9px) 与本处 top: calc(100%+9px) 同时生效，
+	   绝对定位 top/bottom 双约束把气泡盒压瘪（border-box 下 height 塌成 12px、
+	   内容区为 0、文字溢出）。修复见下方 tooltip 规则：bottom:auto + 提升特异性。 */
+	z-index: -2;
 	width: auto;
 	max-width: none;
 }
@@ -435,12 +438,23 @@ body.is-hero-active::before {
 	box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.25);
 }
 
-/* 书签 tooltip（照搬） */
-.home-hero__links a[data-tooltip]::before {
+/* 书签 tooltip（照搬 FlatPaper）
+   ⚠️ 选择器特意多挂 `.home-hero .home-hero__profile` 两级祖先 + 显式 bottom:auto：
+   书签容器在标记里同时带 .socials 类（.socials.home-hero__links），侧栏
+   SocialIcon 的 tooltip 规则 `.socials a[data-tooltip]::before { bottom: calc(100%+9px) }`
+   会一并命中首屏书签。若只靠原选择器（特异性与侧栏规则打平）且不写 bottom，
+   侧栏的 bottom 与本处 top 同时生效 → 绝对定位过约束 → 气泡盒被压瘪成
+   12px（border-box：内容区 0，只剩 padding+边框），表现为「提示框显示不全」。
+   侧栏规则与本规则特异性脱钩后，打包顺序变化也不会再打架。 */
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]::before {
 	content: attr(data-tooltip);
 	position: absolute;
 	left: 50%;
 	top: calc(100% + 9px);
+	bottom: auto;
 	z-index: 5;
 	max-width: min(220px, 68vw);
 	padding: 5px 9px;
@@ -461,15 +475,25 @@ body.is-hero-active::before {
 		transform 0.16s ease;
 }
 
-.home-hero__links a[data-tooltip]:hover::before,
-.home-hero__links a[data-tooltip]:focus-visible::before {
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]:hover::before,
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]:focus-visible::before {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0) rotate(1deg);
 }
 
 /* 书签 tooltip 的小菱形指示箭头（照搬 flatpaper profile.styl 的 ::after；
-   原版只有气泡没有箭头，hover 时看起来和书签「脱节」，故补齐以与 homulilly 完全一致） */
-.home-hero__links a[data-tooltip]::after {
+   原版只有气泡没有箭头，hover 时看起来和书签「脱节」，故补齐以与 homulilly 完全一致。
+   特异性与 bottom:auto 的原因同上 ::before 注释。 */
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]::after {
 	content: "";
 	position: absolute;
 	left: 50%;
@@ -491,8 +515,14 @@ body.is-hero-active::before {
 		transform 0.16s ease;
 }
 
-.home-hero__links a[data-tooltip]:hover::after,
-.home-hero__links a[data-tooltip]:focus-visible::after {
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]:hover::after,
+.home-hero
+	.home-hero__profile
+	.home-hero__links
+	a[data-tooltip]:focus-visible::after {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0) rotate(45deg);
 }
@@ -982,11 +1012,7 @@ body.no-banner-mode #top-row.paper-hero-layout,
 #top-row.paper-hero-layout {
 	position: sticky !important;
 	top: 16px !important;
-	/* 2026-10-02：40 -> 50。paper-header.css 的 body::after 顶部渐隐遮罩
-	   z-index: 45，40 会让首页吸顶后被遮罩压住导航纸带和上面的胶带
-	   （内页 #top-row 是 50，无此问题）。提到 50 与内页一致：
-	   遮罩在导航和胶带之下，只补导航上方的缝隙。 */
-	z-index: 50;
+	z-index: 40;
 }
 
 #top-row.paper-hero-layout #navbar-wrapper {
