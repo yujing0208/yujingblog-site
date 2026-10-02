@@ -64,7 +64,7 @@
   --font-mono: var(--font-jetbrains-mono), "Fira Code", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", "Cascadia Code", monospace;
 
   /* 站题主字体：中英文同字体，切换时只改这一行（"Huiwen Mingchao" / "Laura Cursive"） */
-  --font-brand: "Huiwen Mingchao";
+  --font-brand: "Laura Cursive";
 
   /* 展示型大标题栈：站题字体优先，缺字回退 Tegomin → 楷书 → 黑体 */
   --font-display: var(--font-brand), var(--font-body), var(--font-hand), var(--font-cjk), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", serif;
