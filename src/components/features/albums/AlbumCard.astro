@@ -10,7 +10,7 @@ const { album } = Astro.props as AlbumCardProps;
 <a
 	href={`/albums/${album.id}/`}
 	data-tags={album.tags?.join(",") || ""}
-	class="album-card group relative block overflow-hidden rounded-[4px] transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+	class="album-card group relative block overflow-hidden"
 >
 	<!-- Cover Image -->
 	<div class="aspect-4/3 relative overflow-hidden">
@@ -118,9 +118,21 @@ const { album } = Astro.props as AlbumCardProps;
 </a>
 
 <style>
+	/* paper 适配：4px 纸卡 + 常驻纸影，hover 上浮加深（与 card-base 同一套节奏） */
 	.album-card {
+		border-radius: 4px;
+		background: var(--card-bg);
+		box-shadow: var(--paper-shadow);
+		transition: box-shadow 0.22s ease, translate 0.22s ease;
 		animation: fadeInUp 0.5s ease-out forwards;
 		opacity: 0;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.album-card:hover {
+			translate: 0 -3px;
+			box-shadow: var(--small-shadow);
+		}
 	}
 
 	.album-card.filtered-out {
