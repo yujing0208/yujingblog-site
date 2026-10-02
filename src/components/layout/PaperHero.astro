@@ -150,9 +150,38 @@ const heroStyle = heroImage
 >
 	<!-- 首帧打标：body.has-paper-hero 驱动 paper-header.css 的 body::after
 	     顶部遮罩时机（hero 在视口内时遮罩隐藏）。用内联脚本在首帧渲染前
-	     执行，避免遮罩在 JS 加载前闪现成页面顶端的白条 -->
+	     执行，避免遮罩在 JS 加载前闪现成页面顶端的白条。
+	     同时在这里直接维护 is-hero-gone（阈值与 paper-hero.js 完全一致：
+	     scrollY >= heroBottom，双写幂等）——遮罩时机不再依赖外部 JS 是否
+	     加载/版本新旧，旧缓存 paper-hero.js 也不会把遮罩永久藏掉导致
+	     吸顶导航上方缝隙露底（2026-10-02 深夜事故）。 -->
 	<script is:inline>
 		document.body.classList.add("has-paper-hero");
+		(function () {
+			var heroEl = document.querySelector("[data-paper-hero]");
+			if (!heroEl) return;
+			var ticking = false;
+			var sync = function () {
+				ticking = false;
+				var bottom = heroEl.offsetTop + heroEl.offsetHeight;
+				document.body.classList.toggle(
+					"is-hero-gone",
+					window.pageYOffset >= bottom
+				);
+			};
+			window.addEventListener(
+				"scroll",
+				function () {
+					if (!ticking) {
+						ticking = true;
+						window.requestAnimationFrame(sync);
+					}
+				},
+				{ passive: true }
+			);
+			window.addEventListener("resize", sync, { passive: true });
+			sync();
+		})();
 	</script>
 
 	<!-- 颗粒层 -->
