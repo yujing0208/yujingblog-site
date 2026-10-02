@@ -102,7 +102,8 @@ export default defineConfig({
 		// astro-config-digest，从而清空 .astro 渲染缓存全量重渲染。
 		// 2026-10-02：依赖级修复（micromark-util-character overrides）不会使渲染缓存失效，
 		// 旧的字面量 ::github 渲染结果被持续复用，靠改端口强制失效一次。
-		port: 3001,
+		// 2026-10-02 晚：remark-fix-github-admonitions 重写同理，port 3001→3002 再失效一次。
+		port: 3002,
 	},
 
 	integrations: [
