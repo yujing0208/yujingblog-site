@@ -13,7 +13,7 @@ on:
       keep_recent:
         description: '除当前生产部署外，额外保留最近 N 个部署'
         required: false
-        default: '4'
+        default: '1'
   push:
     branches: [main]
     paths:
@@ -35,7 +35,7 @@ jobs:
         run: |
           cat > /tmp/cleanup.mjs <<'EOF'
           const TOKEN = process.env.VERCEL_TOKEN;
-          const KEEP = parseInt(process.env.KEEP_RECENT || '4', 10);
+          const KEEP = parseInt(process.env.KEEP_RECENT || '1', 10);
           const base = 'https://api.vercel.com';
           const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           const H = { Authorization: `Bearer ${TOKEN}`, 'User-Agent': 'vercel-cleanup' };
@@ -53,15 +53,30 @@ jobs:
             throw new Error(lastErr);
           }
 
-          // ---- 0. 用量诊断：Deployment Storage 到底还剩多少 ----
+          // ---- 0. 用量诊断：Deployment Storage 到底还剩多少（/v1/usage 必须带 from/to）----
           const usageProbe = [];
-          for (const p of ['/v1/usage', '/v1/billing/usage', '/v1/deployments/usage']) {
+          const to = new Date();
+          const from = new Date(Date.now() - 30 * 864e5);
+          const usagePath = `/v1/usage?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+          try {
+            const r = await fetch(base + usagePath, { headers: H });
+            const t = await r.text();
+            let parsed = null;
+            try { parsed = JSON.parse(t); } catch {}
+            if (parsed && parsed.usage) {
+              const u = parsed.usage;
+              const storageKeys = Object.keys(u).filter((k) => /storage|deployment|data|artifact|size|cache/i.test(k));
+              usageProbe.push(`deployment_data = ${JSON.stringify(u.deployment_data ?? storageKeys.map((k) => `${k}=${u[k]}`))}`);
+              usageProbe.push(`full usage = ${JSON.stringify(u).slice(0, 500)}`);
+            } else {
+              usageProbe.push(`${usagePath} -> ${r.status}: ${t.slice(0, 240)}`);
+            }
+          } catch (e) { usageProbe.push(`usage ERR ${String(e.message).slice(0, 80)}`); }
+          for (const p of ['/v1/billing/usage']) {
             try {
               const r = await fetch(base + p, { headers: H });
-              const t = await r.text();
-              usageProbe.push(`${p} -> ${r.status}: ${t.slice(0, 240)}`);
+              usageProbe.push(`${p} -> ${r.status}: ${(await r.text()).slice(0, 160)}`);
             } catch (e) { usageProbe.push(`${p} -> ERR ${String(e.message).slice(0, 80)}`); }
-            await sleep(200);
           }
           console.log('=== USAGE PROBE ===');
           for (const u of usageProbe) console.log(u);
@@ -109,6 +124,11 @@ jobs:
             } while (cursor);
 
             if (deps.length === 0) { rows.push({ name: p.name, total: 0, kept: 0, deleted: 0, failed: 0, errors: [] }); continue; }
+
+            // 状态分布：DELETED 残留说明删除未真正释放，BUILDING/QUEUED 说明在途构建仍在吃额度
+            const byState = {};
+            for (const d of deps) byState[d.state] = (byState[d.state] || 0) + 1;
+            console.log(`::notice title=vercel-states::${p.name}: ${JSON.stringify(byState)}`);
 
             deps.sort((a, b) => b.created - a.created);
             const keep = new Set();
