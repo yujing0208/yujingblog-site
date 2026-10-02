@@ -230,6 +230,20 @@ let posterAvatarUrl = profileConfig.avatar;
 						<Markdown class="mb-6 markdown-content onload-animation">
 							<Content />
 						</Markdown>
+						<!-- FlatPaper 风格版权卡：文章结尾、结尾区上方 -->
+						{
+							licenseConfig.enable && (
+								<PaperLicense
+									title={entry.data.title}
+									pubDate={entry.data.published}
+									author={entry.data.author}
+									sourceLink={entry.data.sourceLink}
+									licenseName={entry.data.licenseName}
+									licenseUrl={entry.data.licenseUrl}
+									class="mb-6"
+								/>
+							)
+						}
 						<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航 -->
 					<PaperArticleFooter
 						title={entry.data.title}
@@ -251,19 +265,6 @@ let posterAvatarUrl = profileConfig.avatar;
 			}
 		</div>
 	</div>
-
-	{
-		licenseConfig.enable && (
-			<PaperLicense
-				title={entry.data.title}
-				pubDate={entry.data.published}
-				author={entry.data.author}
-				sourceLink={entry.data.sourceLink}
-				licenseName={entry.data.licenseName}
-				licenseUrl={entry.data.licenseUrl}
-			/>
-		)
-	}
 
 	<!-- 评论 -->
 	<Comment post={entry} />

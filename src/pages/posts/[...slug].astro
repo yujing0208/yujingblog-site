@@ -338,6 +338,29 @@ const jsonLd = {
 				)
 			}
 
+			<!-- FlatPaper 风格版权卡：文章结尾、结尾区上方（加密文章解锁后按 #license-component 揭示） -->
+			{
+				licenseConfig.enable && (
+					<div
+						id="license-component"
+						class:list={[
+							"encrypted-hidden-wrapper",
+							{ "encrypted-hidden": isEncrypted },
+						]}
+					>
+						<PaperLicense
+							title={entry.data.title}
+							pubDate={entry.data.published}
+							author={entry.data.author}
+							sourceLink={entry.data.sourceLink}
+							licenseName={entry.data.licenseName}
+							licenseUrl={entry.data.licenseUrl}
+							class="mb-6"
+						/>
+					</div>
+				)
+			}
+
 			<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航（替代 ShareCard） -->
 			<div class:list={["encrypted-hidden-wrapper", { "encrypted-hidden": isEncrypted }]}>
 				<PaperArticleFooter
@@ -358,28 +381,6 @@ const jsonLd = {
 			</div>
 		</div>
 	</div>
-
-	<!-- FlatPaper 风格版权卡（加密文章解锁后按 #license-component 揭示） -->
-	{
-		licenseConfig.enable && (
-			<div
-				id="license-component"
-				class:list={[
-					"encrypted-hidden-wrapper",
-					{ "encrypted-hidden": isEncrypted },
-				]}
-			>
-				<PaperLicense
-					title={entry.data.title}
-					pubDate={entry.data.published}
-					author={entry.data.author}
-					sourceLink={entry.data.sourceLink}
-					licenseName={entry.data.licenseName}
-					licenseUrl={entry.data.licenseUrl}
-				/>
-			</div>
-		)
-	}
 
 	<!-- FlatPaper 相关文章纸卡（文章纸卡与评论区之间，同参考站顺序） -->
 	<PaperRelatedPosts relatedPosts={relatedPosts.slice(0, 4)} />
