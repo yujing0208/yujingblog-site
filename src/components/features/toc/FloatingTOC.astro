@@ -37,7 +37,7 @@ const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 				aria-label="Close TOC"
 				class="btn-plain rounded-lg h-8 w-8 active:scale-90"
 			>
-				<Icon name="lucide:x" class="text-lg" />
+				<Icon name="lucide:x" class="text-lg" is:inline />
 			</button>
 		</div>
 		<div class="floating-toc-panel-content" id="floating-toc-content"></div>
@@ -437,3 +437,4 @@ const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 	document.addEventListener("DOMContentLoaded", initFloatingTOC);
 	document.addEventListener("astro:page-load", initFloatingTOC);
 </script>
+
