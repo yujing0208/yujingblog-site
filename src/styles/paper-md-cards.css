@@ -1,0 +1,301 @@
+/* ===========================================================================
+   paper-md-cards.css — 正文内嵌卡片的手账纸痕风统一实现
+   覆盖对象（插件产出标记，类名不可改，只动样式）：
+     1. remark-wiki-link.mjs  →  [[slug]] 双链文章卡
+        div.wiki-card.card-base > a.wiki-card-link
+          > .wiki-card-cover(内联背景图) + .wiki-card-body
+            > .wiki-card-title / .wiki-card-desc
+            > .wiki-card-meta > .wiki-card-date / .wiki-card-cat
+                              / .wiki-card-tags > .wiki-card-tag
+        行内双链：a.wiki-link（/ .wiki-link-broken 未命中文章）
+     2. rehype-component-github-card.mjs  →  ::github{repo="owner/name"}
+        a.card-github.fetch-waiting.no-styling
+          > .gc-titlebar(.gc-titlebar-left(.gc-owner(.gc-avatar,.gc-user),
+            .gc-divider,.gc-repo), .github-logo)
+          + .gc-description + .gc-infobar(.gc-stars,.gc-forks,.gc-license,
+            .gc-language)
+   设计语言：与 PaperLicense 版权卡同款「卡内嵌块」——单层 tape 手绘虚线方框
+   （2px dashed --dash + --radius-handdrawn-wide + --paper-warm 底），
+   不用胶带、不用纸卡撕边外壳（那是卡外平级区块的语言）。
+   注意：wiki-card 自带 card-base 类，这里显式压掉其 4px 圆角与常驻纸层。
+   =========================================================================== */
+
+/* ─── 公共卡片外壳（tape 手绘虚线方框） ─────────────────────────── */
+
+.markdown-content.markdown-content .wiki-card,
+.markdown-content.markdown-content a.card-github {
+  display: block;
+  box-sizing: border-box;
+  margin: 1.25rem 0;
+  padding: 0;
+  background: var(--paper-warm);
+  border: 2px dashed var(--dash);
+  border-radius: var(--radius-handdrawn-wide);
+  overflow: hidden;
+  /* hover 反馈走 translate（与全站卡片上浮同手法，避开 onload-animation） */
+  transition:
+    translate 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.2s ease;
+}
+
+/* wiki-card 自带 card-base：压掉 4px 圆角、--card-bg 底与常驻纸层，
+   否则 4px 纸层会从手绘圆角底下漏出来 */
+.markdown-content.markdown-content .wiki-card.card-base {
+  background: var(--paper-warm);
+  border-radius: var(--radius-handdrawn-wide);
+  border: 2px dashed var(--dash);
+}
+.markdown-content.markdown-content .wiki-card.card-base::after {
+  content: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .markdown-content.markdown-content .wiki-card:hover,
+  .markdown-content.markdown-content a.card-github:hover {
+    translate: 0 -2px;
+    box-shadow: var(--soft-shadow);
+    border-color: color-mix(in oklch, var(--color-accent-strong) 45%, var(--dash));
+  }
+}
+
+/* ─── Wiki 双链文章卡 ───────────────────────────────────────────── */
+
+.markdown-content.markdown-content .wiki-card-link {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.markdown-content.markdown-content .wiki-card-cover {
+  flex: 0 0 7.5rem;
+  width: 7.5rem;
+  min-height: 7.5rem;
+  border-radius: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: color-mix(in oklch, var(--ink) 8%, var(--paper-warm));
+  /* 封面与正文的虚线裁纸线 */
+  border-right: 2px dashed var(--dash);
+}
+
+.markdown-content.markdown-content .wiki-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.15rem 0.15rem 0.15rem 0;
+}
+
+.markdown-content.markdown-content .wiki-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  transition: color 0.15s ease;
+}
+
+.markdown-content.markdown-content .wiki-card-link:hover .wiki-card-title {
+  color: var(--color-accent-strong);
+}
+
+.markdown-content.markdown-content .wiki-card-desc {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.markdown-content.markdown-content .wiki-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: color-mix(in oklch, var(--ink-soft) 72%, transparent);
+}
+
+.markdown-content.markdown-content .wiki-card-cat::before {
+  content: "# ";
+  opacity: 0.7;
+}
+
+.markdown-content.markdown-content .wiki-card-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+/* tag：dashed 小票签，配 tape 语言 */
+.markdown-content.markdown-content .wiki-card-tag {
+  padding: 0.05rem 0.5rem;
+  border: 1px dashed var(--dash);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-accent-strong);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+/* 行内双链：accent 色 + 虚线下划线（对齐全站 .link-underline 语言） */
+.markdown-content.markdown-content .wiki-link,
+.wiki-link {
+  color: var(--color-accent-strong);
+  text-decoration: none;
+  border-bottom: 1px dashed color-mix(in oklch, var(--color-accent-strong) 55%, transparent);
+  transition:
+    color 0.15s ease,
+    border-bottom-color 0.15s ease;
+}
+.markdown-content.markdown-content .wiki-link:hover,
+.wiki-link:hover {
+  color: var(--color-accent-strong);
+  border-bottom-color: var(--color-accent-strong);
+}
+.wiki-link-broken {
+  color: color-mix(in oklch, oklch(0.55 0.18 25) 88%, transparent);
+  border-bottom-color: color-mix(in oklch, oklch(0.55 0.18 25) 40%, transparent);
+}
+
+/* ─── GitHub 仓库卡 ─────────────────────────────────────────────── */
+
+.markdown-content.markdown-content a.card-github {
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+}
+
+.markdown-content.markdown-content .gc-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content.markdown-content .gc-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.markdown-content.markdown-content .gc-owner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.markdown-content.markdown-content .gc-avatar {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: color-mix(in oklch, var(--ink) 8%, var(--paper-warm));
+  border: 1px solid var(--dash);
+  flex-shrink: 0;
+}
+
+.markdown-content.markdown-content .gc-user {
+  color: var(--ink);
+}
+
+.markdown-content.markdown-content .gc-divider {
+  color: color-mix(in oklch, var(--ink-soft) 65%, transparent);
+  font-size: 0.8125rem;
+}
+
+.markdown-content.markdown-content .gc-repo {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}
+
+.markdown-content.markdown-content .github-logo {
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--ink-soft);
+  opacity: 0.75;
+  flex-shrink: 0;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z'/%3E%3C/svg%3E")
+    center/contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z'/%3E%3C/svg%3E")
+    center/contain no-repeat;
+}
+
+.markdown-content.markdown-content .gc-description {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-bottom: 0.55rem;
+  min-height: 1.125rem;
+}
+
+.markdown-content.markdown-content .gc-infobar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: color-mix(in oklch, var(--ink-soft) 75%, transparent);
+  flex-wrap: wrap;
+}
+
+.markdown-content.markdown-content .gc-infobar > div,
+.markdown-content.markdown-content .gc-infobar > span {
+  min-height: 0.875rem;
+}
+
+.markdown-content.markdown-content .gc-language {
+  color: var(--color-accent-strong);
+}
+
+/* 拉取中：弱化占位 */
+.markdown-content.markdown-content .card-github.fetch-waiting .gc-description,
+.markdown-content.markdown-content .card-github.fetch-waiting .gc-infobar {
+  opacity: 0.55;
+}
+
+/* 拉取失败：红边 + 提示 */
+.markdown-content.markdown-content .card-github.fetch-error {
+  border-color: color-mix(in oklch, oklch(0.55 0.18 25) 55%, var(--dash));
+}
+.markdown-content.markdown-content .card-github.fetch-error .gc-description::after {
+  content: "（加载失败）";
+  color: oklch(0.55 0.18 25);
+}
+
+/* ─── 移动端：封面缩小 ──────────────────────────────────────────── */
+
+@media (width < 640px) {
+  .markdown-content.markdown-content .wiki-card-link {
+    gap: 0.75rem;
+    padding: 0.7rem;
+  }
+  .markdown-content.markdown-content .wiki-card-cover {
+    flex-basis: 5.5rem;
+    width: 5.5rem;
+    min-height: 5.5rem;
+  }
+  .markdown-content.markdown-content .wiki-card-title {
+    font-size: 0.95rem;
+  }
+  .markdown-content.markdown-content a.card-github {
+    padding: 0.75rem 0.9rem;
+  }
+}
