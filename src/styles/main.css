@@ -41,14 +41,14 @@
 /* 站题自定义字体（本地子集 woff2，仅覆盖站题用字，缺字自动回退后续字体栈） */
 @font-face {
   font-family: "Huiwen Mingchao";
-  src: url("/fonts/huiwen-title.woff2") format("woff2");
+  src: url("/fonts/huiwen-title-2.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Laura Cursive";
-  src: url("/fonts/laura-title.woff2") format("woff2");
+  src: url("/fonts/laura-title-2.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
