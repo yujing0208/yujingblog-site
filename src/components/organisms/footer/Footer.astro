@@ -29,6 +29,9 @@ const beianList = [
 // ---- 签名区：内联 footer-signature.svg（currentColor 自适应明暗主题）----
 const hasSignature = true;
 
+// ---- 页脚标语（页脚专用；profileConfig.bio 仍用于侧边栏等处）----
+const footerTagline = "且在屏幕和纸张之间，藏些停更的草稿与旧梦。";
+
 // ---- Powered by 信息 ----
 const poweredBy = [
 	{ label: "框架", name: "Astro", href: "https://astro.build" },
@@ -118,8 +121,8 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 					<div class="site-footer__signature" data-footer-signature>
 						{hasSignature && <Fragment set:html={signatureSvg} />}
 					</div>
-					{profileConfig.bio && (
-						<p class="site-footer__tagline">{profileConfig.bio}</p>
+					{footerTagline && (
+						<p class="site-footer__tagline">{footerTagline}</p>
 					)}
 				</div>
 			</section>
@@ -589,19 +592,50 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		flex: 0 0 auto;
 	}
 
-	/* 签名描边动画（有 svg 时生效） */
+	/* 签名描边动画（填充型签名：先依次描轮廓，再淡入上墨） */
 	.site-footer.is-signature-pending :global(.site-footer__signature-mask) {
 		stroke-dasharray: 1 1;
 		stroke-dashoffset: 1;
+		stroke: currentColor;
+		stroke-width: 7;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		fill-opacity: 0;
 	}
 
 	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask) {
-		animation: site-footer-signature-draw 1.2s cubic-bezier(0.35, 0, 0.15, 1) forwards;
+		animation: site-footer-signature-draw 0.9s cubic-bezier(0.35, 0, 0.15, 1) forwards;
+	}
+
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask:nth-of-type(2)) {
+		animation-delay: 0.9s;
+	}
+
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask:nth-of-type(3)) {
+		animation-delay: 1.8s;
+	}
+
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path) {
+		animation: site-footer-signature-fill 0.6s ease-out forwards;
+	}
+
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path:nth-of-type(2)) {
+		animation-delay: 1.65s;
+	}
+
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path:nth-of-type(3)) {
+		animation-delay: 2.55s;
 	}
 
 	@keyframes site-footer-signature-draw {
 		to {
 			stroke-dashoffset: 0;
+		}
+	}
+
+	@keyframes site-footer-signature-fill {
+		to {
+			fill-opacity: 1;
 		}
 	}
 
@@ -662,6 +696,8 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		.site-footer.is-signature-pending :global(.site-footer__signature-mask) {
 			stroke-dasharray: none;
 			stroke-dashoffset: 0;
+			stroke-width: 0;
+			fill-opacity: 1;
 			animation: none;
 		}
 	}
