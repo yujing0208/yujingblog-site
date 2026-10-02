@@ -6,9 +6,10 @@ interface Props {
 const className = Astro.props.class;
 ---
 
+<!-- 统一 MD 渲染：只保留 markdown-content（paper-markdown.css 一套），旧 prose / custom-md 层已移除 -->
 <div
 	data-pagefind-body
-	class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`}
+	class={`markdown-content ${className}`}
 >
 	<!--<div class="prose dark:prose-invert max-w-none custom-md">-->
 	<!--<div class="max-w-none custom-md">-->
