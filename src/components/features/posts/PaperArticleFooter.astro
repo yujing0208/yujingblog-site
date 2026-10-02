@@ -199,25 +199,33 @@ const finalAuthor = author || profileConfig.name;
 		place-items: center;
 		padding: 0;
 		font-size: 16px;
-		border: 1px dashed var(--dash);
-		border-radius: 50%;
+		/* tape 风格真值：2px 虚线 + 手绘歪扭方框 + 静止微倾 -2deg */
+		border: 2px dashed var(--dash);
+		border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 		color: var(--ink-soft);
 		background: transparent;
 		cursor: pointer;
+		transform: rotate(-2deg);
 		transition:
 			color 0.2s ease,
+			background-color 0.2s ease,
 			border-color 0.2s ease,
-			background 0.2s ease,
-			transform 0.2s ease;
+			transform 0.22s ease,
+			box-shadow 0.2s ease;
 	}
 
-	/* hover 沿用 Round 7 胶带按钮风格：accent 底 + 斜纹 + 上浮 */
+	/* hover 真值：回正 + 上浮 + 微放大 + accent 底/斜纹/纸影 */
 	.fp-reaction:hover {
 		color: var(--color-accent-strong);
 		border-color: var(--color-accent);
 		background-color: var(--color-accent-soft);
 		background-image: var(--nav-tape-stripes);
-		transform: translateY(-2px) scale(1.06);
+		transform: rotate(0deg) translateY(-2px) scale(1.06);
+		box-shadow: var(--soft-shadow);
+	}
+
+	:root.dark .fp-reaction:hover {
+		color: var(--color-accent-muted);
 	}
 
 	.fp-reaction-label {

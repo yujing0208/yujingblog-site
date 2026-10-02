@@ -7,8 +7,6 @@ import Comment from "@components/comment/index.astro";
 import {
 	LastModified,
 	PostMeta,
-	RandomPosts,
-	RelatedPosts,
 } from "@components/features/posts";
 import PaperArticleFooter from "@components/features/posts/PaperArticleFooter.astro";
 import { Icon } from "astro-icon/components";
@@ -16,7 +14,7 @@ import "@/styles/paper-post.css";
 import Markdown from "@components/misc/Markdown.astro";
 import AiSummary from "@components/widgets/ai-summary/AiSummary.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getRelatedPosts, getSortedPosts } from "@utils/content-utils";
+import { getSortedPosts } from "@utils/content-utils";
 import { hasCustomPermalink, initPostIdMap } from "@utils/permalink-utils";
 import { getPostPublicDescription } from "@utils/post-card-content";
 import {
@@ -24,12 +22,7 @@ import {
 	getFileDirFromPath,
 	removeFileExtension,
 } from "@utils/url-utils";
-import {
-	permalinkConfig,
-	randomPostsConfig,
-	relatedPostsConfig,
-	shareConfig,
-} from "src/config";
+import { permalinkConfig, shareConfig } from "src/config";
 import Image from "../../components/atoms/Image/Image.astro";
 import Encryptor from "../../components/features/auth/Encryptor.astro";
 import { profileConfig, siteConfig } from "../../config";
@@ -99,11 +92,6 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
 const { remarkPluginFrontmatter } = await render(entry);
-
-// 获取相关文章
-const relatedPosts = relatedPostsConfig.enable
-	? await getRelatedPosts(entry, relatedPostsConfig.maxCount)
-	: [];
 
 // Process cover image, for both OG and SharePoster
 let ogCoverUrl: string | undefined;
@@ -373,23 +361,6 @@ const jsonLd = {
 			<LastModified
 				updatedDate={entry.data.updated || entry.data.published}
 			/>
-		)
-	}
-
-	<!-- 相关文章与随机文章 -->
-	{
-		(relatedPostsConfig.enable || randomPostsConfig.enable) && (
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-				{relatedPostsConfig.enable && relatedPosts.length > 0 && (
-					<RelatedPosts relatedPosts={relatedPosts} />
-				)}
-				{randomPostsConfig.enable && (
-					<RandomPosts
-						excludeIds={[entry.id]}
-						maxCount={randomPostsConfig.maxCount}
-					/>
-				)}
-			</div>
 		)
 	}
 </MainGridLayout>
