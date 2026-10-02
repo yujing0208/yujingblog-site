@@ -38,6 +38,22 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* 站题自定义字体（本地子集 woff2，仅覆盖站题用字，缺字自动回退后续字体栈） */
+@font-face {
+  font-family: "Huiwen Mingchao";
+  src: url("/fonts/huiwen-title.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Laura Cursive";
+  src: url("/fonts/laura-title.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Migrate from v3 config */
 @theme {
   /* 对齐 homulilly.com（FlatPaper 演示站）字体栈：
@@ -47,8 +63,11 @@
   /* 等宽栈同 FlatPaper：JetBrains Mono 打头 */
   --font-mono: var(--font-jetbrains-mono), "Fira Code", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", "Cascadia Code", monospace;
 
-  /* 展示型大标题栈：英文 → New Tegomin（手账风），中文 → Ma Shan Zheng 楷书（手写风），风格统一 */
-  --font-display: var(--font-body), var(--font-hand), var(--font-cjk), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", serif;
+  /* 站题主字体：中英文同字体，切换时只改这一行（"Huiwen Mingchao" / "Laura Cursive"） */
+  --font-brand: "Huiwen Mingchao";
+
+  /* 展示型大标题栈：站题字体优先，缺字回退 Tegomin → 楷书 → 黑体 */
+  --font-display: var(--font-brand), var(--font-body), var(--font-hand), var(--font-cjk), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", serif;
 
   --breakpoint-md: 768px;
   --breakpoint-lg: 1280px;
