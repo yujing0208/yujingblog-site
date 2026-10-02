@@ -148,6 +148,13 @@ const heroStyle = heroImage
 	style={heroStyle}
 	data-hero-images={heroImagesAttr}
 >
+	<!-- 首帧打标：body.has-paper-hero 驱动 paper-header.css 的 body::after
+	     顶部遮罩时机（hero 在视口内时遮罩隐藏）。用内联脚本在首帧渲染前
+	     执行，避免遮罩在 JS 加载前闪现成页面顶端的白条 -->
+	<script is:inline>
+		document.body.classList.add("has-paper-hero");
+	</script>
+
 	<!-- 颗粒层 -->
 	<div class="home-hero__grain" aria-hidden="true"></div>
 
