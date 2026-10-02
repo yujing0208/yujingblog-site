@@ -43,6 +43,7 @@ export interface SiteConfig {
 		devices: boolean; // 设备页面开关
 		aiTools: boolean; // AI 工具页面开关
 		changelog: boolean; // 更新日志页面开关
+		notebooks: boolean; // 笔记本页面开关
 	};
 
 	// 文章列表布局配置
