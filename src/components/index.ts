@@ -26,4 +26,3 @@ export * from "./widgets/profile";
 export * from "./widgets/sidebar";
 export * from "./widgets/site-stats";
 export * from "./widgets/tags";
-export * from "./widgets/toc";
