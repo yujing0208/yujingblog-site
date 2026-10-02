@@ -65,6 +65,8 @@ jobs:
           }
           console.log('=== USAGE PROBE ===');
           for (const u of usageProbe) console.log(u);
+          // 用量结果写成 annotation（无需鉴权即可读取，便于外部核验）
+          for (const u of usageProbe) console.log(`::notice title=vercel-usage::${u}`);
 
           // ---- 1. 枚举账户下所有项目 ----
           const projects = [];
