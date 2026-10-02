@@ -41,6 +41,18 @@ function allowedOwners() {
   return all.map((s) => s.toLowerCase());
 }
 
+/**
+ * 未设置 GH_CARD_OWNERS → 开放所有公开仓库（文章会引用第三方开源仓库）；
+ * 设置了 GH_CARD_OWNERS → 白名单模式，仅放行默认 owner + 环境变量列表。
+ */
+function ownerAllowed(owner) {
+  const hasRestriction = Boolean(
+    String(process.env.GH_CARD_OWNERS || "").trim()
+  );
+  if (!hasRestriction) return true;
+  return allowedOwners().indexOf(owner) !== -1;
+}
+
 function json(res, status, payload, maxAge) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -122,7 +134,7 @@ module.exports = async function handler(req, res) {
   }
 
   const owner = repo.split("/")[0].toLowerCase();
-  if (allowedOwners().indexOf(owner) === -1) {
+  if (!ownerAllowed(owner)) {
     return json(res, 403, {
       ok: false,
       error: "该仓库不在卡片白名单内（可由环境变量 GH_CARD_OWNERS 追加）",
