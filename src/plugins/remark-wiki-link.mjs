@@ -89,6 +89,15 @@ function removeExt(p) {
 	return p.replace(/\.(md|markdown|mdx)$/i, "");
 }
 
+// 按路径段编码：中文等字符转义，但保留 / 作为路径分隔符
+// （encodeURIComponent 会把 slug 里的分类斜杠编成 %2F，导致卡片链接 404）
+function encodePath(p) {
+	return p
+		.split("/")
+		.map((seg) => encodeURIComponent(seg))
+		.join("/");
+}
+
 // ─── 构建 slug -> 文章元数据 索引（模块加载时执行一次）──────────────
 const postIndex = new Map();
 (function buildIndex() {
@@ -104,8 +113,8 @@ const postIndex = new Map();
 		const slug = removeExt(path.relative(POSTS_DIR, f).replace(/\\/g, "/"));
 		const alias = fm.alias;
 		const canonical = alias
-			? `/posts/${encodeURIComponent(alias)}/`
-			: `/posts/${encodeURIComponent(slug)}/`;
+			? `/posts/${encodePath(alias)}/`
+			: `/posts/${encodePath(slug)}/`;
 		const entry = {
 			slug,
 			title: fm.title || slug,
@@ -188,7 +197,7 @@ function makeLinkNode({ target, alias }) {
 	}
 
 	const entry = lookup(article);
-	let href = entry ? entry.path : `/posts/${encodeURIComponent(article)}/`;
+	let href = entry ? entry.path : `/posts/${encodePath(article)}/`;
 	if (headingSlug) href += `#${headingSlug}`;
 
 	let text = alias;
