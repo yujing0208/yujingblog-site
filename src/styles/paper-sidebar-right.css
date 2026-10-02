@@ -87,6 +87,21 @@
 	margin-top: 22px;
 }
 
+/* ⚠️ 普通流组为空时吸顶组顶距归零（2026-10-02 需求：侧栏组件间隔统一）
+   上一条规则本意是修文章页左栏「名片组 ↔ 目录/最新组」的间距，但首页/列表页
+   右栏（音乐组件所在的 SidebarColumn）普通流组是空的（music-sidebar 的
+   position=sticky）——空组高度为 0，这 22px 变成凭空多出的间距：
+   随机文章 ↔ 音乐播放器实测 44px（22 网格 gap + 22 吸顶组 margin），
+   是其它卡间距的一倍。
+   现在：普通流组有子元素（:has(> div)）时保留 22px；空组时归零，
+   所有卡间隔统一为 .paper-sidebar 网格的 22px。
+   （特异性 (0,3,1) > 上一条 (0,3,0)，无需 !important。） */
+.sidebar-column-root
+	> div:first-child:not(:has(> div))
+	~ .sidebar-sticky-column {
+	margin-top: 0;
+}
+
 /* ⚠️ 吸顶组必须钉在导航栏下方而不是钻进去（2026-10-01 需求：阅读文章
    上滑时目录卡吸附在导航栏下并留间距）。
    内页导航栏是 fixed（top:16px + 高 72px → 底缘 88px），而吸顶组用

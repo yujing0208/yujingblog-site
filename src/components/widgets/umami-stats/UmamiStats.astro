@@ -1,5 +1,23 @@
 ---
-import WidgetLayout from "../common/WidgetLayout.astro";
+/**
+ * UmamiStats —— 手账风「访问统计」侧栏卡片（2026-10-02 纸化重做）
+ *
+ * 历史：原为 Mizuki 风格（WidgetLayout card-base + 中性灰大字），Round 5 时
+ * 从桌面侧栏撤下；本次按需求加回左栏并适配纸风格。
+ *
+ * 视觉（对齐 side-card 家族：撕纸边纸面 + 右上黄胶带由 paper-sidebar-right.css
+ * 的 .side-card::before 提供，卡片无需自己画）：
+ *   section.side-card.visit-card
+ *     h2                           ← lucide:eye + 「访问统计」（16px/700，同 random/tag 卡）
+ *     a.visit-link                 ← 整卡可点，跳 Umami 公开分享页（原组件行为保留）
+ *       .visit-hero                ← 总浏览量大数字 + 黄色荧光笔下划线（welcome h1::after 同手法）
+ *       .visit-grid                ← 访问数 / 游客数 两列，虚线分隔（--paper-dash）
+ *
+ * 数据：Umami 云端分享 API（脚本逻辑原样保留，类名 umami-total-* 不能改，
+ *       容器类 umami-visit-stats 供 IntersectionObserver 用）。
+ *       统计周期 30 天（脚本 STATS_PERIOD_DAYS）。
+ */
+import { Icon } from "astro-icon/components";
 
 interface Props {
 	class?: string;
@@ -11,54 +29,33 @@ const { class: className, style } = Astro.props;
 const UMAMI_SHARE_URL = "https://cloud.umami.is/share/eq6I2iWnakVCH2Rt";
 ---
 
-<WidgetLayout
-	id="umami-stats"
-	name="访问统计"
-	class:list={["umami-visit-stats", className]}
-	style={style}
->
+<section class:list={["side-card", "visit-card", "umami-visit-stats", className]} style={style}>
+	<h2>
+		<Icon name="lucide:eye" class="side-card-icon" is:inline />
+		访问统计
+	</h2>
 	<a
 		href={UMAMI_SHARE_URL}
 		target="_blank"
 		rel="noopener noreferrer"
-		class="block umami-link"
+		class="visit-link"
 	>
-		<div class="text-center py-2">
-			<div
-				class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-pageviews"
-			>
-				-
-			</div>
-			<div class="text-sm text-neutral-500 dark:text-neutral-400">
-				总浏览量
-			</div>
+		<div class="visit-hero">
+			<strong class="visit-hero__num umami-total-pageviews">-</strong>
+			<span class="visit-hero__label">总浏览量 · 近 30 天</span>
 		</div>
-		<div
-			class="grid grid-cols-2 divide-x divide-neutral-200 dark:divide-neutral-700 text-center pt-2"
-		>
-			<div class="px-2">
-				<div
-					class="text-xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-visits"
-				>
-					-
-				</div>
-				<div class="text-sm text-neutral-500 dark:text-neutral-400">
-					访问数
-				</div>
+		<div class="visit-grid">
+			<div class="visit-cell">
+				<strong class="visit-cell__num umami-total-visits">-</strong>
+				<span class="visit-cell__label">访问数</span>
 			</div>
-			<div class="px-2">
-				<div
-					class="text-xl font-bold text-neutral-900 dark:text-neutral-100 umami-total-visitors"
-				>
-					-
-				</div>
-				<div class="text-sm text-neutral-500 dark:text-neutral-400">
-					游客数
-				</div>
+			<div class="visit-cell">
+				<strong class="visit-cell__num umami-total-visitors">-</strong>
+				<span class="visit-cell__label">游客数</span>
 			</div>
 		</div>
 	</a>
-</WidgetLayout>
+</section>
 
 <script is:inline define:vars={{ UMAMI_SHARE_URL }}>
 	const UMAMI_CONFIG = { shareUrl: UMAMI_SHARE_URL };
@@ -222,3 +219,113 @@ const UMAMI_SHARE_URL = "https://cloud.umami.is/share/eq6I2iWnakVCH2Rt";
 		});
 	}
 </script>
+
+<style>
+	/* 链接整体：去下划线，占满卡内容宽 */
+	.visit-link {
+		display: block;
+		text-decoration: none;
+	}
+
+	/* --- 主数字：总浏览量 --- */
+	.visit-hero {
+		padding: 4px 0 16px;
+		text-align: center;
+	}
+
+	.visit-hero__num {
+		position: relative;
+		display: inline-block;
+		padding: 0 6px;
+		font-size: 30px;
+		line-height: 1.25;
+		font-weight: 800;
+		letter-spacing: 0.5px;
+		color: var(--deep-text);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* 黄色荧光笔下划线（welcome h1::after 同手法） */
+	.visit-hero__num::after {
+		content: "";
+		position: absolute;
+		left: 2px;
+		right: 2px;
+		bottom: 3px;
+		z-index: -1;
+		height: 10px;
+		background: rgba(241, 193, 84, 0.4);
+	}
+
+	.visit-hero__label {
+		display: block;
+		margin-top: 6px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 1px;
+		color: var(--text-muted);
+	}
+
+	/* --- 两列小数字：访问数 / 游客数 --- */
+	.visit-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		padding-top: 14px;
+		border-top: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.visit-cell {
+		position: relative;
+		text-align: center;
+	}
+
+	/* 中缝虚线分隔 */
+	.visit-cell + .visit-cell::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 12%;
+		bottom: 12%;
+		border-left: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.visit-cell__num {
+		display: block;
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--deep-text);
+		font-variant-numeric: tabular-nums;
+		transition: color 0.2s ease;
+	}
+
+	.visit-cell__label {
+		display: block;
+		margin-top: 3px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.5px;
+		color: var(--text-muted);
+	}
+
+	/* 悬停：小数字染强调色（卡片自身的 translate 上浮由 .side-card 提供） */
+	.visit-link:hover .visit-cell__num {
+		color: var(--color-accent-strong);
+	}
+
+	/* --- 暗色（--deep-text 不自动适配，照 welcome h1 的做法显式覆盖） --- */
+	:root.dark .visit-hero__num,
+	:root.dark .visit-cell__num {
+		color: var(--text-strong);
+	}
+
+	:root.dark .visit-link:hover .visit-cell__num {
+		color: var(--color-accent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.visit-cell__num,
+		.visit-link:hover .visit-cell__num {
+			transition: none;
+		}
+	}
+</style>

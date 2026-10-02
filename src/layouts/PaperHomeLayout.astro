@@ -34,6 +34,7 @@ import PaperCategoriesCard from "@components/widgets/sidebar/PaperCategoriesCard
 import PaperTagsCard from "@components/widgets/sidebar/PaperTagsCard.astro";
 import PaperWelcomeCard from "@components/widgets/sidebar/PaperWelcomeCard.astro";
 import PaperRandomCard from "@components/widgets/sidebar/PaperRandomCard.astro";
+import UmamiStats from "@components/widgets/umami-stats/UmamiStats.astro";
 import type { MarkdownHeading } from "astro";
 
 import { profileConfig, siteConfig } from "../config";
@@ -133,8 +134,8 @@ const tagCount = tagList.length;
 	<div id="paper-home-content" class="relative w-full z-30">
 		<div class="paper-shell-container">
 			<div id="main-grid" class="paper-shell" data-layout-mode="grid">
-				<!-- 视觉左栏（flatpaper sidebar-right.ejs，文件名与视觉相反）：
-				     个人名片 → 分类 → 标签 -->
+			<!-- 视觉左栏（flatpaper sidebar-right.ejs，文件名与视觉相反）：
+			     个人名片 → 分类 → 标签 → 访问统计（2026-10-02 加回） -->
 				<aside class="paper-sidebar paper-sidebar--right">
 					<PaperProfileCard
 						postCount={postCount}
@@ -143,6 +144,7 @@ const tagCount = tagList.length;
 					/>
 					<PaperCategoriesCard limit={6} />
 					<PaperTagsCard limit={12} />
+					<UmamiStats />
 				</aside>
 
 				<!-- 主栏（照搬 section.paper-main：grid gap 24px） -->

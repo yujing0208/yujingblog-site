@@ -149,16 +149,18 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	//   按需求：删掉日历（calendar）、分类（categories）与站点统计（site-stats）组件；
 	//   音乐组件放在「最近动态」下面（最近动态卡由 PaperHomeLayout 渲染在 RightSideBar 之后）。
 	components: {
-		left: [
-			// FlatPaper 化内页侧栏（2026-09-27 Round 5）：
-			// profile-card（名片+统计）→ categories-card（彩点分类）→ tag-card（胶带标签云）
-			// 对齐 flatpaper sidebar-right.ejs；card-toc 保留（文章页目录，对应 flatpaper 文章页 toc-card）
-			// announcement/hitokoto/umami-stats 从桌面内页侧栏撤下（drawer 移动端仍可见）
-			"paper-profile",
-			"paper-categories",
-			"paper-tags",
-			"card-toc",
-		],
+	left: [
+		// FlatPaper 化内页侧栏（2026-09-27 Round 5）：
+		// profile-card（名片+统计）→ categories-card（彩点分类）→ tag-card（胶带标签云）
+		// 对齐 flatpaper sidebar-right.ejs；card-toc 保留（文章页目录，对应 flatpaper 文章页 toc-card）
+		// announcement/hitokoto 从桌面内页侧栏撤下（drawer 移动端仍可见）；
+		// umami-stats 于 2026-10-02 按需求加回（纸化重做后挂在标签卡后面）
+		"paper-profile",
+		"paper-categories",
+		"paper-tags",
+		"umami-stats",
+		"card-toc",
+	],
 		right: ["music-sidebar"],
 		drawer: ["profile", "announcement", "music-sidebar", "categories", "tags"],
 	},
