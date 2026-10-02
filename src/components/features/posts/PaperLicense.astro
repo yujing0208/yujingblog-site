@@ -1,6 +1,8 @@
 ---
-// FlatPaper 风格版权卡 —— 原 License.astro 的信息（标题/链接/作者/日期/协议）
-// 重新适配本站纸风格：纸底 + 撕边滤镜 + 右上角蓝胶带 + 手绘虚线分隔（同 related-paper 语言）
+// FlatPaper 风格版权卡（2026-10-02 第六轮视觉收敛）：
+// 原 License.astro 的信息（标题/链接/作者/日期/协议）+ 结尾区同款 tape 手绘语言。
+// 因置于文章卡内（文章结尾、结尾区上方），不再使用独立纸卡的撕边+蓝胶带外壳，
+// 收敛为单层手绘虚线方框；字号/间距对齐 fp-nav-label（12px muted）/fp-nav-title（14px/600 ink）。
 import { Icon } from "astro-icon/components";
 import { licenseConfig } from "../../../config";
 import I18nKey from "../../../i18n/i18nKey";
@@ -33,13 +35,11 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 
 <section class:list={["paper-license", className]} aria-label="版权声明">
 	<header class="paper-license__head">
-		<h2>
-			<Icon name="lucide:scale" is:inline />
-			{i18n(I18nKey.license)}
-		</h2>
+		<Icon name="lucide:scale" is:inline />
+		{i18n(I18nKey.license)}
 	</header>
 
-	<div class="paper-license__body">
+	<div class="paper-license__box">
 		<Icon
 			name="fa7-brands:creative-commons"
 			class="paper-license__watermark"
@@ -74,61 +74,31 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 </section>
 
 <style>
-	/* ---------- 纸卡外壳（同 related-paper：撕边纸底 + 右上角蓝胶带） ---------- */
-	.paper-license {
-		position: relative;
-		padding: 22px 26px 24px;
-		z-index: 1;
-	}
-
-	.paper-license::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background: var(--paper);
-		z-index: -1;
-		border-radius: 4px;
-		filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
-	}
-
-	.paper-license::after {
-		content: "";
-		position: absolute;
-		top: -10px;
-		right: 30px;
-		z-index: 2;
-		width: 70px;
-		height: 20px;
-		background-color: var(--tape-blue);
-		background-image: var(--tape-stripes);
-		transform: rotate(6deg);
-	}
-
-	.paper-license__head h2 {
-		display: inline-flex;
+	/* ---------- 头部：与结尾区小标题同级（15px/700 ink + 16px accent 图标） ---------- */
+	.paper-license__head {
+		display: flex;
 		align-items: center;
-		gap: 10px;
-		margin: 0 0 14px;
-		font-size: 17px;
+		gap: 8px;
+		margin: 0 0 10px;
+		font-size: 15px;
 		font-weight: 700;
 		color: var(--ink);
 	}
 
-	.paper-license__head h2 :global(svg) {
-		width: 18px;
-		height: 18px;
+	.paper-license__head :global(svg) {
+		width: 16px;
+		height: 16px;
 		color: var(--color-accent-strong);
 	}
 
-	:root.dark .paper-license__head h2 :global(svg) {
+	:root.dark .paper-license__head :global(svg) {
 		color: var(--color-accent-muted);
 	}
 
-	/* ---------- 正文：标题 / 链接 / 三列元信息 ---------- */
-	.paper-license__body {
+	/* ---------- 单层 tape 手绘方框（与评论/分享按钮同语言，不做纸中纸） ---------- */
+	.paper-license__box {
 		position: relative;
-		padding: 16px 18px;
-		/* 手绘虚线方框（同 tape 风格真值） */
+		padding: 14px 20px 16px;
 		border: 2px dashed var(--dash);
 		border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 		background: var(--paper-warm);
@@ -137,23 +107,25 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 
 	.paper-license__watermark {
 		position: absolute;
-		right: -18px;
+		right: -14px;
 		top: 50%;
-		transform: translateY(-50%);
-		width: 9rem;
-		height: 9rem;
+		transform: translateY(-50%) rotate(-4deg);
+		width: 7rem;
+		height: 7rem;
 		pointer-events: none;
 		color: var(--ink);
-		opacity: 0.05;
+		opacity: 0.06;
 	}
 
 	:root.dark .paper-license__watermark {
 		color: var(--paper);
-		opacity: 0.07;
+		opacity: 0.08;
 	}
 
+	/* 标题：对齐 fp-nav-title 的 14px/600 ink */
 	.paper-license__title {
 		display: block;
+		font-size: 14px;
 		font-weight: 700;
 		color: var(--ink);
 		line-height: 1.5;
@@ -161,12 +133,13 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 		z-index: 1;
 	}
 
+	/* 链接：13px + 虚线下划线（手绘感，替代默认 link 样式） */
 	.paper-license__link {
 		display: inline-block;
 		margin-top: 2px;
 		color: var(--color-accent-strong);
-		font-size: 14px;
-		/* 虚线下划线，替代默认 link 样式，贴合手绘感 */
+		font-size: 13px;
+		line-height: 1.6;
 		text-decoration: underline dashed var(--dash);
 		text-underline-offset: 4px;
 		word-break: break-all;
@@ -183,12 +156,13 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 		color: var(--color-accent-muted);
 	}
 
+	/* ---------- 三列元信息：dt 对齐 fp-nav-label（12px/600 muted），dd 对齐 fp-nav-title ---------- */
 	.paper-license__meta {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 8px 32px;
-		margin: 14px 0 0;
-		padding-top: 14px;
+		gap: 10px 28px;
+		margin: 12px 0 0;
+		padding-top: 12px;
 		border-top: 1px dashed var(--line);
 		position: relative;
 		z-index: 1;
@@ -196,14 +170,17 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 
 	.paper-license__meta dt {
 		color: var(--muted);
-		font-size: 13px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
 	}
 
 	.paper-license__meta dd {
-		margin: 2px 0 0;
+		margin: 3px 0 0;
 		color: var(--ink);
 		font-weight: 600;
 		font-size: 14px;
+		line-height: 1.4;
 	}
 
 	.paper-license__meta dd a {
@@ -222,21 +199,18 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 	}
 
 	@media (max-width: 600px) {
-		.paper-license {
-			padding: 18px 18px 20px;
-		}
-
-		.paper-license__body {
-			padding: 14px 16px;
+		.paper-license__box {
+			padding: 12px 16px 14px;
 		}
 
 		.paper-license__watermark {
-			width: 6.5rem;
-			height: 6.5rem;
+			width: 5.5rem;
+			height: 5.5rem;
+			right: -10px;
 		}
 
 		.paper-license__meta {
-			gap: 8px 22px;
+			gap: 10px 20px;
 		}
 	}
 </style>
