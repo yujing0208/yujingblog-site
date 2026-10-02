@@ -1,5 +1,6 @@
 ---
 import DeviceCard from "@components/features/devices/DeviceCard.astro";
+import { PageHeader } from "@components/features/page-header";
 
 import { siteConfig } from "../config";
 import { devicesData } from "../data/devices";
@@ -30,16 +31,10 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 	>
 		<div class="card-base z-10 px-9 py-6 relative w-full">
 			<!-- 页面标题 -->
-			<div class="flex flex-col items-start justify-center mb-8">
-				<h1
-					class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2 relative before:w-1 before:h-8 before:rounded-md before:bg-(--primary) before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4"
-				>
-					{i18n(I18nKey.devices)}
-				</h1>
-				<p class="text-lg text-black/60 dark:text-white/60">
-					{i18n(I18nKey.devicesSubtitle)}
-				</p>
-			</div>
+			<PageHeader
+				title={i18n(I18nKey.devices)}
+				subtitle={i18n(I18nKey.devicesSubtitle)}
+			/>
 
 			<!-- 过滤按钮 -->
 			<div class="mb-6">
@@ -107,15 +102,15 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 				container.innerHTML = items.map(function(device, index) {
 					return [
 						'<a href="' + device.link + '" target="_blank" rel="noopener noreferrer"',
-						' class="device-card group relative overflow-hidden rounded-xl border border-(--line-divider) bg-(--card-bg) transition-all duration-300 hover:border-(--primary)/50 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-white/5 hover:scale-[1.02] hover:-translate-y-0.5 block cursor-pointer"',
+						' class="device-card group relative block cursor-pointer"',
 						' style="animation-delay: ' + (index * 100) + 'ms">',
 						'<div class="relative p-6 pb-0">',
-						'<div class="flex justify-center items-center h-48 bg-linear-to-br from-(--card-bg) to-(--btn-regular-bg) rounded-lg overflow-hidden relative">',
+						'<div class="device-card-imgbox flex justify-center items-center h-48 overflow-hidden relative">',
 						'<img src="' + device.image + '" alt="' + device.name + '" class="w-auto h-full max-h-full object-contain group-hover:scale-110 transition-all duration-500 drop-shadow-md relative z-10" loading="lazy"/>',
 						'</div></div>',
 						'<div class="p-6 pt-4 relative z-10">',
 						'<h3 class="text-lg font-bold text-black/90 dark:text-white/90 group-hover:text-(--primary) transition-colors duration-300">' + device.name + '</h3>',
-						'<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-(--btn-regular-bg) text-black/70 dark:text-white/70 text-sm my-3">',
+						'<div class="device-spec inline-flex items-center gap-2 px-3 py-1 text-sm my-3">',
 						'<span class="font-medium">' + device.specs + '</span></div>',
 						'<p class="text-sm text-black/60 dark:text-white/60 line-clamp-2">' + device.description + '</p>',
 						'</div></a>'
@@ -135,7 +130,8 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 	</script>
 </MainGridLayout>
 
-<style>
+<style is:global>
+	/* paper 适配：筛选按钮 = 手绘虚线框（与动态页 tag-item 同语言） */
 	.filter-container {
 		display: flex;
 		flex-wrap: wrap;
@@ -144,51 +140,60 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 	}
 
 	.filter-tag {
-		padding: 0.625rem 1.25rem;
-		border: 1px solid var(--line-divider);
-		border-radius: var(--radius-large);
-		background: var(--btn-regular-bg);
-		color: var(--btn-content);
+		padding: 0.5rem 1.1rem;
+		border: 1.5px dashed var(--dash);
+		border-radius: var(--radius-handdrawn);
+		background: transparent;
+		color: var(--ink-soft);
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all 0.2s ease;
 		white-space: nowrap;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.filter-tag::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: var(--primary);
-		opacity: 0;
-		transition: opacity 0.3s ease;
-		z-index: -1;
 	}
 
 	.filter-tag:hover:not(.active) {
-		background: var(--btn-hover-bg);
-		border-color: var(--primary);
-		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		color: var(--color-accent-strong);
+		border-color: var(--color-accent-strong);
+		background: var(--color-accent-soft);
 	}
 
 	.filter-tag.active {
-		background: var(--primary);
-		color: white;
-		border-color: var(--primary);
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+		background: var(--color-accent-strong);
+		color: #fff;
+		border-color: var(--color-accent-strong);
+		border-style: solid;
+		box-shadow: var(--small-shadow);
 	}
 
-	.filter-tag.active:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 16px rgba(var(--color-primary-rgb), 0.4);
+	/* 设备卡片：纸卡壳层（4px 撕边纸由 card-base 体系承担，这里对齐语言） */
+	.device-card {
+		border-radius: 4px;
+		background: var(--card-bg);
+		border: 1px solid var(--paper-line);
+		box-shadow: var(--paper-shadow);
+		transition: box-shadow 0.22s ease, translate 0.22s ease, border-color 0.22s ease;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.device-card:hover {
+			translate: 0 -3px;
+			box-shadow: var(--small-shadow);
+			border-color: var(--paper-dash);
+		}
+	}
+
+	.device-card-imgbox {
+		border-radius: 3px;
+		background: var(--paper-warm);
+	}
+
+	/* 规格标签：手绘虚线小框 */
+	.device-spec {
+		border: 1.5px dashed var(--dash);
+		border-radius: var(--radius-handdrawn);
+		background: transparent;
+		color: var(--ink-soft);
 	}
 
 	/* 设备卡片动画效果 */
@@ -216,31 +221,6 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 		overflow: hidden;
 	}
 
-	/* 设备卡片微妙的悬停效果 */
-	.device-card::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: 0.75rem;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--color-primary-rgb), 0.05),
-			transparent
-		);
-		opacity: 0;
-		transition: opacity 0.4s ease;
-		pointer-events: none;
-	}
-
-	.device-card:hover::after {
-		opacity: 1;
-	}
-
-	/* 设备名称和规格的文本样式 */
-	.device-card h3 {
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-	}
-
 	/* 响应式调整 */
 	@media (width < 768px) {
 		.filter-container {
@@ -248,7 +228,7 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 		}
 
 		.filter-tag {
-			padding: 0.5rem 1rem;
+			padding: 0.4rem 0.9rem;
 			font-size: 0.8rem;
 		}
 
@@ -258,13 +238,6 @@ const viewDetailsText = i18n(I18nKey.devicesViewDetails);
 
 		.device-card .p-6\.pt-4 {
 			padding: 1rem;
-		}
-	}
-
-	/* 在深色模式下微妙的阴影效果 */
-	@media (prefers-color-scheme: dark) {
-		.device-card:hover {
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		}
 	}
 </style>
