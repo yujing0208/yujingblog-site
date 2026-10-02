@@ -36,6 +36,7 @@ class ThemeOptimizer {
 			".widget",
 			".post-card",
 			".custom-md",
+			".markdown-content",
 		];
 
 		this.init();
@@ -412,7 +413,8 @@ class ThemeOptimizer {
       .is-theme-transitioning .post-card,
       .is-theme-transitioning #navbar *,
       .is-theme-transitioning .dropdown-content,
-      .is-theme-transitioning .custom-md * {
+      .is-theme-transitioning .custom-md *,
+      .is-theme-transitioning .markdown-content * {
         transition: none !important;
         animation: none !important;
       }
