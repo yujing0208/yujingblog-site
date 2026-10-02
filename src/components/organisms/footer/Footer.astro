@@ -351,6 +351,8 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 	.site-footer__signature {
 		display: block;
 		min-height: 1px;
+		/* 视觉左移：签名图片左侧有留白，负外边距抵消约一个字符宽 */
+		margin-left: -1.5rem;
 	}
 
 	.site-footer__signature :global(svg) {
