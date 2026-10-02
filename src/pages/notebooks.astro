@@ -1,4 +1,5 @@
 ---
+import { PageHeader } from "@components/features/page-header";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 const title = "笔记本";
@@ -8,8 +9,7 @@ const subtitle = "三本随手记下的小书";
 <MainGridLayout title={title} description={subtitle}>
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-6 sm:px-9 py-8 relative w-full">
-			<h1 class="nb-h1">我的<span class="nb-em">笔记本</span></h1>
-			<p class="nb-sub">三本随手记下的小书 · 点开任意一本开始读</p>
+			<PageHeader title={title} subtitle={subtitle} />
 			<main class="shelf" id="shelf"></main>
 		</div>
 	</div>
@@ -34,40 +34,26 @@ const subtitle = "三本随手记下的小书";
 	<div class="toast" id="toast"></div>
 
 	<style is:global>
+		/* paper 适配：全部映射到 paper-theme.css 的全局 token，亮暗自动跟随 */
 		:root {
-			--nb-primary: var(--primary, #7aa585);
-			--nb-primary-soft: color-mix(in srgb, var(--nb-primary) 14%, transparent);
-			--nb-primary-line: color-mix(in srgb, var(--nb-primary) 35%, transparent);
-			--nb-bg: #f5f4f1;
-			--nb-bg2: #eceae5;
-			--nb-card: #fffdf9;
-			--nb-ink: #2c2a26;
-			--nb-muted: #8a857c;
-			--nb-line: rgba(40, 36, 30, 0.1);
-			--nb-shadow: 0 18px 44px -20px rgba(40, 36, 30, 0.38);
-			--nb-radius: 18px;
+			--nb-primary: var(--color-accent-strong);
+			--nb-primary-soft: var(--color-accent-soft);
+			--nb-primary-line: color-mix(in srgb, var(--color-accent-strong) 35%, transparent);
+			--nb-bg: var(--paper-warm);
+			--nb-bg2: var(--paper-warm);
+			--nb-card: var(--card-bg);
+			--nb-ink: var(--ink);
+			--nb-muted: var(--ink-soft);
+			--nb-line: var(--paper-dash);
+			--nb-shadow: var(--paper-shadow);
+			--nb-radius: 4px;
 			--nb-font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
-			--nb-serif: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+			--nb-serif: var(--font-hand, "Songti SC", "STSong", "Noto Serif SC", Georgia, serif);
 		}
 		:root.dark {
-			--nb-bg: #16161a;
-			--nb-bg2: #1c1c22;
-			--nb-card: #23232b;
-			--nb-ink: #ece9e3;
-			--nb-muted: #9a958c;
-			--nb-line: rgba(255, 255, 255, 0.1);
-			--nb-shadow: 0 24px 56px -22px rgba(0, 0, 0, 0.62);
+			--nb-font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+			--nb-serif: var(--font-hand, "Songti SC", "STSong", "Noto Serif SC", Georgia, serif);
 		}
-
-		.nb-h1 {
-			font-size: clamp(26px, 4vw, 38px);
-			font-weight: 600;
-			letter-spacing: 5px;
-			font-family: var(--nb-serif);
-			color: var(--nb-ink);
-		}
-		.nb-em { font-style: normal; color: var(--nb-primary); }
-		.nb-sub { margin-top: 8px; color: var(--nb-muted); font-size: 14px; letter-spacing: 0.4px; }
 
 		.shelf {
 			margin: 28px auto 30px;
@@ -159,7 +145,7 @@ const subtitle = "三本随手记下的小书";
 		.shake { animation: shake 0.5s; }
 
 		.reader-overlay { background: rgba(20, 18, 15, 0.5); }
-		.book-modal { position: relative; width: min(960px, 94vw); height: min(640px, 86vh); display: flex; border-radius: 14px 16px 16px 14px; overflow: hidden; background: var(--nb-card); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.6); transform: scale(0.95); opacity: 0; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease; }
+		.book-modal { position: relative; width: min(960px, 94vw); height: min(640px, 86vh); display: flex; border-radius: 4px; overflow: hidden; background: var(--nb-card); box-shadow: var(--shadow, 0 18px 38px rgba(82, 64, 38, 0.16)); transform: scale(0.95); opacity: 0; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease; }
 		.reader-overlay.show .book-modal { transform: scale(1); opacity: 1; }
 		.book-modal .left-page, .book-modal .right-page { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 		.book-modal .left-page { border-right: 1px solid var(--nb-line); }
@@ -267,6 +253,14 @@ const subtitle = "三本随手记下的小书";
 			if (!shelf || shelf.dataset.nb === "1") return;
 			shelf.dataset.nb = "1";
 
+			// 防御：数据文件可能混入非文章条目（历史遗留：编辑器曾把 GitHub 文件树
+			// {name,path,sha} 写进 data/notebooks.ts）。这类条目没有 h/body，
+			// readerMarkdown 会对 undefined.body 调 split 抛 TypeError ——
+			// 表现为「密码输对了，阅读器却不弹出」。这里只保留合法条目。
+			const articles = (Array.isArray(campusNotebook) ? campusNotebook : []).filter(
+				(a) => a && typeof a.h === "string" && typeof a.body === "string"
+			);
+
 			// 把弹窗移到 body 下，脱离 MainGridLayout 的层叠上下文
 			for (const id of ["pwOverlay", "readerOverlay", "toast"]) {
 				const el = document.getElementById(id);
@@ -276,7 +270,7 @@ const subtitle = "三本随手记下的小书";
 			const NOTEBOOKS = [
 				{
 					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", locked: true, type: "markdown",
-					articles: campusNotebook
+					articles: articles
 				},
 				{
 					id: "run", title: "自律日记", accent: "#e0996b", band: "跑过的路，一步都不白费", author: "余京◎著", type: "runs",
@@ -466,14 +460,15 @@ const subtitle = "三本随手记下的小书";
 				const order = b._order || "old";
 				const list = () => { const a = [...b.articles]; return order === "new" ? a.reverse() : a; };
 				const dates = [...b.articles].map((a) => a.h).sort();
-				const days = Math.round((new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000);
+				const _span = dates.length ? (new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000 : 0;
+				const days = Number.isFinite(_span) ? Math.round(_span) : 0;
 				const arts = list();
 			b._orderList = arts.map((a) => b.articles.indexOf(a));
 			b._arts = arts;
 			b._cur = 0;
 			const toc = arts.map((a, i) => `<div class="toc-item" data-i="${b.articles.indexOf(a)}"><span class="idx">${String(i + 1).padStart(2, "0")}</span><span>${a.h}</span></div>`).join("");
 			const singleArt = (cur) => { const a = b._arts[cur]; return `<div class="art-single"><h2>${a.h}</h2>${md(a.body)}</div>`; };
-			const body = singleArt(0);
+			const body = b.articles.length ? singleArt(0) : nbEmpty("📖", "这本还空着", "还没有可读的篇目");
 				return `<button class="close-x" title="关闭">✕</button>
 					<section class="left-page"><div class="page-pad">
 						<div class="pg-head"><h2>目录</h2><button class="btn-soft" id="sortBtn">⇅ ${b._order === "new" ? "倒序" : "正序"}</button></div>
