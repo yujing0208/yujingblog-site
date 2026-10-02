@@ -56,7 +56,7 @@ const episodesUnit = isNovel ? "册" : "集";
 ---
 
 <div
-	class={`group relative ${isGame ? "anime-card-game" : "bg-(--card-bg) border border-(--line-divider) rounded-[4px] overflow-hidden hover:shadow-lg"}`}
+	class={`group relative anime-paper-card ${isGame ? "anime-card-game" : ""}`}
 	data-anime-status={anime.status}
 	data-anime-category={anime.category}
 >
@@ -204,7 +204,7 @@ const episodesUnit = isNovel ? "册" : "集";
 					<div class="flex flex-wrap gap-1 mt-2">
 						{
 							anime.genre.map((g) => (
-								<span class="px-1.5 py-0.5 bg-(--btn-regular-bg) text-black/70 dark:text-white/70 rounded text-xs">
+								<span class="anime-genre-chip px-1.5 py-0.5 text-xs">
 									{g}
 								</span>
 							))
@@ -217,6 +217,35 @@ const episodesUnit = isNovel ? "册" : "集";
 </div>
 
 <style is:global>
+	/* paper 适配：4px 纸卡 + 常驻纸影，hover 上浮（与 card-base 同一套节奏） */
+	.anime-paper-card {
+		border-radius: 4px;
+		background: var(--card-bg);
+		border: 1px solid var(--paper-line);
+		box-shadow: var(--paper-shadow);
+		overflow: hidden;
+		transition: box-shadow 0.22s ease, translate 0.22s ease, border-color 0.22s ease;
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.anime-paper-card:hover {
+			translate: 0 -3px;
+			box-shadow: var(--small-shadow);
+			border-color: var(--paper-dash);
+		}
+	}
+	/* 封面右上角评分角标对齐纸感 */
+	.anime-paper-card .bg-black\/70 {
+		border-radius: 3px;
+	}
+
+	/* 类型标签：手绘虚线小框 */
+	.anime-genre-chip {
+		border: 1.5px dashed var(--dash);
+		border-radius: var(--radius-handdrawn);
+		background: transparent;
+		color: var(--ink-soft);
+	}
+
 	/* In list mode, keep game cards as icon + name below, not a horizontal row */
 	.anime-grid-container.anime-list-mode .anime-card-game {
 		flex-direction: column !important;
