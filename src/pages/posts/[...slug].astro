@@ -9,6 +9,7 @@ import {
 	PostMeta,
 } from "@components/features/posts";
 import PaperArticleFooter from "@components/features/posts/PaperArticleFooter.astro";
+import PaperLicense from "@components/features/posts/PaperLicense.astro";
 import PaperRelatedPosts from "@components/features/posts/PaperRelatedPosts.astro";
 import { Icon } from "astro-icon/components";
 import "@/styles/paper-post.css";
@@ -24,6 +25,7 @@ import {
 	removeFileExtension,
 } from "@utils/url-utils";
 import {
+	licenseConfig,
 	permalinkConfig,
 	relatedPostsConfig,
 	shareConfig,
@@ -336,14 +338,8 @@ const jsonLd = {
 				)
 			}
 
-			<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航（替代 ShareCard/License） -->
-			<div
-				id="license-component"
-				class:list={[
-					"encrypted-hidden-wrapper",
-					{ "encrypted-hidden": isEncrypted },
-				]}
-			>
+			<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航（替代 ShareCard） -->
+			<div class:list={["encrypted-hidden-wrapper", { "encrypted-hidden": isEncrypted }]}>
 				<PaperArticleFooter
 					title={entry.data.title}
 					author={entry.data.author}
@@ -362,6 +358,28 @@ const jsonLd = {
 			</div>
 		</div>
 	</div>
+
+	<!-- FlatPaper 风格版权卡（加密文章解锁后按 #license-component 揭示） -->
+	{
+		licenseConfig.enable && (
+			<div
+				id="license-component"
+				class:list={[
+					"encrypted-hidden-wrapper",
+					{ "encrypted-hidden": isEncrypted },
+				]}
+			>
+				<PaperLicense
+					title={entry.data.title}
+					pubDate={entry.data.published}
+					author={entry.data.author}
+					sourceLink={entry.data.sourceLink}
+					licenseName={entry.data.licenseName}
+					licenseUrl={entry.data.licenseUrl}
+				/>
+			</div>
+		)
+	}
 
 	<!-- FlatPaper 相关文章纸卡（文章纸卡与评论区之间，同参考站顺序） -->
 	<PaperRelatedPosts relatedPosts={relatedPosts.slice(0, 4)} />

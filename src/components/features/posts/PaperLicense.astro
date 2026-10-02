@@ -1,0 +1,242 @@
+---
+// FlatPaper 风格版权卡 —— 原 License.astro 的信息（标题/链接/作者/日期/协议）
+// 重新适配本站纸风格：纸底 + 撕边滤镜 + 右上角蓝胶带 + 手绘虚线分隔（同 related-paper 语言）
+import { Icon } from "astro-icon/components";
+import { licenseConfig } from "../../../config";
+import I18nKey from "../../../i18n/i18nKey";
+import { i18n } from "../../../i18n/translation";
+import { formatDateToYYYYMMDD } from "../../../utils/date-utils";
+
+interface Props {
+	title: string;
+	pubDate: Date;
+	author?: string;
+	sourceLink?: string;
+	licenseName?: string;
+	licenseUrl?: string;
+	class?: string;
+}
+
+const { title, pubDate, author, sourceLink, licenseName, licenseUrl } =
+	Astro.props;
+const className = Astro.props.class;
+
+// 版权信息缺省值：与原 License.astro 一致
+const DEFAULT_AUTHOR = "余京";
+const DEFAULT_LICENSE_NAME = "Unlicensed";
+const postUrl = sourceLink || decodeURIComponent(Astro.url.toString());
+const licenseHref = licenseName
+	? licenseUrl || licenseConfig.url || undefined
+	: licenseConfig.url || undefined;
+const licenseText = licenseName || DEFAULT_LICENSE_NAME;
+---
+
+<section class:list={["paper-license", className]} aria-label="版权声明">
+	<header class="paper-license__head">
+		<h2>
+			<Icon name="lucide:scale" is:inline />
+			{i18n(I18nKey.license)}
+		</h2>
+	</header>
+
+	<div class="paper-license__body">
+		<Icon
+			name="fa7-brands:creative-commons"
+			class="paper-license__watermark"
+			aria-hidden="true"
+		/>
+		<strong class="paper-license__title">{title}</strong>
+		<a class="paper-license__link" href={postUrl}>{postUrl}</a>
+
+		<dl class="paper-license__meta">
+			<div>
+				<dt>{i18n(I18nKey.author)}</dt>
+				<dd>{author || DEFAULT_AUTHOR}</dd>
+			</div>
+			<div>
+				<dt>{i18n(I18nKey.publishedAt)}</dt>
+				<dd>{formatDateToYYYYMMDD(pubDate)}</dd>
+			</div>
+			<div>
+				<dt>{i18n(I18nKey.license)}</dt>
+				<dd>
+					{licenseHref ? (
+						<a href={licenseHref} target="_blank" rel="noopener">
+							{licenseText}
+						</a>
+					) : (
+						licenseText
+					)}
+				</dd>
+			</div>
+		</dl>
+	</div>
+</section>
+
+<style>
+	/* ---------- 纸卡外壳（同 related-paper：撕边纸底 + 右上角蓝胶带） ---------- */
+	.paper-license {
+		position: relative;
+		padding: 22px 26px 24px;
+		z-index: 1;
+	}
+
+	.paper-license::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--paper);
+		z-index: -1;
+		border-radius: 4px;
+		filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
+	}
+
+	.paper-license::after {
+		content: "";
+		position: absolute;
+		top: -10px;
+		right: 30px;
+		z-index: 2;
+		width: 70px;
+		height: 20px;
+		background-color: var(--tape-blue);
+		background-image: var(--tape-stripes);
+		transform: rotate(6deg);
+	}
+
+	.paper-license__head h2 {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 0 14px;
+		font-size: 17px;
+		font-weight: 700;
+		color: var(--ink);
+	}
+
+	.paper-license__head h2 :global(svg) {
+		width: 18px;
+		height: 18px;
+		color: var(--color-accent-strong);
+	}
+
+	:root.dark .paper-license__head h2 :global(svg) {
+		color: var(--color-accent-muted);
+	}
+
+	/* ---------- 正文：标题 / 链接 / 三列元信息 ---------- */
+	.paper-license__body {
+		position: relative;
+		padding: 16px 18px;
+		/* 手绘虚线方框（同 tape 风格真值） */
+		border: 2px dashed var(--dash);
+		border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+		background: var(--paper-warm);
+		overflow: hidden;
+	}
+
+	.paper-license__watermark {
+		position: absolute;
+		right: -18px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 9rem;
+		height: 9rem;
+		pointer-events: none;
+		color: var(--ink);
+		opacity: 0.05;
+	}
+
+	:root.dark .paper-license__watermark {
+		color: var(--paper);
+		opacity: 0.07;
+	}
+
+	.paper-license__title {
+		display: block;
+		font-weight: 700;
+		color: var(--ink);
+		line-height: 1.5;
+		position: relative;
+		z-index: 1;
+	}
+
+	.paper-license__link {
+		display: inline-block;
+		margin-top: 2px;
+		color: var(--color-accent-strong);
+		font-size: 14px;
+		/* 虚线下划线，替代默认 link 样式，贴合手绘感 */
+		text-decoration: underline dashed var(--dash);
+		text-underline-offset: 4px;
+		word-break: break-all;
+		position: relative;
+		z-index: 1;
+		transition: color 0.15s ease;
+	}
+
+	.paper-license__link:hover {
+		color: var(--color-accent);
+	}
+
+	:root.dark .paper-license__link {
+		color: var(--color-accent-muted);
+	}
+
+	.paper-license__meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 32px;
+		margin: 14px 0 0;
+		padding-top: 14px;
+		border-top: 1px dashed var(--line);
+		position: relative;
+		z-index: 1;
+	}
+
+	.paper-license__meta dt {
+		color: var(--muted);
+		font-size: 13px;
+	}
+
+	.paper-license__meta dd {
+		margin: 2px 0 0;
+		color: var(--ink);
+		font-weight: 600;
+		font-size: 14px;
+	}
+
+	.paper-license__meta dd a {
+		color: var(--color-accent-strong);
+		text-decoration: underline dashed var(--dash);
+		text-underline-offset: 4px;
+		transition: color 0.15s ease;
+	}
+
+	.paper-license__meta dd a:hover {
+		color: var(--color-accent);
+	}
+
+	:root.dark .paper-license__meta dd a {
+		color: var(--color-accent-muted);
+	}
+
+	@media (max-width: 600px) {
+		.paper-license {
+			padding: 18px 18px 20px;
+		}
+
+		.paper-license__body {
+			padding: 14px 16px;
+		}
+
+		.paper-license__watermark {
+			width: 6.5rem;
+			height: 6.5rem;
+		}
+
+		.paper-license__meta {
+			gap: 8px 22px;
+		}
+	}
+</style>

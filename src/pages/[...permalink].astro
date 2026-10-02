@@ -16,6 +16,7 @@ import {
 	PostMeta,
 } from "@components/features/posts";
 import PaperArticleFooter from "@components/features/posts/PaperArticleFooter.astro";
+import PaperLicense from "@components/features/posts/PaperLicense.astro";
 import Markdown from "@components/misc/Markdown.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
@@ -28,7 +29,7 @@ import { getPostPublicDescription } from "@utils/post-card-content";
 import { getCategoryUrl, getFileDirFromPath } from "@utils/url-utils";
 import "@/styles/paper-post.css";
 import { Icon } from "astro-icon/components";
-import { shareConfig } from "src/config";
+import { licenseConfig, shareConfig } from "src/config";
 
 import { permalinkConfig } from "@/config";
 
@@ -250,6 +251,19 @@ let posterAvatarUrl = profileConfig.avatar;
 			}
 		</div>
 	</div>
+
+	{
+		licenseConfig.enable && (
+			<PaperLicense
+				title={entry.data.title}
+				pubDate={entry.data.published}
+				author={entry.data.author}
+				sourceLink={entry.data.sourceLink}
+				licenseName={entry.data.licenseName}
+				licenseUrl={entry.data.licenseUrl}
+			/>
+		)
+	}
 
 	<!-- 评论 -->
 	<Comment post={entry} />
