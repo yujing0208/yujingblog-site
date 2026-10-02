@@ -1,0 +1,490 @@
+---
+// FlatPaper「相关文章」纸卡 —— 抄自主题源码（github.com/Homulilly/hexo-theme-flatpaper）：
+//   layout/post.ejs（related-paper 结构）
+//   source/css/_partials/_components/related-paper.styl
+//   source/css/_partials/_global/thumbnail.styl（paper-thumb 插画/折角）
+//   source/css/_partials/_layout/responsive.styl（1200px 2列 / 600px 1列）
+// 类名与源码一致（本站无同名冲突）；--tape-blue/--tape-stripes/--small-shadow
+// 等 token 已在 paper-theme.css 中按源码同值定义；#paper-edge 撕边滤镜全局可用。
+import { Icon } from "astro-icon/components";
+import Image from "@components/atoms/Image/Image.astro";
+import type { PostForList } from "@/utils/content-utils";
+import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import { getFileDirFromPath, getPostUrlBySlug } from "@/utils/url-utils";
+
+interface Props {
+	relatedPosts: PostForList[];
+}
+
+const { relatedPosts } = Astro.props;
+---
+
+{
+	relatedPosts.length > 0 && (
+		<section class="related-paper" aria-label="相关文章">
+			<header class="related-paper__head">
+				<h2>
+					<Icon name="lucide:link" is:inline />
+					相关文章
+				</h2>
+				<a class="related-paper__more" href="/archive/">
+					<span>查看更多</span>
+					<Icon name="lucide:arrow-right" is:inline />
+				</a>
+			</header>
+			<div class="related-paper__grid">
+				{relatedPosts.map((post, index) => {
+					const variant = index % 3;
+					const hasCover = !!post.data.image;
+					return (
+						<a class="related-card" href={getPostUrlBySlug(post.id)}>
+							<span class="related-card__thumb">
+								<div
+									class:list={[
+										"paper-thumb",
+										`paper-thumb-${variant}`,
+										{ "paper-thumb--cover": hasCover },
+									]}
+								>
+									{hasCover ? (
+										<Image
+											src={post.data.image}
+											basePath={getFileDirFromPath(post.filePath || "")}
+											class="paper-thumb__imghost"
+											alt={post.data.title}
+											widths={[320, 640]}
+											sizes="(max-width: 768px) 50vw, 25vw"
+										/>
+									) : (
+										<>
+											<div class="sun" />
+											<div class="cloud cloud-a" />
+											<div class="cloud cloud-b" />
+											<div class="mountain mountain-a" />
+											<div class="mountain mountain-b" />
+											<div class="mountain mountain-c" />
+											{variant === 1 && (
+												<div class="screen">
+													<i />
+													<i />
+													<i />
+												</div>
+											)}
+											{variant === 2 && (
+												<div class="camera">
+													<i />
+												</div>
+											)}
+										</>
+									)}
+								</div>
+							</span>
+							<span class="related-card__body">
+								<strong class="related-card__title">{post.data.title}</strong>
+								<em class="related-card__date">
+									{formatDateToYYYYMMDD(post.data.published)}
+								</em>
+							</span>
+						</a>
+					);
+				})}
+			</div>
+		</section>
+	)
+}
+
+<style>
+	/* ============== RELATED PAPER（抄 related-paper.styl） ============== */
+	.related-paper {
+		position: relative;
+		padding: 26px 28px 28px;
+		z-index: 1;
+	}
+
+	.related-paper::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--paper);
+		z-index: -1;
+		border-radius: 4px;
+		filter: url(#paper-edge) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
+	}
+
+	/* 右上角蓝胶带（demo 编译版没有，源码新增） */
+	.related-paper::after {
+		content: "";
+		position: absolute;
+		top: -10px;
+		right: 30px;
+		z-index: 2;
+		width: 70px;
+		height: 20px;
+		background-color: var(--tape-blue);
+		background-image: var(--tape-stripes);
+		transform: rotate(6deg);
+	}
+
+	.related-paper__head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 18px;
+	}
+
+	.related-paper__head h2 {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0;
+		font-size: 17px;
+		font-weight: 700;
+		color: var(--ink);
+	}
+
+	.related-paper__head h2 :global(svg) {
+		width: 18px;
+		height: 18px;
+		color: var(--color-accent-strong);
+	}
+
+	:root.dark .related-paper__head h2 :global(svg) {
+		color: var(--color-accent-muted);
+	}
+
+	.related-paper__more {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--muted);
+		font-size: 13px;
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.related-paper__more :global(svg) {
+		width: 13px;
+		height: 13px;
+	}
+
+	.related-paper__more:hover {
+		color: var(--color-accent-strong);
+	}
+
+	:root.dark .related-paper__more:hover {
+		color: var(--color-accent-muted);
+	}
+
+	.related-paper__grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 14px;
+	}
+
+	/* ============== 单卡（抄 .related-card） ============== */
+	.related-card {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		color: var(--ink);
+		text-decoration: none;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+		transition: transform 0.22s ease;
+	}
+
+	.related-card::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--paper);
+		z-index: -1;
+		border-radius: 4px;
+		filter: url(#paper-edge);
+	}
+
+	.related-card::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+		border-radius: 4px;
+		box-shadow: var(--small-shadow);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.22s ease;
+	}
+
+	.related-card:hover {
+		transform: translateY(-3px);
+	}
+
+	.related-card:hover::after {
+		opacity: 1;
+	}
+
+	.related-card__thumb {
+		display: block;
+	}
+
+	.related-card__thumb :global(.paper-thumb) {
+		height: 110px;
+		border-radius: 4px 4px 0 0;
+	}
+
+	.related-card__body {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 10px 12px 12px;
+	}
+
+	.related-card__title {
+		font-size: 13px;
+		font-weight: 600;
+		line-height: 1.45;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		word-break: break-word;
+	}
+
+	.related-card:hover .related-card__title {
+		color: var(--color-accent-strong);
+	}
+
+	:root.dark .related-card:hover .related-card__title {
+		color: var(--color-accent-muted);
+	}
+
+	.related-card__date {
+		color: var(--muted);
+		font-size: 11px;
+		font-style: normal;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ============== PAPER THUMB（抄 thumbnail.styl） ============== */
+	.related-card__thumb :global(.paper-thumb) {
+		position: relative;
+		width: 100%;
+		overflow: hidden;
+	}
+
+	/* 有封面：--cover 底 + 图片铺满 */
+	.related-card__thumb :global(.paper-thumb--cover) {
+		background: var(--paper-warm);
+	}
+
+	.related-card__thumb :global(.paper-thumb__imghost) {
+		position: absolute;
+		inset: 0;
+	}
+
+	.related-card__thumb :global(.paper-thumb img),
+	.related-card__thumb :global(.paper-thumb picture) {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 50% 50%;
+		display: block;
+	}
+
+	/* 无封面：插画变体底色 */
+	.related-card__thumb :global(.paper-thumb-0) {
+		background: linear-gradient(180deg, #d5e7d4 0%, #ecf3d8 100%);
+	}
+
+	.related-card__thumb :global(.paper-thumb-1) {
+		background: linear-gradient(180deg, #ffd8af, #f7b276);
+	}
+
+	.related-card__thumb :global(.paper-thumb-2) {
+		background: linear-gradient(180deg, #d8efd8, #a9d5af);
+	}
+
+	/* 无封面时右下角折角（--cover 有图时隐藏） */
+	.related-card__thumb :global(.paper-thumb:not(.paper-thumb--cover))::after {
+		content: "";
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 36px;
+		height: 36px;
+		background: linear-gradient(
+			135deg,
+			rgba(255, 255, 255, 0.92) 0 50%,
+			rgba(219, 201, 176, 0.55) 51% 100%
+		);
+		box-shadow: -3px -3px 8px rgba(75, 60, 42, 0.1);
+		clip-path: polygon(100% 0, 100% 100%, 0 100%);
+		z-index: 1;
+	}
+
+	/* 插画元素（抄 thumbnail.styl 几何真值） */
+	.related-card__thumb :global(.sun) {
+		position: absolute;
+		top: 18px;
+		left: 22%;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: var(--yellow, #f5c453);
+		box-shadow: 0 2px 0 rgba(180, 130, 40, 0.12);
+	}
+
+	.related-card__thumb :global(.mountain) {
+		position: absolute;
+		bottom: -1px;
+		width: 56%;
+		height: 50%;
+		background: linear-gradient(
+			135deg,
+			rgba(95, 158, 110, 0.95),
+			rgba(125, 188, 132, 0.75)
+		);
+		clip-path: polygon(0 100%, 52% 0, 100% 100%);
+	}
+
+	.related-card__thumb :global(.mountain-a) {
+		left: -8%;
+	}
+
+	.related-card__thumb :global(.mountain-b) {
+		right: 0;
+		height: 62%;
+	}
+
+	.related-card__thumb :global(.mountain-c) {
+		left: 26%;
+		bottom: -8%;
+		height: 36%;
+		opacity: 0.65;
+	}
+
+	.related-card__thumb :global(.cloud) {
+		position: absolute;
+		width: 46px;
+		height: 18px;
+		border-radius: 18px;
+		background: rgba(255, 255, 255, 0.86);
+	}
+
+	.related-card__thumb :global(.cloud)::before,
+	.related-card__thumb :global(.cloud)::after {
+		content: "";
+		position: absolute;
+		border-radius: 50%;
+		background: inherit;
+	}
+
+	.related-card__thumb :global(.cloud)::before {
+		width: 20px;
+		height: 20px;
+		left: 8px;
+		bottom: 6px;
+	}
+
+	.related-card__thumb :global(.cloud)::after {
+		width: 28px;
+		height: 28px;
+		right: 6px;
+		bottom: 4px;
+	}
+
+	.related-card__thumb :global(.cloud-a) {
+		right: 10%;
+		top: 30px;
+	}
+
+	.related-card__thumb :global(.cloud-b) {
+		left: 8%;
+		top: 56px;
+		transform: scale(0.7);
+	}
+
+	.related-card__thumb :global(.screen) {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 72px;
+		height: 50px;
+		padding: 10px 12px;
+		border-radius: 4px;
+		background: #273942;
+		transform: translate(-50%, -55%);
+		box-shadow:
+			0 14px 0 -10px #526e78,
+			0 18px 0 -14px #263942;
+	}
+
+	.related-card__thumb :global(.screen) i {
+		display: block;
+		width: 40px;
+		height: 3px;
+		margin-bottom: 5px;
+		border-radius: 99px;
+		background: #efbe64;
+	}
+
+	.related-card__thumb :global(.screen) i:nth-child(2) {
+		width: 30px;
+		background: #76b986;
+	}
+
+	.related-card__thumb :global(.screen) i:nth-child(3) {
+		width: 48px;
+		background: #6fb1df;
+	}
+
+	.related-card__thumb :global(.camera) {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 76px;
+		height: 50px;
+		border-radius: 10px;
+		background: #56755f;
+		transform: translate(-50%, -48%);
+		box-shadow: inset 0 -10px 0 rgba(30, 55, 44, 0.22);
+	}
+
+	.related-card__thumb :global(.camera)::before {
+		content: "";
+		position: absolute;
+		left: 18px;
+		top: -10px;
+		width: 32px;
+		height: 14px;
+		border-radius: 6px 6px 0 0;
+		background: #56755f;
+	}
+
+	.related-card__thumb :global(.camera) i {
+		position: absolute;
+		left: 24px;
+		top: 10px;
+		width: 28px;
+		height: 28px;
+		border: 6px solid #263a36;
+		border-radius: 50%;
+		background: #8eb99a;
+	}
+
+	/* ============== 响应式（抄 responsive.styl） ============== */
+	@media (max-width: 1200px) {
+		.related-paper__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 600px) {
+		.related-paper__grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>
