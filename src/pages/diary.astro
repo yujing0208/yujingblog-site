@@ -110,7 +110,33 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
               class="twikoo-entry-comments mt-3 hidden"
               data-diary-id={moment.id}
             >
-              <div id={`tcomment-${moment.id}`}></div>
+              {/* 与文章页评论区同一套纸卡外壳（comments-section，样式见 paper-comments.css，
+                  全局主包已引入）：撕边纸层 + 顶部粉胶带 + 「评论」标题 */}
+              <section
+                class="comments-section diary-comments-section"
+                aria-label="评论"
+              >
+                <header class="comments-section__head">
+                  <h2>
+                    <svg
+                      class="lucide"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      width="18"
+                      height="18"
+                      aria-hidden="true"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    评论
+                  </h2>
+                </header>
+                <div id={`tcomment-${moment.id}`}></div>
+              </section>
             </div>
           </div>
         ))
@@ -660,12 +686,17 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
   }
   #moments-feed .mood-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; height: 14px; }
 
-  /* 展开评论区（纸中纸：warm 底 + 手绘虚线框） */
+  /* 展开评论区：与文章页同一套 comments-section 纸卡外壳（撕边纸层 + 粉胶带 + 标题，
+     样式在 paper-comments.css 随主包下发）。外层容器只负责显示/收起，不再自带底色。 */
   #moments-feed .twikoo-entry-comments {
-    background: var(--paper-warm);
-    border: 1.5px dashed var(--dash);
-    border-radius: 4px;
-    padding: 0.875rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  /* 卡内嵌入时收紧上下外距（原 26px 8px 是卡外平级区块的节奏） */
+  #moments-feed .diary-comments-section {
+    margin-block: 4px 2px;
   }
 
   #moments-feed .card-content { margin-bottom: 0.75rem; }
