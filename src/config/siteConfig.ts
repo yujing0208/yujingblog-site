@@ -28,6 +28,7 @@ export const siteConfig: SiteConfig = {
 		devices: true, // 设备页面开关
 		aiTools: false, // AI 工具页面开关
 		changelog: true, // 更新日志页面开关
+		notebooks: true, // 笔记本页面开关
 	},
 
 	// 顶栏标题配置
