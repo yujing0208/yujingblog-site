@@ -71,6 +71,31 @@ body:not(.paper-layout) #top-row .site-header {
 	margin-top: 0;
 }
 
+/* ---- 顶部渐隐纸色（照搬 flatpaper 的 body::before 顶部遮罩，2026-10-02） ----
+   参考站滚动时导航栏上方是干净的空白背景，因为 flatpaper 的 body::before
+   自带「固定在视口顶部、向下渐隐的纸色遮罩」。本站的 body::before 已被
+   纸张底纹占用（paper-theme.css 第 1 节），当时跳过了这一层 —— 结果导航
+   钉在 top:16px（首页首屏在 28px），上方那条 16~28px 的间隙滚动时会把
+   页面内容透出来。
+   这里用 body::after 补同款遮罩（全站样式已确认无人占用 body::after）：
+   盖在内容之上、导航（z-index 50）之下，颜色跟随明暗模式自动切换。 */
+body::after {
+	content: "";
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 44px;
+	z-index: 45;
+	pointer-events: none;
+	background: linear-gradient(
+		to bottom,
+		var(--page-bg) 0%,
+		var(--page-bg) 40%,
+		transparent 100%
+	);
+}
+
 /* 永不隐藏：swup 切页（swup-hooks）与 back-to-top 处理器会给 #navbar-wrapper
    加 .navbar-hidden（opacity:0 + -translate-y-16）。需求要求导航栏任何时刻都可见，
    这里直接反制，JS 那侧的加类逻辑不用动。 */
