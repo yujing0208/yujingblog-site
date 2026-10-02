@@ -1,7 +1,7 @@
 // scripts/build-env-info.mjs — 构建时把关键依赖的实际解析版本写入 public/build-info.txt
 // 用于诊断线上构建环境的依赖组合（尤其是 micromark-util-character）
 import { createRequire } from "node:module";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -157,7 +157,33 @@ try {
       rehypeImageWidth,
     ],
   });
-  const mdFile = path.join(root, "content", "posts", "lx-music-guide.md");
+  lines.push(`env: ENABLE_CONTENT_SYNC=${process.env.ENABLE_CONTENT_SYNC ?? "(unset)"} CONTENT_DIR=${process.env.CONTENT_DIR ?? "(unset)"} CI=${process.env.CI ?? "(unset)"}`);
+  // 内容目录在 Vercel 上可能与本地不同（CONTENT_DIR 环境变量决定），自动发现文章路径
+  const candidates = [
+    path.join(root, "content", "posts", "lx-music-guide.md"),
+    path.join(root, "src", "content", "posts", "lx-music-guide.md"),
+  ];
+  let mdFile = null;
+  for (const c of candidates) {
+    if (existsSync(c)) { mdFile = c; break; }
+  }
+  if (!mdFile) {
+    // 兜底：浅层递归搜索（最多 4 层，跳过 node_modules/.git）
+    const search = (dir, depth) => {
+      if (depth > 4 || mdFile) return;
+      let ents;
+      try { ents = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of ents) {
+        if (e.name.startsWith(".") || e.name === "node_modules") continue;
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) search(p, depth + 1);
+        else if (e.name === "lx-music-guide.md") { mdFile = p; return; }
+      }
+    };
+    search(root, 0);
+  }
+  lines.push("md-file: " + (mdFile ?? "NOT FOUND"));
+  if (!mdFile) throw new Error("lx-music-guide.md not found anywhere under cwd");
   const raw = readFileSync(mdFile, "utf8");
   const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
   const rendered = await realProc.render(body);
