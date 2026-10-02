@@ -592,39 +592,23 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		flex: 0 0 auto;
 	}
 
-	/* 签名描边动画（填充型签名：先依次描轮廓，再淡入上墨） */
+	/* 签名笔画动画（参考站同款 mask 描边法：
+	   mask 白描边作为笔迹窗口，墨迹从窗口中露出，一条 1.2s 动画画完） */
 	.site-footer.is-signature-pending :global(.site-footer__signature-mask) {
 		stroke-dasharray: 1 1;
 		stroke-dashoffset: 1;
-		stroke: currentColor;
-		stroke-width: 7;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		fill-opacity: 0;
+	}
+
+	.site-footer.is-signature-pending :global(.site-footer__signature-dot) {
+		opacity: 0;
 	}
 
 	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask) {
-		animation: site-footer-signature-draw 0.9s cubic-bezier(0.35, 0, 0.15, 1) forwards;
+		animation: site-footer-signature-draw 1.2s cubic-bezier(0.35, 0, 0.15, 1) forwards;
 	}
 
-	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask:nth-of-type(2)) {
-		animation-delay: 0.9s;
-	}
-
-	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-mask:nth-of-type(3)) {
-		animation-delay: 1.8s;
-	}
-
-	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path) {
-		animation: site-footer-signature-fill 0.6s ease-out forwards;
-	}
-
-	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path:nth-of-type(2)) {
-		animation-delay: 1.65s;
-	}
-
-	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature svg path:nth-of-type(3)) {
-		animation-delay: 2.55s;
+	.site-footer.is-signature-pending.is-signature-drawn :global(.site-footer__signature-dot) {
+		animation: site-footer-signature-dot 180ms ease-out 1s forwards;
 	}
 
 	@keyframes site-footer-signature-draw {
@@ -633,9 +617,9 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		}
 	}
 
-	@keyframes site-footer-signature-fill {
+	@keyframes site-footer-signature-dot {
 		to {
-			fill-opacity: 1;
+			opacity: 1;
 		}
 	}
 
@@ -696,8 +680,11 @@ const initialLastUpdateText = getLastUpdateText(lastPostDate);
 		.site-footer.is-signature-pending :global(.site-footer__signature-mask) {
 			stroke-dasharray: none;
 			stroke-dashoffset: 0;
-			stroke-width: 0;
-			fill-opacity: 1;
+			animation: none;
+		}
+
+		.site-footer.is-signature-pending :global(.site-footer__signature-dot) {
+			opacity: 1;
 			animation: none;
 		}
 	}
