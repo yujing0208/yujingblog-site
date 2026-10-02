@@ -214,6 +214,11 @@ const bannerOffset =
 		     移植自 flatpaper main.js 的导航相关段 -->
 		<script is:inline defer src="/js/paper-header.js?v=1"></script>
 
+		<!-- 搜索弹窗（flatpaper 同款 search-panel 视觉 + pagefind 后端，
+		     失败回退 /api/allPostMeta.json）。全站加载：capture 委托绑定
+		     .js-search-open，Swup 换页后依然有效 -->
+		<script is:inline defer src="/js/paper-search.js?v=1"></script>
+
 		<!-- 留言墙渲染（照搬 flatpaper main.js 的 renderGuestbookWall）
 		     读取 .guestbook-wall[data-guestbook-system] 的配置，
 		     调 Twikoo 的 getRecentComments 把评论铺成便签卡。
