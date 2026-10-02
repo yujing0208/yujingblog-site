@@ -292,11 +292,11 @@ const brandTitle = siteConfig.title || "FlatPaper";
 				});
 		});
 
-		// 搜索 → 转发给 Search 组件的移动端开关键（打开 pagefind 浮层）
-		bindOnce(".js-search-open", function () {
-			var sw = document.getElementById("search-switch");
-			if (sw) sw.click();
-		});
+		// 搜索 → 打开 flatpaper 同款搜索弹窗，由 public/js/paper-search.js 全局接管
+		// （document capture 阶段委托，事件到不了这里的按钮级监听）。
+		// 保留一个空绑定占位：预占 dataset.paperBound 标记，防止 public/js/paper-header.js
+		// 的旧转发逻辑（search-container/search-bar，指向已弃用的 Mizuki Search 浮层）抢绑。
+		bindOnce(".js-search-open", function () {});
 
 		// 主题 → 转发给 ThemeSwitch（保证 data-theme/localStorage/过渡一致）
 		bindOnce(".theme-toggle", function () {
