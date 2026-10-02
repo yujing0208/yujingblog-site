@@ -58,6 +58,122 @@ try {
   lines.push("unicodePunctuation check ERROR " + String(e.message).slice(0, 120));
 }
 
+// ---- 决定性检查：用真实管线渲染真实文章，结果写入 build-info.txt ----
+// 区分两种假设：
+//   A) Vercel 构建环境渲染 OK，但线上 HTML 是旧渲染缓存复用 → cards>0 且线上仍字面量
+//   B) Vercel 构建环境里渲染本身就失败 → cards=0
+// 插件清单与 astro.config.mjs 的 markdown.processor 完全一致（直接导入，绕开 config 里
+// 无扩展名 .js->.ts 映射——Vite 能解析而纯 Node 不能，不影响真实构建）。
+try {
+  const root = process.cwd();
+  // rehype-mermaid.mjs 用了 Vite 的 `?raw` 导入，纯 Node 不支持：
+  // 在 .diagtmp/ 生成补丁副本（?raw -> 预生成 default 导出的 shim 模块）
+  const diagTmp = path.join(root, ".diagtmp");
+  mkdirSync(diagTmp, { recursive: true });
+  const scriptContent = readFileSync(path.join(root, "src/plugins/mermaid-render-script.js"), "utf8");
+  writeFileSync(path.join(diagTmp, "mermaid-render-script.js"),
+    "export default " + JSON.stringify(scriptContent) + ";\n", "utf8");
+  const mermaidSrc = readFileSync(path.join(root, "src/plugins/rehype-mermaid.mjs"), "utf8");
+  writeFileSync(path.join(diagTmp, "rehype-mermaid.mjs"),
+    mermaidSrc.replace('"/src/plugins/mermaid-render-script.js?raw"', '"/mermaid-render-script.js"')
+      .replace('"./mermaid-render-script.js?raw"', '"./mermaid-render-script.js"'), "utf8");
+  const local = (p) => import(pathToFileURL(path.join(root, p)).href);
+  const localPatched = (p) => import(pathToFileURL(path.join(diagTmp, p)).href);
+  const [
+    { remarkStripLeadingTitle }, { remarkContent }, { remarkFixGithubAdmonitions },
+    { remarkEscapeNumericColons }, { parseDirectiveNode }, { remarkMermaid },
+    { remarkWikiLink }, { rehypeWrapTable }, { rehypeFlatpaperTabs },
+    { GithubCardComponent }, { ImageGridComponent }, { AdmonitionComponent },
+    { rehypeImageWidth }, { rehypeMermaid },
+  ] = await Promise.all([
+    local("src/plugins/remark-strip-leading-title.mjs"),
+    local("src/plugins/remark-content.mjs"),
+    local("src/plugins/remark-fix-github-admonitions.js"),
+    local("src/plugins/remark-escape-numeric-colons.mjs"),
+    local("src/plugins/remark-directive-rehype.js"),
+    local("src/plugins/remark-mermaid.js"),
+    local("src/plugins/remark-wiki-link.mjs"),
+    local("src/plugins/rehype-wrap-table.mjs"),
+    local("src/plugins/rehype-flatpaper-tabs.mjs"),
+    local("src/plugins/rehype-component-github-card.mjs"),
+    local("src/plugins/rehype-component-image-grid.mjs"),
+    local("src/plugins/rehype-component-admonition.mjs"),
+    local("src/plugins/rehype-image-width.mjs"),
+    localPatched("rehype-mermaid.mjs"),
+  ]);
+  const [
+    remarkMath, remarkDirective, remarkSectionize,
+    rehypeKatex, rehypeExternalLinks, rehypeSlug, rehypeComponents, rehypeAutolinkHeadings,
+  ] = await Promise.all([
+    import("remark-math").then((m) => m.default),
+    import("remark-directive").then((m) => m.default),
+    import("remark-sectionize").then((m) => m.default),
+    import("rehype-katex").then((m) => m.default),
+    import("rehype-external-links").then((m) => m.default),
+    import("rehype-slug").then((m) => m.default),
+    import("rehype-components").then((m) => m.default),
+    import("rehype-autolink-headings").then((m) => m.default),
+  ]);
+  const { unified } = await import("@astrojs/markdown-remark");
+  const { createMarkdownProcessor } = await import("@astrojs/markdown-remark");
+  // 与 @astrojs/markdown-remark/dist/processor.js 的 createRenderer 等价
+  const realProc = await createMarkdownProcessor({
+    gfm: true,
+    smartypants: true,
+    remarkPlugins: [
+      remarkStripLeadingTitle, remarkMath, remarkContent, remarkFixGithubAdmonitions,
+      remarkDirective, remarkEscapeNumericColons, remarkSectionize, parseDirectiveNode,
+      remarkMermaid, remarkWikiLink,
+    ],
+    rehypePlugins: [
+      rehypeKatex,
+      [rehypeExternalLinks, { target: "_blank", rel: ["nofollow", "noopener", "noreferrer"] }],
+      rehypeSlug, rehypeWrapTable, rehypeFlatpaperTabs, rehypeMermaid,
+      [rehypeComponents, {
+        components: {
+          github: GithubCardComponent,
+          grid: ImageGridComponent,
+          note: (x, y) => AdmonitionComponent(x, y, "note"),
+          primary: (x, y) => AdmonitionComponent(x, y, "primary"),
+          info: (x, y) => AdmonitionComponent(x, y, "info"),
+          success: (x, y) => AdmonitionComponent(x, y, "success"),
+          danger: (x, y) => AdmonitionComponent(x, y, "danger"),
+          error: (x, y) => AdmonitionComponent(x, y, "danger"),
+          tip: (x, y) => AdmonitionComponent(x, y, "tip"),
+          important: (x, y) => AdmonitionComponent(x, y, "important"),
+          caution: (x, y) => AdmonitionComponent(x, y, "caution"),
+          warning: (x, y) => AdmonitionComponent(x, y, "warning"),
+        },
+      }],
+      [rehypeAutolinkHeadings, {
+        behavior: "append",
+        properties: { className: ["anchor"] },
+        content: {
+          type: "element", tagName: "span",
+          properties: { className: ["anchor-icon"], "data-pagefind-ignore": true },
+          children: [{ type: "text", value: "#" }],
+        },
+      }],
+      rehypeImageWidth,
+    ],
+  });
+  const mdFile = path.join(root, "content", "posts", "lx-music-guide.md");
+  const raw = readFileSync(mdFile, "utf8");
+  const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  const rendered = await realProc.render(body);
+  const cards = (rendered.code.match(/card-github/g) || []).length;
+  const rawDirectives = (rendered.code.match(/::github/g) || []).length;
+  lines.push(`render-check: cards=${cards} raw-gh=${rawDirectives} len=${rendered.code.length}`);
+  // 记录渲染输出里 directive 附近的片段，便于失败时定位
+  const idx = rendered.code.indexOf("::github");
+  if (idx >= 0) {
+    lines.push("render-context: " + rendered.code.slice(Math.max(0, idx - 60), idx + 80).replace(/\s+/g, " "));
+  }
+} catch (e) {
+  lines.push("render-check: ERROR " + String(e && e.message ? e.message : e).slice(0, 300));
+  if (e && e.stack) lines.push("render-stack: " + e.stack.split("\n").slice(0, 4).join(" | ").slice(0, 300));
+}
+
 const out = lines.join("\n") + "\n";
 try {
   mkdirSync("public", { recursive: true });
