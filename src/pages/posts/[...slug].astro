@@ -7,14 +7,12 @@ import Comment from "@components/comment/index.astro";
 import {
 	LastModified,
 	PostMeta,
-	PostNavigation,
 	RandomPosts,
 	RelatedPosts,
-	ShareCard,
 } from "@components/features/posts";
+import PaperArticleFooter from "@components/features/posts/PaperArticleFooter.astro";
 import { Icon } from "astro-icon/components";
 import "@/styles/paper-post.css";
-import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
 import AiSummary from "@components/widgets/ai-summary/AiSummary.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -27,7 +25,6 @@ import {
 	removeFileExtension,
 } from "@utils/url-utils";
 import {
-	licenseConfig,
 	permalinkConfig,
 	randomPostsConfig,
 	relatedPostsConfig,
@@ -234,7 +231,7 @@ const jsonLd = {
 		import("../../scripts/right-sidebar-layout.js");
 	</script>
 	<div
-		class="flex w-full rounded-[4px] overflow-hidden relative mb-4"
+		class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4"
 	>
 		<div
 			id="post-container"
@@ -277,7 +274,7 @@ const jsonLd = {
 							aria-label={entry.data.category}
 						>
 							<Icon
-								name="lucide:folder"
+								name="material-symbols:folder-outline"
 								class="text-[14px]"
 								is:inline
 							/>
@@ -341,45 +338,30 @@ const jsonLd = {
 				)
 			}
 
-			{
-				shareConfig.enable && entry.data.showShare !== false && (
-					<ShareCard
-						class:list={[{ "encrypted-hidden": isEncrypted }]}
-						title={entry.data.title}
-						author={entry.data.author}
-						description={publicDescription}
-						pubDate={formatDateToYYYYMMDD(entry.data.published)}
-						coverImage={posterCoverUrl}
-						url={Astro.url.toString()}
-						siteTitle={siteConfig.title}
-						avatar={posterAvatarUrl}
-					/>
-				)
-			}
-
-			{
-				licenseConfig.enable && (
-					<div
-						id="license-component"
-						class:list={[
-							"encrypted-hidden-wrapper",
-							{ "encrypted-hidden": isEncrypted },
-						]}
-					>
-						<License
-							title={entry.data.title}
-							id={entry.id}
-							pubDate={entry.data.published}
-
-							author={entry.data.author}
-							sourceLink={entry.data.sourceLink}
-							licenseName={entry.data.licenseName}
-							licenseUrl={entry.data.licenseUrl}
-							class="mb-6 rounded-[4px] license-container onload-animation"
-						/>
-					</div>
-				)
-			}
+			<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航（替代 ShareCard/License） -->
+			<div
+				id="license-component"
+				class:list={[
+					"encrypted-hidden-wrapper",
+					{ "encrypted-hidden": isEncrypted },
+				]}
+			>
+				<PaperArticleFooter
+					title={entry.data.title}
+					author={entry.data.author}
+					description={publicDescription}
+					pubDate={formatDateToYYYYMMDD(entry.data.published)}
+					coverImage={posterCoverUrl}
+					url={Astro.url.toString()}
+					siteTitle={siteConfig.title}
+					avatar={posterAvatarUrl}
+					showShare={shareConfig.enable && entry.data.showShare !== false}
+					prevSlug={entry.data.nextSlug}
+					prevTitle={entry.data.nextTitle}
+					nextSlug={entry.data.prevSlug}
+					nextTitle={entry.data.prevTitle}
+				/>
+			</div>
 		</div>
 	</div>
 
@@ -393,13 +375,6 @@ const jsonLd = {
 			/>
 		)
 	}
-
-	<PostNavigation
-		prevSlug={entry.data.nextSlug}
-		prevTitle={entry.data.nextTitle}
-		nextSlug={entry.data.prevSlug}
-		nextTitle={entry.data.prevTitle}
-	/>
 
 	<!-- 相关文章与随机文章 -->
 	{

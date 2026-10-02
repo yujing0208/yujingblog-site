@@ -1,0 +1,360 @@
+---
+// FlatPaper 文章结尾区（2026-10-02）：
+// footer.article-reactions（评论 / 分享）+ nav.article-actions（上一篇 / 下一篇）
+// 参考真值：flatpaper demo_style.css .article-reactions / .reaction / .article-action*
+// 分享按钮复用 SharePoster 海报功能（隐藏载体 + 点击转发），评论按钮滚动到 #comments。
+import { getPostUrlBySlug } from "@utils/url-utils";
+import { Icon } from "astro-icon/components";
+import SharePoster from "@components/misc/SharePoster.svelte";
+import { profileConfig } from "src/config";
+
+interface Props {
+	title: string;
+	description?: string;
+	author?: string;
+	pubDate: string;
+	coverImage?: string | null;
+	url: string;
+	siteTitle: string;
+	avatar?: string | null;
+	showShare?: boolean;
+	prevSlug?: string;
+	prevTitle?: string;
+	nextSlug?: string;
+	nextTitle?: string;
+	class?: string;
+}
+
+const {
+	title,
+	description,
+	author,
+	pubDate,
+	coverImage,
+	url,
+	siteTitle,
+	avatar,
+	showShare = true,
+	prevSlug,
+	prevTitle,
+	nextSlug,
+	nextTitle,
+	class: className,
+} = Astro.props;
+
+const hasNav = !!(prevSlug || nextSlug);
+const finalAuthor = author || profileConfig.name;
+---
+
+<div class:list={["fp-article-footer", className]}>
+	{
+		showShare && (
+			<footer class="fp-reactions">
+				<div class="fp-reaction-group">
+					<button
+						type="button"
+						class="fp-reaction"
+						data-action="scroll-to-comments"
+						aria-label="跳转到评论区"
+					>
+						<Icon name="lucide:message-circle" is:inline />
+					</button>
+					<span class="fp-reaction-label">评论</span>
+				</div>
+				<div class="fp-reaction-group fp-reaction-group--right">
+					<div class="fp-share-carrier" aria-hidden="true">
+						<SharePoster
+							client:visible
+							{title}
+							author={finalAuthor}
+							description={description || ""}
+							{pubDate}
+							coverImage={coverImage ?? null}
+							{url}
+							{siteTitle}
+							avatar={avatar ?? null}
+						/>
+					</div>
+					<button
+						type="button"
+						class="fp-reaction"
+						data-action="share"
+						aria-label="分享"
+					>
+						<Icon name="lucide:share-2" is:inline />
+					</button>
+					<span class="fp-reaction-label">分享</span>
+				</div>
+			</footer>
+		)
+	}
+
+	{
+		hasNav && (
+			<nav class="fp-nav">
+				{prevSlug && (
+					<a
+						class="fp-nav-item fp-nav-item--prev"
+						href={getPostUrlBySlug(prevSlug)}
+					>
+						<Icon name="lucide:arrow-left" is:inline />
+						<span class="fp-nav-label">上一篇</span>
+						<span class="fp-nav-title">{prevTitle}</span>
+					</a>
+				)}
+				{nextSlug && (
+					<a
+						class="fp-nav-item fp-nav-item--next"
+						href={getPostUrlBySlug(nextSlug)}
+					>
+						<Icon name="lucide:arrow-right" is:inline />
+						<span class="fp-nav-label">下一篇</span>
+						<span class="fp-nav-title">{nextTitle}</span>
+					</a>
+				)}
+			</nav>
+		)
+	}
+</div>
+
+<script>
+	// 事件委托（swup 换页后依然有效）：
+	// - 评论 → 平滑滚动到 #comments
+	// - 分享 → 转发给隐藏的 SharePoster 按钮（海报功能保留）；未挂载时降级 navigator.share / 复制链接
+	document.addEventListener("click", (e) => {
+		const btn = (e.target as HTMLElement | null)?.closest?.(
+			".fp-reaction[data-action]",
+		) as HTMLElement | null;
+		if (!btn) return;
+
+		const action = btn.dataset.action;
+		if (action === "scroll-to-comments") {
+			document
+				.getElementById("comments")
+				?.scrollIntoView({ behavior: "smooth" });
+		} else if (action === "share") {
+			const inner = document.querySelector<HTMLElement>(
+				'.fp-share-carrier button[aria-label="Generate Share Poster"]',
+			);
+			if (inner) {
+				inner.click();
+				return;
+			}
+			const shareData = { title: document.title, url: location.href };
+			if (navigator.share) {
+				navigator.share(shareData).catch(() => {});
+			} else {
+				navigator.clipboard?.writeText(shareData.url).catch(() => {});
+			}
+		}
+	});
+</script>
+
+<style>
+	/* ---------- reactions：评论 / 分享 一行（照搬 .article-reactions） ----------
+	   出血适配：card-base px-6(1.5rem) / md:px-9(2.25rem)，FlatPaper 原值是 -64px */
+	.fp-reactions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 14px;
+		margin: 6px -1.5rem 0;
+		padding: 18px 1.5rem;
+		border-top: 1px dashed var(--line);
+	}
+
+	@media (min-width: 768px) {
+		.fp-reactions {
+			margin-inline: -2.25rem;
+			padding-inline: 2.25rem;
+		}
+	}
+
+	.fp-reaction-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.fp-reaction-group--right {
+		margin-left: auto;
+		position: relative;
+	}
+
+	/* SharePoster 隐藏载体：保留 1px 盒子让 client:visible 正常水合 */
+	.fp-share-carrier {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.fp-reaction {
+		width: 36px;
+		height: 36px;
+		display: inline-grid;
+		place-items: center;
+		padding: 0;
+		font-size: 16px;
+		border: 1px dashed var(--dash);
+		border-radius: 50%;
+		color: var(--ink-soft);
+		background: transparent;
+		cursor: pointer;
+		transition:
+			color 0.2s ease,
+			border-color 0.2s ease,
+			background 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	/* hover 沿用 Round 7 胶带按钮风格：accent 底 + 斜纹 + 上浮 */
+	.fp-reaction:hover {
+		color: var(--color-accent-strong);
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+		background-image: var(--nav-tape-stripes);
+		transform: translateY(-2px) scale(1.06);
+	}
+
+	.fp-reaction-label {
+		color: var(--muted);
+		font-size: 13px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ---------- nav：上一篇 / 下一篇（照搬 .article-actions） ----------
+	   底部出血抵消 card-base 的 pb-4(1rem)，让导航贴住卡片底边（外层 overflow-hidden 裁圆角） */
+	.fp-nav {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		margin: 0 -1.5rem -1rem;
+		border-top: 1px dashed var(--line);
+	}
+
+	@media (min-width: 768px) {
+		.fp-nav {
+			margin-inline: -2.25rem;
+		}
+	}
+
+	.fp-nav-item {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		grid-template-rows: auto auto;
+		column-gap: 12px;
+		align-items: center;
+		min-height: 70px;
+		padding: 14px 24px;
+		color: var(--ink-soft);
+		background: var(--paper);
+		font-size: 13px;
+		text-decoration: none;
+		transition:
+			background 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.fp-nav-item :global(svg) {
+		grid-row: 1 / 3;
+		width: 18px;
+		height: 18px;
+		color: var(--muted);
+		transition:
+			transform 0.2s ease,
+			color 0.2s ease;
+	}
+
+	.fp-nav-label {
+		color: var(--muted);
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+
+	.fp-nav-title {
+		color: var(--ink);
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 1.45;
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.fp-nav-item--prev {
+		text-align: left;
+	}
+
+	.fp-nav-item--next {
+		text-align: right;
+		grid-template-columns: 1fr auto;
+		border-left: 1px dashed var(--line);
+	}
+
+	.fp-nav-item--next :global(svg) {
+		grid-column: 2;
+		grid-row: 1 / 3;
+	}
+
+	.fp-nav-item--next .fp-nav-label,
+	.fp-nav-item--next .fp-nav-title {
+		grid-column: 1;
+	}
+
+	a.fp-nav-item:hover {
+		background: var(--paper-warm);
+	}
+
+	a.fp-nav-item:hover .fp-nav-title {
+		color: var(--color-accent-strong);
+	}
+
+	a.fp-nav-item--prev:hover :global(svg) {
+		color: var(--color-accent-strong);
+		transform: translateX(-3px);
+	}
+
+	a.fp-nav-item--next:hover :global(svg) {
+		color: var(--color-accent-strong);
+		transform: translateX(3px);
+	}
+
+	/* 暗色 hover（照搬 .dark-mode 规则） */
+	:root.dark a.fp-nav-item:hover .fp-nav-title,
+	:root.dark a.fp-nav-item:hover :global(svg) {
+		color: var(--color-accent-muted);
+	}
+
+	/* ≤600px：上下堆叠，下一篇恢复左对齐（照搬演示站移动端） */
+	@media (max-width: 600px) {
+		.fp-nav {
+			grid-template-columns: 1fr;
+		}
+
+		.fp-nav-item--next {
+			border-left: 0;
+			grid-template-columns: auto 1fr;
+			text-align: left;
+		}
+
+		.fp-nav-item--next :global(svg) {
+			grid-column: 1;
+			grid-row: 1 / 3;
+		}
+
+		.fp-nav-item--next .fp-nav-label,
+		.fp-nav-item--next .fp-nav-title {
+			grid-column: 2;
+		}
+
+		.fp-reaction-group--right {
+			justify-content: flex-end;
+		}
+	}
+</style>

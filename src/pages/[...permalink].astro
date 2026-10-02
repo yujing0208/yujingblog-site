@@ -14,10 +14,8 @@ import Encryptor from "@components/features/auth/Encryptor.astro";
 import {
 	LastModified,
 	PostMeta,
-	PostNavigation,
-	ShareCard,
 } from "@components/features/posts";
-import License from "@components/misc/License.astro";
+import PaperArticleFooter from "@components/features/posts/PaperArticleFooter.astro";
 import Markdown from "@components/misc/Markdown.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
@@ -30,7 +28,7 @@ import { getPostPublicDescription } from "@utils/post-card-content";
 import { getCategoryUrl, getFileDirFromPath } from "@utils/url-utils";
 import "@/styles/paper-post.css";
 import { Icon } from "astro-icon/components";
-import { licenseConfig, shareConfig } from "src/config";
+import { shareConfig } from "src/config";
 
 import { permalinkConfig } from "@/config";
 
@@ -174,7 +172,7 @@ let posterAvatarUrl = profileConfig.avatar;
 							aria-label={entry.data.category}
 						>
 							<Icon
-								name="lucide:folder"
+								name="material-symbols:folder-outline"
 								class="text-[14px]"
 								is:inline
 							/>
@@ -231,32 +229,22 @@ let posterAvatarUrl = profileConfig.avatar;
 						<Markdown class="mb-6 markdown-content onload-animation">
 							<Content />
 						</Markdown>
-						{
-							shareConfig.enable && entry.data.showShare !== false && (
-								<ShareCard
-									title={entry.data.title}
-									author={entry.data.author}
-									description={publicDescription}
-									pubDate={formatDateToYYYYMMDD(entry.data.published)}
-									coverImage={posterCoverUrl}
-									url={Astro.url.toString()}
-									siteTitle={siteConfig.title}
-									avatar={posterAvatarUrl}
-								/>
-							)
-						}
-						{licenseConfig.enable && (
-							<License
-								title={entry.data.title}
-								id={entry.id}
-								pubDate={entry.data.published}
-								author={entry.data.author}
-								sourceLink={entry.data.sourceLink}
-								licenseName={entry.data.licenseName}
-								licenseUrl={entry.data.licenseUrl}
-								class="mb-6 rounded-xl license-container onload-animation"
-							/>
-						)}
+						<!-- FlatPaper 文章结尾区：评论/分享 reactions + 上一篇/下一篇导航 -->
+					<PaperArticleFooter
+						title={entry.data.title}
+						author={entry.data.author}
+						description={publicDescription}
+						pubDate={formatDateToYYYYMMDD(entry.data.published)}
+						coverImage={posterCoverUrl}
+						url={Astro.url.toString()}
+						siteTitle={siteConfig.title}
+						avatar={posterAvatarUrl}
+						showShare={shareConfig.enable && entry.data.showShare !== false}
+						prevSlug={entry.data.nextSlug}
+						prevTitle={entry.data.nextTitle}
+						nextSlug={entry.data.prevSlug}
+						nextTitle={entry.data.prevTitle}
+					/>
 					</>
 				)
 			}
@@ -273,11 +261,4 @@ let posterAvatarUrl = profileConfig.avatar;
 			/>
 		)
 	}
-
-	<PostNavigation
-		prevSlug={entry.data.nextSlug}
-		prevTitle={entry.data.nextTitle}
-		nextSlug={entry.data.prevSlug}
-		nextTitle={entry.data.prevTitle}
-	/>
 </MainGridLayout>
