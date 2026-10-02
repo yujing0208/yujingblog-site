@@ -70,8 +70,6 @@ export default defineConfig({
 			cssVariable: "--font-cjk",
 			provider: fontProviders.fontsource(),
 			styles: ["normal"],
-			// 关键：默认只拉 latin 子集，必须显式声明中文字面子集，否则中文回退系统字体
-			subsets: ["latin", "chinese-simplified"],
 			// The final system fallback belongs to --font-sans, not this partial
 			// CJK font stack.
 			fallbacks: [],
@@ -83,8 +81,6 @@ export default defineConfig({
 			cssVariable: "--font-hand",
 			provider: fontProviders.fontsource(),
 			styles: ["normal"],
-			// 关键：默认只拉 latin 子集，站题中文必须有 chinese-simplified 子集才会渲染楷书
-			subsets: ["latin", "chinese-simplified"],
 			fallbacks: [],
 			optimizedFallbacks: false,
 		},
@@ -102,7 +98,11 @@ export default defineConfig({
 	},
 
 	server: {
-		port: 3000,
+		// 仅 dev 使用；3001 是刻意为之：变更此值会改变 content layer 的
+		// astro-config-digest，从而清空 .astro 渲染缓存全量重渲染。
+		// 2026-10-02：依赖级修复（micromark-util-character overrides）不会使渲染缓存失效，
+		// 旧的字面量 ::github 渲染结果被持续复用，靠改端口强制失效一次。
+		port: 3001,
 	},
 
 	integrations: [
