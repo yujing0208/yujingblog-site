@@ -56,7 +56,7 @@ const description = "用一张地图，记录我去过的山川与城市 🗺️
 				data-amap-security={amapSecurityCode}
 				data-highlight={highlightMode}
 				data-locate="auto"
-				style="width: 100%; height: 70vh; min-height: 480px; border-radius: var(--radius-large); overflow: hidden; margin-top: 1rem;"
+				style="width: 100%; height: 70vh; min-height: 480px; border-radius: 4px; overflow: hidden; margin-top: 1rem;"
 			>
 			</div>
 		</div>
@@ -153,11 +153,16 @@ const description = "用一张地图，记录我去过的山川与城市 🗺️
 </MainGridLayout>
 
 <style>
+	/* paper 适配：提示条 = 手账虚线纸条（与动态页筛选条同语言） */
 	.fp-tip {
 		margin-top: 0.5rem;
-		font-size: 0.9rem;
+		font-size: 0.8125rem;
 		line-height: 1.7;
-		color: rgba(var(--color-base-content, 0 0 0) / 0.6);
+		color: var(--ink-soft);
+		padding: 0.5rem 0.875rem;
+		background: var(--paper-warm);
+		border: 1.5px dashed var(--dash);
+		border-radius: var(--radius-handdrawn);
 	}
 
 	.fp-tip code {
@@ -165,5 +170,12 @@ const description = "用一张地图，记录我去过的山川与城市 🗺️
 		border-radius: 0.3rem;
 		background: rgba(var(--color-base-content, 0 0 0) / 0.08);
 		font-size: 0.82em;
+	}
+
+	/* 地图容器对齐纸卡语言（覆盖 public/footprint/css 里的白底硬编码） */
+	.footprint-map {
+		border: 1px solid var(--paper-line);
+		background: var(--card-bg);
+		box-shadow: var(--paper-shadow);
 	}
 </style>
