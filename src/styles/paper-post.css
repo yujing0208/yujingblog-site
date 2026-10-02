@@ -13,7 +13,7 @@
      标题区上移 208px 压图（≤960px → 174px；≤600px → clamp(132px,44vw,188px)） */
 .fp-article-top-img {
 	position: relative;
-	/* 抵消 card-base 的 pt-6(1.5rem) / px-6(1.5rem)；md 断点横向 padding 为 px-9(2.25rem) */
+	/* 抵消 card-base 的 pt-6(1.5rem) / px-6(1.5rem)；md 断点横向 padding 为 px-14(3.5rem) */
 	margin: -1.5rem -1.5rem 0;
 	height: clamp(220px, 31vw, 360px);
 	overflow: hidden;
@@ -22,7 +22,7 @@
 
 @media (min-width: 768px) {
 	.fp-article-top-img {
-		margin: -1.5rem -2.25rem 0;
+		margin: -1.5rem -3.5rem 0;
 	}
 }
 
