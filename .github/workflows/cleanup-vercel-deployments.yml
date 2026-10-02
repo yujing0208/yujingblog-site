@@ -1,0 +1,106 @@
+name: Cleanup Vercel Deployments
+
+# 一次性/手动触发的部署存储清理工具：
+#   - 遍历 Vercel 账户下所有项目，删除旧部署释放 Deployment Storage（免费额度 10GB）
+#   - 保留：当前生产部署（最新 READY 且 target=production）+ 最近 N 个部署（默认 4）
+#   - 触发：Actions 页面手动 Run workflow；或 push 本文件到 main 时自动跑一次
+# ⚠️ 删除不可恢复：被删部署的预览 URL 会失效（不影响线上正式站点）
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_recent:
+        description: '除当前生产部署外，额外保留最近 N 个部署'
+        required: false
+        default: '4'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-vercel-deployments.yml'
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old deployments via Vercel API
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          KEEP_RECENT: ${{ github.event.inputs.keep_recent || '4' }}
+        run: |
+          cat > /tmp/cleanup.mjs <<'EOF'
+          const TOKEN = process.env.VERCEL_TOKEN;
+          const KEEP = parseInt(process.env.KEEP_RECENT || '4', 10);
+          const base = 'https://api.vercel.com';
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          async function api(path, opts = {}) {
+            let lastErr = null;
+            for (let i = 0; i < 4; i++) {
+              const res = await fetch(base + path, {
+                ...opts,
+                headers: { Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {}) },
+              });
+              if (res.ok) {
+                try { return await res.json(); } catch { return {}; }
+              }
+              const body = await res.text();
+              lastErr = `${opts.method || 'GET'} ${path} -> ${res.status}: ${body.slice(0, 160)}`;
+              if (res.status === 429 || res.status >= 500) { await sleep(1500 * (i + 1)); continue; }
+              throw new Error(lastErr);
+            }
+            throw new Error(lastErr);
+          }
+
+          // 1. 枚举账户下所有项目
+          const projects = [];
+          let cursor;
+          do {
+            const d = await api(`/v9/projects?limit=100${cursor ? `&until=${cursor}` : ''}`);
+            projects.push(...(d.projects || []));
+            cursor = d.pagination && d.pagination.next ? d.pagination.next : undefined;
+          } while (cursor);
+
+          console.log(`projects: ${projects.length} -> ${projects.map((p) => p.name).join(', ')}`);
+
+          // 2. 逐项目清理旧部署
+          const summary = [];
+          for (const p of projects) {
+            const deps = [];
+            let cursor;
+            do {
+              const d = await api(`/v6/deployments?projectId=${p.id}&limit=100${cursor ? `&until=${cursor}` : ''}`);
+              deps.push(...(d.deployments || []));
+              cursor = d.pagination && d.pagination.next ? d.pagination.next : undefined;
+            } while (cursor);
+
+            if (deps.length === 0) { summary.push(`${p.name}: 0 deployments, skip`); continue; }
+
+            deps.sort((a, b) => b.created - a.created);
+            const keep = new Set();
+            const prod = deps.find((d) => d.state === 'READY' && d.target === 'production');
+            if (prod) keep.add(prod.uid);            // 当前线上版本，绝不删
+            for (const d of deps.slice(0, KEEP)) keep.add(d.uid);  // 最近 N 个留作回滚/排查
+
+            const toDelete = deps.filter((d) => !keep.has(d.uid));
+            let ok = 0, fail = 0;
+            const errors = [];
+            for (const d of toDelete) {
+              try {
+                await api(`/v13/deployments/${d.uid}`, { method: 'DELETE' });
+                ok++;
+              } catch (e) {
+                fail++;
+                errors.push(`${d.uid.slice(0, 12)}(${d.state}): ${e.message.slice(0, 100)}`);
+              }
+              await sleep(120);
+            }
+            summary.push(`${p.name}: total=${deps.length}, kept=${keep.size}, deleted=${ok}, failed=${fail}${errors.length ? '\n    ' + errors.slice(0, 5).join('\n    ') : ''}`);
+          }
+
+          console.log('=== CLEANUP SUMMARY ===');
+          for (const s of summary) console.log(s);
+          console.log('=== DONE ===');
+          EOF
+          node /tmp/cleanup.mjs
