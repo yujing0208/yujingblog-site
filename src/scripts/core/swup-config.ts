@@ -211,9 +211,9 @@ export const getDefaultFancyboxConfig = (): FancyboxConfig => ({
 
 // Fancybox 选择器
 export const FANCYBOX_SELECTORS = {
-	// 相册/文章图片
+	// 相册/文章图片（.custom-md 为 admin 编辑器预览兼容保留）
 	albumImages:
-		".custom-md img:not(.image-grid img), #post-cover img, .moment-images img",
+		".custom-md img:not(.image-grid img), .markdown-content img:not(.image-grid img), #post-cover img, .moment-images img",
 
 	// Markdown 图片网格：每个网格通过 data-fancybox 形成独立轮播组
 	imageGrids: ".image-grid [data-fancybox]",
