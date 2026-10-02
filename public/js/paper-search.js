@@ -123,6 +123,12 @@
 
 	function loadPagefind() {
 		if (pagefindState === "ready" || pagefindState === "loading") return;
+		// 已就绪的 window.pagefind（Mizuki 加载器已注入、或宿主环境预置）直接用
+		if (window.pagefind && typeof window.pagefind.search === "function") {
+			pagefind = window.pagefind;
+			pagefindState = "ready";
+			return;
+		}
 		pagefindState = "loading";
 		// Mizuki 的加载器若存在（window.loadPagefind）优先用它：
 		// 它会注入 /pagefind/pagefind.js 并派发 pagefindready 事件
