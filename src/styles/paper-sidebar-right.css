@@ -541,7 +541,8 @@ a.site-info__item:focus-visible strong {
  * 三、分类（照搬 categories-sidebar.styl）
  * ========================================================================== */
 
-/* 顶部居中蓝胶带（照搬 .categories-card::before） */
+/* 顶部居中绿胶带（参考原为蓝胶带；2026-10-02 胶带多样化：
+   名片已占蓝色，分类改绿 —— 左栏四卡四色各一，不再撞色） */
 .categories-card::before {
 	content: "";
 	position: absolute;
@@ -551,7 +552,7 @@ a.site-info__item:focus-visible strong {
 	z-index: 2;
 	width: 70px;
 	height: 20px;
-	background-color: var(--tape-blue);
+	background-color: var(--tape-green);
 	background-image: var(--tape-stripes);
 	filter: saturate(0.9);
 	transform: translateX(-50%);
@@ -798,6 +799,24 @@ a.site-info__item:focus-visible strong {
 }
 
 /* ==========================================================================
+ * 五、访问统计卡（umami-stats；2026-10-02 胶带多样化）
+ *     通用 .side-card::before 是「黄胶带右上 +6°」，与标签卡的粉胶带同位置
+ *     —— 左栏后两张卡撞款（用户截图实证）。改为左上角黄胶带 +45°：
+ *     与名片蓝胶带（左上 -45°）同角镜像、不同色。左栏四卡四色四位置：
+ *     蓝·左上-45°（名片）/ 绿·顶中（分类）/ 粉·右上+6°（标签）/ 黄·左上+45°（访问）。
+ *     双类选择器 (0,2,0) 提权，稳压 .side-card::before (0,1,0)。
+ * ========================================================================== */
+.side-card.visit-card::before {
+	top: 6px;
+	left: -14px;
+	right: auto;
+	width: 56px;
+	height: 18px;
+	background-color: var(--tape-yellow);
+	transform: rotate(45deg);
+}
+
+/* ==========================================================================
  * 六、最近动态卡片（移植 random-posts.styl 52 行 + 类型徽章）
  * ========================================================================== */
 
@@ -812,8 +831,11 @@ a.site-info__item:focus-visible strong {
 /* ==========================================================================
  * 5.5 右栏 widget 的手账化（音乐播放器等 widget-layout.card-base）
  *     左栏胶带规则在 paper-theme.css 只覆盖 #sidebar，这里是右栏对应版本。
- *     音乐组件按需求要有「胶带便签」感：右上角黄胶带 + 纸片基座（纸面层
+ *     音乐组件要有「胶带便签」感：顶部居中蓝胶带 + 纸片基座（纸面层
  *     由 paper-theme.css 的 .card-base::after 已提供）。
+ *     2026-10-02 胶带多样化：原「黄胶带右上」与相邻的随机文章卡完全撞款
+ *     （用户截图实证），改为蓝·顶中 —— 右栏两张卡变成
+ *     黄·右上（随机文章）/ 蓝·顶中（音乐），一眼可辨。
  *
  *     ⚠️ 为什么还要写 widget-layout.card-base（2026-10-01 实测根因）
  *     同一张音乐卡在三种容器里出现，容器类名各不相同，只按容器写必然漏：
@@ -833,23 +855,33 @@ widget-layout.card-base::before,
 #paper-home-content .right-sidebar-container .card-base::before {
 	content: "";
 	position: absolute;
-	top: -9px;
-	right: 20px;
+	top: -10px;
+	left: 50%;
+	right: auto;
 	z-index: 6;
 	width: 66px;
 	height: 19px;
-	background-color: var(--tape-yellow);
+	background-color: var(--tape-blue);
 	background-image: var(--tape-stripes);
 	filter: saturate(0.92);
-	transform: rotate(5deg);
+	transform: translateX(-50%);
 	pointer-events: none;
 	border-radius: 1px;
 }
 
-/* 站点统计卡给蓝胶带（区分功能，仍属同一手账语言） */
-.right-sidebar-container .card-base:nth-of-type(1)::before {
-	background-color: var(--tape-blue);
-	transform: rotate(-4deg);
+/* 旧 nth-of-type(1)「站点统计卡蓝胶带」特例已删：右栏 components 只剩
+   music-sidebar，上面的组选择器本来就只命中音乐卡；特例反而造成
+   内页（蓝·右上-4°）与首页（黄·右上+5°）不一致 —— 统一收口到这里。 */
+
+/* html.tape-disabled 总开关补漏（paper-theme.css 那边只覆盖 #sidebar /
+   #post-list-container / .post-card-item / .tape，paper 侧栏卡的胶带
+   全定义在本文件，这里一并纳入开关）。content:none 即可：各位置/颜色
+   覆盖规则不改 content，开关在层叠上必胜。 */
+html.tape-disabled .side-card::before,
+html.tape-disabled widget-layout.card-base::before,
+html.tape-disabled .paper-sidebar--left .card-base::before,
+html.tape-disabled .right-sidebar-container .card-base::before {
+	content: none !important;
 }
 
 .recent-list {
