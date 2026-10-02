@@ -249,12 +249,19 @@
 			}).observe(heroSocialLinks);
 		}
 
-		/* ---------------- 首屏激活态（供 body::before 淡出） ---------------- */
+		/* ---------------- 首屏激活态（供 body::before 淡出 + 顶部遮罩时机） ---------------- */
+		// has-paper-hero：标记「本页有 hero」，paper-header.css 的 body::after
+		// 顶部遮罩靠它与 is-hero-gone 决定显示时机（PaperHero.astro 的内联
+		// 脚本首帧也会打标，这里兜底 swup 换页回首页的场景）。
+		document.body.classList.add("has-paper-hero");
 		var heroScrollTicking = false;
 		function setHeroActive() {
-			var active =
-				window.pageYOffset < hero.offsetTop + hero.offsetHeight - 80;
-			document.body.classList.toggle("is-hero-active", active);
+			var y = window.pageYOffset;
+			var bottom = hero.offsetTop + hero.offsetHeight;
+			document.body.classList.toggle("is-hero-active", y < bottom - 80);
+			// is-hero-gone：hero 完全滚出视口后为 true —— 导航早已吸顶、
+			// 用户继续下滑，body::after 顶部遮罩此时才淡入（paper-header.css）。
+			document.body.classList.toggle("is-hero-gone", y >= bottom);
 		}
 		window.addEventListener(
 			"scroll",
