@@ -7,7 +7,7 @@
 		"init-content": "node scripts/init-content-repo.js",
 		"ai-summary": "node scripts/generate-ai-summary.mjs",
 		"predev": "node scripts/sync-content.js || true",
-		"prebuild": "node scripts/sync-content.js || true",
+		"prebuild": "node scripts/sync-content.js || true && node scripts/build-env-info.mjs",
 		"dev": "astro dev",
 		"start": "astro dev",
 		"check": "astro check",
