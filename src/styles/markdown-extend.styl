@@ -105,7 +105,9 @@ a.card-github
       color: var(--tw-prose-headings)
 
       &:before
-        background-color: var(--tw-prose-headings)
+        // 回退链：paper 主题文章容器不在 .prose 作用域内，--tw-prose-* 未定义，
+        // 缺回退时图标会变透明（2026-10-02 修复）
+        background-color: var(--tw-prose-headings, var(--ink, #2c3531))
 
   &:active
     scale: .98
@@ -176,7 +178,9 @@ a.card-github
       margin-right: .4rem
       vertical-align: -.24em
       font-size: inherit
-      background-color: var(--tw-prose-body)
+      // 回退链：paper 主题无 --tw-prose-body（仅 .prose 作用域有），缺回退时
+      // mask 图标透明不可见（2026-10-02 修复）
+      background-color: var(--tw-prose-body, var(--ink-soft, #4a5751))
       overflow: visible
       mask-size: contain
       mask-position: center
