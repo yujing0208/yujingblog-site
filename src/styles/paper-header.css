@@ -88,6 +88,10 @@ body::after {
 	height: 44px;
 	z-index: 45;
 	pointer-events: none;
+	/* 2026-10-02：出现/消失改为淡入淡出（flatpaper 原版无动画，
+	   滚动到阈值时突然弹出很突兀），时机控制见文件尾部的 has-paper-hero 段 */
+	opacity: 1;
+	transition: opacity 0.3s ease;
 	background: linear-gradient(
 		to bottom,
 		var(--page-bg) 0%,
@@ -666,14 +670,247 @@ body::after {
 	vertical-align: middle;
 }
 
-/* ---- 手账首屏激活时隐藏顶部遮罩（2026-10-02 白条修复） ----
-   上一节的 body::after 顶部 44px 渐变遮罩是为「吸顶导航上方 16px 缝隙」服务的，
-   但首页 hero 模式下，未滚动时导航还在文档流里（尚未吸顶），这条 fixed 遮罩
-   会直接盖在 hero 背景图上，形成页面最顶端的白条（实测截图确认）。
-   paper-hero.js 的 setHeroActive 会在滚过首屏（heroBottom - 80px）时移除
-   is-hero-active —— 时间点早于导航吸顶（#top-row top:16px 触发点），
-   所以「首屏在视口内 -> 无遮罩（hero 图完整）；导航吸顶后 -> 遮罩恢复」，
-   两个需求互不冲突。 */
-body.is-hero-active::after {
+/* ---- 顶部遮罩的出现时机（2026-10-02 白条修复 + 同日二次优化） ----
+   body::after 顶部 44px 渐变遮罩是为「吸顶导航上方 16px 缝隙」服务的。
+   首页 hero 在视口内时必须整段隐藏（否则就是盖在首屏图上的白条）；
+   且要在「导航栏已吸附到页顶 + 用户继续下滑（hero 完全滚出视口）」之后
+   才淡入 —— 之前的 is-hero-active 阈值（heroBottom - 80px）会在 hero
+   残影还压在导航下方时就弹出遮罩，观感突兀。
+   状态由 paper-hero.js 维护：
+     has-paper-hero  hero 组件所在页面（PaperHero.astro 内联脚本首帧打标，
+                     paper-header.js 在 swup 换页后按 DOM 实况同步）
+     is-hero-gone    hero 已完全滚出视口（scrollY >= heroBottom）
+   内页两个类都不存在 -> 遮罩始终可见，行为不变。 */
+body.has-paper-hero:not(.is-hero-gone)::after {
+	opacity: 0;
+}
+
+/* ===========================================================================
+ *  搜索弹窗（2026-10-02：1:1 移植 flatpaper 的 search-panel）
+ *  结构由 public/js/paper-search.js 动态创建并挂在 body 下（Swup 换页不丢），
+ *  搜索后端用本站已有的 pagefind 索引（/pagefind/pagefind.js），
+ *  pagefind 不可用时回退 /api/allPostMeta.json（标题 + 摘要匹配）。
+ *  变量映射（flatpaper -> 本站 paper-theme.css）：
+ *    --paper -> --card-bg      --paper-warm -> --page-bg   --paper-solid -> --card-bg
+ *    --dash  -> --paper-dash   --color-accent -> --fp-accent
+ *    --color-accent-soft -> --fp-accent-soft   --ink -> --deep-text
+ *    .dark-mode -> :root.dark
+ *  所有规则挂在 #paper-search-root 下：避免误伤 Search.svelte 遗留的
+ *  .search-panel（Mizuki 原搜索浮层，已弃用但仍渲染）。
+ * ========================================================================= */
+#paper-search-root {
+	position: fixed;
+	inset: 0;
+	z-index: 80;
 	display: none;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 12vh 20px 20px;
+}
+#paper-search-root.is-open {
+	display: flex;
+	animation: fp-search-fade 0.18s ease-out;
+}
+body.fp-search-lock {
+	overflow: hidden !important;
+}
+#paper-search-root .search-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(46, 36, 22, 0.36);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	cursor: pointer;
+}
+:root.dark #paper-search-root .search-backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+#paper-search-root .search-dialog {
+	position: relative;
+	z-index: 1;
+	width: min(620px, 100%);
+	padding: 26px 28px 22px;
+	animation: fp-search-pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+#paper-search-root .search-dialog::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--card-bg);
+	z-index: -1;
+	border-radius: 4px;
+	filter: url("#paper-edge")
+		drop-shadow(0 26px 60px rgba(60, 44, 22, 0.22));
+}
+#paper-search-root .search-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+#paper-search-root .search-head h2 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--deep-text);
+}
+#paper-search-root .search-head .icon-button {
+	width: 32px;
+	height: 32px;
+}
+#paper-search-root .green-dot {
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: var(--radius-handdrawn);
+	background: var(--fp-accent);
+	transform: rotate(15deg);
+	flex-shrink: 0;
+}
+#paper-search-root .search-field {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 16px;
+	height: 48px;
+	border: 2px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn);
+	background: var(--page-bg);
+	transition: border-color 0.2s ease;
+}
+#paper-search-root .search-field:focus-within {
+	border-color: var(--fp-accent);
+	background: var(--card-bg);
+}
+#paper-search-root .search-field > svg {
+	width: 16px;
+	height: 16px;
+	color: var(--muted);
+	flex-shrink: 0;
+}
+#paper-search-root .search-input {
+	flex: 1;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	outline: none;
+	background: transparent;
+	color: var(--deep-text);
+	font: inherit;
+	font-size: 14px;
+	appearance: none;
+	-webkit-appearance: none;
+}
+#paper-search-root .search-input::placeholder {
+	color: var(--muted);
+}
+#paper-search-root .search-input::-webkit-search-cancel-button,
+#paper-search-root .search-input::-webkit-search-decoration {
+	display: none;
+	-webkit-appearance: none;
+}
+#paper-search-root .search-results {
+	margin-top: 10px;
+	margin-left: -8px;
+	margin-right: -4px;
+	max-height: 52vh;
+	overflow-y: auto;
+	padding: 8px;
+}
+#paper-search-root .search-empty {
+	margin: 24px 0 8px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 13px;
+}
+#paper-search-root a.search-result {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	column-gap: 12px;
+	padding: 12px 14px;
+	margin-bottom: 10px;
+	border: 1px dashed var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: var(--radius-handdrawn);
+	color: var(--deep-text);
+	background: var(--page-bg);
+	text-decoration: none;
+	transition:
+		background 0.18s ease,
+		border-color 0.18s ease,
+		transform 0.18s ease;
+}
+#paper-search-root a.search-result:hover {
+	border-color: var(--fp-accent);
+	background: var(--fp-accent-soft);
+	transform: translateY(-2px) scale(1.01) rotate(0.5deg);
+	box-shadow: 0 10px 22px rgba(var(--paper-shadow-rgb, 82, 64, 38), 0.1);
+}
+#paper-search-root .search-result strong {
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.5;
+}
+#paper-search-root .search-result span {
+	align-self: start;
+	color: var(--muted);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+#paper-search-root .search-result p {
+	grid-column: 1/-1;
+	margin: 4px 0 0;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.6;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+#paper-search-root .search-result mark {
+	padding: 0 4px;
+	border-radius: var(--radius-handdrawn);
+	background-color: var(--tape-yellow);
+	background-image: var(--tape-stripes);
+	color: var(--deep-text);
+}
+:root.dark #paper-search-root .search-result mark {
+	color: #1e1e1e;
+}
+@media (max-width: 600px) {
+	#paper-search-root {
+		padding: 8vh 14px 14px;
+	}
+	#paper-search-root .search-dialog {
+		padding: 22px 20px 18px;
+	}
+	#paper-search-root .search-results {
+		max-height: 60vh;
+	}
+}
+@keyframes fp-search-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes fp-search-pop {
+	from {
+		opacity: 0;
+		transform: translateY(-14px) scale(0.97);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
 }
