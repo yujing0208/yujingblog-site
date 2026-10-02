@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       keep_recent:
-        description: '除当前生产部署外，额外保留最近 N 个部署'
+        description: '总共保留最近 N 个部署（含当前生产部署）'
         required: false
-        default: '4'
+        default: '2'
   push:
     branches: [main]
     paths:
@@ -29,7 +29,7 @@ jobs:
       - name: Delete old deployments via Vercel API
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          KEEP_RECENT: ${{ github.event.inputs.keep_recent || '4' }}
+          KEEP_RECENT: ${{ github.event.inputs.keep_recent || '2' }}
           GH_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -68,6 +68,22 @@ jobs:
           } while (cursor);
 
           console.log(`projects: ${projects.length} -> ${projects.map((p) => p.name).join(', ')}`);
+
+          // 1.5 清除各项目的远程构建缓存（Deployment Storage 的大头之一：
+          //     每次 Vercel 侧构建都会写入缓存，1100+ 次历史构建累积可观）
+          let cacheOk = 0, cacheFail = 0;
+          const cacheErrors = [];
+          for (const p of projects) {
+            try {
+              await api(`/v1/build-cache/${p.id}`, { method: 'DELETE' });
+              cacheOk++;
+            } catch (e) {
+              cacheFail++;
+              cacheErrors.push(`${p.name}: ${e.message.slice(0, 100)}`);
+            }
+            await sleep(120);
+          }
+          console.log(`::notice title=vercel-cleanup::build-cache purged: ok=${cacheOk}, failed=${cacheFail}`);
 
           // 2. 逐项目清理旧部署
           const rows = [];
@@ -114,9 +130,10 @@ jobs:
             '|---|---|---|---|---|',
             ...rows.map((r) => `| ${r.name} | ${r.total} | ${r.kept} | ${r.deleted} | ${r.failed} |`),
             '',
-            `**合计**: 删除 ${sum.deleted} 个，失败 ${sum.failed} 个（原总数 ${sum.total}）`,
+            `**合计**: 删除 ${sum.deleted} 个部署，失败 ${sum.failed} 个（原总数 ${sum.total}）；构建缓存清除 ok=${cacheOk}/failed=${cacheFail}`,
             '',
             ...rows.flatMap((r) => r.errors.length ? [`### ${r.name} 失败明细`, ...r.errors.map((e) => `- ${e}`)] : []),
+            ...(cacheErrors.length ? ['### 构建缓存清除失败明细', ...cacheErrors.map((e) => `- ${e}`)] : []),
           ].join('\n');
           const fs = await import('fs');
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summaryMd);
@@ -124,7 +141,7 @@ jobs:
           // 4. 写 commit status（匿名可读）
           const ghSha = process.env.GH_SHA;
           const [owner, repo] = (process.env.GH_REPO || '/').split('/');
-          const desc = `deleted=${sum.deleted}, failed=${sum.failed}, total=${sum.total} | ${rows.map((r) => `${r.name}:${r.deleted}/${r.total}`).join(' ')}`.slice(0, 137);
+          const desc = `deleted=${sum.deleted}, failed=${sum.failed}, total=${sum.total}; cache purged=${cacheOk}/${cacheOk + cacheFail} | ${rows.map((r) => `${r.name}:${r.deleted}/${r.total}`).join(' ')}`.slice(0, 137);
           try {
             const st = await fetch(`https://api.github.com/repos/${owner}/${repo}/statuses/${ghSha}`, {
               method: 'POST',
@@ -142,6 +159,7 @@ jobs:
           }
 
           console.log('=== CLEANUP SUMMARY ===');
+          console.log(`build-cache purged: ok=${cacheOk}, failed=${cacheFail}${cacheErrors.length ? ' | ' + cacheErrors.join(' ; ') : ''}`);
           for (const r of rows) console.log(`${r.name}: total=${r.total}, kept=${r.kept}, deleted=${r.deleted}, failed=${r.failed}${r.errors.length ? '\n    ' + r.errors.slice(0, 5).join('\n    ') : ''}`);
           console.log('=== DONE ===');
           EOF
