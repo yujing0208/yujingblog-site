@@ -1,7 +1,10 @@
----
+﻿---
 import { MomentCard } from "@components/features/diary";
 import MomentsCover from "@components/features/diary/MomentsCover.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+// 展开评论区与文章页共用一套 Twikoo 功能性样式（OwO 面板尺寸等）
+import "../styles/twikoo.css";
 
 import { siteConfig } from "../config";
 import type { DiaryItem } from "../data/diary";
@@ -374,38 +377,37 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     top: -0.75rem;
     left: 1rem;
     right: 1rem;
-    height: 1px;
-    background: var(--border);
-    opacity: 0.7;
+    height: 0;
+    border-top: 1px dashed var(--paper-dash);
   }
 
-  /* 标签筛选状态条 */
+  /* 标签筛选状态条（手账手绘方框） */
   .wx-filter-bar {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.875rem;
     margin-bottom: 1rem;
-    background: var(--card-bg);
-    border: 1px solid var(--primary);
-    border-radius: 9999px;
+    background: var(--paper-warm);
+    border: 1.5px dashed var(--dash);
+    border-radius: var(--radius-handdrawn);
     font-size: 0.8125rem;
-    color: var(--text-color);
+    color: var(--ink);
   }
   .wx-filter-bar[hidden] {
     display: none;
   }
   .wx-filter-icon {
     display: inline-flex;
-    color: var(--primary);
+    color: var(--color-accent-strong);
     flex-shrink: 0;
   }
   .wx-filter-tag {
     font-weight: 600;
-    color: var(--primary);
+    color: var(--color-accent-strong);
   }
   .wx-filter-count {
-    color: var(--content-meta);
+    color: var(--ink-soft);
   }
   .wx-filter-clear {
     margin-left: auto;
@@ -414,26 +416,29 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     gap: 0.25rem;
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
-    color: var(--content-meta);
-    background: var(--btn-regular-bg);
-    border: 0;
-    border-radius: 9999px;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 1.5px dashed var(--dash);
+    border-radius: var(--radius-handdrawn);
     cursor: pointer;
     transition:
       color 0.2s ease,
-      background 0.2s ease;
+      background 0.2s ease,
+      border-color 0.2s ease;
   }
   .wx-filter-clear:hover {
-    color: var(--primary);
+    color: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
   }
 
-  /* 空状态 */
+  /* 空状态（纸卡） */
   .wx-empty {
     text-align: center;
     padding: 3rem 1rem;
     background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 4px;
+    box-shadow: var(--paper-shadow);
   }
 
   .wx-empty-icon {
@@ -443,22 +448,22 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--btn-regular-bg);
+    background: var(--color-accent-soft);
     border-radius: 50%;
-    color: var(--content-meta);
+    color: var(--color-accent-strong);
     font-size: 2rem;
   }
 
   .wx-empty h3 {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--ink);
     margin-bottom: 0.375rem;
   }
 
   .wx-empty p {
     font-size: 0.875rem;
-    color: var(--content-meta);
+    color: var(--ink-soft);
     margin: 0;
   }
 
@@ -485,35 +490,33 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     display: flex;
     align-items: stretch;
     background: var(--card-bg);
-    border-radius: 12px;
+    border-radius: 4px;
+    box-shadow: var(--paper-shadow);
     overflow: hidden;
     margin-bottom: 1.25rem;
     min-height: 4.5rem;
     text-decoration: none;
-    color: var(--text-color);
-    border: 1.5px solid transparent;
-    transition: border-color 0.2s ease, transform 0.2s ease;
-    cursor: pointer;
+    color: var(--ink);
+    transition: box-shadow 0.22s ease, translate 0.22s ease;
   }
   .wx-pinned:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
+    box-shadow: var(--small-shadow);
+    translate: 0 -3px;
   }
   .wx-pinned-tag {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0 0.75rem;
-    background: #fff;
-    color: #1a1a1a;
-    font-size: 1.625rem;
-    font-weight: 400;
+    padding: 0.25rem 0.875rem;
+    margin: auto 0.75rem;
+    background-color: var(--tape-yellow);
+    background-image: var(--tape-stripes);
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 2px;
+    transform: rotate(-2deg);
     flex-shrink: 0;
     white-space: nowrap;
-  }
-  :root.dark .wx-pinned-tag {
-    background: #00000000;
-    color: #fff;
   }
   .wx-pinned-items {
     display: flex;
@@ -535,7 +538,7 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
     min-width: 4rem;
     max-width: 7.5rem;
     flex: 1;
-    border-left: 1px solid var(--border);
+    border-left: 1px dashed var(--paper-dash);
     overflow: hidden;
   }
   .wx-pinned-preview:first-child {
@@ -580,7 +583,7 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
   .wx-ptxt {
     margin: 0;
     font-size: 0.625rem;
-    color: var(--content-meta);
+    color: var(--ink-soft);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 4;
@@ -601,44 +604,44 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
   }
 
   /* ============================================
-   * JS 动态插入的说说卡片样式
+   * 动态卡片（手账纸卡：4px 圆角 + 常驻纸影，hover 纸影加深上浮）
    * ============================================ */
   #moments-feed .moment-card {
     position: relative;
     background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-large);
+    border-radius: 4px;
+    box-shadow: var(--paper-shadow);
     padding: 1rem 1rem 1rem 1rem;
     overflow: hidden;
-    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+    transition: box-shadow 0.22s ease, translate 0.22s ease;
   }
-  :root.dark #moments-feed .moment-card { border-color: #3f3f46; }
   #moments-feed .moment-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-  }
-  :root.dark #moments-feed .moment-card:hover {
-    border-color: #fff;
-    box-shadow: 0 4px 24px rgba(255,255,255,0.08);
+    box-shadow: var(--small-shadow);
+    translate: 0 -3px;
   }
 
   #moments-feed .card-header { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem; }
   #moments-feed .card-avatar { flex-shrink: 0; }
   #moments-feed .avatar-img {
     width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover;
-    border: 2px solid var(--primary); box-sizing: border-box;
+    border: 2px solid var(--color-accent-soft); box-sizing: border-box;
   }
   #moments-feed .card-user-info { flex: 1; min-width: 0; }
   #moments-feed .user-row { display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.125rem; }
+  /* 卡内「置顶」徽章：小黄胶带 */
   #moments-feed .pinned-badge {
     display: inline-flex; align-items: center; gap: 0.25rem;
-    padding: 0.125rem 0.5rem; background: var(--btn-regular-bg);
-    color: var(--btn-content); border-radius: var(--radius);
-    font-size: 0.75rem; font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    background-color: var(--tape-yellow);
+    background-image: var(--tape-stripes);
+    color: var(--ink);
+    border-radius: 2px;
+    font-size: 0.7rem; font-weight: 700;
+    transform: rotate(-2deg);
   }
   #moments-feed .pinned-icon { width: 14px; height: 14px; }
-  #moments-feed .user-name { font-size: 0.9375rem; font-weight: 600; color: var(--primary); }
-  #moments-feed .meta-row { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--content-meta); }
+  #moments-feed .user-name { font-size: 0.9375rem; font-weight: 600; color: var(--color-accent-strong); }
+  #moments-feed .meta-row { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--ink-soft); }
   #moments-feed .meta-dot { opacity: 0.5; }
   #moments-feed .location {
     display: inline-flex;
@@ -657,27 +660,20 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
   }
   #moments-feed .mood-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; height: 14px; }
 
-  /* 展开评论区白底卡片 */
+  /* 展开评论区（纸中纸：warm 底 + 手绘虚线框） */
   #moments-feed .twikoo-entry-comments {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-large);
+    background: var(--paper-warm);
+    border: 1.5px dashed var(--dash);
+    border-radius: 4px;
     padding: 0.875rem 1rem;
-  }
-  :root.dark #moments-feed .twikoo-entry-comments {
-    border-color: #3f3f46;
   }
 
   #moments-feed .card-content { margin-bottom: 0.75rem; }
-  #moments-feed .moment-markdown { word-break: break-word; line-height: 1.7; color: var(--text-color); }
-  /* 夜间模式：内容文字改为白色（主题未定义 --text-color，避免继承到黑色） */
-  :root.dark #moments-feed .moment-markdown { color: #fff; }
-  /* 空状态标题同样用了未定义的 --text-color，夜间一并改白 */
-  :root.dark .wx-empty h3 { color: #fff; }
+  #moments-feed .moment-markdown { word-break: break-word; line-height: 1.7; color: var(--ink); }
   #moments-feed .moment-markdown p { margin-bottom: 0.375rem; }
   #moments-feed .moment-markdown p:last-child { margin-bottom: 0; }
-  #moments-feed .moment-markdown img { border-radius: var(--radius); margin-top: 0.5rem; max-width: 100%; }
-  #moments-feed .moment-markdown a { color: var(--primary); text-decoration: underline; }
+  #moments-feed .moment-markdown img { border-radius: 4px; margin-top: 0.5rem; max-width: 100%; }
+  #moments-feed .moment-markdown a { color: var(--color-accent-strong); text-decoration: underline; }
 
   /* 图片网格基础布局（列数由 --img-cols 控制：1/2/3） */
   #moments-feed .card-images {
@@ -688,7 +684,7 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
   }
   #moments-feed .image-item {
     position: relative;
-    border-radius: var(--radius);
+    border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
     aspect-ratio: 1;
@@ -758,23 +754,31 @@ const normalMoments = moments.filter((m) => !(m as DiaryItemWithPinned).pinned);
 
   #moments-feed .card-tags {
     display: flex; flex-wrap: wrap; gap: 0.375rem;
-    padding-top: 0.625rem; border-top: 1px solid var(--border);
+    padding-top: 0.625rem; border-top: 1px dashed var(--paper-dash);
   }
+  /* 标签：tape 手绘小方框，奇偶轻微倾角 */
   #moments-feed .tag-item {
     padding: 0.25rem 0.625rem; background: transparent;
-    border: 1px solid var(--primary); border-radius: 9999px;
+    border: 1.5px dashed var(--dash);
+    border-radius: var(--radius-handdrawn);
     font-size: 0.75rem; font-family: inherit; line-height: inherit;
-    color: var(--primary);
+    color: var(--ink-soft);
     cursor: pointer;
     transition: all 0.2s ease;
   }
+  #moments-feed .tag-item:nth-child(odd) { transform: rotate(-1.2deg); }
+  #moments-feed .tag-item:nth-child(even) { transform: rotate(1.2deg); }
   #moments-feed .tag-item:hover {
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
+    transform: rotate(0);
   }
   #moments-feed .tag-item.active {
-    background: var(--primary);
-    border-color: var(--primary);
+    background: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
     color: #fff;
+    transform: rotate(0);
   }
 
   /* 移动端 */

@@ -1,4 +1,4 @@
----
+﻿---
 // Firefly 动态页封面（微信朋友圈风格），数据源改为 shuoShuoProfile
 import { shuoShuoProfile } from "../../../config/shuoShuoProfile";
 
@@ -55,16 +55,31 @@ const profile = shuoShuoProfile;
 <style>
   .wx-cover {
     margin-bottom: 1.25rem;
-    border-radius: 12px;
+    border-radius: 4px;
     overflow: visible;
     position: relative;
+    /* 顶部中央粉胶带（与全站评论区/侧栏胶带同语言） */
+    filter: drop-shadow(0 2px 6px rgba(var(--paper-shadow-rgb), 0.12));
+  }
+
+  .wx-cover::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    z-index: 25;
+    width: 90px;
+    height: 22px;
+    background-color: var(--tape-pink);
+    background-image: var(--tape-stripes);
+    transform: translateX(-50%) rotate(-2deg);
   }
 
   /* ===== 封面图 ===== */
   .wx-cover-img-box {
     width: 100%;
     height: 280px;
-    border-radius: 12px 12px 0 0;
+    border-radius: 4px 4px 0 0;
     overflow: hidden;
   }
 
@@ -86,7 +101,7 @@ const profile = shuoShuoProfile;
     position: relative;
     background: var(--card-bg);
     border: none;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 4px 4px;
     padding: 0.75rem 1.25rem 1rem;
     min-height: 2rem;
     display: flex;
@@ -97,7 +112,7 @@ const profile = shuoShuoProfile;
   /* 签名：右侧，头像下方 */
   .wx-bio {
     font-size: 0.8125rem;
-    color: var(--content-meta);
+    color: var(--ink-soft);
     line-height: 1.5;
     text-align: right;
     max-width: calc(100% - 8rem);
@@ -120,10 +135,10 @@ const profile = shuoShuoProfile;
   .wx-avatar {
     width: 5rem;
     height: 5rem;
-    border-radius: 6px;
+    border-radius: 4px;
     object-fit: cover;
     border: 3px solid var(--card-bg);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--paper-shadow);
     display: block;
   }
 
@@ -145,15 +160,11 @@ const profile = shuoShuoProfile;
   @media (max-width: 480px) {
     .wx-cover-img-box {
       height: 200px;
-      border-radius: 8px 8px 0 0;
-    }
-
-    .wx-cover {
-      border-radius: 8px;
+      border-radius: 4px 4px 0 0;
     }
 
     .wx-info-bar {
-      border-radius: 0 0 8px 8px;
+      border-radius: 0 0 4px 4px;
       padding: 0.625rem 1rem 0.75rem;
     }
 

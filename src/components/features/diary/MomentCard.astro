@@ -1,4 +1,4 @@
----
+﻿---
 // Firefly 动态卡片（原样移植），数据源改为 DiaryItem
 import { shuoShuoProfile } from "../../../config/shuoShuoProfile";
 import type { DiaryItem } from "../../../data/diary";
@@ -88,11 +88,11 @@ const videoList = (moment as MomentWithExtras).videos ?? [];
               >
                 <path
                   d="M829.31 607.6L548.07 234.1c-12.93-19.17-41.01-19.61-54.82-0.89L197.3 606.71c-16.05 22.28-0.45 53.49 27.19 53.49h139.06v173.38c0 26.3 21.39 48.14 48.14 48.14H612.7c26.29 0 48.13-21.39 48.13-48.14V660.2h140.4c27.19 0 43.24-30.31 28.08-52.6z"
-                  fill="var(--primary)"
+                  fill="var(--color-accent-strong)"
                 ></path>
                 <path
                   d="M226.72 218.06h570.5c20.95 0 37.89-16.94 37.89-37.88s-16.94-37.88-37.89-37.88h-570.5c-20.95 0-37.88 16.94-37.88 37.88s16.94 37.88 37.88 37.88z"
-                  fill="var(--primary)"
+                  fill="var(--color-accent-strong)"
                 ></path>
               </svg>
               <span>置顶</span>
@@ -234,7 +234,7 @@ const videoList = (moment as MomentWithExtras).videos ?? [];
     }
     <button
       type="button"
-      class="card-comment waline-toggle-btn"
+      class="card-comment twikoo-toggle-btn"
       data-diary-id={moment.id}
     >
       <svg
@@ -250,21 +250,21 @@ const videoList = (moment as MomentWithExtras).videos ?? [];
       >
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
-      <span class="waline-toggle-text">评论</span>
+      <span class="twikoo-toggle-text">评论</span>
     </button>
   </div>
 </div>
 
 <style>
-  /* 左侧主题色竖条 */
+  /* 左侧主题色竖条（手账荧光笔标记线） */
   .card-accent-bar {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
     width: 4px;
-    background: var(--primary);
-    opacity: 0.35;
+    background: var(--color-accent);
+    opacity: 0.45;
     border-radius: 0 2px 2px 0;
   }
 
@@ -275,28 +275,36 @@ const videoList = (moment as MomentWithExtras).videos ?? [];
     justify-content: space-between;
     gap: 0.625rem;
     padding-top: 0.625rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px dashed var(--paper-dash);
   }
 
+  /* 评论按钮：tape 手绘方框（全站按钮语言） */
   .card-comment {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.3rem;
     font-size: 0.78rem;
-    color: var(--content-meta);
+    color: var(--ink-soft);
     background: transparent;
-    border: 0;
-    padding: 0.25rem 0.5rem;
-    border-radius: 9999px;
+    border: 1.5px dashed var(--dash);
+    border-radius: var(--radius-handdrawn);
+    padding: 0.25rem 0.75rem;
     cursor: pointer;
+    transform: rotate(-2deg);
     transition:
+      transform 0.22s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease,
       color 0.2s ease,
-      background 0.2s ease;
+      border-color 0.2s ease;
   }
 
   .card-comment:hover {
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    transform: rotate(0) translateY(-2px) scale(1.06);
+    color: var(--color-accent-strong);
+    border-color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
+    box-shadow: var(--soft-shadow);
   }
 
   .comment-icon {
