@@ -100,7 +100,10 @@
 
 		if (data.html_url) el.setAttribute("href", data.html_url);
 
+		// fetch-error 一并摘掉：历史页面上旧内联脚本直连失败可能已打上该类，
+		// 代理成功后不能让「（加载失败）」伪元素残留
 		el.classList.remove("fetch-waiting");
+		el.classList.remove("fetch-error");
 		el.classList.add("fetch-done");
 		el.setAttribute("data-gc-state", "done");
 	}
