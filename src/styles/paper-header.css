@@ -665,3 +665,15 @@ body::after {
 	flex-shrink: 0;
 	vertical-align: middle;
 }
+
+/* ---- 手账首屏激活时隐藏顶部遮罩（2026-10-02 白条修复） ----
+   上一节的 body::after 顶部 44px 渐变遮罩是为「吸顶导航上方 16px 缝隙」服务的，
+   但首页 hero 模式下，未滚动时导航还在文档流里（尚未吸顶），这条 fixed 遮罩
+   会直接盖在 hero 背景图上，形成页面最顶端的白条（实测截图确认）。
+   paper-hero.js 的 setHeroActive 会在滚过首屏（heroBottom - 80px）时移除
+   is-hero-active —— 时间点早于导航吸顶（#top-row top:16px 触发点），
+   所以「首屏在视口内 -> 无遮罩（hero 图完整）；导航吸顶后 -> 遮罩恢复」，
+   两个需求互不冲突。 */
+body.is-hero-active::after {
+	display: none;
+}
