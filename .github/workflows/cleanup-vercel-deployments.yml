@@ -1,8 +1,10 @@
 name: Cleanup Vercel Deployments
 
-# 一次性/手动触发的部署存储清理工具：
+# 部署存储清理工具（可反复手动跑）：
 #   - 遍历 Vercel 账户下所有项目，删除旧部署释放 Deployment Storage（免费额度 10GB）
 #   - 保留：当前生产部署（最新 READY 且 target=production）+ 最近 N 个部署（默认 4）
+#   - 结果输出到：Job 日志、GITHUB_STEP_SUMMARY、::notice:: 注解、触发 commit 的 status
+#     （注解与 status 匿名可读，便于无需鉴权核验结果）
 #   - 触发：Actions 页面手动 Run workflow；或 push 本文件到 main 时自动跑一次
 # ⚠️ 删除不可恢复：被删部署的预览 URL 会失效（不影响线上正式站点）
 
@@ -28,6 +30,9 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           KEEP_RECENT: ${{ github.event.inputs.keep_recent || '4' }}
+          GH_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           cat > /tmp/cleanup.mjs <<'EOF'
           const TOKEN = process.env.VERCEL_TOKEN;
@@ -65,7 +70,7 @@ jobs:
           console.log(`projects: ${projects.length} -> ${projects.map((p) => p.name).join(', ')}`);
 
           // 2. 逐项目清理旧部署
-          const summary = [];
+          const rows = [];
           for (const p of projects) {
             const deps = [];
             let cursor;
@@ -75,7 +80,7 @@ jobs:
               cursor = d.pagination && d.pagination.next ? d.pagination.next : undefined;
             } while (cursor);
 
-            if (deps.length === 0) { summary.push(`${p.name}: 0 deployments, skip`); continue; }
+            if (deps.length === 0) { rows.push({ name: p.name, total: 0, kept: 0, deleted: 0, failed: 0, errors: [] }); continue; }
 
             deps.sort((a, b) => b.created - a.created);
             const keep = new Set();
@@ -96,11 +101,48 @@ jobs:
               }
               await sleep(120);
             }
-            summary.push(`${p.name}: total=${deps.length}, kept=${keep.size}, deleted=${ok}, failed=${fail}${errors.length ? '\n    ' + errors.slice(0, 5).join('\n    ') : ''}`);
+            rows.push({ name: p.name, total: deps.length, kept: keep.size, deleted: ok, failed: fail, errors });
+            console.log(`::notice title=vercel-cleanup::${p.name}: total=${deps.length}, kept=${keep.size}, deleted=${ok}, failed=${fail}`);
+          }
+
+          // 3. 汇总输出
+          const sum = rows.reduce((a, r) => ({ deleted: a.deleted + r.deleted, failed: a.failed + r.failed, total: a.total + r.total }), { deleted: 0, failed: 0, total: 0 });
+          const summaryMd = [
+            '## Vercel 部署清理结果',
+            '',
+            '| 项目 | 部署总数 | 保留 | 已删除 | 删除失败 |',
+            '|---|---|---|---|---|',
+            ...rows.map((r) => `| ${r.name} | ${r.total} | ${r.kept} | ${r.deleted} | ${r.failed} |`),
+            '',
+            `**合计**: 删除 ${sum.deleted} 个，失败 ${sum.failed} 个（原总数 ${sum.total}）`,
+            '',
+            ...rows.flatMap((r) => r.errors.length ? [`### ${r.name} 失败明细`, ...r.errors.map((e) => `- ${e}`)] : []),
+          ].join('\n');
+          const fs = await import('fs');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summaryMd);
+
+          // 4. 写 commit status（匿名可读）
+          const ghSha = process.env.GH_SHA;
+          const [owner, repo] = (process.env.GH_REPO || '/').split('/');
+          const desc = `deleted=${sum.deleted}, failed=${sum.failed}, total=${sum.total} | ${rows.map((r) => `${r.name}:${r.deleted}/${r.total}`).join(' ')}`.slice(0, 137);
+          try {
+            const st = await fetch(`https://api.github.com/repos/${owner}/${repo}/statuses/${ghSha}`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.GH_TOKEN}`,
+                'User-Agent': 'vercel-cleanup-workflow',
+                'Content-Type': 'application/json',
+                Accept: 'application/vnd.github+json',
+              },
+              body: JSON.stringify({ state: 'success', context: 'vercel-cleanup', description: desc }),
+            });
+            console.log(`commit status -> ${st.status}`);
+          } catch (e) {
+            console.log(`commit status failed: ${e.message}`);
           }
 
           console.log('=== CLEANUP SUMMARY ===');
-          for (const s of summary) console.log(s);
+          for (const r of rows) console.log(`${r.name}: total=${r.total}, kept=${r.kept}, deleted=${r.deleted}, failed=${r.failed}${r.errors.length ? '\n    ' + r.errors.slice(0, 5).join('\n    ') : ''}`);
           console.log('=== DONE ===');
           EOF
           node /tmp/cleanup.mjs
