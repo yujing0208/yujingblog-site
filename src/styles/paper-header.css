@@ -183,7 +183,7 @@ body:not(.paper-layout) #top-row .site-header {
 	color: var(--deep-text, #2a2620);
 	text-decoration: none;
 	/* 站题手写风：英文 New Tegomin + 中文楷书，见 main.css --font-display */
-	font-family: var(--font-display), inherit;
+	font-family: var(--font-display);
 	transition:
 		color 0.2s ease,
 		transform 0.2s ease;
