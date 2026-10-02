@@ -1,4 +1,4 @@
----
+﻿---
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { Icon } from "astro-icon/components";
@@ -98,6 +98,7 @@ const lastModified = dayjs(updatedDate).utc().format("YYYY-MM-DDTHH:mm:ss");
 				<Icon
 					name="lucide:history"
 					class="text-3xl text-(--primary)"
+					is:inline
 				/>
 			</div>
 			<div class="flex flex-col gap-1">
@@ -115,3 +116,4 @@ const lastModified = dayjs(updatedDate).utc().format("YYYY-MM-DDTHH:mm:ss");
 		</div>
 	</div>
 </>
+

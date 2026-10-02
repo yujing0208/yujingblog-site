@@ -1,4 +1,4 @@
----
+﻿---
 // ============================================================
 // Announcement.astro (升级版 — 多则公告轮播)
 // ------------------------------------------------------------
@@ -136,7 +136,7 @@ const style = Astro.props.style;
 						data-action="prev"
 						aria-label={i18n(I18nKey.announcementPrev)}
 					>
-						<Icon name="lucide:chevron-left" class="text-xs" />
+						<Icon name="lucide:chevron-left" class="text-xs" is:inline />
 					</button>
 					<button
 						type="button"
@@ -144,7 +144,7 @@ const style = Astro.props.style;
 						data-action="next"
 						aria-label={i18n(I18nKey.announcementNext)}
 					>
-						<Icon name="lucide:chevron-right" class="text-xs" />
+						<Icon name="lucide:chevron-right" class="text-xs" is:inline />
 					</button>
 				</>
 			)}
@@ -228,7 +228,7 @@ const style = Astro.props.style;
 						onclick="closeAnnouncement()"
 						aria-label={i18n(I18nKey.announcementClose)}
 					>
-						<Icon name="lucide:x" class="text-sm" />
+						<Icon name="lucide:x" class="text-sm" is:inline />
 					</button>
 				)
 			}
@@ -556,3 +556,4 @@ const style = Astro.props.style;
 	// 使公告栏函数全局可用
 	window.closeAnnouncement = closeAnnouncement;
 </script>
+
