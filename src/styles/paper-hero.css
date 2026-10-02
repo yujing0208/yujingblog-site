@@ -982,7 +982,11 @@ body.no-banner-mode #top-row.paper-hero-layout,
 #top-row.paper-hero-layout {
 	position: sticky !important;
 	top: 16px !important;
-	z-index: 40;
+	/* 2026-10-02：40 -> 50。paper-header.css 的 body::after 顶部渐隐遮罩
+	   z-index: 45，40 会让首页吸顶后被遮罩压住导航纸带和上面的胶带
+	   （内页 #top-row 是 50，无此问题）。提到 50 与内页一致：
+	   遮罩在导航和胶带之下，只补导航上方的缝隙。 */
+	z-index: 50;
 }
 
 #top-row.paper-hero-layout #navbar-wrapper {
