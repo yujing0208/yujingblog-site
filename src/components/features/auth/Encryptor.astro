@@ -1,8 +1,8 @@
 ---
-import "@/styles/markdown.css";
-import "@/styles/expressive-code.css";
+// 统一 MD 渲染：不再导入旧渲染层 markdown.css / markdown-extend.styl（避免与全局
+// paper-markdown.css 双套打架）；expressive-code.css 已由 Layout.astro 全局导入。
+// 解密后的内容本就包裹在 .markdown-content 容器内，由 paper-markdown.css 统一渲染。
 import "@/styles/encrypted-content.css";
-import "@/styles/markdown-extend.styl";
 
 import { encryptContent } from "@utils/crypto-utils";
 
