@@ -1,17 +1,19 @@
 name: Mirror Content
 
-# 内容仓库 -> 站点仓库 的零 secret 同步桥（2026-10-03 建立）
+# 内容仓库 -> 站点仓库 的同步桥（2026-10-03 建立；同日因内容仓库转私有而补充凭据）
 #
 # 背景：原方案（内容仓库 workflow 用 DISPATCH_TOKEN 调站点仓库 repository_dispatch）已失效——
 #   站点仓库自 2026-08-15 起 1249 次 run 中 repository_dispatch 记录为 0，内容仓库
-#   每次 push 都在 dispatch 步红叉。改为站点仓库主动拉，两边都不依赖对方的凭据。
+#   每次 push 都在 dispatch 步红叉。改为站点仓库主动拉，读内容仓库用一个只读 PAT。
 #
 # 机制：每半小时比对内容仓库 master 的 HEAD sha；不一样就往站点仓库 main 推一个
 #   chore(content-mirror) commit（commit message 里带上该 sha，同时写 content-sha.txt），
 #   由 Vercel Git 自动部署线构建上线，prebuild 的 sync-content.js 会把最新内容拉进产物。
 #
-# 不需要任何 secret：读内容仓库走匿名 API（仓库是 public），推自己仓库用自动注入的
-#   GITHUB_TOKEN（actions/checkout + x-access-token 推送）。
+# 凭据（2026-10-03 内容仓库转私有后修订）：
+#   - 读内容仓库：secrets.CONTENT_REPO_TOKEN，缺省回落到 secrets.DISPATCH_TOKEN
+#     （同一个 PAT，权限 repo，能读该私有仓）；PAT 权限为 repo 时无需另建。
+#   - 推自己仓库：自动注入的 GITHUB_TOKEN（actions/checkout + x-access-token 推送）。
 
 on:
   schedule:
@@ -36,13 +38,27 @@ jobs:
           REPO: ${{ github.repository }}
           CONTENT_REPO: yujing0208/yujingblog-content
           CONTENT_BRANCH: master
+          # 读私有内容仓库用的 PAT，缺省回落到 DISPATCH_TOKEN
+          CONTENT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.DISPATCH_TOKEN }}
         run: |
           set -euo pipefail
 
           echo "::group::获取内容仓库 HEAD"
-          remote=$(git ls-remote "https://github.com/$CONTENT_REPO.git" "refs/heads/$CONTENT_BRANCH" | cut -f1)
+          if [ -z "${CONTENT_TOKEN:-}" ]; then
+            echo "::error::未配置 secrets.CONTENT_REPO_TOKEN（也没有 DISPATCH_TOKEN），无法读取私有内容仓库"
+            echo "::error::新建方式：仓库 Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::值填一个对该私有仓有 Contents: Read 权限的 GitHub PAT"
+            exit 1
+          fi
+          # token 不写进 remote URL，只作为本次命令的 http header
+          CONTENT_BASIC=$(printf 'x-access-token:%s' "$CONTENT_TOKEN" | base64 -w0)
+          remote=$(git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $CONTENT_BASIC" \
+            ls-remote "https://github.com/$CONTENT_REPO.git" "refs/heads/$CONTENT_BRANCH" | cut -f1)
           if [ -z "$remote" ]; then
-            echo "::error::git ls-remote 取不到内容仓库 HEAD，检查 CONTENT_REPO / CONTENT_BRANCH"
+            echo "::error::git ls-remote 取不到内容仓库 HEAD。依次检查："
+            echo "::error::  1) CONTENT_REPO_TOKEN 是否勾选了该私有仓的 Contents 读权限"
+            echo "::error::  2) CONTENT_REPO=$CONTENT_REPO / CONTENT_BRANCH=$CONTENT_BRANCH 是否正确"
+            echo "::error::  3) PAT 是否已过期"
             exit 1
           fi
           echo "内容仓库 HEAD = $remote"

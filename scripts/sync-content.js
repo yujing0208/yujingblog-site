@@ -16,6 +16,45 @@ const ENABLE_CONTENT_SYNC = process.env.ENABLE_CONTENT_SYNC !== "false"; // 默�
 const CONTENT_REPO_URL = process.env.CONTENT_REPO_URL || "";
 const CONTENT_DIR = process.env.CONTENT_DIR || path.join(rootDir, "content");
 
+// 内容仓库已于 2026-10-03 转为私有仓，匿名 clone/fetch 会 401。
+// 凭据优先级：CONTENT_REPO_TOKEN（专用）→ GH_TOKEN（与在线编辑器共用同一个 PAT）。
+// 两者都没有时退化为匿名访问；此时若仓库是私有的，下方 clone 失败会给出明确指引。
+const CONTENT_REPO_TOKEN = (
+	process.env.CONTENT_REPO_TOKEN ||
+	process.env.GH_TOKEN ||
+""
+).trim();
+
+/**
+ * 为 git 命令注入 https 读取凭据。
+ *
+ * 用 `git -c http.https://github.com/.extraheader=AUTHORIZATION: basic <b64>`
+ * 而不是把 token 拼进 remote URL：前者不会把 token 落盘到 content/.git/config，
+ * 而后者会（本地开发时 content/ 是常驻目录，且该目录不在 .gitignore 的忽略范围内
+ * 对 remote URL 生效）。
+ *
+ * 仅对 https 远程生效；SSH 形式的 URL 走 ssh key，不注入。
+ */
+function gitAuthArgs() {
+	if (!CONTENT_REPO_TOKEN) return "";
+	if (!/^https:\/\//i.test(CONTENT_REPO_URL)) return "";
+	const basic = Buffer.from(`x-access-token:${CONTENT_REPO_TOKEN}`).toString(
+		"base64",
+	);
+	return `-c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${basic}" `;
+}
+
+function privateRepoHint() {
+	if (CONTENT_REPO_TOKEN) return "";
+	return [
+		"",
+		"  ⚠️ 未配置 CONTENT_REPO_TOKEN / GH_TOKEN，将以匿名方式访问内容仓库。",
+		"     若内容仓库已转为私有，clone 会因 401 失败。",
+		"     请在 Vercel 项目 Environment Variables 添加 CONTENT_REPO_TOKEN，",
+		"     值填一个对该私有仓有 Contents: Read 权限的 GitHub PAT。",
+	].join("\n");
+}
+
 console.log("开始同步内容...\n");
 
 // 检查是否启用内容分离
@@ -42,14 +81,21 @@ if (!fs.existsSync(CONTENT_DIR)) {
 	}
 
 	try {
-		console.log(`正在克隆内容仓库：${CONTENT_REPO_URL}`);
-		execSync(`git clone --depth 1 ${CONTENT_REPO_URL} ${CONTENT_DIR}`, {
-			stdio: "inherit",
-			cwd: rootDir,
-		});
+		console.log(
+			`正在克隆内容仓库：${CONTENT_REPO_URL}` +
+				(CONTENT_REPO_TOKEN ? "（已注入凭据）" : "（匿名）"),
+		);
+		execSync(
+			`git ${gitAuthArgs()}clone --depth 1 ${CONTENT_REPO_URL} ${CONTENT_DIR}`,
+			{
+				stdio: "inherit",
+				cwd: rootDir,
+			},
+		);
 		console.log("内容仓库克隆成功");
 	} catch (error) {
 		console.error("克隆失败：", error.message);
+		console.error(privateRepoHint());
 		process.exit(1);
 	}
 } else {
@@ -65,8 +111,8 @@ if (!fs.existsSync(CONTENT_DIR)) {
 				cwd: CONTENT_DIR,
 			});
 
-			// 2. 更新远程引用
-			execSync("git fetch --all --prune", {
+			// 2. 更新远程引用（私有仓需注入凭据；token 不落盘到 .git/config）
+			execSync(`git ${gitAuthArgs()}fetch --all --prune`, {
 				stdio: "inherit",
 				cwd: CONTENT_DIR,
 			});
@@ -176,6 +222,17 @@ if (resolved.length === 0 && missed.length > 0) {
 		top.forEach((d) => console.warn(`    ${d.isDirectory() ? "[dir] " : "[file]"} ${d.name}`));
 	} catch (error) {
 		console.warn(`    无法读取 ${CONTENT_DIR}：${error.message}`);
+	}
+	// 硬失败：package.json 的 prebuild 是 `sync-content.js || true`，
+	// 空映射会被 `|| true` 吞掉，构建照常产出「空博客」并静默上线——
+	// 表现为「文章全没了」且没有任何报错，是最难排查的失败模式。
+	// 这里主动 exit 1，让构建红掉：内容没进来就不该产出可上线产物。
+	if (ENABLE_CONTENT_SYNC) {
+		console.error(
+			"\n❌ 内容同步失败：0 个内容目录被映射。终止构建，避免上线空博客。",
+		);
+		console.error(privateRepoHint());
+		process.exit(1);
 	}
 }
 

@@ -70,6 +70,8 @@ jobs:
         env:
           ENABLE_CONTENT_SYNC: true
           CONTENT_REPO_URL: https://github.com/yujing0208/yujingblog-content.git
+          # 内容仓库转私有后，构建期 clone 需要凭据；缺省回落到 DISPATCH_TOKEN
+          CONTENT_REPO_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.DISPATCH_TOKEN }}
         run: |
           echo "触发来源: ${{ github.event_name }} / ${{ github.event.action }}"
           echo "站点仓库 commit: ${{ github.sha }}"
