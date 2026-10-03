@@ -93,21 +93,43 @@ if (!fs.existsSync(CONTENT_DIR)) {
 // 创建符号链接或复制内容
 console.log("\n正在建立内容链接...");
 
+// 内容仓库 -> 站点目录的映射
+// src 是候选路径数组，按顺序取第一个真实存在的那个：
+//   - 新布局（2026-10-03 起）：内容仓库收敛到 content/ 下，见「内容与框架分离」重构
+//   - 旧布局：posts/ spec/ data/ images/ 直接平铺在内容仓库根目录
+// dest 路径在两种布局下完全一致，因此 Astro 侧（content collections、import）无需任何改动，
+// 这也是新旧布局可以平滑切换而不产生破坏的关键。
 const contentMappings = [
-	{ src: "posts", dest: "src/content/posts" },
-	{ src: "spec", dest: "src/content/spec" },
-	{ src: "data", dest: "src/data" },
-	{ src: "images", dest: "public/images" },
+	{ src: ["content/posts", "posts"], dest: "src/content/posts" },
+	{ src: ["content/spec", "spec"], dest: "src/content/spec" },
+	{ src: ["content/data", "data"], dest: "src/data" },
+	{ src: ["content/images", "images"], dest: "public/images" },
 ];
 
-for (const mapping of contentMappings) {
-	const srcPath = path.join(CONTENT_DIR, mapping.src);
-	const destPath = path.join(rootDir, mapping.dest);
+const resolved = [];
+const missed = [];
 
-	if (!fs.existsSync(srcPath)) {
-		console.log(`跳过不存在的源目录：${mapping.src}`);
+for (const mapping of contentMappings) {
+	// 兼容新旧两种内容仓库布局：content/<name> 优先，退回 <name>
+	let srcPath = null;
+	let srcRel = null;
+	for (const candidate of mapping.src) {
+		const candidatePath = path.join(CONTENT_DIR, candidate);
+		if (fs.existsSync(candidatePath)) {
+			srcPath = candidatePath;
+			srcRel = candidate;
+			break;
+		}
+	}
+
+	if (!srcPath) {
+		console.log(`跳过不存在的源目录：${mapping.src.join(" | ")}`);
+		missed.push(mapping);
 		continue;
 	}
+	resolved.push({ mapping, srcRel });
+
+	const destPath = path.join(rootDir, mapping.dest);
 
 	// 如果目标已存在且不是符号链接,备份它
 	if (fs.existsSync(destPath) && !fs.lstatSync(destPath).isSymbolicLink()) {
@@ -130,11 +152,32 @@ for (const mapping of contentMappings) {
 	try {
 		const relPath = path.relative(path.dirname(destPath), srcPath);
 		fs.symlinkSync(relPath, destPath, "junction");
-		console.log(`已创建符号链接：${mapping.dest} -> ${mapping.src}`);
+		console.log(`已创建符号链接：${mapping.dest} -> ${srcRel}`);
 	} catch (error) {
-		console.log(`符号链接失败，改为复制内容：${mapping.src} -> ${mapping.dest}`);
+		console.log(`符号链接失败，改为复制内容：${srcRel} -> ${mapping.dest}`);
 		copyRecursive(srcPath, destPath);
 	}
+}
+
+// 诊断：一个都没映射上时，把内容仓库的实际顶层结构打印出来，
+// 便于一眼看出是目录改名了还是克隆失败，而不是得到一个"悄悄空掉"的博客。
+if (resolved.length === 0 && missed.length > 0) {
+	console.warn(
+		"\n⚠️ 没有任何内容目录被映射成功，站点将构建出一个空博客。内容仓库顶层实际内容：",
+	);
+	try {
+		const top = fs.readdirSync(CONTENT_DIR, { withFileTypes: true });
+		top.forEach((d) => console.warn(`    ${d.isDirectory() ? "[dir] " : "[file]"} ${d.name}`));
+	} catch (error) {
+		console.warn(`    无法读取 ${CONTENT_DIR}：${error.message}`);
+	}
+}
+
+if (resolved.length > 0) {
+	console.log(
+		`\n已映射 ${resolved.length}/${contentMappings.length} 项：` +
+			resolved.map((r) => `${r.mapping.dest} <- ${r.srcRel}`).join("，"),
+	);
 }
 
 console.log("\n内容同步完成\n");
