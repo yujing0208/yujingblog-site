@@ -1,56 +1,50 @@
 import type { CommentConfig } from "../types/config";
+import { deepMerge } from "./_settings";
+// ↓ 内容仓 content/settings/comment.ts
+import editable from "../settings/comment";
 
-// 评论系统配置
+// ══════════════════════════════════════════════════════════════════════
+// 评论系统配置（薄 Provider）
 //
-// 说明（2026-09-27）：
-//   留言板已按「照搬 homulilly.com/comment/」重建，后端随之切回 **Twikoo**。
-//   Waline 那套聊天室（GuestbookChat.svelte，43KB）已废弃不再引用。
+// 2026-09-27 起评论后端是 **Twikoo**，走 Vercel Serverless + MongoDB。
+// 配置项（包括表情包）存在服务端，由 Twikoo 自己的管理面板下发 ——
+// 所以这里只有"前端要连哪个后端"这几个字段，没有 emoji 列表。
 //
-//   ⚠️ Twikoo 服务端必须配置 MONGODB_URI 才能启动：
-//      twikoo-vercel 的 api/index.js 里写死
-//      `if (!uri) throw new Error('未设置环境变量 MONGODB_URI')`
-//      所以 Vercel 项目里必须存在这一条环境变量，否则请求会直接 500。
-export const commentConfig: CommentConfig = {
-	enable: true, // 启用评论功能。当设置为 false 时，评论组件将不会显示在文章区域。
-	system: "twikoo", // 评论系统选择: "waline" | "twikoo" | "giscus"
+// ⚠️ Twikoo 服务端必须配好 MONGODB_URI 才能启动，
+//    否则 twikoo-vercel 的 api/index.js 会直接抛错、请求 500。
+//    这条环境变量配在 Twikoo 那个 Vercel 项目里，不在这里。
+//
+// ⚠️ 已废弃的 Waline 整块配置本次一并删除。
+//    Waline 切不回去了：components/comment/Waline.astro 组件文件早已不存在，
+//    只剩 public/waline/ 的静态资源和配置文件里那句"可切回"的空头支票。
+// ══════════════════════════════════════════════════════════════════════
 
-	// Twikoo 配置
-	twikoo: {
-		// Twikoo 云函数地址（含 https://，不带路径）。
-		// 若尚未部署自己的 Twikoo，这里留空则留言墙会显示「留言加载失败」，
-		// 但页面本身不会报错。
-		envId: "https://twikoo.yujingblog.top",
+/** 内容仓送来的扁平形状 */
+type FlatComment = {
+	enable?: boolean;
+	system?: "twikoo";
+	envId?: string;
+	lang?: string;
+	avatarFallback?: string;
+};
+
+const flat = deepMerge<FlatComment>(
+	{
+		enable: false,
+		system: "twikoo",
+		envId: "",
 		lang: "zh-CN",
-		// 访客头像加载失败时的兜底图
 		avatarFallback: "/images/icon-error.webp",
 	},
+	editable,
+);
 
-	// Waline 配置（保留但已不再用于留言板；文章评论区如需可切回 system: "waline"）
-	waline: {
-		serverURL: "https://waline.yujingblog.top", // Waline 服务端地址
-		// ⚠️ 不要改回 SITE_LANG（值是 "zh_CN"，带下划线）。
-		//    Waline 查语言包时只做 toLowerCase()，语言包 key 形如 "zh-cn" / "en-us"，
-		//    所以 "zh_cn" 查不到，会静默回退到英文（`B[lang.toLowerCase()] ?? B["en-us"]`），
-		//    评论区就整体变英文了。必须写成带连字符的形式才认。
-		lang: "zh-CN",
-		locale: {
-			placeholder: "欢迎留言交流～",
-		},
-		emoji: [
-			"https://unpkg.com/@waline/emojis@1.4.0/weibo",
-			"https://unpkg.com/@waline/emojis@1.4.0/bilibili",
-			"https://unpkg.com/@waline/emojis@1.4.0/bmoji",
-		],
-		meta: ["nick", "mail", "link"],
-		requiredMeta: [],
-		login: "enable",
-		wordLimit: [0, 2000],
-		pageSize: 10,
-		visitorCount: false,
-		highlighter: false,
-		imageUploader: false,
-		texRenderer: false,
-		search: false,
-		reaction: false,
+export const commentConfig: CommentConfig = {
+	enable: flat.enable ?? false,
+	system: flat.system ?? "twikoo",
+	twikoo: {
+		envId: flat.envId ?? "",
+		lang: flat.lang,
+		avatarFallback: flat.avatarFallback,
 	},
 };

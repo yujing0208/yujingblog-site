@@ -104,6 +104,9 @@ const contentMappings = [
 	{ src: ["content/spec", "spec"], dest: "src/content/spec" },
 	{ src: ["content/data", "data"], dest: "src/data" },
 	{ src: ["content/images", "images"], dest: "public/images" },
+	// 可编辑配置（站点名/头像/导航/首屏/评论/音乐…）。
+	// 由 src/config/*.ts 里的薄 Provider 静态 import，详见 src/config/_settings.ts。
+	{ src: ["content/settings", "settings"], dest: "src/settings" },
 ];
 
 const resolved = [];

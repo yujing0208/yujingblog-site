@@ -29,6 +29,7 @@ pnpm-debug.log*
 !/src/content/posts/.gitkeep
 /src/content/spec/*
 !/src/content/spec/.gitkeep
+/src/settings/
 
 # Large zip files
 *.zip
@@ -73,6 +74,10 @@ src/data/bilibili-data.json
 # ---- 内容分离：以下内容仓库产物由 sync-content.js 构建期生成，禁止提交 ----
 # images/  -> public/images（内容仓库 images 整体同步，整体替换）
 /public/images/
+# settings/ -> src/settings（可编辑配置文件，整体由内容仓库提供）
+#   不屏蔽的话，sync-content.js 结尾那句 `git add .` 会把内容仓的 settings
+#   提交进站点仓库，造成"配置有两个源"的混乱。
+/src/settings/
 # data/  -> src/data（merge 同步；此处显式列举内容仓库拥有的文件，
 #           站点仓库独有的 data 文件仍可正常跟踪）
 /src/data/anime.ts
