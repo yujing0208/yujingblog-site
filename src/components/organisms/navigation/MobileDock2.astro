@@ -1,13 +1,11 @@
 ---
 import { Icon } from "astro-icon/components";
 import { announcementConfig, navBarConfig } from "@/config";
-import { LinkPresets } from "@/constants/link-presets";
-import type { LinkPreset, NavBarLink } from "@/types/config";
+import type { NavBarLink } from "@/types/config";
 import { url } from "@/utils/url-utils";
 import FabMusicPanel from "@/components/widgets/music-player/FabMusicPanel.svelte";
 
-const resolveLink = (link: NavBarLink | LinkPreset): NavBarLink => typeof link === "number" ? LinkPresets[link] : link;
-const links = navBarConfig.links.map(resolveLink).map((link) => ({ ...link, children: link.children?.map(resolveLink) }));
+const links = navBarConfig.links.map((link) => ({ ...link, children: link.children?.map((child: NavBarLink) => child) }));
 const announcementEntries = Array.isArray(announcementConfig.content) ? announcementConfig.content : [announcementConfig.content];
 const announcements = announcementEntries.map((entry) => typeof entry === "string" ? { title: entry, content: entry, link: announcementConfig.link } : { title: entry.content, content: entry.content, link: entry.link ?? announcementConfig.link });
 const mobileName = (name: string) => name === "Links" ? "链接" : name === "My" ? "我的" : name === "About" ? "关于" : name === "Others" ? "其他" : name === "Devices" ? "设备" : name === "Timeline" ? "时间线" : name;

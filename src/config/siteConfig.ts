@@ -1,265 +1,190 @@
 import type { SiteConfig } from "../types/config";
+import { deepMerge } from "./_settings";
+// ↓ 内容仓 content/settings/site.ts，经 junction 落到 src/settings/site.ts。
+//   和 announcementConfig.ts 引 ../data/announcement 是同一种写法，线上已实证。
+import editable from "../settings/site";
 
-// 定义站点语言
-const SITE_LANG = "zh_CN"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
+// ══════════════════════════════════════════════════════════════════════
+// 站点语言（构建期常量，不可编辑）
+// ══════════════════════════════════════════════════════════════════════
+const SITE_LANG = "zh_CN";
 
-export const siteConfig: SiteConfig = {
-	title: "YuJing的记忆终端",
-	subtitle: "记一些无用的日常，和有光的时刻。",
-	siteURL: "https://yujingblog.top/", // 请替换为你的站点URL，以斜杠结尾
-	siteStartDate: "2026-07-25", // 站点开始运行日期，用于站点统计组件计算运行天数
-
+// ══════════════════════════════════════════════════════════════════════
+// L1 写死的常量区
+//
+// 这些曾经是 siteConfig 里的「开关」，现在不再是开关，而是这个主题的事实。
+// 它们不出现在内容仓的可编辑文件里，但依然要出现在最终的 siteConfig 中，
+// 因为引用方还在读（例如 image-utils.ts 读 imageOptimization）。
+// ══════════════════════════════════════════════════════════════════════
+const HARDCODED = {
 	lang: SITE_LANG,
 
-	themeColor: {
-		hue: 240, // 主题色的默认色相，范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345
-		fixed: false, // 对访问者隐藏主题色选择器
+	// ── 页面缩放：全站关闭 ──────────────────────────────────────────
+	// 内页原本按 clientWidth/2000（下限 0.85）把 html 字号压到 85%，
+	// --page-width(81.25rem) 跟着缩成 1105px；而手账首页 body.paper-layout
+	// 会跳过缩放，导航就变成「首页 1300px / 内页 1105px」两种尺寸。
+	// 参考站 FlatPaper 也没有整页缩放（固定 min(94%,1300px) 容器），
+	// 关掉后所有页面的导航与内容宽度、字号完全一致。
+	pageScaling: { enable: false, targetWidth: 2000 },
+
+	homeLayout: "paper" as const,
+
+	// ── 目录 TOC ────────────────────────────────────────────────────
+	// desktopSidebar 已删除右侧悬浮目录（目录在左栏 card-toc）
+	toc: {
+		enable: true,
+		mobileTop: true,
+		floating: true,
+		depth: 2 as const,
+		useJapaneseBadge: true,
 	},
 
-	// 特色页面开关配置（关闭未使用的页面有助于提升 SEO，关闭后请记得在 navbarConfig 中移除对应链接）
+	// ── 标签样式 ────────────────────────────────────────────────────
+	tagStyle: { useNewStyle: false },
+
+	showCoverInContent: true,
+	generateOgImages: false,
+	showLastModified: true,
+
+	pageProgressBar: { enable: true, height: 3, duration: 6000 },
+
+	card: { border: true, followTheme: false },
+
+	favicon: [
+		{ src: "/favicon/avatar-icon.png", theme: "light" as const, sizes: "64x64" },
+		{ src: "/favicon/avatar-icon.png", theme: "dark" as const, sizes: "64x64" },
+	],
+
+	// 第三方统计（Microsoft Clarity）保持关闭 —— 启用会拉低 Lighthouse 评分
+	thirdPartyAnalytics: { enable: false, clarityId: "" },
+
+	// ── 壁纸模式 ────────────────────────────────────────────────────
+	// 首屏已改为手账风 PaperHero，壁纸模式保持 none。
+	// banner 相关配置整块已删除（Banner.astro / FullscreenWallpaper 一并未启用）。
+	wallpaperMode: { defaultMode: "none" as const, showModeSwitchOnMobile: "both" as const },
+
+	// ── 番剧 / 日记数据源（均走本地静态数据，未接外部 API）────────
+	anime: { mode: "local" as const },
+	bangumi: { userId: "your-bangumi-id", fetchOnDev: false },
+	bilibili: {
+		vmid: "your-bilibili-vmid",
+		fetchOnDev: false,
+		coverMirror: "",
+		useWebp: true,
+	},
+	diaryApiUrl: "",
+
+	// ── 文章列表 ────────────────────────────────────────────────────
+	postListLayout: {
+		defaultMode: "list" as const,
+		enable: true,
+		allowSwitch: true,
+		categoryBar: { enable: true },
+	},
+
+	// ── 特色页面开关 ────────────────────────────────────────────────
+	// 关闭未使用的页面有助于提升 SEO。改动这里需要同步改 navbar.ts（L3）。
+	// 注意：这些开关决定路由是否存在，属构建期结构，不开放给编辑器。
 	featurePages: {
-		anime: true, // 番剧页面开关
-		diary: true, // 日记页面开关
-		friends: true, // 友链页面开关
-		projects: true, // 项目页面开关
-		skills: true, // 技能页面开关
-		timeline: true, // 时间线页面开关
-		albums: true, // 相册页面开关
-		devices: true, // 设备页面开关
-		aiTools: false, // AI 工具页面开关
-		changelog: true, // 更新日志页面开关
-		notebooks: true, // 笔记本页面开关
+		anime: true,
+		diary: true,
+		friends: true,
+		projects: true,
+		skills: true,
+		timeline: true,
+		albums: true,
+		devices: true,
+		aiTools: false,
+		changelog: true,
+		notebooks: true,
 	},
 
-	// 顶栏标题配置
+	// ── 图片优化 ────────────────────────────────────────────────────
+	imageOptimization: {
+		formats: "webp" as const,
+		quality: 85,
+		// 需要添加 referrerpolicy="no-referrer" 的域名（支持通配符）
+		noReferrerDomains: ["*.hdslb.com"],
+	},
+
+	// ── 壁纸模式已关，但 wallpaperMode 之外的 banner 字段全部删除 ──
+	// SiteConfig 类型里 banner 是必填，这里补一个最小占位，
+	// 保证 homeLayout === "paper" 时不会有任何代码去读它。
+	banner: {
+		src: { desktop: [] as string[], mobile: [] as string[] },
+		position: "center" as const,
+		carousel: { enable: false, interval: 3, switchable: false },
+		waves: { enable: false, performanceMode: false, mobileDisable: false, switchable: false },
+		imageApi: { enable: false, url: "" },
+		homeText: {
+			enable: false,
+			title: "",
+			subtitle: [] as string[],
+			typewriter: { enable: false, speed: 100, deleteSpeed: 50, pauseTime: 2000 },
+			switchable: false,
+		},
+		credit: { enable: false, text: "", url: "" },
+		navbar: { transparentMode: "semifull" as const },
+	},
+};
+
+// ══════════════════════════════════════════════════════════════════════
+// L3 可编辑区的回落默认值
+//
+// 内容仓 content/settings/site.ts 缺字段时用这里的值。
+// 缺整个文件才会让构建失败 —— 这是刻意的：宁可编译期报错，
+// 也不要静默产出一个配置残缺的站点。
+// ══════════════════════════════════════════════════════════════════════
+const EDITABLE_DEFAULT = {
+	title: "YuJing的记忆终端",
+	subtitle: "记一些无用的日常，和有光的时刻。",
+	siteURL: "https://yujingblog.top/",
+	siteStartDate: "2026-07-25",
+
+	// 主题色相。fixed 不再是开关（色相选择器始终对访问者可见）
+	themeColor: { hue: 240, fixed: false },
+
+	// 顶栏标题
 	navbarTitle: {
-		// 显示模式："text-icon" 显示图标+文本，"logo" 仅显示Logo
-		mode: "text-icon",
-		// 顶栏标题文本
+		mode: "text-icon" as const,
 		text: "Yujing",
-		// 顶栏标题图标路径，默认使用 public/assets/home/home.webp
 		icon: "assets/home/avatar.webp",
-		// 网站Logo图片路径
 		logo: "assets/home/default-logo.webp",
 	},
 
-	// 页面自动缩放配置
-	// 2026-10-01：全站关闭整页缩放。
-	//   内页原本按 clientWidth/2000（下限 0.85）把 html 字号压到 85%，
-	//   --page-width(81.25rem) 跟着缩成 1105px；而手账首页 body.paper-layout 会跳过
-	//   缩放（缩放会把三栏压扁），导航就变成「首页 1300px / 内页 1105px」两种尺寸。
-	//   参考站 FlatPaper 也没有整页缩放（固定 min(94%,1300px) 容器），
-	//   关掉后所有页面的导航与内容宽度、字号完全一致。
-	pageScaling: {
-		enable: false, // 是否开启自动缩放
-		targetWidth: 2000, // 目标宽度，低于此宽度时开始缩放
-	},
-
-	// 首页首屏布局
-	//   "paper"  —— 手账风首屏（PaperHero，移植 Hexo FlatPaper 的 home-hero）
-	//   "banner" —— 原有的壁纸/Banner 首屏（功能完整保留，可随时切回）
-	homeLayout: "paper",
-
 	// 手账首屏（homeLayout: "paper" 时生效）
-	// ↓↓↓ 以下取值 1:1 照搬 homulilly.com 线上 home_hero 配置 ↓↓↓
 	paperHero: {
 		enable: true,
-		// 背景图；留空则用纯纸张底（FlatPaper 默认）。可写多张，脚本会随机挑一张
-		// 2026-10-01 按需求启用首屏大图：用站点「原来的背景图」= banner 的
-		// /assets/banner/city-sunset.jpg（此前置空是因为 /assets/home/hero-bg.webp
-		// 二进制损坏会让 astro build 报 NoImageMetadata；这里直接用 proven 可用的
-		// 横幅图，且 PaperHero 只是把它写进 --hero-bg-image（不做 Astro 图片优化），
-		// 因此不会再次触发该构建问题）。
-		images: ["/assets/banner/city-sunset.jpg"],
-		// 照搬 homulilly：home-hero--mobile-image，移动端同样使用背景图
+		images: ["/assets/banner/city-sunset.jpg"] as string[],
 		mobileImage: true,
-		// 背景图上下遮罩浓度 [上, 下]，0~1（与 homulilly 一致）
-		imageOverlay: [0.2, 0.2],
-		// 内置便签贴纸文字（\n 换行）——照搬 homulilly：「欢迎访问」
+		imageOverlay: [0.2, 0.2] as [number, number],
 		noteText: "欢迎访问",
-		// 自定义图片贴纸（最多 5 张）：{ image, link?, alt?, size? }
-		// 照搬 homulilly 三张贴纸：claudecode / madoka / homura，各 100px（已本地化到 /images/stickers/）
 		stickers: [
 			{ image: "/images/stickers/claudecode.webp", size: 100 },
 			{ image: "/images/stickers/madoka.webp", size: 100 },
 			{ image: "/images/stickers/homura.webp", size: 100 },
 		],
-		// 贴纸可拖拽（homulilly 线上 has-draggable-stickers）
 		stickersDraggable: true,
-		// 下拉纸签文案（cta_background: 'random' 的 9 张内置背景已内置在 PaperHero 组件里）
 		ctaText: "开始阅读",
-	},
-
-	bangumi: {
-		userId: "your-bangumi-id", // 在此处设置你的Bangumi用户ID，可以设置为 "sai" 测试
-		fetchOnDev: false, // 是否在开发环境下获取 Bangumi 数据（默认 false），获取前先执行 pnpm build 构建 json 文件
-	},
-
-	bilibili: {
-		vmid: "your-bilibili-vmid", // 在此处设置你的Bilibili用户ID (uid)，例如 "1129280784"
-		fetchOnDev: false, // 是否在开发环境下获取 Bilibili 数据（默认 false）
-		coverMirror: "", // 封面图片镜像源（可选，如果需要使用镜像源，例如 "https://images.weserv.nl/?url="）
-		useWebp: true, // 是否使用WebP格式（默认 true）
-
-		// bilibili 观看进度配置说明(可选，如需配置仔细阅读):
-		// 1. 本地开发：请在 .env 文件中填写 BILI_SESSDATA=your_SESSDATA
-		// 2. 远程构建：请在 GitHub 仓库 Settings -> Secrets 中添加 BILI_SESSDATA
-		// 注意：SESSDATA 为账号凭证，为防止泄露，切记不可使用硬编码。
-		// 安全提示：如 SESSDATA 已泄露，请打开 B站手机端 —— 我的 —— 设置 —— 安全隐私 —— 登陆设备管理 —— 一键退登，销毁已泄露的账号凭证
-	},
-
-	anime: {
-		mode: "local", // 番剧页面模式："bangumi" 使用Bangumi API，"local" 使用本地配置，"bilibili" 使用Bilibili API
-	},
-
-	// 日记页面 Memos API 地址，留空则使用静态数据
-	diaryApiUrl: "",
-
-	// 文章列表布局配置
-	postListLayout: {
-		// 默认布局模式："list" 列表模式（单列布局），"grid" 网格模式（双列布局）
-		// 注意：如果侧边栏配置启用了"both"双侧边栏，则无法使用文章列表"grid"网格（双列）布局
-		defaultMode: "list",
-		// 是否启用布局切换功能
-		enable: true,
-		// 是否允许用户切换布局
-		allowSwitch: true,
-		// 文章列表页分类导航条配置
-		categoryBar: {
-			enable: true, // 是否在文章列表页显示分类导航条
-		},
-	},
-
-	// 标签样式配置
-	tagStyle: {
-		// 是否使用新样式（悬停高亮样式）还是旧样式（外框常亮样式）
-		useNewStyle: false,
-	},
-
-	// 壁纸模式配置
-	wallpaperMode: {
-		// 默认壁纸模式：banner=顶部横幅，fullscreen=全屏壁纸，none=无壁纸
-		defaultMode: "none",
-		// 整体布局方案切换按钮显示设置（默认："desktop"）
-		// "off" = 不显示
-		// "mobile" = 仅在移动端显示
-		// "desktop" = 仅在桌面端显示
-		// "both" = 在所有设备上显示
-		showModeSwitchOnMobile: "both",
-	},
-
-	banner: {
-		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
-		src: {
-			desktop: ["/assets/banner/city-sunset.jpg"], // 桌面横幅图片
-			mobile: ["/assets/banner/city-sunset-mobile.webp"], // 移动横幅图片
-		}, // 使用本地横幅图片
-
-		position: "center", // 等同于 object-position，仅支持 'top', 'center', 'bottom'。默认为 'center'
-
-		carousel: {
-			enable: true,
-			interval: 3,
-			switchable: true,
-		},
-
-		waves: {
-			// 2026-09-30 按需求全站关闭水波纹（含 banner 模式下的滚动波浪动画）
-			enable: false,
-			performanceMode: false,
-			mobileDisable: false,
-			switchable: false,
-		},
-
-		// PicFlow API支持(智能图片API)
-		imageApi: {
-			enable: false, // 启用图片API
-			url: "http://domain.com/api_v2.php?format=text&count=4", // API地址，返回每行一个图片链接的文本
-		},
-		// 这里需要使用PicFlow API的Text返回类型,所以我们需要format=text参数
-		// 项目地址:https://github.com/matsuzaka-yuki/PicFlow-API
-		// 请自行搭建API
-
-		homeText: {
-			enable: true,
-			title: "YuJing的记忆终端",
-			switchable: true,
-
-			subtitle: [
-				"记一些无用的日常，和有光的时刻。",
-				"一个人的碎碎念，一颗心的自留地。",
-				"日尝，日常。",
-			],
-			typewriter: {
-				enable: true, // 启用副标题打字机效果
-
-				speed: 100, // 打字速度（毫秒）
-				deleteSpeed: 50, // 删除速度（毫秒）
-				pauseTime: 2000, // 完全显示后的暂停时间（毫秒）
-			},
-		},
-
-		credit: {
-			enable: false, // 显示横幅图片来源文本
-
-			text: "Describe", // 要显示的来源文本
-			url: "", // （可选）原始艺术品或艺术家页面的 URL 链接
-		},
-
-		navbar: {
-			transparentMode: "semifull", // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明，"semifull" 动态透明
-		},
-	},
-	toc: {
-		enable: true, // 总开关，启用目录功能
-		mobileTop: true, // 手机端顶部 TOC 按钮
-		desktopSidebar: false, // 电脑端右侧边栏 TOC（Round 19 已删除右侧悬浮目录，目录在左栏 card-toc）
-		floating: true, // 悬浮 TOC 按钮
-		depth: 2, // 目录深度，1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推
-		useJapaneseBadge: true, // 使用日语假名标记（あいうえお...）代替数字，开启后会将 1、2、3... 改为 あ、い、う...
-	},
-	showCoverInContent: true, // 在文章内容页显示文章封面
-	generateOgImages: false, // 启用生成OpenGraph图片功能,注意开启后要渲染很长时间，不建议本地调试的时候开启
-	favicon: [
-		{
-			src: "/favicon/avatar-icon.png",
-			theme: "light",
-			sizes: "64x64",
-		},
-		{
-			src: "/favicon/avatar-icon.png",
-			theme: "dark",
-			sizes: "64x64",
-		},
-	],
-
-	// 字体现在通过 astro.config.mjs 的 fonts 选项配置（Astro Font API）
-	showLastModified: true, // 控制"上次编辑"卡片显示的开关
-	pageProgressBar: {
-		enable: true, // 启用页面顶部进度条
-		height: 3, // 进度条高度 3px
-		duration: 6000, // 动画时长 6s
-	},
-
-	thirdPartyAnalytics: {
-		enable: false, // 是否启用第三方统计（Microsoft Clarity），默认关闭，启用可能影响 Lighthouse 评分
-		clarityId: "", // Clarity 项目 ID
-	},
-	// 卡片样式配置
-	card: {
-		border: true, // 开启卡片边框和微阴影，让卡片更有立体感
-		followTheme: false, // 卡片背景跟随主题色相
-	},
-	// 图片优化配置
-	imageOptimization: {
-		formats: "webp", // 图片输出格式："avif"、"webp" 或 "both"（avif+webp，最优质量但构建更慢）
-		quality: 85, // 图片质量，推荐 70-85
-		noReferrerDomains: [
-			// 需要添加 referrerpolicy="no-referrer" 的域名（支持通配符）
-			"*.hdslb.com", // Bilibili CDN
-		],
 	},
 };
 
-export { SITE_LANG };
+/** 从内容仓 content/settings/site.ts 取值的部分 */
+const editableMerged = deepMerge(EDITABLE_DEFAULT, editable);
 
+/**
+ * 站点核心配置。
+ *
+ * ⚠️ 结构契约：导出的名字（siteConfig）和类型（SiteConfig）都不能变 ——
+ *    index.ts 是纯 re-export，64 个引用方走它；
+ *    另有 src/utils/image-utils.ts 直连本文件读 imageOptimization。
+ */
+export const siteConfig: SiteConfig = {
+	...HARDCODED,
+	...editableMerged,
+	// banner 与 toc 等嵌套对象需要单独合并一次，避免被 editable 的浅覆盖打散
+	banner: HARDCODED.banner,
+	toc: HARDCODED.toc,
+} as SiteConfig;
+
+export { SITE_LANG };

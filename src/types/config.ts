@@ -218,31 +218,19 @@ export interface Favicon {
 	sizes?: string;
 }
 
-export enum LinkPreset {
-	Home = 0,
-	Archive = 1,
-	About = 2,
-	Friends = 3,
-	Anime = 4,
-	Diary = 5,
-	Albums = 6,
-	Projects = 7,
-	Skills = 8,
-	Timeline = 9,
-	AITools = 10,
-}
-
 export interface NavBarLink {
 	name: string;
 	url: string;
 	external?: boolean;
 	action?: string; // 自定义行为标识（如 "search" / "guestbook"）
 	icon?: string; // 菜单项图标
-	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
+	// 支持子菜单，只有一层。历史上这里可以是 LinkPreset 数字枚举，
+	// 2026-10-03 起导航配置移到内容仓、预设已展开成字面量对象 ⇒ 只剩 NavBarLink
+	children?: NavBarLink[];
 }
 
 export interface NavBarConfig {
-	links: (NavBarLink | LinkPreset)[];
+	links: NavBarLink[];
 }
 
 export interface ProfileConfig {

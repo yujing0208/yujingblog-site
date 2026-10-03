@@ -113,7 +113,7 @@ src/config/index.ts  (聚合 re-export)
 | 文件 | 导出 | 职责 |
 |---|---|---|
 | `siteConfig.ts` | `siteConfig`, `SITE_LANG` | 站点核心配置：标题/URL/语言、主题色、特色页开关、banner、目录、壁纸模式、统计等 |
-| `navBarConfig.ts` | `navBarConfig` | 导航栏菜单（多级下拉，`children` 可为 `LinkPreset` 枚举） |
+| `navBarConfig.ts` | `navBarConfig` | 导航栏菜单（多级下拉，`children` 为 `NavBarLink` 数组） |
 | `pioConfig.ts` | `pioConfig` | 看板娘：模型、位置、对话、菜单、气泡 |
 | `sidebarConfig.ts` | `sidebarLayoutConfig` | 三栏侧边栏布局（组件分配、响应式断点） |
 | `permalinkConfig.ts` | `permalinkConfig` | 固定链接模板（当前关闭，默认 `/posts/:slug/`） |
@@ -129,10 +129,10 @@ src/config/index.ts  (聚合 re-export)
 | `changelog.ts` | `changelogData` | 更新日志 |
 | `shuoShuoProfile.ts` | `shuoShuoProfile` | 日记（说说）博主信息 |
 
-### 关键枚举
+### 关键枚举 / 类型
 
-- **`LinkPreset`**（`src/constants/link-presets.ts`）：导航预置项（Home/Archive/About/Friends/Anime/Diary/…），映射为 i18n 化的 `NavBarLink`。
 - **`WidgetComponentType`**：侧边栏组件类型（profile/announcement/categories/tags/toc/music-player/pio/site-stats/…）。
+- **`NavBarLink`**：导航项（`name` / `url` / `icon` / `external` / `action` / `children?`）。导航配置已移入内容仓 `content/settings/navbar.ts`，预设项在其中展开为字面量对象。
 
 ---
 

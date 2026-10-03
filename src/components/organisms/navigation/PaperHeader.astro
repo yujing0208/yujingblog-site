@@ -20,8 +20,7 @@
 import { Icon } from "astro-icon/components";
 
 import { navBarConfig, profileConfig, siteConfig } from "../../../config";
-import { LinkPresets } from "../../../constants/link-presets";
-import { LinkPreset, type NavBarLink } from "../../../types/config";
+import type { NavBarLink } from "../../../types/config";
 import { url } from "../../../utils/url-utils";
 import MobileTOC from "../../features/toc/MobileTOC.svelte";
 import ThemeSwitch from "../../control/ThemeSwitch.svelte";
@@ -57,19 +56,12 @@ function isFeaturePageDisabled(linkUrl: string): boolean {
 	return false;
 }
 
-function resolveLink(item: NavBarLink | LinkPreset): NavBarLink | null {
-	if (typeof item === "number") {
-		const resolved = LinkPresets[item];
-		if (isFeaturePageDisabled(resolved.url)) return null;
-		return resolved;
-	}
+function resolveLink(item: NavBarLink): NavBarLink | null {
 	if (isFeaturePageDisabled(item.url)) return null;
 	return item;
 }
 
-function filterLinksByFeaturePages(
-	items: (NavBarLink | LinkPreset)[],
-): NavBarLink[] {
+function filterLinksByFeaturePages(items: NavBarLink[]): NavBarLink[] {
 	return items
 		.map(resolveLink)
 		.filter((item): item is NavBarLink => item !== null)
