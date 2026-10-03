@@ -4,6 +4,18 @@ import * as path from "node:path";
 import type { AlbumGroup, Photo } from "../types/album";
 
 /**
+ * 相册图片的缓存版本号（构建期唯一）。
+ *
+ * 为什么需要它：`public/images/**` 被 vercel.json 的
+ * `Cache-Control: public, max-age=86400, stale-while-revalidate=604800` 覆盖，
+ * 于是 CDN 会把「文件被删 / 改名前的 404」按天缓存住 —— 即使内容仓库随后补回了
+ * cover.webp，裸 URL 依旧返回旧 404 兜底页，表现就是「封面不显示」而图其实已经上线。
+ * 每次构建换一次 query，等价于换缓存键，天然绕过；
+ * 同时也让「内容仓库更新了图片 → 下次部署自动生效」不需要手工加 ?v=。
+ */
+const ALBUM_CACHE_VERSION = Date.now().toString(36);
+
+/**
  * 对损坏的 JSON 做“安全”修复，使其在二次解析时尽可能通过。
  * 设计原则：**绝不误伤合法 JSON**。只处理一类已知脏数据——数组/对象中
  * “逗号后开启的字符串未闭合即遇到 ] 或 }”（如 `"tags": ["学校", "回忆]`）。
@@ -120,9 +132,9 @@ async function processAlbumFolder(
 				}
 			}
 
-			cover = hasWebpCover
-				? `/images/albums/${folderName}/cover.webp`
-				: `/images/albums/${folderName}/cover.jpg`;
+		cover = hasWebpCover
+			? `/images/albums/${folderName}/cover.webp?v=${ALBUM_CACHE_VERSION}`
+			: `/images/albums/${folderName}/cover.jpg?v=${ALBUM_CACHE_VERSION}`;
 			photos = scanPhotos(folderPath, folderName);
 		}
 
@@ -198,8 +210,8 @@ function scanPhotos(folderPath: string, albumId: string): Photo[] {
 		const { baseName, tags } = parseFileName(file);
 
 		const src = fileWebpMap.has(file)
-			? `/images/albums/${albumId}/${fileWebpMap.get(file)}`
-			: `/images/albums/${albumId}/${file}`;
+			? `/images/albums/${albumId}/${fileWebpMap.get(file)}?v=${ALBUM_CACHE_VERSION}`
+			: `/images/albums/${albumId}/${file}?v=${ALBUM_CACHE_VERSION}`;
 
 		photos.push({
 			id: `${albumId}-photo-${index}`,
