@@ -284,29 +284,11 @@ export interface PermalinkConfig {
 
 export interface CommentConfig {
 	enable: boolean; // 是否启用评论功能
-	system?: "twikoo" | "giscus" | "waline"; // 评论系统选择
+	system?: "twikoo" | "giscus"; // 评论系统选择
 	twikoo?: TwikooConfig;
 	giscus?: GiscusConfig;
-	waline?: WalineConfig;
 }
 
-export interface WalineConfig {
-	serverURL: string;
-	lang?: string;
-	locale?: { placeholder?: string };
-	emoji?: string[];
-	meta?: string[];
-	requiredMeta?: string[];
-	login?: "enable" | "force" | "disable";
-	wordLimit?: [number, number];
-	pageSize?: number;
-	visitorCount?: boolean;
-	highlighter?: boolean;
-	imageUploader?: boolean;
-	texRenderer?: boolean;
-	search?: boolean;
-	reaction?: boolean;
-}
 
 export interface GiscusConfig {
 	repo: string;

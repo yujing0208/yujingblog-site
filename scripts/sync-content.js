@@ -107,6 +107,9 @@ const contentMappings = [
 	// 可编辑配置（站点名/头像/导航/首屏/评论/音乐…）。
 	// 由 src/config/*.ts 里的薄 Provider 静态 import，详见 src/config/_settings.ts。
 	{ src: ["content/settings", "settings"], dest: "src/settings" },
+	// 可下载附件（PPT 原件 / PDF 等）。与 content/images 分开：
+	// images 面向文章插图（会被 Astro 图片优化），assets 面向原样分发的二进制文件。
+	{ src: ["content/assets", "assets"], dest: "public/assets" },
 ];
 
 const resolved = [];
