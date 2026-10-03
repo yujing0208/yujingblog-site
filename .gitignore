@@ -69,3 +69,20 @@ src/data/bilibili-data.json
 
 .vercel
 .env*
+
+# ---- 内容分离：以下内容仓库产物由 sync-content.js 构建期生成，禁止提交 ----
+# images/  -> public/images（内容仓库 images 整体同步，整体替换）
+/public/images/
+# data/  -> src/data（merge 同步；此处显式列举内容仓库拥有的文件，
+#           站点仓库独有的 data 文件仍可正常跟踪）
+/src/data/anime.ts
+/src/data/announcement.ts
+/src/data/devices.ts
+/src/data/diary.ts
+/src/data/footprints.ts
+/src/data/friends.ts
+/src/data/notebooks.ts
+/src/data/projects.ts
+/src/data/skills.ts
+/src/data/timeline.ts
+/src/data/website.ts
