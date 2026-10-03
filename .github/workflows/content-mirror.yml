@@ -1,0 +1,66 @@
+name: Mirror Content
+
+# 内容仓库 -> 站点仓库 的零 secret 同步桥（2026-10-03 建立）
+#
+# 背景：原方案（内容仓库 workflow 用 DISPATCH_TOKEN 调站点仓库 repository_dispatch）已失效——
+#   站点仓库自 2026-08-15 起 1249 次 run 中 repository_dispatch 记录为 0，内容仓库
+#   每次 push 都在 dispatch 步红叉。改为站点仓库主动拉，两边都不依赖对方的凭据。
+#
+# 机制：每半小时比对内容仓库 master 的 HEAD sha；不一样就往站点仓库 main 推一个
+#   chore(content-mirror) commit（commit message 里带上该 sha），由 Vercel Git 自动部署线
+#   构建上线，prebuild 的 sync-content.js 会把最新内容拉进产物。
+#
+# 不需要任何 secret：读内容仓库走匿名 API（仓库是 public），推自己仓库用自动注入的
+#   GITHUB_TOKEN（actions/checkout + x-access-token 推送）。
+
+on:
+  schedule:
+    - cron: "0,30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Compare content HEAD, push mirror commit if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CONTENT_REPO: yujing0208/yujingblog-content
+          CONTENT_BRANCH: master
+        run: |
+          set -euo pipefail
+
+          echo "::group::获取内容仓库 HEAD"
+          remote=$(curl -sS --fail "https://api.github.com/repos/$CONTENT_REPO/heads/$CONTENT_BRANCH" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);if(!j.object||!j.object.sha){console.error('unexpected json: '+s.slice(0,200));process.exit(1);}process.stdout.write(j.object.sha);})")
+          echo "内容仓库 HEAD = $remote"
+          echo "::endgroup::"
+
+          echo "::group::比对上次同步记录"
+          last=$(git log -1 --format=%s origin/main | sed -n 's/.*content@\([0-9a-f]\{7,40\}\).*/\1/p' || true)
+          echo "上次同步 = ${last:-<无，本次为首次建基线>}"
+          if [ -n "$last" ] && [ "$last" = "$remote" ]; then
+            echo "内容未变化，跳过"
+            exit 0
+          fi
+          echo "::endgroup::"
+
+          echo "::group::推送 mirror commit"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --quiet -B mirror-tmp origin/main
+          printf '%s\n' "$remote" > content-sha.txt
+          git add content-sha.txt
+          git commit -q -m "chore(content-mirror): sync content @$remote"
+          git push --quiet "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" HEAD:main
+          echo "已推送 mirror commit，等待 Vercel 构建"
+          echo "::endgroup::"
