@@ -40,8 +40,11 @@ jobs:
           set -euo pipefail
 
           echo "::group::获取内容仓库 HEAD"
-          remote=$(curl -sS --fail "https://api.github.com/repos/$CONTENT_REPO/heads/$CONTENT_BRANCH" |
-            node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);if(!j.object||!j.object.sha){console.error('unexpected json: '+s.slice(0,200));process.exit(1);}process.stdout.write(j.object.sha);})")
+          remote=$(git ls-remote "https://github.com/$CONTENT_REPO.git" "refs/heads/$CONTENT_BRANCH" | cut -f1)
+          if [ -z "$remote" ]; then
+            echo "::error::git ls-remote 取不到内容仓库 HEAD，检查 CONTENT_REPO / CONTENT_BRANCH"
+            exit 1
+          fi
           echo "内容仓库 HEAD = $remote"
           echo "::endgroup::"
 
