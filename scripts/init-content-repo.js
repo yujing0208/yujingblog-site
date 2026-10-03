@@ -98,9 +98,7 @@ CONTENT_DIR=./content
 	// 提示后续步骤
 	console.log("\n初始化完成\n");
 	console.log("\n相关文档：");
-	console.log("- 内容仓库说明：docs/CONTENT_REPOSITORY.md");
-	console.log("- 迁移指南：docs/MIGRATION_GUIDE.md");
-
+		
 	rl.close();
 }
 
