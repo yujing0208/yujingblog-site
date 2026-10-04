@@ -316,6 +316,30 @@
 		$("#stagePanel").classList.toggle("on", on);
 		$("#stageMask").classList.toggle("on", on);
 	}
+
+	/* 内容仓库 → 站点仓库 的同步桥（2026-10-04 修"synchronize 假成功"）
+	 * 编辑器写的始终是内容仓库，而线上站点由站点仓库的 Vercel Git 部署线构建，
+	 * 因此写完内容仓库后必须把它的 HEAD 镜像到站点仓库（写 content-sha.txt + 推 mirror
+	 * commit），站点才会重新构建。同步服务：/api/editor-sync。 */
+	function shortSha(s) { return s ? String(s).slice(0, 7) : ""; }
+	function syncContent() {
+		return fetch("/api/editor-sync", {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "Content-Type": "application/json" },
+			body: "{}",
+		}).then(function (r) {
+			if (r.status === 401) {
+				if (window.EditorAuthGate && window.EditorAuthGate.require) window.EditorAuthGate.require();
+				return { error: "登录已过期，请重新输入编辑密码" };
+			}
+			if (r.status === 404) return { error: "同步服务未部署（/api/editor-sync 404），站点重新部署后即可用" };
+			return r.json().then(function (j) {
+				if (!r.ok) return { error: (j && j.message) || ("HTTP " + r.status) };
+				return j;
+			});
+		}).catch(function (e) { return { error: e.message }; });
+	}
 	function pushAll() {
 		var keys = Object.keys(STAGED);
 		if (!keys.length) { openStage(false); return; }
@@ -326,11 +350,17 @@
 		var btn = $("#spPush");
 		if (btn) { btn.disabled = true; btn.textContent = "推送中…"; }
 		GIT.commitTree(OWNER, REPO, BRANCH, changes, "chore(editor): 批量更新 " + keys.length + " 项")
-			.then(function () {
+			.then(function (r) {
 				STAGED = {}; syncStageUI(); renderStageList(); openStage(false);
 				CACHE.posts = null;
 				Object.keys(CACHE).forEach(function (k) { if (k.indexOf("ts:") === 0) delete CACHE[k]; });
-				toast("推送成功，Vercel 构建已触发");
+				// 内容已落到内容仓库；接着把 HEAD 镜像到站点仓库，等 Vercel 构建
+				return syncContent().then(function (info) { return info && info.error ? { error: info.error } : info; });
+			})
+			.then(function (info) {
+				if (!info || info.error) { toast("已推送到内容仓库，但同步上线失败：" + ((info && info.error) || "未知")); return; }
+				if (info.synced) toast("推送成功，内容已是最新（" + shortSha(info.contentSha) + "）");
+				else toast("推送成功，已触发上线（站点 commit " + shortSha(info.siteCommit) + "）");
 				if (current === "dash") renderDash();
 				else loadView(current, true);
 			})
@@ -1644,17 +1674,26 @@ document.addEventListener("click", function (e) {
 /* ================= 发布状态 ================= */
 function renderRelease() {
 	setView("release",
-		pageHead("up", "发布状态", 'GitHub commit status + Vercel · 只读',
-			'<button class="btn" type="button" id="relRefresh">↻ 刷新</button><button class="btn btn-primary" type="button" id="relVercel">打开 Vercel 构建历史</button>') +
+		pageHead("up", "发布状态", 'GitHub commit status + Vercel · 内容仓改动在「发布状态」一键同步上线',
+			'<button class="btn" type="button" id="relRefresh">↻ 刷新</button><button class="btn btn-primary" type="button" id="relSyncBtn">立即同步</button><button class="btn btn-primary" type="button" id="relVercel">打开 Vercel 构建历史</button>') +
 		'<div class="stat-row">' +
 		'<div class="card stat"><div class="stat-k">当前状态</div><div class="stat-v" style="font-size:20px;color:var(--ok)" id="relState">检测中…</div><div class="stat-f">Vercel · Production</div></div>' +
 		'<div class="card stat"><div class="stat-k">站点仓最新提交</div><div class="stat-v mono" style="font-size:17px" id="relSiteSha">…</div><div class="stat-f">yujingblog-site · main</div></div>' +
 		'<div class="card stat"><div class="stat-k">内容仓最新提交</div><div class="stat-v mono" style="font-size:17px" id="relSha">…</div><div class="stat-f">yujingblog-content · master</div></div>' +
+		'<div class="card stat"><div class="stat-k">内容同步</div><div class="stat-v" style="font-size:17px" id="relSync">检测中…</div><div class="stat-f" id="relSyncF">已同步到站点</div></div>' +
 		'<div class="card stat"><div class="stat-k">暂存区</div><div class="stat-v" style="font-size:20px" id="relStage">0 项</div><div class="stat-f">待统一推送</div></div></div>' +
 		'<div class="card"><div class="card-head"><h2 class="card-title">内容仓最近提交</h2></div><div id="relList">' + loading() + '</div></div>' +
 		'<div class="card"><div class="card-head"><h2 class="card-title">站点仓最近提交</h2></div><div id="relSiteList">' + loading() + "</div></div>");
 	$("#relVercel").addEventListener("click", function () { window.open("https://vercel.com/yujing/~/deployments", "_blank", "noopener"); });
 	$("#relRefresh").addEventListener("click", function () { renderRelease(); });
+	$("#relSyncBtn").addEventListener("click", function () {
+		var b = this; b.disabled = true; b.textContent = "同步中…";
+		syncContent().then(function (info) {
+			if (!info || info.error) toast("同步失败：" + ((info && info.error) || "未知"));
+			else toast(info.synced ? "内容已是最新（" + shortSha(info.contentSha) + "）" : "已触发站点构建（" + shortSha(info.siteCommit) + "）");
+			renderRelease();
+		}).finally(function () { b.disabled = false; b.textContent = "立即同步"; });
+	});
 	ghCommits(REPO, 8).then(function (cs) {
 		$("#relSha").textContent = cs.length ? String(cs[0].sha).slice(0, 7) : "—";
 		$("#relList").innerHTML = cs.map(commitRowHtml).join("") || '<div class="empty-block">暂无提交</div>';
@@ -1664,6 +1703,28 @@ function renderRelease() {
 		$("#relState").textContent = "已上线";
 		$("#relSiteList").innerHTML = cs.map(commitRowHtml).join("") || '<div class="empty-block">暂无提交</div>';
 	}).catch(function (e) { $("#relSiteList").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+
+	// 内容同步状态：内容仓 HEAD 与站点仓记录的 content-sha.txt 是否一致
+	var syncEl = $("#relSync"), syncF = $("#relSyncF");
+	Promise.all([
+		ghCommits(REPO, 1).catch(function () { return []; }),
+		GIT.getFile(OWNER, SITE_REPO, "content-sha.txt", SITE_BRANCH).catch(function () { return null; }),
+	]).then(function (r) {
+		if (!syncEl) return;
+		var cs = r[0] || [];
+		var head = cs.length ? String(cs[0].sha) : "";
+		var rec = ((r[1] && r[1].content) || "").trim();
+		if (!head) { syncEl.textContent = "—"; if (syncF) syncF.textContent = "取不到内容仓 HEAD"; return; }
+		if (rec === head) {
+			syncEl.textContent = "已同步";
+			syncEl.style.color = "var(--ok)";
+			if (syncF) syncF.textContent = "站点已构建 @ " + head.slice(0, 7);
+		} else {
+			syncEl.textContent = "待同步";
+			syncEl.style.color = "#d9822b";
+			if (syncF) syncF.textContent = "内容 " + head.slice(0, 7) + " / 站点 " + (rec ? rec.slice(0, 7) : "无记录");
+		}
+	}).catch(function () { if (syncEl) syncEl.textContent = "检测失败"; });
 }
 
 /* ================= CF 图床 ================= */
