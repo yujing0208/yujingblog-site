@@ -69,8 +69,18 @@ jobs:
           # key 与 value 之间可能根本没有空格，所以必须用 *（0 个或多个）而不是 +。
           # 末尾统一取 [0-9a-f]{40}，避免 grep 命中后带出来引号/尾巴。
           jsha() { grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}'; }
-          # 从 commit 对象里取 tree.sha（"tree":{"sha":...}）
-          jtree() { grep -oE '"tree"[[:space:]]*:[[:space:]]*\{[[:space:]]*"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}'; }
+          # 从 commit 响应里取 tree sha，**两种形态都要吃**：
+          #   - GET /repos/{o}/{r}/commits/{sha}（commits API）里 tree 是字符串："tree":"78bf0f8a..."；
+          #   - GET /repos/{o}/{r}/git/commits/{sha}（git API）里 tree 是对象： "tree":{"sha":"78bf0f8a..."}。
+          # 只写对象形态会在 commits API  responses 上永远取空（曾导致 step 静默 exit 1）。
+          jtree() {
+            local v
+            v=$(grep -oE '"tree"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}')
+            if [ -z "$v" ]; then
+              v=$(grep -oE '"tree"[[:space:]]*:[[:space:]]*\{[[:space:]]*"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}')
+            fi
+            printf '%s' "$v"
+          }
           # 判断是否取到值（不依赖退出码，供 set +e 后自己报错）
           is_sha() { printf '%s' "$1" | grep -Eq '^[0-9a-f]{40}$'; }
 
