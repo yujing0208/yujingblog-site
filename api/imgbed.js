@@ -103,7 +103,13 @@ module.exports = async function handler(req, res) {
         return json(res, 200, { ok: true, configured: true });
       }
       const dir = params.get("dir") || "";
-      const lst = await fetch(CFBED_BASE + "/api/manage/list?dir=" + encodeURIComponent(dir), {
+      /* 透传分页参数（CloudFlare-ImgBed: start/count） */
+      const extra = [];
+      const start = params.get("start");
+      const count = params.get("count");
+      if (start != null) extra.push("start=" + encodeURIComponent(start));
+      if (count != null) extra.push("count=" + encodeURIComponent(count));
+      const lst = await fetch(CFBED_BASE + "/api/manage/list?dir=" + encodeURIComponent(dir) + (extra.length ? "&" + extra.join("&") : ""), {
         headers: authHeaders(),
       });
       const text = await lst.text();
@@ -111,11 +117,30 @@ module.exports = async function handler(req, res) {
         return json(res, 200, { ok: false, error: "列举失败 " + lst.status + "：" + text.slice(0, 200) });
       }
       let files = [];
+      let total = null;
       try {
         const j = JSON.parse(text);
         files = Array.isArray(j) ? j : (j.files || j.data || []);
+        if (j && j.totalCount != null) total = j.totalCount;
+        else if (j && j.total != null) total = j.total;
+        /* 归一化：补 url / size / ts，前端不用关心上游结构 */
+        files = files.map(function (f) {
+          const name = f && f.name ? String(f.name) : "";
+          const md = (f && f.metadata) || {};
+          let url = f && f.url ? String(f.url) : "";
+          if (!url && name) url = CFBED_BASE + "/file/" + name.split("/").map(encodeURIComponent).join("/");
+          return {
+            name: name,
+            url: url,
+            size: typeof f.size === "number" ? f.size : (md.FileSizeBytes != null ? Number(md.FileSizeBytes) : null),
+            ts: md.TimeStamp != null ? Number(md.TimeStamp) : null,
+            type: md.FileType || null,
+            w: md.Width || null,
+            h: md.Height || null,
+          };
+        });
       } catch (e) { /* 保持空 */ }
-      return json(res, 200, { ok: true, files: files });
+      return json(res, 200, { ok: true, files: files, total: total });
     }
 
     return json(res, 405, { ok: false, error: "Method Not Allowed" });
