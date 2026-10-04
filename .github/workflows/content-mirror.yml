@@ -15,12 +15,13 @@
 #        `remote: Duplicate header: "Authorization"` -> 400 -> exit 128（原来必红的根因）；
 #      - gh CLI 不带自定义 token 时会用自己的 token 去读私有仓，拿到 404 当成功值用，
 #        因此这里统一 curl + 显式 PAT，并对结果做 40 位 sha 校验；
-#      - 纯 REST 也不需要 clone，跑得更快；
-#   4. 推送用 workflow 自带的 GITHUB_TOKEN（站点仓库有 contents: write），
-#      只有「读私有/受限内容仓库」那段需要用户注入的 PAT。
+#   4. **关闭 set -e**，每一步自己判断：原来 `set -e` + `set -o pipefail` 下，
+#      jsha/jtree 里的 grep 取不到匹配就返回 1，整个 step 静默 exit 1，
+#      日志里只剩一句 "Process completed with exit code 1"，完全看不出哪儿炸。
+#      现在每步都打印原始返回，取不到就 ::error:: 明确指出是哪一步。
 #
 # 凭据：secrets.CONTENT_REPO_TOKEN（对该内容仓库有 Contents: Read 的 PAT），
-#       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在。
+#       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在）。
 
 name: Mirror Content
 
@@ -55,28 +56,32 @@ jobs:
           set -uo pipefail
 
           # 发一次 GitHub API 请求；$1=token(可空) $2=method $3=path $4=body(可空)
+          # -o /dev/null 不行，要 body；用 -w 额外把 HTTP 码打到 body 后面便于排查
           api() {
             local tok="$1" m="$2" p="$3" b="${4:-}"
-            local args=(-sS --max-time 30 -X "$m" -H "Accept: application/vnd.github+json")
+            local args=(-sS --max-time 30 --retry 2 -X "$m" -H "Accept: application/vnd.github+json" -w "\n__HTTP__%{http_code}")
             if [ -n "$tok" ]; then args+=(-H "Authorization: Bearer $tok"); fi
             if [ -n "$b" ]; then args+=(-H "Content-Type: application/json" -d "$b"); fi
             curl "${args[@]}" "$API$p"
           }
-          # 取第一个 sha 字段。
+          # 取第一个 40 位 sha。
           # 注意：GitHub REST 返回的是**无空格压缩 JSON**（{"object":{"sha":"..."}}），
           # key 与 value 之间可能根本没有空格，所以必须用 *（0 个或多个）而不是 +。
-          jsha() { grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}"$' | tr -d '"'; }
+          # 末尾统一取 [0-9a-f]{40}，避免 grep 命中后带出来引号/尾巴。
+          jsha() { grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}'; }
           # 从 commit 对象里取 tree.sha（"tree":{"sha":...}）
-          jtree() { grep -oE '"tree"[[:space:]]*:[[:space:]]*\{[^}]*"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}"$' | tr -d '"'; }
+          jtree() { grep -oE '"tree"[[:space:]]*:[[:space:]]*\{[[:space:]]*"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}'; }
+          # 判断是否取到值（不依赖退出码，供 set +e 后自己报错）
+          is_sha() { printf '%s' "$1" | grep -Eq '^[0-9a-f]{40}$'; }
 
           echo "::group::读取内容仓库 HEAD"
           remote=""
           if [ -n "${CONTENT_TOKEN:-}" ]; then
             raw_remote=$(api "$CONTENT_TOKEN" GET "/repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH")
             remote=$(printf '%s' "$raw_remote" | jsha)
-            echo "内容仓库原始返回：$(printf '%s' "$raw_remote" | head -c 200)"
+            echo "内容仓库响应（前240字符）：$(printf '%s' "$raw_remote" | head -c 240)"
           fi
-          if ! printf '%s' "$remote" | grep -Eq '^[0-9a-f]{40}$'; then
+          if ! is_sha "$remote"; then
             echo "::warning::读不到内容仓库 HEAD（值='$remote'）：未配置 CONTENT_REPO_TOKEN，或 PAT 已失效。正常推送由 /api/editor-sync 主链路完成，本次定时兜底跳过。"
             exit 0
           fi
@@ -85,41 +90,47 @@ jobs:
 
           echo "::group::比对站点仓库已记录的内容 sha"
           last=""
-          raw=$(curl -s --max-time 30 "https://raw.githubusercontent.com/$SITE_REPO/$SITE_BRANCH/content-sha.txt")
+          raw=$(curl -sS --max-time 30 "https://raw.githubusercontent.com/$SITE_REPO/$SITE_BRANCH/content-sha.txt")
           if [ -n "$raw" ]; then last=$(printf '%s' "$raw" | tr -d '[:space:]'); fi
           echo "站点仓库 content-sha.txt = ${last:-（无记录）}"
           if [ -n "$last" ] && [ "$last" = "$remote" ]; then
-            echo "内容未变化，跳过"
+            echo "内容已同步，跳过"
             exit 0
           fi
           echo "::endgroup::"
 
           echo "::group::推送 mirror commit"
-          set -e
+          # 关掉 set -e：这里每一步都要自己判断并打印原始返回，
+          # 否则 grep 取不到匹配（退出码 1）会直接把整个 step 带走，日志只剩一行 exit 1。
+          set +e
 
           raw_ref=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH")
           parent=$(printf '%s' "$raw_ref" | jsha)
+          echo "① 站点 ref 响应（前240字符）：$(printf '%s' "$raw_ref" | head -c 240)"
+          if ! is_sha "$parent"; then echo "::error::第①步取站点 HEAD 失败"; exit 1; fi
+
           raw_cm=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/commits/$parent")
           tree=$(printf '%s' "$raw_cm" | jtree)
+          echo "② 站点 commit 响应（前240字符）：$(printf '%s' "$raw_cm" | head -c 240)"
+          if ! is_sha "$tree"; then echo "::error::第②步取站点 tree 失败"; exit 1; fi
           echo "站点 HEAD=$parent tree=$tree"
-          echo "commit 原始返回：$(printf '%s' "$raw_cm" | head -c 200)"
-          if ! printf '%s' "$tree" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "::error::取站点仓库 tree 失败"
-            exit 1
-          fi
 
           blob=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/blobs" \
             '{"content":"'"$remote"'","encoding":"utf-8"}' | jsha)
-          echo "blob=$blob"
+          if ! is_sha "$blob"; then echo "::error::第③步建 blob 失败"; exit 1; fi
+          echo "③ blob=$blob"
 
           newtree=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/trees" \
             '{"base_tree":"'"$tree"'","tree":[{"path":"content-sha.txt","mode":"100644","type":"blob","sha":"'"$blob"'"}]}' | jsha)
-          echo "tree=$newtree"
+          if ! is_sha "$newtree"; then echo "::error::第④步建 tree 失败"; exit 1; fi
+          echo "④ tree=$newtree"
 
           commit=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/commits" \
             '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"]}' | jsha)
-          echo "commit=$commit"
+          if ! is_sha "$commit"; then echo "::error::第⑤步建 commit 失败"; exit 1; fi
+          echo "⑤ commit=$commit"
 
-          api "$GH_TOKEN" PATCH "/repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" '{"sha":"'"$commit"'"}' >/dev/null
-          echo "已推送 mirror commit，等待 Vercel 构建"
+          upd=$(api "$GH_TOKEN" PATCH "/repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" '{"sha":"'"$commit"'"}')
+          if ! is_sha "$upd"; then echo "::error::第⑥步更新分支失败，响应：$(printf '%s' "$upd" | head -c 240)"; exit 1; fi
+          echo "⑥ 已推送 mirror commit -> $upd，等待 Vercel 构建"
           echo "::endgroup::"
