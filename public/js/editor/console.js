@@ -1088,7 +1088,7 @@ function editDataItem(schema, ts, item, isNew, idx) {
 			getTs(schema).then(function (ts2) {
 				var arr = ts2.value;
 				if (isNew) arr.push(item);
-				var content = TSIO.replace(ts2.raw, schema.varName, JSON.stringify(arr, null, 2).replace(/\n/g, "\n"));
+				var content = TSIO.replace(ts2.raw, schema.varName, arr); /* 传值，replace 内部自行序列化；传字符串会被双重编码成带引号的 string */
 				clearTs(schema);
 				DIRTY = false;
 				stagePut(schema.path, content, schema.label);
@@ -1105,7 +1105,7 @@ function editDataItem(schema, ts, item, isNew, idx) {
 			if (!confirm("删除该条目？（先入暂存区）")) return;
 			getTs(schema).then(function (ts2) {
 				var arr = ts2.value.filter(function (x) { return x !== item; });
-				var content = TSIO.replace(ts2.raw, schema.varName, JSON.stringify(arr, null, 2));
+				var content = TSIO.replace(ts2.raw, schema.varName, arr);
 				clearTs(schema);
 				stagePut(schema.path, content, schema.label + "（删除一条）");
 				loadView(schema.id, true);
@@ -1259,7 +1259,7 @@ function openNbItem(arr, it, idx) {
 		if (isNew) list.push(item); else list[idx] = item;
 		list.sort(function (a, b) { return String(a.h || "").localeCompare(String(b.h || "")); });
 		getTs(window.getSchema("notebooks")).then(function (ts) {
-			var content = TSIO.replace(ts.raw, "campusNotebook", JSON.stringify(list, null, 2));
+			var content = TSIO.replace(ts.raw, "campusNotebook", list);
 			clearTs(window.getSchema("notebooks"));
 			DIRTY = false;
 			stagePut("content/data/notebooks.ts", content, "校园杂记");
@@ -1271,7 +1271,7 @@ function openNbItem(arr, it, idx) {
 		if (!confirm("删除本篇？（先入暂存区）")) return;
 		var list = arr.filter(function (x) { return x !== it; });
 		getTs(window.getSchema("notebooks")).then(function (ts) {
-			var content = TSIO.replace(ts.raw, "campusNotebook", JSON.stringify(list, null, 2));
+			var content = TSIO.replace(ts.raw, "campusNotebook", list);
 			clearTs(window.getSchema("notebooks"));
 			stagePut("content/data/notebooks.ts", content, "校园杂记（删除一篇）");
 			loadView("notebooks", true);
@@ -1331,7 +1331,7 @@ function renderSettingsBody(file) {
 	bindSettingsFields(file);
 	var sb = $("#setSave");
 	if (sb) sb.addEventListener("click", function () {
-		var content = TSIO.replace(ctx.raw, settingsVarName(file), JSON.stringify(ctx.val, null, 2));
+		var content = TSIO.replace(ctx.raw, settingsVarName(file), ctx.val);
 		DIRTY = false;
 		stagePut("content/settings/" + file + ".ts", content, "站点与外观 · " + file);
 		toast("已暂存：" + file + ".ts");
