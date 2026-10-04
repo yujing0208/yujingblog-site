@@ -192,13 +192,59 @@ module.exports = async function handler(req, res) {
       return json(res, 200, { synced: true, contentSha: contentSha, siteCommit: null, reason: "内容仓库与站点记录一致" });
     }
 
-    // 乐观锁：并发触发时，若期间另一个实例已推过镜像 commit，直接放弃本次写入
-    const last2 = await readContentSha();
-    if (last2 === contentSha) {
-      return json(res, 200, { synced: true, contentSha: contentSha, siteCommit: null, reason: "已被其他同步触发（并发保护）" });
-    }
+    // 并行获取站点 ref + 创建 blob（无依赖）
+    const [siteRefResp, blobResp] = await Promise.all([
+      ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/ref/heads/" + SITE_BRANCH),
+      ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/blobs", {
+        method: "POST",
+        body: JSON.stringify({ content: contentSha + "\n", encoding: "utf8" }),
+      }),
+    ]);
 
-    const siteCommit = await pushMirrorCommit(contentSha);
+    if (!siteRefResp.ok) throw new Error("读取站点仓库 ref 失败：" + siteRefResp.status);
+    const siteRef = await siteRefResp.json();
+    const parentSha = siteRef.object.sha;
+
+    if (!blobResp.ok) throw new Error("创建 blob 失败：" + blobResp.status);
+    const blob = await blobResp.json();
+
+    // 获取父 commit（依赖 parentSha）
+    const commitR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits/" + parentSha);
+    if (!commitR.ok) throw new Error("读取站点仓库 commit 失败：" + commitR.status);
+    const parent = await commitR.json();
+    if (!parent.tree) throw new Error("站点仓库 commit 缺少 tree");
+
+    // 创建 tree
+    const treeR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/trees", {
+      method: "POST",
+      body: JSON.stringify({
+        base_tree: parent.tree.sha,
+        tree: [{ path: "content-sha.txt", mode: "100644", type: "blob", sha: blob.sha }],
+      }),
+    });
+    if (!treeR.ok) throw new Error("创建 tree 失败：" + treeR.status);
+    const tree = await treeR.json();
+
+    // 创建 commit
+    const commitR2 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits", {
+      method: "POST",
+      body: JSON.stringify({
+        message: "chore(content-mirror): sync content @" + contentSha.slice(0, 7),
+        tree: tree.sha,
+        parents: [parentSha],
+      }),
+    });
+    if (!commitR2.ok) throw new Error("创建 commit 失败：" + commitR2.status);
+    const commit = await commitR2.json();
+
+    // 更新引用
+    const updR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/refs/heads/" + SITE_BRANCH, {
+      method: "PATCH",
+      body: JSON.stringify({ sha: commit.sha }),
+    });
+    if (!updR.ok) throw new Error("更新站点仓库 ref 失败：" + updR.status);
+
+    const siteCommit = commit.sha;
     return json(res, 200, { synced: false, contentSha: contentSha, siteCommit: siteCommit, reason: "已推送镜像 commit，等待 Vercel 构建" });
   } catch (e) {
     return json(res, 500, { message: "同步失败：" + (e && e.message ? e.message : "unknown") });
