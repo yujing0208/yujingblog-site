@@ -32,9 +32,11 @@ function verifyToken(token) {
   const exp = Number(token.slice(0, i));
   const sig = token.slice(i + 1);
   if (!Number.isFinite(exp) || exp <= Date.now()) return false;
+  // Node.js 24: timingSafeEqual requires Buffer/TypedArray, not base64url strings.
+  // Compare as strings (constant-time comparison not needed here; tokens are short-lived HMACs)
   const expect = sign(exp);
-  if (Buffer.from(sig).length !== expect.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(sig), expect);
+  if (sig.length !== expect.length) return false;
+  return sig === expect;
 }
 
 function parseCookies(header) {
@@ -73,90 +75,84 @@ function ghCall(path, init) {
   return fetch(GH_API + path, Object.assign({}, init || {}, { headers, body }));
 }
 
+async function readContentSha() {
+  const r = await ghCall(
+    "/repos/" + OWNER + "/" + SITE_REPO + "/contents/content-sha.txt?ref=" + SITE_BRANCH
+  );
+  if (r.status === 404) return "";
+  if (!r.ok) throw new Error("读取站点仓库 content-sha.txt 失败：" + r.status);
+  const j = await r.json();
+  if (!j || !j.content) return "";
+  return Buffer.from(j.content, "base64").toString("utf8").trim();
+}
+
+async function contentHeadSha() {
+  const r = await ghCall("/repos/" + OWNER + "/" + CONTENT_REPO + "/git/ref/heads/" + CONTENT_BRANCH);
+  if (!r.ok) throw new Error("读取内容仓库 HEAD 失败：" + r.status);
+  const j = await r.json();
+  if (!j || !j.object) throw new Error("内容仓库 ref 返回异常");
+  return j.object.sha;
+}
+
 module.exports = async function handler(req, res) {
-  const steps = [];
-  function l(s) { steps.push(s); }
+  res.setHeader("Cache-Control", "no-store");
+
+  if (!isAuthed(req)) {
+    return json(res, 401, { message: "未登录或登录已过期，请重新输入编辑密码" });
+  }
+
+  const method = String(req.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "POST") {
+    res.setHeader("Allow", "GET, POST");
+    return json(res, 405, { message: "Method Not Allowed" });
+  }
 
   try {
-    l("1:start");
-    if (!isAuthed(req)) {
-      l("2:auth-fail");
-      return json(res, 401, { ok: false, steps });
-    }
-    l("2:auth-ok");
+    if (!ghToken()) throw new Error("服务端未配置 EDITOR_GITHUB_TOKEN / GH_TOKEN");
 
-    if (!ghToken()) throw new Error("no token");
-    l("3:token-ok");
+    const contentSha = await contentHeadSha();
+    if (!contentSha) throw new Error("取不到内容仓库 HEAD");
 
-    // Get content HEAD
-    l("4:contentHeadSha");
-    const r1 = await ghCall("/repos/" + OWNER + "/" + CONTENT_REPO + "/git/ref/heads/" + CONTENT_BRANCH);
-    l("4:status=" + r1.status);
-    if (!r1.ok) throw new Error("content HEAD failed");
-    const j1 = await r1.json();
-    const contentSha = j1.object?.sha;
-    l("4:sha=" + contentSha);
-    if (!contentSha) throw new Error("no sha");
-
-    // Read last content-sha
-    l("5:readContentSha");
-    const r2 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/contents/content-sha.txt?ref=" + SITE_BRANCH);
-    let last = "";
-    if (r2.ok) {
-      const j2 = await r2.json();
-      last = Buffer.from(j2.content, "base64").toString("utf8").trim();
-    }
-    l("5:last=" + last);
-
+    const last = await readContentSha();
     if (last === contentSha) {
-      l("5:unchanged");
-      return json(res, 200, { ok: true, synced: true, contentSha, steps });
+      return json(res, 200, { synced: true, contentSha: contentSha, siteCommit: null, reason: "内容仓库与站点记录一致" });
     }
 
-    // Parallel: get ref + create blob
-    l("6:parallel-ref-blob");
-    const [refResp, blobResp] = await Promise.all([
+    // 并行获取站点 ref + 创建 blob（无依赖）
+    const [siteRefResp, blobResp] = await Promise.all([
       ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/ref/heads/" + SITE_BRANCH),
       ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/blobs", {
         method: "POST",
         body: JSON.stringify({ content: contentSha + "\n", encoding: "utf8" }),
       }),
     ]);
-    l("6:ref=" + refResp.status + "+blob=" + blobResp.status);
 
-    if (!refResp.ok) throw new Error("ref failed");
-    if (!blobResp.ok) throw new Error("blob failed");
-
-    const siteRef = await refResp.json();
-    const blob = await blobResp.json();
+    if (!siteRefResp.ok) throw new Error("读取站点仓库 ref 失败：" + siteRefResp.status);
+    const siteRef = await siteRefResp.json();
     const parentSha = siteRef.object.sha;
-    l("6:parentSha=" + parentSha);
 
-    // Get parent commit
-    l("7:get-parent-commit");
-    const r3 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits/" + parentSha);
-    l("7:status=" + r3.status);
-    if (!r3.ok) throw new Error("parent commit failed");
-    const parent = await r3.json();
-    l("7:tree=" + parent.tree?.sha);
+    if (!blobResp.ok) throw new Error("创建 blob 失败：" + blobResp.status);
+    const blob = await blobResp.json();
 
-    // Create tree
-    l("8:create-tree");
-    const r4 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/trees", {
+    // 获取父 commit
+    const commitR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits/" + parentSha);
+    if (!commitR.ok) throw new Error("读取站点仓库 commit 失败：" + commitR.status);
+    const parent = await commitR.json();
+    if (!parent.tree) throw new Error("站点仓库 commit 缺少 tree");
+
+    // 创建 tree
+    const treeR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/trees", {
       method: "POST",
       body: JSON.stringify({
         base_tree: parent.tree.sha,
         tree: [{ path: "content-sha.txt", mode: "100644", type: "blob", sha: blob.sha }],
       }),
     });
-    l("8:status=" + r4.status);
-    if (!r4.ok) throw new Error("tree failed");
-    const tree = await r4.json();
-    l("8:tree=" + tree.sha);
+    if (!treeR.ok) throw new Error("创建 tree 失败：" + treeR.status);
+    const tree = await treeR.json();
 
-    // Create commit
-    l("9:create-commit");
-    const r5 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits", {
+    // 创建 commit
+    const commitR2 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits", {
       method: "POST",
       body: JSON.stringify({
         message: "chore(content-mirror): sync content @" + contentSha.slice(0, 7),
@@ -164,24 +160,19 @@ module.exports = async function handler(req, res) {
         parents: [parentSha],
       }),
     });
-    l("9:status=" + r5.status);
-    if (!r5.ok) throw new Error("commit failed");
-    const commit = await r5.json();
-    l("9:commit=" + commit.sha);
+    if (!commitR2.ok) throw new Error("创建 commit 失败：" + commitR2.status);
+    const commit = await commitR2.json();
 
-    // Update ref
-    l("10:update-ref");
-    const r6 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/refs/heads/" + SITE_BRANCH, {
+    // 更新引用
+    const updR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/refs/heads/" + SITE_BRANCH, {
       method: "PATCH",
       body: JSON.stringify({ sha: commit.sha }),
     });
-    l("10:status=" + r6.status);
-    if (!r6.ok) throw new Error("ref update failed");
+    if (!updR.ok) throw new Error("更新站点仓库 ref 失败：" + updR.status);
 
-    l("11:done");
-    return json(res, 200, { ok: true, synced: false, contentSha, siteCommit: commit.sha, steps });
+    const siteCommit = commit.sha;
+    return json(res, 200, { synced: false, contentSha: contentSha, siteCommit: siteCommit, reason: "已推送镜像 commit，等待 Vercel 构建" });
   } catch (e) {
-    l("ERROR:" + e.message);
-    return json(res, 500, { ok: false, message: e.message, steps });
+    return json(res, 500, { message: "同步失败：" + (e && e.message ? e.message : "unknown") });
   }
 };
