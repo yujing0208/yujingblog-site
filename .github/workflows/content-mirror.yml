@@ -155,6 +155,10 @@ jobs:
           echo "⑤ commit=$commit"
 
           upd=$(api "$GH_TOKEN" PATCH "/repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" '{"sha":"'"$commit"'"}')
-          if ! is_sha "$upd"; then echo "::error::第⑥步更新分支失败，响应：$(printf '%s' "$upd" | head -c 240)"; exit 1; fi
-          echo "⑥ 已推送 mirror commit -> $upd，等待 Vercel 构建"
+          # 注意：PATCH /git/refs/... 的响应是 ref 对象，sha 在 .object.sha 里，
+          # 顶层没有 "sha"（早期写成 .sha 会取空，明明推送成功了却被判失败）。
+          upd_sha=$(printf '%s' "$upd" | jq -r '.object.sha // .sha // empty' 2>/dev/null)
+          if [ -z "$upd_sha" ]; then upd_sha=$(printf '%s' "$upd" | jsha); fi
+          if ! is_sha "$upd_sha"; then echo "::error::第⑥步更新分支失败，响应：$(printf '%s' "$upd" | head -c 240)"; exit 1; fi
+          echo "⑥ 已推送 mirror commit $commit -> 分支已指向 $upd_sha，等待 Vercel 构建"
           echo "::endgroup::"
