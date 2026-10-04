@@ -62,15 +62,19 @@ jobs:
             if [ -n "$b" ]; then args+=(-H "Content-Type: application/json" -d "$b"); fi
             curl "${args[@]}" "$API$p"
           }
-          # 从扁平 JSON 里取第一个 sha 字段
-          jsha() { sed -n 's/.*[[:space:]]"sha"[[:space:]]:[[:space:]]"\([0-9a-f]\{40\}\)".*/\1/p' | head -1; }
+          # 取第一个 sha 字段。
+          # 注意：GitHub REST 返回的是**无空格压缩 JSON**（{"object":{"sha":"..."}}），
+          # key 与 value 之间可能根本没有空格，所以必须用 *（0 个或多个）而不是 +。
+          jsha() { grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}"$' | tr -d '"'; }
           # 从 commit 对象里取 tree.sha（"tree":{"sha":...}）
-          jtree() { sed -n 's/.*"tree":[[:space:]]*{[[:space:]]*"sha"[[:space:]]:[[:space:]]"\([0-9a-f]\{40\}\)".*/\1/p' | head -1; }
+          jtree() { grep -oE '"tree"[[:space:]]*:[[:space:]]*\{[^}]*"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}"$' | tr -d '"'; }
 
           echo "::group::读取内容仓库 HEAD"
           remote=""
           if [ -n "${CONTENT_TOKEN:-}" ]; then
-            remote=$(api "$CONTENT_TOKEN" GET "/repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH" | jsha)
+            raw_remote=$(api "$CONTENT_TOKEN" GET "/repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH")
+            remote=$(printf '%s' "$raw_remote" | jsha)
+            echo "内容仓库原始返回：$(printf '%s' "$raw_remote" | head -c 200)"
           fi
           if ! printf '%s' "$remote" | grep -Eq '^[0-9a-f]{40}$'; then
             echo "::warning::读不到内容仓库 HEAD（值='$remote'）：未配置 CONTENT_REPO_TOKEN，或 PAT 已失效。正常推送由 /api/editor-sync 主链路完成，本次定时兜底跳过。"
@@ -93,9 +97,12 @@ jobs:
           echo "::group::推送 mirror commit"
           set -e
 
-          parent=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH" | jsha)
-          tree=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/commits/$parent" | jtree)
+          raw_ref=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH")
+          parent=$(printf '%s' "$raw_ref" | jsha)
+          raw_cm=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/commits/$parent")
+          tree=$(printf '%s' "$raw_cm" | jtree)
           echo "站点 HEAD=$parent tree=$tree"
+          echo "commit 原始返回：$(printf '%s' "$raw_cm" | head -c 200)"
           if ! printf '%s' "$tree" | grep -Eq '^[0-9a-f]{40}$'; then
             echo "::error::取站点仓库 tree 失败"
             exit 1
