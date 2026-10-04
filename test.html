@@ -1,7 +1,0 @@
-<div style="position:fixed;top:0;left:0;right:0;padding:14px;background:#000;color:#0f0;font-family:monospace;z-index:99999;white:pre-wrap" id="__diag"></div>
-<script>
-fetch("/api/editor-auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:"yujing100208"})}).then(r=>r.json()).then(j=>{
-  document.title = "LOGIN:"+JSON.stringify(j);
-  var el=document.getElementById("__diag"); if(el) el.textContent="LOGIN: "+JSON.stringify(j);
-});
-</script>
