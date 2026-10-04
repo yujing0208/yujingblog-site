@@ -9,16 +9,18 @@
 #   1. 比对依据从 `git log --grep=content-mirror`（会被用户自己的手动提交冲掉，
 #      导致空推 mirror commit 刷构建）改为直接读 content-sha.txt；
 #   2. 读不到内容仓库 HEAD 时改为 warning + 退出 0，不再留一排红叉掩盖真实故障；
-#   3. **完全不用 actions/checkout 和 git**，改走 REST API（gh api）：
+#   3. **完全不用 actions/checkout 和 git**，改走 REST + curl：
 #      - checkout 会往 .git/config 写 http.https://github.com/.extraheader，
 #        再叠加我们自己的 extraheader 会触发
-#        `remote: Duplicate header: "Authorization"` -> 400 -> 128，这是原来兜底必红的根因；
+#        `remote: Duplicate header: "Authorization"` -> 400 -> exit 128（原来必红的根因）；
+#      - gh CLI 不带自定义 token 时会用自己的 token 去读私有仓，拿到 404 当成功值用，
+#        因此这里统一 curl + 显式 PAT，并对结果做 40 位 sha 校验；
 #      - 纯 REST 也不需要 clone，跑得更快；
 #   4. 推送用 workflow 自带的 GITHUB_TOKEN（站点仓库有 contents: write），
-#      只有「读私有内容仓库」那段需要用户注入的 PAT。
+#      只有「读私有/受限内容仓库」那段需要用户注入的 PAT。
 #
 # 凭据：secrets.CONTENT_REPO_TOKEN（对该内容仓库有 Contents: Read 的 PAT），
-#       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在）。
+#       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在。
 
 name: Mirror Content
 
@@ -52,14 +54,26 @@ jobs:
         run: |
           set -uo pipefail
 
+          # 发一次 GitHub API 请求；$1=token(可空) $2=method $3=path $4=body(可空)
+          api() {
+            local tok="$1" m="$2" p="$3" b="${4:-}"
+            local args=(-sS --max-time 30 -X "$m" -H "Accept: application/vnd.github+json")
+            if [ -n "$tok" ]; then args+=(-H "Authorization: Bearer $tok"); fi
+            if [ -n "$b" ]; then args+=(-H "Content-Type: application/json" -d "$b"); fi
+            curl "${args[@]}" "$API$p"
+          }
+          # 从扁平 JSON 里取第一个 sha 字段
+          jsha() { sed -n 's/.*[[:space:]]"sha"[[:space:]]:[[:space:]]"\([0-9a-f]\{40\}\)".*/\1/p' | head -1; }
+          # 从 commit 对象里取 tree.sha（"tree":{"sha":...}）
+          jtree() { sed -n 's/.*"tree":[[:space:]]*{[[:space:]]*"sha"[[:space:]]:[[:space:]]"\([0-9a-f]\{40\}\)".*/\1/p' | head -1; }
+
           echo "::group::读取内容仓库 HEAD"
           remote=""
           if [ -n "${CONTENT_TOKEN:-}" ]; then
-            remote=$(gh api "repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH" \
-              --jq .object.sha 2>/dev/null || true)
+            remote=$(api "$CONTENT_TOKEN" GET "/repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH" | jsha)
           fi
-          if [ -z "$remote" ]; then
-            echo "::warning::读不到内容仓库 HEAD：未配置 CONTENT_REPO_TOKEN，或 PAT 已失效。正常推送由 /api/editor-sync 主链路完成，本次定时兜底跳过。"
+          if ! printf '%s' "$remote" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::warning::读不到内容仓库 HEAD（值='$remote'）：未配置 CONTENT_REPO_TOKEN，或 PAT 已失效。正常推送由 /api/editor-sync 主链路完成，本次定时兜底跳过。"
             exit 0
           fi
           echo "内容仓库 HEAD = $remote"
@@ -79,28 +93,26 @@ jobs:
           echo "::group::推送 mirror commit"
           set -e
 
-          # 站点仓库当前 HEAD（commit 与 tree）
-          parent=$(gh api "repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH" --jq .object.sha)
-          tree=$(gh api "repos/$SITE_REPO/commits/$parent" --jq .tree.sha)
+          parent=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH" | jsha)
+          tree=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/commits/$parent" | jtree)
           echo "站点 HEAD=$parent tree=$tree"
+          if ! printf '%s' "$tree" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::取站点仓库 tree 失败"
+            exit 1
+          fi
 
-          blob=$(gh api -X POST "repos/$SITE_REPO/git/blobs" \
-            -f "content=$remote" -f "encoding=utf-8" --jq .sha)
+          blob=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/blobs" \
+            '{"content":"'"$remote"'","encoding":"utf-8"}' | jsha)
           echo "blob=$blob"
 
-          newtree=$(gh api -X POST "repos/$SITE_REPO/git/trees" \
-            -F "base_tree=$tree" \
-            -F "tree=[{path=content-sha.txt,mode=100644,type=blob,sha=$blob}]" \
-            --jq .sha)
+          newtree=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/trees" \
+            '{"base_tree":"'"$tree"'","tree":[{"path":"content-sha.txt","mode":"100644","type":"blob","sha":"'"$blob"'"}]}' | jsha)
           echo "tree=$newtree"
 
-          commit=$(gh api -X POST "repos/$SITE_REPO/git/commits" \
-            -f "message=chore(content-mirror): sync content @$remote" \
-            -f "tree=$newtree" \
-            -F "parents[]=$parent" \
-            --jq .sha)
+          commit=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/commits" \
+            '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"]}' | jsha)
           echo "commit=$commit"
 
-          gh api -X PATCH "repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" -F "sha=$commit" >/dev/null
+          api "$GH_TOKEN" PATCH "/repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" '{"sha":"'"$commit"'"}' >/dev/null
           echo "已推送 mirror commit，等待 Vercel 构建"
           echo "::endgroup::"
