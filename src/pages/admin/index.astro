@@ -3,11 +3,11 @@
 // 设计稿：preview/editor-preview.html（2026-10-04 视觉签收版）
 // 数据层：复用 /js/editor 既有引擎（EditorGit / EditorTsIO / EditorMd / EditorForm / EditorUpload / EditorImgBed）
 // 未迁入的旧编辑器（相册/公告）由 console.js 跳转到原 /admin/xxx-edit 页面
+//
+// ⚠️ 不要在本页写任何 <style>（哪怕 define:vars）：站点 astro.config 关了 cssCodeSplit，
+// 全站 CSS 合并成单个 chunk，任何打包样式都会让本页引入 640KB 博客全局样式并覆盖 console.css。
+// 编辑器样式全部走 public/js/editor/console.css（纯静态，不进打包管线）。
 export const prerender = true;
-
-import { siteConfig } from "@/config";
-
-const hue = siteConfig.themeColor.hue;
 ---
 
 <!doctype html>
@@ -18,9 +18,6 @@ const hue = siteConfig.themeColor.hue;
 	<meta name="robots" content="noindex" />
 	<title>记忆终端 · YuJing 的博客管理台</title>
 	<link rel="stylesheet" href="/js/editor/console.css?v=1" />
-	<style define:vars={{ hue: String(hue) }}>
-		:root { --hue: var(--hue); }
-	</style>
 </head>
 <body>
 	<div class="app">
