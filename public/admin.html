@@ -83,21 +83,32 @@
 		</div>
 	</div>
 
+	<!-- 登录页（预览稿同款；由 console.js 控制显示与提交） -->
+	<div class="login" id="login" style="display:none">
+		<div class="login-card">
+			<div class="login-logo">余</div>
+			<h1>内容编辑器</h1>
+			<p>输入编辑密码进入。登录状态保持 30 天。</p>
+			<div class="card"><div class="card-body">
+				<div class="f">
+					<label class="f-label" for="pw">编辑密码</label>
+					<input class="inp" id="pw" type="password" placeholder="••••••••" autocomplete="current-password" spellcheck="false">
+					<div class="f-hint" id="loginErr" style="display:none;color:var(--bad)"></div>
+					<div class="f-hint">Cookie 为 HttpOnly + SameSite=Strict，前端脚本读不到。</div>
+				</div>
+				<div style="margin-top:14px"><button class="btn btn-primary btn-block" type="button" id="loginBtn">进入编辑器</button></div>
+			</div></div>
+		</div>
+	</div>
+
 	<div class="stage-mask" id="stageMask"></div>
-	<aside class="stage-drawer" id="stageDrawer" aria-label="推送面板">
-		<div class="stage-head">
-			<h3>推送面板</h3>
-			<button class="btn btn-sm" type="button" id="stageClose">关闭</button>
-		</div>
-		<div class="stage-list" id="stageList"></div>
-		<div class="stage-foot">
-			<button class="btn btn-primary" type="button" id="stagePush">统一推送</button>
-			<button class="btn btn-danger" type="button" id="stageClear">清空</button>
-		</div>
+	<aside class="stage-panel" id="stagePanel" aria-label="暂存区推送面板">
+		<div class="sp-head"><b>暂存区 · 待推送</b><span class="card-sub" style="margin-left:auto">合并为一次 commitTree</span><button class="btn btn-sm" type="button" data-sp-close>关闭</button></div>
+		<div class="sp-list" id="spList"></div>
+		<div class="sp-foot"><button class="btn btn-primary" type="button" id="spPush">🚀 一键推送</button></div>
 	</aside>
 
-	<!-- 引擎脚本（全部沿用线上既有文件，顺序与旧编辑器一致） -->
-	<script src="/js/editor/auth-gate.js?v=1"></script>
+	<!-- 引擎脚本（全部沿用线上既有文件，顺序与旧编辑器一致；登录闸门由 console.js 内置实现） -->
 	<script src="/js/editor/github.js?v=4"></script>
 	<script src="/js/editor/ts-io.js?v=3"></script>
 	<script src="/js/editor/md.js?v=3"></script>
@@ -106,6 +117,6 @@
 	<script src="/js/editor/form.js?v=3"></script>
 	<script src="/js/editor/upload.js?v=3"></script>
 	<script src="/js/editor/imgbed.js?v=2"></script>
-	<script src="/js/editor/console.js?v=1"></script>
+	<script src="/js/editor/console.js?v=2"></script>
 </body>
 </html>
