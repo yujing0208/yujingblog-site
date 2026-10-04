@@ -39,9 +39,11 @@ module.exports = async function handler(req, res) {
     hasSecret: !!process.env.EDITOR_SECRET,
     hasPassword: !!process.env.EDITOR_PASSWORD,
     cookieHeaderPresent: !!cookieHeader,
+    cookieHeaderValue: cookieHeader ? cookieHeader.slice(0, 80) : "(none)",
     tokenFound: !!token,
     tokenLength: token.length,
-    tokenPreview: token ? token.slice(0, 30) + "..." : "(none)"
+    tokenPreview: token ? token.slice(0, 20) + "..." : "(none)",
+    allHeaders: req.headers
   };
   
   if (token) {
@@ -57,6 +59,8 @@ module.exports = async function handler(req, res) {
       out.sigMatch = sig === expect;
       out.sigLength = sig.length;
       out.expectLength = expect.length;
+      out.sigPreview = sig.slice(0, 20);
+      out.expectPreview = expect.slice(0, 20);
     }
   }
   
