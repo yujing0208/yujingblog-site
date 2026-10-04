@@ -193,12 +193,12 @@
 	/* ================= 暂存 / 推送 ================= */
 	var STAGED = {};
 	function stagePut(path, content, label) {
-		STAGED[path] = { path: path, content: content, label: label || path, del: false };
+		STAGED[path] = { path: path, content: content, label: label || path, del: false, tm: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) };
 		syncStageUI(); renderStageList();
 		toast("已暂存：" + path.split("/").pop() + "（待推送）");
 	}
 	function stageDelete(path, label) {
-		STAGED[path] = { path: path, content: null, label: label || path, del: true };
+		STAGED[path] = { path: path, content: null, label: label || path, del: true, tm: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) };
 		syncStageUI(); renderStageList();
 		toast("已暂存删除：" + path.split("/").pop() + "（待推送）");
 	}
@@ -214,15 +214,16 @@
 		}
 	}
 	function renderStageList() {
-		var box = $("#stageList"); if (!box) return;
+		var box = $("#spList"); if (!box) return;
 		box.innerHTML = "";
 		var keys = Object.keys(STAGED);
 		if (!keys.length) { box.innerHTML = '<div class="empty-block">暂存区是空的。编辑内容后点「存入暂存区」，可跨页面攒多次改动，一次推送。</div>'; return; }
 		keys.forEach(function (k) {
 			var it = STAGED[k];
-			var row = el("div", "stage-item");
-			row.innerHTML = '<span class="pill ' + (it.del ? "bad" : "ok") + '">' + (it.del ? "删除" : "写入") + "</span>" +
-				'<span class="mono">' + esc(k) + "</span>";
+			var row = el("div", "sp-item");
+			row.innerHTML = '<span class="sp-tp">' + (it.del ? "删除" : "写入") + "</span>" +
+				'<span class="sp-nm" title="' + esc(k).replace(/"/g, "&quot;") + '">' + esc(k) + "</span>" +
+				'<span class="sp-tm num">' + (it.tm || "") + "</span>";
 			var rm = el("button", "btn btn-sm", "撤销");
 			rm.addEventListener("click", function () { unstage(k); });
 			row.appendChild(rm);
@@ -230,8 +231,8 @@
 		});
 	}
 	function openStage(on) {
-		$("#stageDrawer").classList.toggle("open", on);
-		$("#stageMask").classList.toggle("open", on);
+		$("#stagePanel").classList.toggle("on", on);
+		$("#stageMask").classList.toggle("on", on);
 		if (on) renderStageList();
 	}
 	function showDiff(oldSrc, newSrc, onConfirm) {
@@ -421,7 +422,7 @@
 			html += '<div class="card"><div class="card-head"><h2 class="card-title">最近提交</h2><button class="cmt-all" type="button" id="depAllBtn" title="打开 Vercel 构建历史">查看全部</button></div>';
 			if (commits && commits.length) {
 				commits.forEach(function (c, i) {
-					var d = new Date(c.commit.committer.date);
+					var d = new Date((c.commit.committer || c.commit.author || {}).date);
 					html += '<div class="row" style="align-items:flex-start"><div class="row-k">' +
 						'<div class="list-t clamp2">' + esc(c.commit.message.split("\n")[0]) + "</div>" +
 						'<div class="list-s mono">' + esc(c.sha.slice(0, 8)) + " · " + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + esc(c.commit.author.name) + "</div>" +
@@ -1129,7 +1130,7 @@
 		ghCommits(REPO, 10).then(function (cs) {
 			var html = "";
 			cs.forEach(function (c) {
-				var d = new Date(c.commit.committer.date);
+				var d = new Date((c.commit.committer || c.commit.author || {}).date);
 				html += '<div class="row" style="align-items:flex-start"><div class="row-k">' +
 					'<div class="list-t clamp2">' + esc(c.commit.message.split("\n")[0]) + "</div>" +
 					'<div class="list-s mono">' + esc(c.sha.slice(0, 8)) + " · " + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + esc(c.commit.author.name) + "</div></div></div>";
@@ -1149,7 +1150,7 @@
 		}).catch(function (e) { $("#bkTags").innerHTML = errBox(e.message); });
 		ghCommits(REPO, 10).then(function (cs) {
 			var html = cs.map(function (c) {
-				var d = new Date(c.commit.committer.date);
+				var d = new Date((c.commit.committer || c.commit.author || {}).date);
 				return '<div class="row"><div class="row-k"><div class="list-t clamp2">' + esc(c.commit.message.split("\n")[0]) + '</div><div class="list-s mono">' + esc(c.sha.slice(0, 8)) + " · " + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "</div></div></div>";
 			}).join("");
 			$("#bkCommits").innerHTML = html;
@@ -1283,7 +1284,6 @@
 		b.setAttribute("data-nav", it.id);
 		b.innerHTML = icon(it.id) + '<span class="nav-text">' + esc(it.label) + "</span>" + (it.star ? '<span class="nav-star">★</span>' : "");
 		b.addEventListener("click", function () {
-			if (it.legacy) { location.href = it.legacy; return; }
 			go(it.id);
 			if (window.matchMedia("(max-width: 1023px)").matches) {
 				document.documentElement.removeAttribute("data-drawer");
@@ -1328,6 +1328,62 @@
 		else if (window.getSchema(id)) renderDataPage(id);
 	}
 
+	/* ================= 登录闸门（预览稿同款 .login 页，替代旧 auth-gate 弹窗） ================= */
+	function authCheck() {
+		return fetch("/api/editor-auth", { method: "GET", credentials: "same-origin", cache: "no-store" })
+			.then(function (r) { return r.ok ? r.json() : { ok: false }; })
+			.then(function (j) { return !!(j && j.ok); })
+			.catch(function () { return false; });
+	}
+	function authLogin(password) {
+		return fetch("/api/editor-auth", {
+			method: "POST", credentials: "same-origin",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: password }),
+		}).then(function (r) {
+			return r.json().catch(function () { return {}; }).then(function (j) {
+				if (!r.ok || !j || !j.ok) return { ok: false, error: (j && j.error) || "密码错误" };
+				return { ok: true };
+			});
+		}).catch(function () { return { ok: false, error: "网络异常，请稍后重试" }; });
+	}
+	function authLogout() {
+		return fetch("/api/editor-auth", { method: "DELETE", credentials: "same-origin" }).catch(function () { });
+	}
+	function showLogin() {
+		var l = $("#login"); if (!l) return;
+		l.style.display = "";
+		var pw = $("#pw"), err = $("#loginErr"), btn = $("#loginBtn"), busy = false;
+		if (!pw || pw.dataset.bound) return;
+		pw.dataset.bound = "1";
+		function submit() {
+			if (busy) return;
+			var v = pw.value;
+			if (!v) { err.textContent = "请输入密码"; err.style.display = "block"; return; }
+			busy = true;
+			btn.disabled = true; btn.textContent = "验证中…"; err.style.display = "none";
+			authLogin(v).then(function (res) {
+				if (res.ok) { location.reload(); return; }
+				busy = false;
+				btn.disabled = false; btn.textContent = "进入编辑器";
+				err.textContent = res.error || "密码错误";
+				err.style.display = "block";
+				pw.select();
+			});
+		}
+		btn.addEventListener("click", submit);
+		pw.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+		setTimeout(function () { pw.focus(); }, 60);
+	}
+	/* 兼容 shim：github.js 在 401 时会调 EditorAuthGate.require() */
+	window.EditorAuthGate = {
+		check: authCheck,
+		login: function (pw) { return authLogin(pw); },
+		logout: authLogout,
+		require: showLogin,
+		start: function () { authCheck().then(function (ok) { if (!ok) showLogin(); }); },
+	};
+
 	/* ================= 启动 ================= */
 	function boot() {
 		applyBlogLook();
@@ -1351,22 +1407,17 @@
 		});
 		$("#pushBtn").addEventListener("click", function () { openStage(true); });
 		$("#status").addEventListener("click", function () { openStage(true); });
-		$("#stageClose").addEventListener("click", function () { openStage(false); });
+		var spClose = document.querySelector("[data-sp-close]");
+		if (spClose) spClose.addEventListener("click", function () { openStage(false); });
 		$("#stageMask").addEventListener("click", function () { openStage(false); });
-		$("#stagePush").addEventListener("click", pushAll);
-		$("#stageClear").addEventListener("click", function () {
-			if (!Object.keys(STAGED).length) { openStage(false); return; }
-			if (confirm("清空暂存区？未推送的改动会丢失")) {
-				STAGED = {}; syncStageUI(); renderStageList(); openStage(false);
-			}
-		});
-		var initId = (location.hash.match(/#\/(\w+)/) || [])[1];
-		if (!TITLES[initId]) initId = "dash";
-		go(initId, true);
-		fetch("/api/editor-auth", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
-			if (j && j.login) $("#userPill").textContent = j.login;
-			else $("#userPill").textContent = "编辑";
-		}).catch(function () { $("#userPill").textContent = "编辑"; });
+		$("#spPush").addEventListener("click", pushAll);
+	var initId = (location.hash.match(/#\/(\w+)/) || [])[1];
+	if (!TITLES[initId]) initId = "dash";
+	go(initId, true);
+	fetch("/api/editor-auth", { credentials: "same-origin", cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+		if (!(j && j.ok)) { showLogin(); $("#userPill").textContent = "未登录"; }
+		else $("#userPill").textContent = j.login || "编辑";
+	}).catch(function () { $("#userPill").textContent = "编辑"; });
 	}
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
 	else boot();
