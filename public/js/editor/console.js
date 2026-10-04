@@ -155,7 +155,7 @@
 					.then(function () { return files; });
 			});
 		}
-		return collect("posts");
+		return collect("content/posts");
 	}
 	function loadPostsWithMeta() {
 		if (CACHE.posts) return Promise.resolve(CACHE.posts);
@@ -922,7 +922,7 @@ function newPostFromText(text, fromName, preset) {
 		'<div data-tabpanel="pv" style="display:none"><div class="md-preview markdown-content" id="pfPreview"></div></div></div></div>' +
 		'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" type="button" id="pfSave">💾 存入暂存区</button></div>';
 	var slug = P.title.replace(/[^\w\u4e00-\u9fa5]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase().slice(0, 40) || "new-post";
-	var path = "posts/" + today_ + "-" + slug + ".md";
+	var path = "content/posts/" + today_ + "-" + slug + ".md";
 	$("#pfSave").addEventListener("click", function () {
 		var cat = $("#pfCat").value;
 		if (cat === "+ 新建分类…") { var v = prompt("输入新分类名："); cat = v || "未分类"; }
@@ -984,28 +984,29 @@ var DATA_SEL = {};
 function renderDataPage(id) {
 	var schema = window.getSchema(id);
 	if (!schema) return;
-	schema.__id = id; /* schema 对象本身无 id 字段，供 id_new 使用 */
+	schema.__id = id; /* schema 对象本身无 id 字段，补挂后 loadView(schema.id)/特化分支才能用 */
+	schema.id = id;
 	var v = $("#v-" + id);
 	v.innerHTML = pageHead(schema.icon || "db", schema.label,
-		'<span class="mono">content/' + esc(schema.path) + '</span>' + (schema.varName ? ' · varName <span class="mono">' + esc(schema.varName) + '</span>' : ""),
+		'<span class="mono">' + esc(schema.path) + '</span>' + (schema.varName ? ' · varName <span class="mono">' + esc(schema.varName) + '</span>' : ""),
 		'<button class="btn btn-primary" type="button" id="dpAdd">+ 新增</button>') +
 		'<div class="split"><div class="card split-list"><div id="dpList"><div class="empty-block">加载中…</div></div></div>' +
 		'<div id="dpPanel"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一个条目，或点「+ 新增」</div></div></div></div></div>' +
 		'<div id="dpHint"></div>';
-	$("#dpAdd").addEventListener("click", function () {
+	$("#dpAdd", v).addEventListener("click", function () {
 		getTs(schema).then(function (ts) {
 			var arr = ts.value;
 			var item = { id: nextId(arr) };
 			schema.fields.forEach(function (fd) { if (item[fd.key] === undefined && !fd.hidden) item[fd.key] = fd.type === "boolean" ? false : ""; });
-			if (schema.id === "diary") item.date = nowISO();
+			if (schema.__id === "diary" || schema.id === "diary") item.date = nowISO();
 			editDataItem(schema, ts, item, true);
-		}).catch(function (e) { $("#dpList").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+		}).catch(function (e) { $("#dpList", v).innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
 	});
 	getTs(schema).then(function (ts) {
 		var arr = Array.isArray(ts.value) ? ts.value : [];
 		renderDataList(schema, arr);
 	}).catch(function (e) {
-		$("#dpList").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>';
+		$("#dpList", v).innerHTML = '<div class="error-block">' + esc(e.message) + '</div>';
 	});
 	bindDataSave(schema);
 }
@@ -1041,7 +1042,7 @@ function dataItemThumb(schema, it) {
 	return "📄";
 }
 function renderDataList(schema, arr) {
-	var box = $("#dpList");
+	var box = $("#dpList", $("#v-" + (schema.__id || schema.id)) || document);
 	box.innerHTML = "";
 	arr.forEach(function (it, i) {
 		var row = el("div", "list-item" + (DATA_SEL[schema.id] === i ? " on" : ""));
@@ -1054,14 +1055,15 @@ function renderDataList(schema, arr) {
 	if (!arr.length) box.innerHTML = '<div class="empty-block">暂无条目，点右上角「+ 新增」</div>';
 }
 function editDataItem(schema, ts, item, isNew, idx) {
+	var vw = $("#v-" + (schema.__id || schema.id)) || document;
 	DATA_SEL[schema.id] = idx;
-	$$("#dpList .list-item").forEach(function (x) { x.classList.toggle("on", Number(x.getAttribute("data-i")) === idx); });
-	var panel = $("#dpPanel");
+	$$("#dpList .list-item", vw).forEach(function (x) { x.classList.toggle("on", Number(x.getAttribute("data-i")) === idx); });
+	var panel = $("#dpPanel", vw);
 	panel.innerHTML = '<div class="card"><div class="card-head"><h2 class="card-title">' + (isNew ? "新增" : esc(dataItemLabel(schema, item))) + '</h2><span class="pill">ts-array</span>' +
 		(schema.id === "diary" ? '<span class="card-sub" style="margin-left:auto">隐藏 id 自动自增</span>' : (item.id != null ? '<span class="card-sub" style="margin-left:auto">id <span class="num">' + item.id + '</span>（隐藏）</span>' : '')) +
 		'</div><div class="card-body" id="dpForm">' + renderFields(schema.fields, item) + '</div></div>' + saveBar(id_new(schema));
 	var saveId = id_new(schema);
-	bindFields($("#dpForm"), item);
+	bindFields($("#dpForm", vw), item);
 	bindDataSave(schema);
 	function collect() {
 		var out = {};
@@ -1120,7 +1122,7 @@ function renderAbout() {
 		'<div class="card-body"><div data-tabpanel="a1"><textarea class="inp mono ed-area" id="abBody" style="min-height:300px;font-size:12.5px"></textarea></div>' +
 		'<div data-tabpanel="a2" style="display:none"><div class="card" style="box-shadow:none;background:var(--bg-inset)"><div class="card-body"><div class="md-preview markdown-content" id="abPreview"></div></div></div></div></div></div>' +
 		'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" type="button" id="abSave">💾 存入暂存区</button></div>';
-	GIT.getFile(OWNER, REPO, "spec/about.md", BRANCH).then(function (f) {
+	GIT.getFile(OWNER, REPO, "content/spec/about.md", BRANCH).then(function (f) {
 		if (!f) { $("#abFm").innerHTML = '<div class="error-block">文件不存在</div>'; return; }
 		var p = MDM.parse(f.content);
 		var fm = p.data || {};
@@ -1140,7 +1142,7 @@ function renderAbout() {
 		$("#abSave").addEventListener("click", function () {
 			var nfm = { title: $("#abTitle").value, description: $("#abDesc").value };
 			DIRTY = false;
-			stagePut("spec/about.md", MDM.stringify(nfm, $("#abBody").value), "关于页面");
+			stagePut("content/spec/about.md", MDM.stringify(nfm, $("#abBody").value), "关于页面");
 		});
 		["abTitle", "abDesc", "abBody"].forEach(function (id) { $("#" + id).addEventListener("input", function () { DIRTY = true; }); });
 	}).catch(function (e) { $("#abFm").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
@@ -1153,7 +1155,7 @@ function renderAlbums() {
 	v.innerHTML = pageHead("album", "相册管理", '<span class="mono">content/images/albums/</span>') +
 		'<div class="split"><div class="card split-list"><div id="alList"><div class="empty-block">加载中…</div></div></div>' +
 		'<div id="alPanel"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一个相册</div></div></div></div></div>';
-	GIT.listDir(OWNER, REPO, "images/albums", BRANCH).then(function (dirs) {
+	GIT.listDir(OWNER, REPO, "content/images/albums", BRANCH).then(function (dirs) {
 		var box = $("#alList");
 		box.innerHTML = "";
 		var albumDirs = dirs.filter(function (d) { return d.type === "dir"; });
@@ -1252,7 +1254,7 @@ function openNbItem(arr, it, idx) {
 			var content = TSIO.replace(ts.raw, "campusNotebook", JSON.stringify(list, null, 2));
 			clearTs(window.getSchema("notebooks"));
 			DIRTY = false;
-			stagePut("data/notebooks.ts", content, "校园杂记");
+			stagePut("content/data/notebooks.ts", content, "校园杂记");
 			loadView("notebooks", true);
 		});
 	});
@@ -1263,7 +1265,7 @@ function openNbItem(arr, it, idx) {
 		getTs(window.getSchema("notebooks")).then(function (ts) {
 			var content = TSIO.replace(ts.raw, "campusNotebook", JSON.stringify(list, null, 2));
 			clearTs(window.getSchema("notebooks"));
-			stagePut("data/notebooks.ts", content, "校园杂记（删除一篇）");
+			stagePut("content/data/notebooks.ts", content, "校园杂记（删除一篇）");
 			loadView("notebooks", true);
 		});
 	});
@@ -1294,7 +1296,7 @@ function showSettingsTab(file) {
 	if (SETTINGS_LOADED[file]) { renderSettingsBody(file); return; }
 	body.innerHTML = '<div class="empty-block">加载 ' + file + '.ts …</div>';
 	var varName = settingsVarName(file);
-	GIT.getFile(OWNER, REPO, "settings/" + file + ".ts", BRANCH).then(function (f) {
+	GIT.getFile(OWNER, REPO, "content/settings/" + file + ".ts", BRANCH).then(function (f) {
 		if (!f) { body.innerHTML = '<div class="error-block">settings/' + file + '.ts 不存在</div>'; return; }
 		var val = TSIO.extract(f.content, varName);
 		var mode = "var";
@@ -1323,7 +1325,7 @@ function renderSettingsBody(file) {
 	if (sb) sb.addEventListener("click", function () {
 		var content = TSIO.replace(ctx.raw, settingsVarName(file), JSON.stringify(ctx.val, null, 2));
 		DIRTY = false;
-		stagePut("settings/" + file + ".ts", content, "站点与外观 · " + file);
+		stagePut("content/settings/" + file + ".ts", content, "站点与外观 · " + file);
 		toast("已暂存：" + file + ".ts");
 	});
 }
