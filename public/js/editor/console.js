@@ -208,32 +208,42 @@
 	function authLogout() {
 		return fetch("/api/editor-auth", { method: "DELETE", credentials: "same-origin" }).catch(function () { });
 	}
-	function showLogin() {
-		var l = $("#login"); if (!l) return;
-		l.style.display = "";
-		var pw = $("#pw"), err = $("#loginErr"), btn = $("#loginBtn"), busy = false;
-		if (!pw || pw.dataset.bound) return;
-		pw.dataset.bound = "1";
-		function submit() {
-			if (busy) return;
-			var v = pw.value;
-			if (!v) { err.textContent = "请输入密码"; err.style.display = "block"; return; }
-			busy = true;
-			btn.disabled = true; btn.textContent = "验证中…"; err.style.display = "none";
-			authLogin(v).then(function (res) {
-				if (res.ok) { location.reload(); return; }
-				busy = false;
-				btn.disabled = false; btn.textContent = "进入编辑器";
-				err.textContent = res.error || "密码错误";
-				err.style.display = "block";
-				pw.select();
-			});
-		}
-		btn.addEventListener("click", submit);
-		pw.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
-		setTimeout(function () { pw.focus(); }, 60);
+function showLogin() {
+	var l = $("#login"); if (!l) return;
+	l.style.display = "";
+	var pw = $("#pw"), err = $("#loginErr"), btn = $("#loginBtn"), busy = false;
+	if (!pw || pw.dataset.bound) return;
+	pw.dataset.bound = "1";
+	function submit() {
+		if (busy) return;
+		var v = pw.value;
+		if (!v) { err.textContent = "请输入密码"; err.style.display = "block"; return; }
+		busy = true;
+		btn.disabled = true; btn.textContent = "验证中…"; err.style.display = "none";
+		authLogin(v).then(function (res) {
+			if (res.ok) { location.reload(); return; }
+			busy = false;
+			btn.disabled = false; btn.textContent = "进入编辑器";
+			err.textContent = res.error || "密码错误";
+			err.style.display = "block";
+			pw.select();
+		});
 	}
-	window.EditorAuthGate = {
+	btn.addEventListener("click", submit);
+	pw.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+	setTimeout(function () { pw.focus(); }, 60);
+}
+window.addEventListener("error", function(e) {
+	var el = document.getElementById("__errBanner");
+	if (!el) {
+		el = document.createElement("div");
+		el.id = "__errBanner";
+		el.style.cssText = "position:fixed;top:0;left:0;right:0;padding:8px 14px;background:#e00;color:#fff;font-size:13px;z-index:9999;white-space:pre-wrap;word-break:break-all";
+		document.body.appendChild(el);
+	}
+	el.textContent += "JS Error: " + e.message + " @ " + e.filename + ":" + e.lineno + "\n";
+});
+window.EditorAuthGate = {
 		check: authCheck,
 		login: function (pw) { return authLogin(pw); },
 		logout: authLogout,
@@ -1976,6 +1986,14 @@ function boot() {
 		else $("#userPill").textContent = j.login || "编辑";
 	}).catch(function () { $("#userPill").textContent = "编辑"; });
 }
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-else boot();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function() {
+	try { boot(); } catch(e) {
+		var el = document.getElementById("__errBanner");
+		if (el) el.textContent += "Boot Error: " + e.message + "\n";
+	}
+});
+else try { boot(); } catch(e) {
+	var el = document.getElementById("__errBanner");
+	if (el) el.textContent += "Boot Error: " + e.message + "\n";
+}
 })();
