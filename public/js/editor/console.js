@@ -629,7 +629,7 @@
 
 
 	/* ================= 文章管理 ================= */
-	var POSTS_STATE = { sel: null, filter: "all", sort: "date", q: "", draft: null };
+	var POSTS_STATE = { sel: null, filter: "all", sort: "date", q: "", draft: null, catOpen: {} };
 function postCats(posts) {
 	var map = {};
 	posts.forEach(function (p) {
@@ -718,7 +718,7 @@ function renderPostsList() {
 		if (!items.length) return;
 		var color = CAT_COLORS[ci++ % CAT_COLORS.length];
 		html += '<div class="cat-group" data-cat="' + esc(c) + '">' +
-			'<button class="cat-head" type="button" aria-expanded="true"><span class="cat-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M9 6l6 6-6 6"/></svg></span><i class="cat-dot" style="background:' + color + '"></i><span class="cat-nm">' + esc(c) + '</span><span class="cat-n num">' + items.length + ' 篇</span></button>' +
+			'<button class="cat-head" type="button" aria-expanded="false"><span class="cat-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M9 6l6 6-6 6"/></svg></span><i class="cat-dot" style="background:' + color + '"></i><span class="cat-nm">' + esc(c) + '</span><span class="cat-n num">' + items.length + ' 篇</span></button>' +
 			'<div class="cat-body">';
 		items.forEach(function (p) {
 			var date = String(p.fm.published || "").slice(0, 10);
@@ -731,12 +731,20 @@ function renderPostsList() {
 	});
 	$("#postsCatList").innerHTML = html;
 	$("#postsNote").innerHTML = '按分类分组 · <b class="num">' + keys.length + '</b> 类 <b class="num">' + posts.length + '</b> 篇';
+	/* 展开状态：与预览稿一致用 .open 类；筛选/搜索激活时全部展开，清空后恢复记忆 */
+	var filtering = !!(POSTS_STATE.q || (POSTS_STATE.filter && POSTS_STATE.filter !== "all"));
+	$$("#postsCatList .cat-group").forEach(function (g) {
+		var on = filtering ? true : !!POSTS_STATE.catOpen[g.getAttribute("data-cat")];
+		g.classList.toggle("open", on);
+		var h = g.querySelector(".cat-head");
+		if (h) h.setAttribute("aria-expanded", on ? "true" : "false");
+	});
 	$$("#postsCatList .cat-head").forEach(function (b) {
 		b.addEventListener("click", function () {
-			var body = b.parentNode.querySelector(".cat-body");
-			var open = b.getAttribute("aria-expanded") === "true";
-			b.setAttribute("aria-expanded", open ? "false" : "true");
-			if (body) body.style.display = open ? "none" : "";
+			var g = b.parentNode;
+			var on = g.classList.toggle("open");
+			b.setAttribute("aria-expanded", on ? "true" : "false");
+			POSTS_STATE.catOpen[g.getAttribute("data-cat")] = on;
 		});
 	});
 	$$("#postsCatList .list-item").forEach(function (it) {
