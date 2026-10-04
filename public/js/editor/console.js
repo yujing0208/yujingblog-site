@@ -1683,7 +1683,9 @@ function renderCfbed() {
 				if (CF.q) files = files.filter(function (f) { return String(f.name || "").toLowerCase().indexOf(CF.q) >= 0; });
 				if (CF.sort === "name") files.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
 				if (CF.sort === "size") files.sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
-				$("#cfSub").textContent = j.total != null ? "共 " + j.total + " 个" : "";
+				if (CF.sort === "date") files.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+				var tot = j.total != null ? j.total : j.totalCount;
+				$("#cfSub").textContent = tot != null ? "共 " + tot + " 个" : "";
 				$("#cfPageInfo").textContent = "第 " + CF.page + " 页";
 				$("#cfGrid").innerHTML = files.length ? files.map(function (f) {
 					return '<div class="thumb" data-sel data-url="' + esc(f.url || "") + '"><div class="ph" style="background-image:url(\'' + esc(f.url || "") + '\')"></div><div class="cap">' + esc(String(f.name || "").slice(0, 26)) + '</div><div class="thumb-meta"><span class="num">' + fmtBytes(f.size) + '</span></div></div>';
@@ -1762,11 +1764,14 @@ function renderStats() {
 		withTimeout(twikooRecent(), 8000),
 	]).then(function (rs) {
 		var s = rs[0] || {}, m = rs[1] || {}, cmts = rs[2] || [];
-		var rows = m.metrics || m.rows || [];
+		/* Umami 新版返回扁平数值（pageviews:4744），旧版是 {value}；metrics 可能是裸数组 */
+		function uNum(v) { return typeof v === "number" ? v : (v && typeof v.value === "number" ? v.value : null); }
+		function fmt(v) { return v != null ? Number(v).toLocaleString() : "—"; }
+		var rows = Array.isArray(m) ? m : (m.metrics || m.rows || []);
 		$("#stRow").innerHTML =
-			'<div class="card stat"><div class="stat-k">浏览量 · 近 30 天</div><div class="stat-v num">' + ((s.pageviews || {}).value != null ? s.pageviews.value.toLocaleString() : "—") + '</div><div class="stat-f">Umami pageviews</div></div>' +
-			'<div class="card stat"><div class="stat-k">访问数 · 近 30 天</div><div class="stat-v num">' + ((s.visits || {}).value != null ? s.visits.value.toLocaleString() : "—") + '</div><div class="stat-f">visits</div></div>' +
-			'<div class="card stat"><div class="stat-k">游客数 · 近 30 天</div><div class="stat-v num">' + ((s.visitors || {}).value != null ? s.visitors.value.toLocaleString() : "—") + '</div><div class="stat-f">visitors</div></div>' +
+			'<div class="card stat"><div class="stat-k">浏览量 · 近 30 天</div><div class="stat-v num">' + fmt(uNum(s.pageviews)) + '</div><div class="stat-f">Umami pageviews</div></div>' +
+			'<div class="card stat"><div class="stat-k">访问数 · 近 30 天</div><div class="stat-v num">' + fmt(uNum(s.visits)) + '</div><div class="stat-f">visits</div></div>' +
+			'<div class="card stat"><div class="stat-k">游客数 · 近 30 天</div><div class="stat-v num">' + fmt(uNum(s.visitors)) + '</div><div class="stat-f">visitors</div></div>' +
 			'<div class="card stat"><div class="stat-k">评论总数</div><div class="stat-v num">' + cmts.length + '</div><div class="stat-f">Twikoo · 本月 +' + cmts.filter(function (c) { return c.created >= MONTH_START; }).length + "</div></div>";
 		var total = rows.reduce(function (a, r) { return a + (r.y || 0); }, 0) || 1;
 		var max = Math.max.apply(null, rows.map(function (r) { return r.y || 0; }).concat([1]));
@@ -1782,7 +1787,8 @@ function renderStats() {
 /* ================= 数据备份 ================= */
 function renderBackup() {
 	setView("backup",
-		pageHead("db", "数据备份", "内容仓 git 历史即备份 · 自动打 tag 记录发布点") +
+		pageHead("db", "数据备份", "内容仓 git 历史即备份 · 每月 1 号自动快照 backup/年-月 分支（保留 12 个月）") +
+		'<div class="card"><div class="card-head"><h2 class="card-title">自动月度快照</h2><span class="card-sub">GitHub Actions · 每月 1 号 · 保留 12 个月</span></div><div id="bkSnapshots">' + loading() + "</div></div>" +
 		'<div class="card"><div class="card-head"><h2 class="card-title">最近提交（可回滚点）</h2><span class="pill warn">建新 commit 指向旧 tree，不改写历史</span></div>' +
 		'<div id="bkList">' + loading() + "</div></div>" +
 		'<div class="card"><div class="card-head"><h2 class="card-title">Tags</h2><span class="card-sub">发布上线成功后自动打 tag</span></div><div id="bkTags">' + loading() + "</div></div>" +
@@ -1802,6 +1808,12 @@ function renderBackup() {
 			});
 		});
 	}).catch(function (e) { $("#bkList").innerHTML = '<div class="error-block">' + esc(e.message) + "</div>"; });
+	gh("/repos/" + OWNER + "/" + REPO + "/branches?per_page=100").then(function (bs) {
+		var snaps = (bs || []).map(function (b) { return b.name || ""; }).filter(function (n) { return n.indexOf("backup/") === 0; }).sort().reverse();
+		$("#bkSnapshots").innerHTML = snaps.length ? snaps.map(function (n) {
+			return '<div class="row"><div class="row-k mono">' + esc(n) + '</div><div class="row-v"><span class="pill ok">快照</span></div></div>';
+		}).join("") : '<div class="empty-block">还没有快照 —— 下个月 1 号自动生成（也可在内容仓 Actions 手动触发）</div>';
+	}).catch(function () { $("#bkSnapshots").innerHTML = '<div class="empty-block">快照列表加载失败</div>'; });
 	gh("/repos/" + OWNER + "/" + REPO + "/tags?per_page=15").then(function (tags) {
 		$("#bkTags").innerHTML = tags.length ? tags.map(function (t) {
 			return '<div class="row"><div class="row-k mono">' + esc(t.name) + '</div><div class="row-v"><span class="pill ok">tag</span></div></div>';
