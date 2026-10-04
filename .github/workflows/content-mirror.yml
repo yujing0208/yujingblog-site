@@ -9,10 +9,15 @@
 #   1. 比对依据从 `git log --grep=content-mirror`（会被用户自己的手动提交冲掉，
 #      导致空推 mirror commit 刷构建）改为直接读 content-sha.txt；
 #   2. 读不到内容仓库 HEAD 时改为 warning + 退出 0，不再留一排红叉掩盖真实故障；
-#   3. 支持通过仓库 Secrets 注入专用 PAT（content-sha.txt 是分支上的真文件，
-#      直接读工作区即可）。
+#   3. **完全不用 actions/checkout 和 git**，改走 REST API（gh api）：
+#      - checkout 会往 .git/config 写 http.https://github.com/.extraheader，
+#        再叠加我们自己的 extraheader 会触发
+#        `remote: Duplicate header: "Authorization"` -> 400 -> 128，这是原来兜底必红的根因；
+#      - 纯 REST 也不需要 clone，跑得更快；
+#   4. 推送用 workflow 自带的 GITHUB_TOKEN（站点仓库有 contents: write），
+#      只有「读私有内容仓库」那段需要用户注入的 PAT。
 #
-# 凭据：secrets.CONTENT_REPO_TOKEN（对该私有内容仓库有 Contents: Read 的 PAT），
+# 凭据：secrets.CONTENT_REPO_TOKEN（对该内容仓库有 Contents: Read 的 PAT），
 #       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在）。
 
 name: Mirror Content
@@ -29,23 +34,20 @@ concurrency:
   group: content-mirror
   cancel-in-progress: false
 
+env:
+  API: https://api.github.com
+  SITE_REPO: yujing0208/yujingblog-site
+  CONTENT_REPO: yujing0208/yujingblog-content
+  CONTENT_BRANCH: master
+  SITE_BRANCH: main
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout site repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
       - name: Compare content HEAD, push mirror commit if changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          CONTENT_REPO: yujing0208/yujingblog-content
-          CONTENT_BRANCH: master
-          SITE_BRANCH: main
-          # 读私有内容仓库用的 PAT，缺省回落到 DISPATCH_TOKEN
           CONTENT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.DISPATCH_TOKEN }}
         run: |
           set -uo pipefail
@@ -53,9 +55,8 @@ jobs:
           echo "::group::读取内容仓库 HEAD"
           remote=""
           if [ -n "${CONTENT_TOKEN:-}" ]; then
-            CONTENT_BASIC=$(printf 'x-access-token:%s' "$CONTENT_TOKEN" | base64 -w0)
-            remote=$(git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $CONTENT_BASIC" \
-              ls-remote "https://github.com/$CONTENT_REPO.git" "refs/heads/$CONTENT_BRANCH" | cut -f1)
+            remote=$(gh api "repos/$CONTENT_REPO/git/ref/heads/$CONTENT_BRANCH" \
+              --jq .object.sha 2>/dev/null || true)
           fi
           if [ -z "$remote" ]; then
             echo "::warning::读不到内容仓库 HEAD：未配置 CONTENT_REPO_TOKEN，或 PAT 已失效。正常推送由 /api/editor-sync 主链路完成，本次定时兜底跳过。"
@@ -66,7 +67,8 @@ jobs:
 
           echo "::group::比对站点仓库已记录的内容 sha"
           last=""
-          if [ -f content-sha.txt ]; then last=$(tr -d '[:space:]' < content-sha.txt); fi
+          raw=$(curl -s --max-time 30 "https://raw.githubusercontent.com/$SITE_REPO/$SITE_BRANCH/content-sha.txt")
+          if [ -n "$raw" ]; then last=$(printf '%s' "$raw" | tr -d '[:space:]'); fi
           echo "站点仓库 content-sha.txt = ${last:-（无记录）}"
           if [ -n "$last" ] && [ "$last" = "$remote" ]; then
             echo "内容未变化，跳过"
@@ -75,12 +77,30 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::推送 mirror commit"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --quiet -B mirror-tmp "origin/${SITE_BRANCH}"
-          printf '%s\n' "$remote" > content-sha.txt
-          git add content-sha.txt
-          git commit -q -m "chore(content-mirror): sync content @$remote"
-          git push --quiet "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" "HEAD:${SITE_BRANCH}"
+          set -e
+
+          # 站点仓库当前 HEAD（commit 与 tree）
+          parent=$(gh api "repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH" --jq .object.sha)
+          tree=$(gh api "repos/$SITE_REPO/commits/$parent" --jq .tree.sha)
+          echo "站点 HEAD=$parent tree=$tree"
+
+          blob=$(gh api -X POST "repos/$SITE_REPO/git/blobs" \
+            -f "content=$remote" -f "encoding=utf-8" --jq .sha)
+          echo "blob=$blob"
+
+          newtree=$(gh api -X POST "repos/$SITE_REPO/git/trees" \
+            -F "base_tree=$tree" \
+            -F "tree=[{path=content-sha.txt,mode=100644,type=blob,sha=$blob}]" \
+            --jq .sha)
+          echo "tree=$newtree"
+
+          commit=$(gh api -X POST "repos/$SITE_REPO/git/commits" \
+            -f "message=chore(content-mirror): sync content @$remote" \
+            -f "tree=$newtree" \
+            -F "parents[]=$parent" \
+            --jq .sha)
+          echo "commit=$commit"
+
+          gh api -X PATCH "repos/$SITE_REPO/git/refs/heads/$SITE_BRANCH" -F "sha=$commit" >/dev/null
           echo "已推送 mirror commit，等待 Vercel 构建"
           echo "::endgroup::"
