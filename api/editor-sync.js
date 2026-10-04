@@ -1,26 +1,3 @@
-/**
- * Vercel Serverless Function —— 内容仓库 → 站点仓库 的同步桥（编辑器专用，v1）
- *
- * 解决的问题：
- *   在线编辑器把改动 commit 到「内容仓库 yujingblog-content(master)」，
- *   但线上站点是由「站点仓库 yujingblog-site(main)」的 Vercel Git 部署线构建的。
- *   两者之间原先只靠站点仓库的 Mirror Content 定时 workflow（每 30 分钟）桥接，
- *   一旦 workflow 拿不到读私有内容仓库的 PAT 就会整条链断掉 ——
- *   表现为编辑器提示"推送成功"而线上永远不更新。
- *
- * 本函数的职责：在编辑器推送成功后，**立刻**把内容仓库 master 的 HEAD 写进
- * 站点仓库的 content-sha.txt 并推一个 mirror commit 到站点仓库 main，
- * 由 Vercel Git 部署线构建上线（构建期 prebuild 的 sync-content.js 会按该 sha
- * 把内容仓库拉进产物）。秒级生效，不再依赖定时轮询。
- *
- * 鉴权：与 /api/editor-github 同源 —— /api/editor-auth 下发的签名 Cookie，
- * 浏览器不持有任何 GitHub Token。
- *
- * 环境变量：EDITOR_GITHUB_TOKEN 优先，回退 GH_TOKEN / GITHUB_TOKEN。
- *
- * 注意：本文件必须使用 CommonJS（module.exports）。
- */
-
 const crypto = require("crypto");
 
 const COOKIE_NAME = "yuj_ed";
@@ -83,100 +60,108 @@ function ghToken() {
   return process.env.EDITOR_GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
 }
 
-/** 直接用服务端 token 调 GitHub（不走 editor-github 代理） */
 function ghCall(path, init) {
   const token = ghToken();
-  if (!token) throw new Error("服务端未配置 EDITOR_GITHUB_TOKEN / GH_TOKEN");
+  if (!token) throw new Error("no token");
   const headers = {
     Authorization: "Bearer " + token,
     Accept: "application/vnd.github+json",
-    "User-Agent": "yujing-blog-editor-sync",
-    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "sync",
   };
   let body = init && init.body;
   if (body) headers["Content-Type"] = "application/json";
   return fetch(GH_API + path, Object.assign({}, init || {}, { headers, body }));
 }
 
-async function readContentSha() {
-  const r = await ghCall(
-    "/repos/" + OWNER + "/" + SITE_REPO + "/contents/content-sha.txt?ref=" + SITE_BRANCH
-  );
-  if (r.status === 404) return "";
-  if (!r.ok) throw new Error("读取站点仓库 content-sha.txt 失败：" + r.status);
-  const j = await r.json();
-  if (!j || !j.content) return "";
-  return Buffer.from(j.content, "base64").toString("utf8").trim();
-}
-
-async function contentHeadSha() {
-  // GET 单引用端点用单数 /git/ref/heads/{branch}
-  const r = await ghCall("/repos/" + OWNER + "/" + CONTENT_REPO + "/git/ref/heads/" + CONTENT_BRANCH);
-  if (!r.ok) throw new Error("读取内容仓库 HEAD 失败：" + r.status);
-  const j = await r.json();
-  if (!j || !j.object) throw new Error("内容仓库 ref 返回异常");
-  return j.object.sha;
-}
-
 module.exports = async function handler(req, res) {
-  res.setHeader("Cache-Control", "no-store");
-
-  if (!isAuthed(req)) {
-    return json(res, 401, { message: "未登录或登录已过期，请重新输入编辑密码" });
-  }
-
-  const method = String(req.method || "GET").toUpperCase();
-  if (method !== "GET" && method !== "POST") {
-    res.setHeader("Allow", "GET, POST");
-    return json(res, 405, { message: "Method Not Allowed" });
-  }
+  const steps = [];
+  function l(s) { steps.push(s); }
 
   try {
-    if (!ghToken()) throw new Error("服务端未配置 EDITOR_GITHUB_TOKEN / GH_TOKEN");
-
-    const contentSha = await contentHeadSha();
-    if (!contentSha) throw new Error("取不到内容仓库 HEAD");
-
-    const last = await readContentSha();
-    if (last === contentSha) {
-      return json(res, 200, { synced: true, contentSha: contentSha, siteCommit: null, reason: "内容仓库与站点记录一致" });
+    // Step 1: auth check
+    const cookieHeader = req.headers.cookie || "";
+    const cookies = parseCookies(cookieHeader);
+    const token = cookies[COOKIE_NAME] || "";
+    l("auth: token=" + (token ? token.substring(0, 20) + "..." : "MISSING"));
+    const authed = verifyToken(token);
+    l("auth: verified=" + authed);
+    if (!authed) {
+      l("auth: FAIL - returning 401");
+      return json(res, 401, { ok: false, message: "未登录", steps });
     }
 
-    // 并行获取站点 ref + 创建 blob（无依赖）
-    const [siteRefResp, blobResp] = await Promise.all([
+    // Step 2: token check
+    const tk = ghToken();
+    l("ghToken: " + (tk ? "SET(len=" + tk.length + ")" : "MISSING"));
+
+    // Step 3: contentHeadSha
+    l("step3: fetching content HEAD...");
+    const r1 = await ghCall("/repos/" + OWNER + "/" + CONTENT_REPO + "/git/ref/heads/" + CONTENT_BRANCH);
+    l("step3: status=" + r1.status);
+    if (!r1.ok) throw new Error("content HEAD failed: " + r1.status);
+    const j1 = await r1.json();
+    const contentSha = j1.object?.sha;
+    l("step3: contentSha=" + contentSha);
+    if (!contentSha) throw new Error("no content sha");
+
+    // Step 4: readContentSha
+    l("step4: fetching site content-sha.txt...");
+    const r2 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/contents/content-sha.txt?ref=" + SITE_BRANCH);
+    l("step4: status=" + r2.status);
+    let last = "";
+    if (r2.ok) {
+      const j2 = await r2.json();
+      last = Buffer.from(j2.content, "base64").toString("utf8").trim();
+    }
+    l("step4: last=" + last);
+
+    if (last === contentSha) {
+      l("step4: content unchanged, returning synced=true");
+      return json(res, 200, { ok: true, synced: true, contentSha, steps });
+    }
+
+    // Step 5: parallel fetch ref + create blob
+    l("step5: parallel ref+blob...");
+    const [refResp, blobResp] = await Promise.all([
       ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/ref/heads/" + SITE_BRANCH),
       ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/blobs", {
         method: "POST",
         body: JSON.stringify({ content: contentSha + "\n", encoding: "utf8" }),
       }),
     ]);
+    l("step5: ref=" + refResp.status + " blob=" + blobResp.status);
 
-    if (!siteRefResp.ok) throw new Error("读取站点仓库 ref 失败：" + siteRefResp.status);
-    const siteRef = await siteRefResp.json();
+    if (!refResp.ok) throw new Error("ref failed: " + refResp.status);
+    if (!blobResp.ok) throw new Error("blob failed: " + blobResp.status);
+
+    const siteRef = await refResp.json();
+    const blob = await blobResp.json();
     const parentSha = siteRef.object.sha;
 
-    if (!blobResp.ok) throw new Error("创建 blob 失败：" + blobResp.status);
-    const blob = await blobResp.json();
+    // Step 6: get parent commit
+    l("step6: get parent commit...");
+    const r3 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits/" + parentSha);
+    l("step6: status=" + r3.status);
+    if (!r3.ok) throw new Error("parent commit failed: " + r3.status);
+    const parent = await r3.json();
+    l("step6: tree=" + parent.tree?.sha);
 
-    // 获取父 commit（依赖 parentSha）
-    const commitR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits/" + parentSha);
-    if (!commitR.ok) throw new Error("读取站点仓库 commit 失败：" + commitR.status);
-    const parent = await commitR.json();
-    if (!parent.tree) throw new Error("站点仓库 commit 缺少 tree");
-
-    // 创建 tree
-    const treeR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/trees", {
+    // Step 7: create tree
+    l("step7: create tree...");
+    const r4 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/trees", {
       method: "POST",
       body: JSON.stringify({
         base_tree: parent.tree.sha,
         tree: [{ path: "content-sha.txt", mode: "100644", type: "blob", sha: blob.sha }],
       }),
     });
-    if (!treeR.ok) throw new Error("创建 tree 失败：" + treeR.status);
-    const tree = await treeR.json();
+    l("step7: status=" + r4.status);
+    if (!r4.ok) throw new Error("tree failed: " + r4.status);
+    const tree = await r4.json();
 
-    // 创建 commit
-    const commitR2 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits", {
+    // Step 8: create commit
+    l("step8: create commit...");
+    const r5 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/commits", {
       method: "POST",
       body: JSON.stringify({
         message: "chore(content-mirror): sync content @" + contentSha.slice(0, 7),
@@ -184,19 +169,23 @@ module.exports = async function handler(req, res) {
         parents: [parentSha],
       }),
     });
-    if (!commitR2.ok) throw new Error("创建 commit 失败：" + commitR2.status);
-    const commit = await commitR2.json();
+    l("step8: status=" + r5.status);
+    if (!r5.ok) throw new Error("commit failed: " + r5.status);
+    const commit = await r5.json();
 
-    // 更新引用
-    const updR = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/refs/heads/" + SITE_BRANCH, {
+    // Step 9: update ref
+    l("step9: update ref...");
+    const r6 = await ghCall("/repos/" + OWNER + "/" + SITE_REPO + "/git/refs/heads/" + SITE_BRANCH, {
       method: "PATCH",
       body: JSON.stringify({ sha: commit.sha }),
     });
-    if (!updR.ok) throw new Error("更新站点仓库 ref 失败：" + updR.status);
+    l("step9: status=" + r6.status);
+    if (!r6.ok) throw new Error("ref update failed: " + r6.status);
 
-    const siteCommit = commit.sha;
-    return json(res, 200, { synced: false, contentSha: contentSha, siteCommit: siteCommit, reason: "已推送镜像 commit，等待 Vercel 构建" });
+    l("DONE!");
+    return json(res, 200, { ok: true, synced: false, contentSha, siteCommit: commit.sha, steps });
   } catch (e) {
-    return json(res, 500, { message: "同步失败：" + (e && e.message ? e.message : "unknown") });
+    l("ERROR: " + e.message);
+    return json(res, 500, { ok: false, message: e.message, steps });
   }
 };
