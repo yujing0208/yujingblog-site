@@ -1,18 +1,23 @@
 /**
- * Vercel Serverless Function — 编辑器专用 GitHub 代理
+ * Vercel Serverless Function — 编辑器专用 GitHub 代理（v3 收紧版）
  *
  * 前端不再持有任何 GitHub Token：浏览器只请求 /api/editor-github，
- * 由本函数带上服务端的 GH_TOKEN 去调 api.github.com。
+ * 由本函数带上服务端的 Token 去调 api.github.com。
  *
  * 调用形态：/api/editor-github?path=<encodeURIComponent("/repos/...")>
  * 请求方法原样透传（GET / PUT / POST / PATCH / DELETE）。
  *
- * 安全边界（故意收窄，就算密码泄露也伤不到别的仓库）：
+ * 安全边界 v3（v4 规格 §9.1 / §9.2）：
  * 1. 必须先通过 /api/editor-auth 下发的签名 Cookie；
- * 2. path 只允许 /user 与 /repos/yujing0208/{yujingblog-content,yujingblog-site}/**；
+ * 2. 路径只允许编辑器工作需要的两类：
+ *    - /repos/yujing0208/yujingblog-content/**  → 内容仓，读写（contents/git/commits）
+ *    - /repos/yujing0208/yujingblog-site/**     → 站点仓，**只读 GET**（站点仓永不被编辑器写入）
+ *    - 不再允许 /user 及其它任何路径；
  * 3. 方法只允许读写文件的 5 种；不允许访问 /orgs、/user/repos 等。
  *
- * 环境变量：GH_TOKEN（GitHub PAT，需对上面两个仓库有 Contents 读写权限）
+ * 环境变量：
+ * - EDITOR_GITHUB_TOKEN 优先；未配置时回退 GH_TOKEN / GITHUB_TOKEN（兼容现有配置）。
+ *   需对内容仓有 Contents 读写权限、对站点仓只读。
  *
  * 注意：本文件必须使用 CommonJS（module.exports），原因见 api/chat.js 顶部注释。
  */
@@ -20,8 +25,9 @@
 const crypto = require("crypto");
 
 const COOKIE_NAME = "yuj_ed";
-const ALLOWED_REPOS = ["yujingblog-content", "yujingblog-site"];
-const ALLOWED_EXACT = ["/user"];
+const OWNER = "yujing0208";
+const CONTENT_REPO = "yujingblog-content";
+const SITE_REPO = "yujingblog-site";
 const ALLOWED_METHODS = ["GET", "PUT", "POST", "PATCH", "DELETE"];
 const GH_API = "https://api.github.com";
 
@@ -95,15 +101,16 @@ function readPathParam(req) {
   }
 }
 
-function isAllowedPath(p) {
-  if (ALLOWED_EXACT.indexOf(p) !== -1) return true;
-  const prefix = "/repos/yujing0208/";
-  if (!p.startsWith(prefix)) return false;
-  const rest = p.slice(prefix.length);
-  const repo = rest.split("/")[0];
-  if (ALLOWED_REPOS.indexOf(repo) === -1) return false;
-  // 防止 /repos/owner/repo/../other 之类的路径穿越
-  return p.indexOf("..") === -1;
+/** v3 白名单：按仓库 + 方法收口 */
+function checkAllowed(p, method) {
+  if (p.indexOf("..") !== -1) return false; // 路径穿越防护
+  const contentPrefix = "/repos/" + OWNER + "/" + CONTENT_REPO + "/";
+  const sitePrefix = "/repos/" + OWNER + "/" + SITE_REPO + "/";
+  const contentExact = "/repos/" + OWNER + "/" + CONTENT_REPO;
+  const siteExact = "/repos/" + OWNER + "/" + SITE_REPO;
+  if (p === contentExact || p.indexOf(contentPrefix) === 0) return true; // 内容仓：5 种方法都放行
+  if (p === siteExact || p.indexOf(sitePrefix) === 0) return method === "GET"; // 站点仓：只读
+  return false;
 }
 
 function json(res, status, payload) {
@@ -146,9 +153,13 @@ module.exports = async function handler(req, res) {
     return json(res, 405, { message: "Method Not Allowed" });
   }
 
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
+  const token =
+    process.env.EDITOR_GITHUB_TOKEN ||
+    process.env.GH_TOKEN ||
+    process.env.GITHUB_TOKEN ||
+    "";
   if (!token) {
-    return json(res, 500, { message: "服务端未配置 GH_TOKEN" });
+    return json(res, 500, { message: "服务端未配置 EDITOR_GITHUB_TOKEN / GH_TOKEN" });
   }
 
   const rawPath = readPathParam(req);
@@ -160,8 +171,8 @@ module.exports = async function handler(req, res) {
   const path = qm >= 0 ? rawPath.slice(0, qm) : rawPath;
   const search = qm >= 0 ? rawPath.slice(qm) : "";
 
-  if (!isAllowedPath(path)) {
-    return json(res, 403, { message: "该路径不在编辑器允许范围内：" + path });
+  if (!checkAllowed(path, method)) {
+    return json(res, 403, { message: "该路径或方法不在编辑器允许范围内：" + method + " " + path });
   }
 
   const headers = {
