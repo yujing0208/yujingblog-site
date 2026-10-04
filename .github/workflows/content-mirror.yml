@@ -69,6 +69,9 @@ jobs:
           # key 与 value 之间可能根本没有空格，所以必须用 *（0 个或多个）而不是 +。
           # 末尾统一取 [0-9a-f]{40}，避免 grep 命中后带出来引号/尾巴。
           jsha() { grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -1 | grep -oE '[0-9a-f]{40}'; }
+          # 新建 blob / tree / commit / 更新分支 的响应都是 {...,"sha":"..."}，直接用 jq 取最稳，
+          # jq 不在时（理论上 ubuntu runner 必装）回落到 jsha。
+          js() { jq -r '.sha // empty' 2>/dev/null || true; }
           # 从 commit 响应里取 tree sha，**两种形态都要吃**：
           #   - GET /repos/{o}/{r}/commits/{sha}（commits API）里 tree 是字符串："tree":"78bf0f8a..."；
           #   - GET /repos/{o}/{r}/git/commits/{sha}（git API）里 tree 是对象： "tree":{"sha":"78bf0f8a..."}。
@@ -115,28 +118,39 @@ jobs:
           set +e
 
           raw_ref=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/git/ref/heads/$SITE_BRANCH")
-          parent=$(printf '%s' "$raw_ref" | jsha)
+          parent=$(printf '%s' "$raw_ref" | jq -r '.object.sha // empty' 2>/dev/null)
+          if [ -z "$parent" ]; then parent=$(printf '%s' "$raw_ref" | jsha); fi
           echo "① 站点 ref 响应（前240字符）：$(printf '%s' "$raw_ref" | head -c 240)"
+          echo "① parent=[$parent]"
           if ! is_sha "$parent"; then echo "::error::第①步取站点 HEAD 失败"; exit 1; fi
 
+          # commits API 里 commit.tree 是对象：{"sha":"038721fa...","url":"..."}
+          # 用 jq 取 .commit.tree.sha；jq 不可用时用 grep 兜底（避开 \{ 在 ERE 里的转义歧义）
           raw_cm=$(api "$GH_TOKEN" GET "/repos/$SITE_REPO/commits/$parent")
-          tree=$(printf '%s' "$raw_cm" | jtree)
+          tree=$(printf '%s' "$raw_cm" | jq -r '.commit.tree.sha // empty' 2>/dev/null)
+          if [ -z "$tree" ]; then
+            tree=$(printf '%s' "$raw_cm" | grep -oE '"tree"[^,]*[,}]' | head -1 | grep -oE '[0-9a-f]{40}' | head -1)
+          fi
           echo "② 站点 commit 响应（前240字符）：$(printf '%s' "$raw_cm" | head -c 240)"
+          echo "② tree=[$tree]"
           if ! is_sha "$tree"; then echo "::error::第②步取站点 tree 失败"; exit 1; fi
           echo "站点 HEAD=$parent tree=$tree"
 
           blob=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/blobs" \
-            '{"content":"'"$remote"'","encoding":"utf-8"}' | jsha)
+            '{"content":"'"$remote"'","encoding":"utf-8"}' | js)
+          if [ -z "$blob" ]; then blob=$(printf '%s' "$blob" | jsha); fi
           if ! is_sha "$blob"; then echo "::error::第③步建 blob 失败"; exit 1; fi
           echo "③ blob=$blob"
 
           newtree=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/trees" \
-            '{"base_tree":"'"$tree"'","tree":[{"path":"content-sha.txt","mode":"100644","type":"blob","sha":"'"$blob"'"}]}' | jsha)
+            '{"base_tree":"'"$tree"'","tree":[{"path":"content-sha.txt","mode":"100644","type":"blob","sha":"'"$blob"'"}]}' | js)
+          if [ -z "$newtree" ]; then newtree=$(printf '%s' "$newtree" | jsha); fi
           if ! is_sha "$newtree"; then echo "::error::第④步建 tree 失败"; exit 1; fi
           echo "④ tree=$newtree"
 
           commit=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/commits" \
-            '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"]}' | jsha)
+            '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"]}' | js)
+          if [ -z "$commit" ]; then commit=$(printf '%s' "$commit" | jsha); fi
           if ! is_sha "$commit"; then echo "::error::第⑤步建 commit 失败"; exit 1; fi
           echo "⑤ commit=$commit"
 
