@@ -51,6 +51,11 @@ interface Props {
 	 * 或直接传一张图片路径固定使用。
 	 */
 	ctaBackground?: string;
+	/**
+	 * 首屏个签下方的快捷链接行（文字链接，区别于右下角的社交书签图标条）。
+	 * 数据来自 siteConfig.paperHero.links（编辑器「首屏」tab 可编辑）。
+	 */
+	links?: Array<{ name: string; url: string }>;
 }
 
 const {
@@ -64,6 +69,7 @@ const {
 	ctaText = "开始阅读",
 	ctaTarget = "paper-home-content",
 	ctaBackground = "random",
+	links = [],
 } = Astro.props;
 
 // 背景图：images 数组优先，回退到单张 image（兼容旧调用）
@@ -279,6 +285,22 @@ const heroStyle = heroImage
 			</p>
 			<h1>{heroTitle}</h1>
 			<p class="home-hero__bio">{heroBio}</p>
+
+			<!-- 首屏个签下方快捷链接行（文字链接，区别于右下角社交书签图标条） -->
+			{
+				links && links.length > 0 && (
+					<nav class="home-hero__nav" aria-label="快捷链接">
+						{links.map((l) => (
+							<a
+								class="home-hero__nav-link"
+								href={l.url}
+								target={l.url.startsWith("http") ? "_blank" : undefined}
+								rel={l.url.startsWith("http") ? "noopener noreferrer" : undefined}
+							>{l.name}</a>
+						))}
+					</nav>
+				)
+			}
 
 			<!-- 波浪分隔线（原版在有 nav 链接时显示 nav，否则显示波浪线） -->
 			<div class="home-hero__divider" aria-hidden="true">
