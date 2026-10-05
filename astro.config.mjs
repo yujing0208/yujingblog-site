@@ -141,6 +141,13 @@ export default defineConfig({
 			ignore: (targetUrl) => {
 				try {
 					const path = String(targetUrl).split("#")[0].split("?")[0];
+					// /circle/ 是 1:1 移植 FCLite「友链清册」的独立整页：自带 <html>/<head>、内联国风
+					// CSS 与 <style is:global>、末尾原生 <script>，且不挂 Layout —— 没有 Swup
+					// 运行时，也没有 #content-wrapper/main 可被 morph。Swup 接管会导致脚本不执行、
+					// 样式错位，必须交给浏览器整页加载。
+					if (/^\/circle(\/|$)/.test(path)) {
+						return true;
+					}
 					const targetIsPaperHome = path.replace(/^\/+|\/+$/g, "") === "";
 					const currentIsPaperHome =
 						!!document.querySelector(".paper-shell");
@@ -305,7 +312,7 @@ export default defineConfig({
 				"qrcode",
 			],
 		},
-		// 预热常用入口文件，让 Vite 在服务器启动后立即开始转换，而不是等到浏览器请求
+		// 预热常用入���文件，让 Vite 在服务器启动后立即开始转换，而不是等到浏览器请求
 		server: {
 			warmup: {
 				clientFiles: [
