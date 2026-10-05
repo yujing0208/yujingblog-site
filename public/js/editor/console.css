@@ -1165,6 +1165,25 @@ textarea.ed-area.drop-hot::after { content: "松开即上传到图床，并在�
 .loading-block { padding: 34px 16px; text-align: center; color: var(--ink-3); font-size: 13px; }
 .loading-block .spin { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 99px; animation: yjsp 0.8s linear infinite; vertical-align: -3px; margin-right: 8px; }
 @keyframes yjsp { to { transform: rotate(360deg); } }
+
+/* ================= 骨架屏（加载占位） =================
+   目标：占位块的位置/尺寸贴近加载完成后的真实布局，避免「转圈 → 内容」时的跳动。
+   底色用 --bg-inset（跟随明暗主题），扫光用 color-mix(--ink) 自动反色。 */
+.sk { display: block; position: relative; overflow: hidden; background: var(--bg-inset); border-radius: 6px; }
+.sk::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 8%, transparent), transparent);
+  animation: sksweep 1.3s ease-in-out infinite;
+}
+@keyframes sksweep { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .sk::after { animation: none; } }
+.sk-ring { flex: 0 0 132px; width: 132px; height: 132px; border-radius: 50%; }
+.sk-chart { display: flex; align-items: flex-end; gap: 8px; height: 148px; padding-top: 6px; }
+.sk-list { display: flex; flex-direction: column; gap: 15px; padding: 6px 14px 10px; }
+.sk-row { display: flex; flex-direction: column; gap: 7px; }
+/* 储存分布：叶子项（无可下钻层级）与空层提示 */
+.don-leaf { cursor: default; }
+.don-empty { padding: 26px 4px; text-align: center; font-size: 12.5px; color: var(--ink-4); }
 .error-block { margin: 12px 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent); background: color-mix(in srgb, var(--bad) 8%, transparent); border-radius: var(--radius-sm); font-size: 13px; color: var(--bad); }
 .empty-block { padding: 26px 16px; text-align: center; color: var(--ink-4); font-size: 12.5px; }
 

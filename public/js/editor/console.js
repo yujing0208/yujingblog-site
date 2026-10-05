@@ -2472,6 +2472,34 @@ function bindSettingsFields(file) {
 
 /* ================= 仪表盘 ================= */
 function loading(text) { return '<div class="loading-block"><span class="spin"></span>' + (text || "加载中…") + "</div>"; }
+/* ================= 骨架屏（加载占位） =================
+   比「转圈 + 加载中」更接近最终布局：加载完成时高度不跳、也不留空白卡片。 */
+function skLine(w, h) { return '<i class="sk" style="width:' + w + '%;height:' + (h || 12) + 'px"></i>'; }
+function skDonutCard() {
+	var rows = "";
+	for (var i = 0; i < 3; i++) {
+		rows += '<li class="don-item"><i class="don-dot sk" style="border-radius:3px"></i>'
+			+ '<i class="sk" style="flex:1 1 auto;height:12px"></i>'
+			+ '<i class="sk" style="flex:0 0 52px;height:12px"></i>'
+			+ '<i class="sk" style="flex:0 0 34px;height:12px"></i></li>';
+	}
+	return '<div class="card don-card"><div class="card-head"><h2 class="card-title">站点储存分布</h2>' +
+		'<span class="card-sub" style="margin-left:auto">正在统计两个仓库…</span></div>' +
+		'<div class="card-body don-body"><div class="sk sk-ring"></div><ul class="don-legend">' + rows + '</ul></div></div>';
+}
+function skTrend() {
+	var hs = [34, 58, 44, 76, 52, 88, 46, 68, 40, 62, 50, 72];
+	return '<div class="sk-chart">' + hs.map(function (v) {
+		return '<i class="sk" style="flex:1 1 0;height:' + v + '%"></i>';
+	}).join("") + "</div>";
+}
+function skList(n) {
+	var out = "";
+	for (var i = 0; i < (n || 3); i++) {
+		out += '<div class="sk-row">' + skLine(56 + ((i * 9) % 32), 12) + skLine(30 + ((i * 7) % 24), 9) + "</div>";
+	}
+	return '<div class="sk-list">' + out + "</div>";
+}
 function kpiFrame(key, icon, tint, k, act) {
 	return '<div class="card kpi' + (act ? " kpi-act" : "") + '"' + (act ? ' data-kpi="' + key + '" role="button" tabindex="0"' : "") + ">" +
 		'<div class="kpi-ic ' + tint + '">' + icon + "</div>" +
@@ -2530,7 +2558,7 @@ function trendChartHtml(series) {
 		'<div class="chart-foot">近 ' + n + " 天 · 合计 <b class=\"num\">" + total.toLocaleString() + "</b> 次浏览 · 峰值 <b class=\"num\">" + vals[peakI] + "</b>（" + esc(dates[peakI].slice(5)) + "）</div>";
 }
 function donutHtml(id) {
-	return '<div class="card don-card" id="' + id + '"><div class="card-head"><h2 class="card-title">站点储存分布</h2><span class="card-sub" style="margin-left:auto">点分类可下钻</span></div>' +
+	return '<div class="card don-card" id="' + id + '"><div class="card-head"><h2 class="card-title">站点储存分布</h2><span class="card-sub" style="margin-left:auto">内容仓 + 站点仓 · 点仓库 / 目录可下钻</span></div>' +
 		'<div class="card-body don-body" data-donut>' +
 		'<div class="donut"><svg viewBox="0 0 150 150"><g transform="rotate(-90 75 75)"></g></svg><div class="don-center"></div></div>' +
 		'<ul class="don-legend"></ul>' +
@@ -2541,13 +2569,17 @@ var DON_PAL = ["var(--tint-purple-fg)", "var(--tint-green-fg)", "var(--tint-blue
 function donutDraw(root, node, crumb) {
 	var C = 2 * Math.PI * 54;
 	var kids = node.children || [];
-	var tot = node.bytes || kids.reduce(function (a, c) { return a + c.bytes; }, 0) || 1;
+	var tot = node.bytes || kids.reduce(function (a, c) { return a + c.bytes; }, 0) || 0;
 	root.__tree = node;
+	/* __tree = 当前层级；__root = 总览树（「返回总览」直接重画，不再整页重渲染）；
+	   __crumb = 当前层级 id（点叶子兜底时用来「留在本层」而不误清面包屑） */
+	root.__crumb = crumb || null;
+	if (!crumb) root.__root = node;
 	/* __tree 同时挂在 data-donut 容器与卡片上（下钻处理器从 [data-donut] 起查） */
 	var anchor = (root.matches && root.matches("[data-donut]")) ? root : (root.querySelector ? root.querySelector("[data-donut]") : null);
-	if (anchor) anchor.__tree = node;
+	if (anchor) { anchor.__tree = node; anchor.__crumb = crumb || null; if (!crumb) anchor.__root = node; }
 	var card = root.closest ? root.closest(".don-card") : null;
-	if (card) card.__tree = node;
+	if (card) { card.__tree = node; card.__crumb = crumb || null; if (!crumb) card.__root = node; }
 	var svg = root.querySelector(".donut svg g");
 	var center = root.querySelector(".don-center");
 	var legend = root.querySelector(".don-legend");
@@ -2555,56 +2587,102 @@ function donutDraw(root, node, crumb) {
 	if (!svg || !center || !legend) return;
 	var off = 0, arcs = "";
 	kids.forEach(function (c, i) {
-		var ratio = c.bytes / tot;
+		var drill = !!(c.children && c.children.length);   /* 叶子不下钻 → 不会点进空白 */
+		var ratio = tot ? c.bytes / tot : 0;
 		var len = ratio * C;
 		arcs += '<circle cx="75" cy="75" r="54" fill="none" stroke="' + DON_PAL[i % DON_PAL.length] + '" stroke-width="15"'
 			+ ' stroke-dasharray="' + len.toFixed(2) + " " + (C - len).toFixed(2) + '"'
 			+ ' stroke-dashoffset="' + (-off).toFixed(2) + '"'
-			+ (c.id ? ' data-drill="' + esc(c.id) + '" style="cursor:pointer"' : "")
+			+ (drill ? ' data-drill="' + esc(c.id) + '" style="cursor:pointer"' : "")
 			+ '><title>' + esc(c.nm) + " " + fmtBytes(c.bytes) + " / " + (ratio * 100).toFixed(1) + '%</title></circle>';
 		off += ratio * C;
 	});
-	svg.innerHTML = arcs;
-	center.innerHTML = '<b class="num">' + (tot / 1048576).toFixed(1) + '</b><span>' + (node.bytes ? "MB · 该分类" : "MB 合计") + '</span>';
+	/* 全 0 字节 / 无子项：给一圈浅色底环，避免「一片空白」看不出是空还是没加载 */
+	svg.innerHTML = arcs || '<circle cx="75" cy="75" r="54" fill="none" stroke="var(--line)" stroke-width="15"/>';
+	center.innerHTML = '<b class="num">' + (tot / 1048576).toFixed(1) + '</b><span>' + (crumb ? "MB · 该分类" : "MB 合计") + '</span>';
 	var lg = "";
 	kids.forEach(function (c, i) {
-		var ratio = c.bytes / tot;
-		lg += '<li class="don-item"' + (c.id ? ' data-drill="' + esc(c.id) + '" title="点击下钻"' : "") + '>'
+		var drill = !!(c.children && c.children.length);
+		var ratio = tot ? c.bytes / tot : 0;
+		lg += '<li class="don-item' + (drill ? "" : " don-leaf") + '"' + (drill ? ' data-drill="' + esc(c.id) + '" title="点击下钻"' : ' title="该分类下没有更细的划分"') + '>'
 			+ '<i class="don-dot" style="background:' + DON_PAL[i % DON_PAL.length] + '"></i>'
 			+ '<span class="don-nm">' + esc(c.nm) + '</span>'
-			+ '<span class="don-sz num">' + (c.bytes / 1048576).toFixed(1) + ' MB</span>'
+			+ '<span class="don-sz num">' + fmtBytes(c.bytes) + '</span>'
 			+ '<span class="don-pc num">' + (ratio * 100).toFixed(1) + '%</span></li>';
 	});
+	if (!kids.length) lg = '<li class="don-empty">该分类下没有更细的划分</li>';
 	legend.innerHTML = lg;
 	if (bar) {
 		bar.hidden = false;
 		bar.style.visibility = crumb ? "visible" : "hidden";
-		if (crumb) bar.querySelector(".don-crumb-tx").textContent = "当前：" + node.nm;
+		if (crumb) bar.querySelector(".don-crumb-tx").textContent = "当前：" + node.nm + (node.files ? "（" + node.files + " 个文件）" : "");
 	}
 }
-function treeToDonut(tree) {
-	/* 两级树：一级 = 顶层目录（可下钻），二级 = 顶层目录下的一级子目录 */
-	var top = {};
-	(tree.tree || []).forEach(function (t) {
+/* ============ 储存分布：内容仓 + 站点仓 合并成一棵可下钻的树 ============ */
+var DON_MAX_DEPTH = 4, DON_MAX_KIDS = 8;
+/* 过滤：隐藏项（.github/ .obsidian/ .gitignore …）与说明文件（README / LICENSE …）不进分布。
+   这两类既不是内容也不是代码，体积恒为 0，混在图例里只会占行还把「下钻」引到空页面。 */
+function donSkipName(nm) {
+	return /^\./.test(nm) ||
+		/^(readme|license|licence|copying|changelog|contributing|code_of_conduct)(\.[a-z0-9]+)?$/i.test(nm);
+}
+function donItems(tree) {
+	/* GitHub tree → [{rel, size}]（任一目录段命中过滤则整条跳过） */
+	var out = [];
+	((tree && tree.tree) || []).forEach(function (t) {
 		if (t.type !== "blob") return;
-		var parts = t.path.split("/");
-		var seg = parts[0];
-		var sub = parts.length > 1 ? parts[1] : "（根文件）";
-		if (!top[seg]) top[seg] = { nm: seg + "/", id: "seg:" + seg, bytes: 0, files: 0, kids: {} };
-		top[seg].bytes += t.size || 0;
-		top[seg].files += 1;
-		if (!top[seg].kids[sub]) top[seg].kids[sub] = { nm: sub + "/", id: "seg:" + seg + "/" + sub, bytes: 0, files: 0 };
-		top[seg].kids[sub].bytes += t.size || 0;
-		top[seg].kids[sub].files += 1;
+		var parts = String(t.path || "").split("/");
+		for (var i = 0; i < parts.length; i++) { if (donSkipName(parts[i])) return; }
+		out.push({ rel: parts.join("/"), size: t.size || 0 });
 	});
-	var kids = Object.keys(top).map(function (k) {
-		var s = top[k];
-		s.children = Object.keys(s.kids).map(function (sk) { return s.kids[sk]; })
-			.sort(function (a, b) { return b.bytes - a.bytes; }).slice(0, 8);
-		delete s.kids;
-		return s;
-	}).sort(function (a, b) { return b.bytes - a.bytes; }).slice(0, 6);
-	return { nm: "全部储存", children: kids.length ? kids : [{ nm: "（空）", bytes: 1, files: 0, id: null }] };
+	return out;
+}
+/* 递归成树。children 为空 = 叶子 → 不给下钻入口，杜绝「点进去一片空白」 */
+function donNode(items, name, depth) {
+	var groups = {}, bytes = 0, files = 0;
+	items.forEach(function (it) {
+		bytes += it.size; files++;
+		var p = it.rel.split("/");
+		var seg = p[0], isDir = p.length > 1;
+		var g = groups[seg] || (groups[seg] = { nm: seg, dir: isDir, bytes: 0, files: 0, items: [] });
+		g.bytes += it.size; g.files++;
+		if (isDir) g.items.push({ rel: p.slice(1).join("/"), size: it.size });
+	});
+	var kids = Object.keys(groups).map(function (k) {
+		var g = groups[k];
+		var children = (g.dir && depth < DON_MAX_DEPTH) ? donNode(g.items, g.nm, depth + 1).children : [];
+		return { nm: g.nm + (g.dir ? "/" : ""), bytes: g.bytes, files: g.files, children: children };
+	}).sort(function (a, b) { return b.bytes - a.bytes; });
+	return { nm: name, bytes: bytes, files: files, children: donCap(kids) };
+}
+function donCap(kids) {
+	if (kids.length <= DON_MAX_KIDS) return kids;
+	var take = DON_MAX_KIDS - 1;
+	var top = kids.slice(0, take), rest = kids.slice(take), b = 0, f = 0;
+	rest.forEach(function (c) { b += c.bytes; f += c.files; });
+	top.push({ nm: "其他 " + rest.length + " 项", bytes: b, files: f, children: [] });
+	return top;
+}
+function donIdAssign(n, prefix) {
+	n.id = prefix;
+	(n.children || []).forEach(function (c) { donIdAssign(c, prefix + "/" + String(c.nm).replace(/\/+$/, "")); });
+	return n;
+}
+var DON_REPOS = [{ tag: "content", nm: "内容仓库" }, { tag: "site", nm: "站点仓库" }];
+function treeToDonut(trees) {
+	/* 两仓一起看总占用：一级 = 仓库 → 二级/三级 = 目录 → 叶子 = 文件 */
+	var repos = [], total = 0;
+	DON_REPOS.forEach(function (r) {
+		var items = donItems(trees && trees[r.tag]);
+		if (!items.length) return;
+		var n = donNode(items, r.nm, 1);
+		n.repo = r.tag;
+		repos.push(n); total += n.bytes;
+	});
+	repos.sort(function (a, b) { return b.bytes - a.bytes; });
+	var root = { nm: "全部储存", bytes: total, children: repos };
+	root.children.forEach(function (c) { donIdAssign(c, "r:" + c.repo); });
+	return root;
 }
 function cmtItemHtml(c) {
 	var src = String(c.url || "").replace(/^https?:\/\/[^/]+/, "") || "/";
@@ -2632,10 +2710,10 @@ function renderDash() {
 		kpiFrame("cmt", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.6 9.6 0 0 1-2.8-.4L3 21l1.5-4.4A8.4 8.4 0 0 1 3.6 11.5a8.4 8.4 0 0 1 8.4-8.4h.6a8.4 8.4 0 0 1 8.4 8.4z"/></svg>', "kpi-orange", "评论总数") +
 		"</div>" +
 		'<div class="dash-top">' +
-		'<div class="card"><div class="card-head"><h2 class="card-title">站点流量统计</h2><span class="card-sub" style="margin-left:auto">近 31 天 · Umami 分享 API</span></div><div class="card-body trend-body" id="dashTrend">' + loading() + '</div></div>' +
-		'<div id="dashDonut">' + loading("正在统计内容仓体积…") + "</div></div>" +
-		'<div class="dash-2col" style="margin-top:14px"><div><div class="card"><div class="card-head"><h2 class="card-title">最新评论</h2><button class="cmt-all" type="button" id="cmtAllBtn">查看全部</button></div><div class="cmt-list" id="dashCmts">' + loading() + '</div></div></div>' +
-		'<div><div class="card"><div class="card-head"><h2 class="card-title">最近提交</h2><button class="cmt-all" type="button" id="depAllBtn" title="打开 Vercel 构建历史">查看全部</button></div><div id="dashCommits">' + loading() + '</div></div></div></div>');
+		'<div class="card"><div class="card-head"><h2 class="card-title">站点流量统计</h2><span class="card-sub" style="margin-left:auto">近 31 天 · Umami 分享 API</span></div><div class="card-body trend-body" id="dashTrend">' + skTrend() + '</div></div>' +
+		'<div id="dashDonut">' + skDonutCard() + "</div></div>" +
+		'<div class="dash-2col" style="margin-top:14px"><div><div class="card"><div class="card-head"><h2 class="card-title">最新评论</h2><button class="cmt-all" type="button" id="cmtAllBtn">查看全部</button></div><div class="cmt-list" id="dashCmts">' + skList(4) + '</div></div></div>' +
+		'<div><div class="card"><div class="card-head"><h2 class="card-title">最近提交</h2><button class="cmt-all" type="button" id="depAllBtn" title="打开 Vercel 构建历史">查看全部</button></div><div id="dashCommits">' + skList(3) + '</div></div></div></div>');
 	$("#dashRefresh").addEventListener("click", function () { CACHE.posts = null; CACHE.comments = null; Object.keys(CACHE).forEach(function (k) { if (k.indexOf("ts:") === 0) delete CACHE[k]; }); renderDash(); });
 	$("#cmtAllBtn").addEventListener("click", function () { go("comments"); });
 	$("#depAllBtn").addEventListener("click", function () { window.open("https://vercel.com/yujing/~/deployments", "_blank", "noopener"); });
@@ -2647,10 +2725,11 @@ function renderDash() {
 		withTimeout(twikooRecent(), 8000),
 		withTimeout(umami("/pageviews", "startAt=" + (Date.now() - 31 * 86400000) + "&endAt=" + Date.now() + "&unit=day&timezone=Asia%2FShanghai"), 8000),
 		withTimeout(ghTree(REPO), 12000),
+		withTimeout(ghTree(SITE_REPO, SITE_BRANCH), 15000),
 		withTimeout(ghCommits(REPO, 3), 8000),
 	];
 	Promise.all(jobs).then(function (rs) {
-		var posts = rs[0], diary = rs[1], friends = rs[2], comments = rs[3], pv = rs[4], tree = rs[5], commits = rs[6];
+		var posts = rs[0], diary = rs[1], friends = rs[2], comments = rs[3], pv = rs[4], tree = rs[5], siteTree = rs[6], commits = rs[7];
 		var el1 = $("#kpi-post"), el2 = $("#kpi-diary"), el3 = $("#kpi-friend"), el4 = $("#kpi-cmt");
 		if (!el1) return;
 		if (posts) {
@@ -2674,8 +2753,9 @@ function renderDash() {
 		}
 		if (pv && pv.pageviews && pv.pageviews.length) $("#dashTrend").innerHTML = trendChartHtml(pv.pageviews.slice(-31));
 		else $("#dashTrend").innerHTML = '<div class="empty-block">暂无流量数据</div>';
-		if (tree) {
-			var node = treeToDonut(tree);
+		if (tree || siteTree) {
+			/* 两个仓库合成一张环形图；某一个拉失败也能照常显示另一个 */
+			var node = treeToDonut({ content: tree, site: siteTree });
 			$("#dashDonut").innerHTML = donutHtml("dashDonutCard");
 			donutDraw($("#dashDonutCard"), node, null);
 		} else $("#dashDonut").innerHTML = '<div class="card"><div class="card-body"><div class="empty-block">储存统计不可用</div></div></div>';
@@ -2695,7 +2775,12 @@ document.addEventListener("click", function (e) {
 		return;
 	}
 	var back = e.target.closest("[data-don-back]");
-	if (back) { go(current, true); return; }
+	if (back) {
+		/* 直接重画总览树（不再整页重渲染 → 不会闪骨架、也不重新拉接口） */
+		var box = back.closest("[data-donut]");
+		if (box && box.__root) donutDraw(box, box.__root, null);
+		return;
+	}
 	var d = e.target.closest("[data-drill]");
 	if (d) {
 		var root = d.closest("[data-donut]");
@@ -2703,7 +2788,8 @@ document.addEventListener("click", function (e) {
 			var id = d.getAttribute("data-drill");
 			var hit = null;
 			(root.__tree.children || []).forEach(function (c) { if (c.id === id || c.nm === id) hit = c; });
-			if (hit) donutDraw(root, hit, id); else donutDraw(root, root.__tree, null);
+			if (hit && hit.children && hit.children.length) donutDraw(root, hit, id);
+			else donutDraw(root, root.__tree, root.__crumb || null);   /* 叶子兜底：留在当前层，不画空图 */
 		}
 		return;
 	}
