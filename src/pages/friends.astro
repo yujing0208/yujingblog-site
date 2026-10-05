@@ -22,7 +22,9 @@ const items = getFriendsList();
 // 数据来自自建 Friend-Circle-Lite 的 link.json（GitHub Action 每 4 小时刷新，经 jsDelivr 分发）。
 // 构建期抓取；取不到就退化为「无状态」（不显示小点），不阻断部署。
 // 判定：不可达 或 已检测但无反链 → 迷失（红点，进底部折叠分组）；可达 → 绿点。
-const LINK_JSON = "https://cdn.jsdelivr.net/gh/yujing0208/Friend-Circle-Lite@page/link.json";
+// ⚠️ 用 raw 而不是 jsDelivr：jsDelivr 对 @分支 文件是 max-age=604800（7 天）强缓存，
+//   实测 Action 更新 link.json 后 CDN 仍返回旧版（has_backlink 全为 null）→ 状态点会全部退化成绿点。
+const LINK_JSON = "https://raw.githubusercontent.com/yujing0208/Friend-Circle-Lite/page/link.json";
 
 function normSite(u: string): string {
 	const raw = String(u || "").trim();
