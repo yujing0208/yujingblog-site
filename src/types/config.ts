@@ -95,6 +95,13 @@ export interface SiteConfig {
 		stickersDraggable?: boolean;
 		/** 下拉纸签文案 */
 		ctaText?: string;
+		/** 首屏个签下方的快捷链接行（文字链接，区别于右下角的社交书签图标条） */
+		links?: Array<{
+			/** 链接显示文字，如「个人主页」 */
+			name: string;
+			/** 跳转地址；外链以 http(s):// 开头会新窗口打开 */
+			url: string;
+		}>;
 	};
 
 	// 字体现在通过 astro.config.mjs 的 fonts 选项配置（Astro Font API）
