@@ -1,0 +1,42 @@
+# 从内容仓 content/data/friends.ts 自动生成站点仓 public/friend.json
+#
+# public/friend.json 是 Friend-Circle-Lite 的取数源（conf.yaml 的 json_url 指向
+# https://yujingblog.top/friend.json）。第 4 字段 linkpage 决定「反链检测」跑不跑，
+# 之前是靠手工探测补的 —— 加新友链就得人记得同步，属于唯一需要人工维护的环节。
+# 本 workflow 把它自动化：每周跑一次，新增站点自动探测友链页，内容没变就不提交。
+#
+# 凭据：GH_TOKEN 用内置 GITHUB_TOKEN 写站点仓；
+#       CONTENT_TOKEN 读内容仓（公开仓可回落 GITHUB_TOKEN，私有仓走 CONTENT_REPO_TOKEN）。
+
+name: Sync Friend JSON
+
+on:
+  schedule:
+    # 每周一 04:23 UTC（北京时间 12:23），避开整点高峰
+    - cron: "23 4 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: friend-json-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout（只为拿到 scripts/）
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate and commit friend.json if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTENT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: node scripts/gen-friend-json.mjs
