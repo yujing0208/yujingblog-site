@@ -707,7 +707,22 @@ details.fold .fold-body .fold { background: var(--bg-inset); }
 .thumb {
   border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-inset);
 }
-.thumb .ph { height: 104px; background: repeating-linear-gradient(45deg, var(--bg-hold), var(--bg-hold) 8px, var(--bg-card) 8px, var(--bg-card) 16px); }
+/* ⚠️ 必须显式写 background-size/position/repeat：
+   行内 style 只设 background-image，而上面的 background 简写会把
+   background-size 重置为 auto —— 大图就会按原始像素铺在左上角，
+   缩略图里只能看到一个角（2026-10-05 修复）。 */
+.thumb .ph {
+  height: 104px;
+  background: repeating-linear-gradient(45deg, var(--bg-hold), var(--bg-hold) 8px, var(--bg-card) 8px, var(--bg-card) 16px);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.thumb .ph[data-imgprev] { cursor: zoom-in; }
+.thumb .ph::after { content: "🔍"; position: absolute; right: 7px; bottom: 7px; font-size: 12px; line-height: 1;
+  padding: 3px 5px; border-radius: 6px; background: rgba(0,0,0,.42); color: #fff; opacity: 0; transition: opacity .15s; }
+.thumb .ph { position: relative; }
+.thumb .ph[data-imgprev]:hover::after { opacity: 1; }
 .thumb .cap { padding: 7px 9px; font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .thumb.on { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
 .thumb-meta { display: flex; justify-content: space-between; gap: 6px; padding: 0 9px 7px;
@@ -937,6 +952,68 @@ textarea.ed-area.drop-hot::after { content: "松开即上传到图床，并在�
   --tape-pink: #6d4756;
 }
 .md-preview > *:first-child { margin-top: 0; }
+
+/* ============================================================
+   2026-10-05 追加：图片预览灯箱 / 拖拽上传遮罩 / 表单图片预览 /
+                 相册照片操作 / 笔记本批量导入落区
+   ============================================================ */
+
+/* ---------------- 图片预览灯箱（编辑器全局共用） ---------------- */
+.lbx { position: fixed; inset: 0; z-index: 200; display: none; }
+.lbx.on { display: block; }
+.lbx-veil { position: absolute; inset: 0; background: rgba(10, 10, 12, .8); }
+.lbx-fig { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; padding: 22px 16px; }
+.lbx-img { max-width: min(96vw, 1560px); max-height: calc(100vh - 138px); width: auto; height: auto;
+  object-fit: contain; border-radius: 10px; background: var(--bg-card); box-shadow: var(--shadow-pop); }
+.lbx-cap { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  color: #f2f2f4; font-size: 12.5px; max-width: min(96vw, 1560px); }
+.lbx-nm { max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .82; }
+.lbx-ops { display: flex; flex-wrap: wrap; gap: 6px; }
+.lbx-ops .btn { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.24); color: #fff; text-decoration: none; }
+.lbx-ops .btn:hover { background: rgba(255,255,255,.26); }
+
+/* ---------------- 拖拽上传遮罩 ---------------- */
+.drag-veil { position: fixed; inset: 0; z-index: 190; display: none; pointer-events: none; }
+.drag-veil.on { display: block; }
+.drag-veil::before { content: ""; position: absolute; inset: 0; background: var(--accent-soft); opacity: .3; }
+.drag-veil-in { position: absolute; inset: 16px; border: 2px dashed var(--accent-strong); border-radius: 16px;
+  background: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 7px; color: var(--ink); box-shadow: var(--shadow-pop); text-align: center; padding: 20px; }
+.drag-veil-in b { font-size: 16px; }
+.drag-veil-in span { font-size: 12.5px; color: var(--ink-3); max-width: 520px; line-height: 1.7; }
+
+/* ---------------- 表单里的图片字段预览 ---------------- */
+.imgprev { display: none; margin-top: 8px; }
+.imgprev.on { display: block; }
+.imgprev img { display: block; max-height: 150px; max-width: 100%; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg-inset); object-fit: contain; cursor: zoom-in; }
+
+/* ---------------- 相册照片操作 ---------------- */
+.ph-wrap { position: relative; }
+.ph-wrap .ph-ops { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px;
+  opacity: 0; transition: opacity .15s; }
+.ph-wrap:hover .ph-ops, .ph-wrap:focus-within .ph-ops { opacity: 1; }
+.ph-ops .btn { padding: 2px 7px; font-size: 11px; background: rgba(0,0,0,.58); border-color: transparent; color: #fff; }
+.ph-ops .btn:hover { background: rgba(0,0,0,.78); }
+.ph-badge { position: absolute; left: 6px; top: 6px; z-index: 2; font-size: 10.5px;
+  padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); color: #fff; }
+.ph-wrap .thumb { border: 0; background: transparent; }
+
+/* ---------------- 值即图片地址的 tag：可点开预览 ---------------- */
+.tags .tag[data-img] { cursor: zoom-in; }
+
+/* ---------------- 笔记本批量导入落区 ---------------- */
+.nb-drop { border: 2px dashed var(--line); border-radius: var(--radius-sm); padding: 13px;
+  text-align: center; color: var(--ink-3); font-size: 12.5px; margin-bottom: 12px; line-height: 1.7; }
+.nb-drop b { color: var(--ink-2); }
+.nb-drop.on { border-color: var(--accent-strong); background: var(--accent-soft); color: var(--accent-strong); }
+.nb-drop.on b { color: var(--accent-strong); }
+
+/* ---------------- 相册：新版编辑面板 ---------------- */
+.al-row { display: flex; align-items: center; gap: 8px; }
+.al-row .list-main { min-width: 0; }
+.alb-empty-hint { font-size: 12px; color: var(--ink-3); line-height: 1.75; }
 .md-preview > *:last-child { margin-bottom: 0; }
 .md-preview p { margin: 1em 0; color: var(--ink); }
 .md-preview h1, .md-preview h2, .md-preview h3, .md-preview h4 {
