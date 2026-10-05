@@ -157,31 +157,47 @@
 		}
 		return collect("content/posts");
 	}
-	function loadPostsWithMeta() {
-		if (CACHE.posts) return Promise.resolve(CACHE.posts);
-		return listPosts().then(function (files) {
-			var out = [], idx = 0;
-			function worker() {
-				if (idx >= files.length) return Promise.resolve();
-				var f = files[idx++];
-				return GIT.getFile(OWNER, REPO, f.path, BRANCH).then(function (r) {
-					if (r) {
-						var p = MDM.parse(r.content);
-						out.push({ file: f, sha: r.sha, fm: p.data || {}, body: p.body || "", raw: r.content });
-					}
-					return worker();
-				});
+function loadPostsWithMeta() {
+	if (CACHE.posts) return Promise.resolve(CACHE.posts);
+	// 先试 localStorage 缓存（5 分钟 TTL），避免每次打开编辑器都全量拉文章全文
+	try {
+		var cached = localStorage.getItem('editor.postsCache');
+		if (cached) {
+			var ts = Number(localStorage.getItem('editor.postsCacheTs') || 0);
+			if (Date.now() - ts < 300000) {
+				CACHE.posts = JSON.parse(cached);
+				return Promise.resolve(CACHE.posts);
 			}
-			return Promise.all([worker(), worker(), worker(), worker(), worker()]).then(function () {
-				out.sort(function (a, b) {
-					var ka = a.file.path, kb = b.file.path;
-					return String(b.fm.published || "").localeCompare(String(a.fm.published || "")) || kb.localeCompare(ka);
-				});
-				CACHE.posts = out;
-				return out;
+		}
+	} catch (e) {}
+	return listPosts().then(function (files) {
+		var out = [], idx = 0;
+		function worker() {
+			if (idx >= files.length) return Promise.resolve();
+			var f = files[idx++];
+			return GIT.getFile(OWNER, REPO, f.path, BRANCH).then(function (r) {
+				if (r) {
+					var p = MDM.parse(r.content);
+					out.push({ file: f, sha: r.sha, fm: p.data || {}, body: p.body || "", raw: r.content });
+				}
+				return worker();
 			});
+		}
+		return Promise.all([worker(), worker(), worker(), worker(), worker()]).then(function () {
+			out.sort(function (a, b) {
+				var ka = a.file.path, kb = b.file.path;
+				return String(b.fm.published || "").localeCompare(String(a.fm.published || "")) || kb.localeCompare(ka);
+			});
+			CACHE.posts = out;
+			// 缓存到 localStorage，TTL 5 分钟
+			try {
+				localStorage.setItem('editor.postsCache', JSON.stringify(out));
+				localStorage.setItem('editor.postsCacheTs', String(Date.now()));
+			} catch (e) {}
+			return out;
 		});
-	}
+	});
+}
 	function countByPrefix(list, prefix) {
 		var n = 0; list.forEach(function (p) { if (p.file.path.indexOf(prefix) === 0) n++; }); return n;
 	}
@@ -327,29 +343,7 @@ window.EditorAuthGate = {
 		$("#stageMask").classList.toggle("on", on);
 	}
 
-	/* 内容仓库 → 站点仓库 的同步桥（2026-10-04 修"synchronize 假成功"）
-	 * 编辑器写的始终是内容仓库，而线上站点由站点仓库的 Vercel Git 部署线构建，
-	 * 因此写完内容仓库后必须把它的 HEAD 镜像到站点仓库（写 content-sha.txt + 推 mirror
-	 * commit），站点才会重新构建。同步服务：/api/editor-sync。 */
 	function shortSha(s) { return s ? String(s).slice(0, 7) : ""; }
-	function syncContent() {
-		return fetch("/api/editor-sync", {
-			method: "POST",
-			credentials: "same-origin",
-			headers: { "Content-Type": "application/json" },
-			body: "{}",
-		}).then(function (r) {
-			if (r.status === 401) {
-				if (window.EditorAuthGate && window.EditorAuthGate.require) window.EditorAuthGate.require();
-				return { error: "登录已过期，请重新输入编辑密码" };
-			}
-			if (r.status === 404) return { error: "同步服务未部署（/api/editor-sync 404），站点重新部署后即可用" };
-			return r.json().then(function (j) {
-				if (!r.ok) return { error: (j && j.message) || ("HTTP " + r.status) };
-				return j;
-			});
-		}).catch(function (e) { return { error: e.message }; });
-	}
 	function pushAll() {
 		var keys = Object.keys(STAGED);
 		if (!keys.length) { openStage(false); return; }
@@ -364,13 +358,13 @@ window.EditorAuthGate = {
 				STAGED = {}; syncStageUI(); renderStageList(); openStage(false);
 				CACHE.posts = null;
 				Object.keys(CACHE).forEach(function (k) { if (k.indexOf("ts:") === 0) delete CACHE[k]; });
-				// 内容已落到内容仓库；接着把 HEAD 镜像到站点仓库，等 Vercel 构建
-				return syncContent().then(function (info) { return info && info.error ? { error: info.error } : info; });
+				try { localStorage.removeItem('editor.postsCache'); localStorage.removeItem('editor.postsCacheTs'); } catch (e) {}
+				// 内容已落到内容仓库；内容仓 webhook 会通知站点仓重新构建，这里推完就结束
+				return { pushed: true, sha: r.sha };
 			})
 			.then(function (info) {
-				if (!info || info.error) { toast("已推送到内容仓库，但同步上线失败：" + ((info && info.error) || "未知")); return; }
-				if (info.synced) toast("推送成功，内容已是最新（" + shortSha(info.contentSha) + "）");
-				else toast("推送成功，已触发上线（站点 commit " + shortSha(info.siteCommit) + "）");
+				if (!info || info.error) { toast("推送失败：" + ((info && info.error) || "未知")); return; }
+				toast("推送成功（" + shortSha(info.sha) + "），内容将在 30 秒内自动上线");
 				if (current === "dash") renderDash();
 				else loadView(current, true);
 			})
@@ -1684,8 +1678,8 @@ document.addEventListener("click", function (e) {
 /* ================= 发布状态 ================= */
 function renderRelease() {
 	setView("release",
-		pageHead("up", "发布状态", 'GitHub commit status + Vercel · 内容仓改动在「发布状态」一键同步上线',
-			'<button class="btn" type="button" id="relRefresh">↻ 刷新</button><button class="btn btn-primary" type="button" id="relSyncBtn">立即同步</button><button class="btn btn-primary" type="button" id="relVercel">打开 Vercel 构建历史</button>') +
+		pageHead("up", "发布状态", 'GitHub commit status + Vercel · 内容仓推送后自动触发站点构建',
+			'<button class="btn" type="button" id="relRefresh">↻ 刷新</button><button class="btn btn-primary" type="button" id="relSyncBtn">打开站点构建</button><button class="btn btn-primary" type="button" id="relVercel">打开 Vercel 构建历史</button>') +
 		'<div class="stat-row">' +
 		'<div class="card stat"><div class="stat-k">当前状态</div><div class="stat-v" style="font-size:20px;color:var(--ok)" id="relState">检测中…</div><div class="stat-f">Vercel · Production</div></div>' +
 		'<div class="card stat"><div class="stat-k">站点仓最新提交</div><div class="stat-v mono" style="font-size:17px" id="relSiteSha">…</div><div class="stat-f">yujingblog-site · main</div></div>' +
@@ -1697,12 +1691,7 @@ function renderRelease() {
 	$("#relVercel").addEventListener("click", function () { window.open("https://vercel.com/yujing/~/deployments", "_blank", "noopener"); });
 	$("#relRefresh").addEventListener("click", function () { renderRelease(); });
 	$("#relSyncBtn").addEventListener("click", function () {
-		var b = this; b.disabled = true; b.textContent = "同步中…";
-		syncContent().then(function (info) {
-			if (!info || info.error) toast("同步失败：" + ((info && info.error) || "未知"));
-			else toast(info.synced ? "内容已是最新（" + shortSha(info.contentSha) + "）" : "已触发站点构建（" + shortSha(info.siteCommit) + "）");
-			renderRelease();
-		}).finally(function () { b.disabled = false; b.textContent = "立即同步"; });
+		window.open("https://github.com/yujing0208/yujingblog-site/actions", "_blank", "noopener");
 	});
 	ghCommits(REPO, 8).then(function (cs) {
 		$("#relSha").textContent = cs.length ? String(cs[0].sha).slice(0, 7) : "—";
