@@ -2271,6 +2271,9 @@ var SETTINGS_CN = {
 		"stickers[].size": ["显示尺寸", "单位 px"],
 		stickersDraggable: ["贴纸可拖拽", "允许访客拖动首屏上的贴纸"],
 		ctaText: ["下拉纸签文案"],
+		links: ["首屏快捷链接", "个签下方的一排文字链接（区别于右下角社交书签图标条）"],
+		"links[].name": ["显示文字", "链接上展示的文字，如「个人主页」"],
+		"links[].url": ["跳转地址", "站内写 /xxx/，站外写完整 https://（会以新窗口打开）"],
 	},
 	navbar: {
 		links: ["菜单项", "最多一层嵌套：children[] 与父级同构递归"],
