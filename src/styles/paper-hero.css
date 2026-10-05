@@ -346,27 +346,35 @@ body.is-hero-active::before {
 }
 
 /* ---------------------------------------------------------------------------
- * 4.5 首屏个签下方快捷链接行（纯文字 + 波浪下划线，无边框/无框）
+ * 4.5 首屏个签下方快捷链接行（照搬原版 .home-hero__nav，纯文字 + 波浪下划线）
+ *
+ *  规则来源：homulilly.com/css/style.css 的 .home-hero__nav / .home-hero__nav-link
+ *  及其 .home-hero--image / .dark-mode 变体，逐条照抄（不自行发挥）：
+ *    · 无边框、无胶囊底 —— 波浪线用 text-decoration: underline wavy 画，
+ *      粗细/间距/偏移沿原版（underline-offset 4px、无 thickness 覆盖）
+ *    · 与「波浪分隔线」二选一：原版有 nav 时不渲染 .home-hero__divider，
+ *      见 PaperHero.astro（2026-10-05 实拍修正：两者同渲染会让链接下多一条线）
+ *  变量沿用本文件既有映射约定：--dash → --paper-dash。
  * ------------------------------------------------------------------------ */
 .home-hero__nav {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	align-items: center;
-	gap: 12px 22px;
-	margin: 16px 0 0;
+	gap: 16px;
+	margin: 16px auto 0;
 }
 
 .home-hero__nav-link {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 8px;
+	color: var(--muted, #8a8678);
 	font-size: 14px;
-	line-height: 1.4;
-	color: var(--ink-soft, #4a5751);
+	font-weight: 500;
 	text-decoration: underline;
 	text-decoration-style: wavy;
-	text-decoration-thickness: 1px;
+	text-decoration-color: var(--paper-dash, rgba(89, 62, 30, 0.24));
 	text-underline-offset: 4px;
-	text-decoration-color: var(--color-accent-strong, #b5742f);
 	transition:
 		color 0.2s ease,
 		text-decoration-color 0.2s ease;
@@ -374,31 +382,21 @@ body.is-hero-active::before {
 
 .home-hero__nav-link:hover,
 .home-hero__nav-link:focus-visible {
-	color: var(--color-accent-strong, #b5742f);
-	text-decoration-color: var(--color-accent-strong, #b5742f);
+	color: var(--color-accent-strong);
+	text-decoration-color: var(--color-accent);
 	outline: none;
 }
 
-/* 图片模式（本站默认）：资料卡是半透玻璃暗底，链接文字用浅色 */
+/* 图片模式（本站默认）：资料卡是半透玻璃暗底，链接用浅色 */
 .home-hero--image .home-hero__nav-link {
-	color: rgba(255, 253, 246, 0.92);
-	text-decoration-color: rgba(255, 248, 236, 0.55);
+	color: rgba(255, 253, 246, 0.6);
+	text-decoration-color: rgba(255, 253, 246, 0.25);
 }
+
 .home-hero--image .home-hero__nav-link:hover,
 .home-hero--image .home-hero__nav-link:focus-visible {
 	color: #fff;
-	text-decoration-color: rgba(255, 248, 236, 0.95);
-}
-
-/* 暗色（非图模式）：资料卡是深色，链接文字用浅色 */
-:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link {
-	color: var(--ink-soft);
-	text-decoration-color: var(--fp-accent, #c98a3c);
-}
-:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link:hover,
-:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link:focus-visible {
-	color: var(--fp-accent-muted, #e6b277);
-	text-decoration-color: var(--fp-accent-muted, #e6b277);
+	text-decoration-color: #fff;
 }
 
 /* ---------------------------------------------------------------------------
@@ -954,6 +952,18 @@ body.is-hero-active::before {
 		color: var(--ink-soft, #4a5751);
 	}
 
+	/* 手机端丢图后卡片变亮米纸，快捷链接随之转深色（照搬原版同段） */
+	.home-hero--image:not(.home-hero--mobile-image) .home-hero__nav-link {
+		color: var(--muted, #8a8678);
+		text-decoration-color: var(--paper-dash, rgba(89, 62, 30, 0.24));
+	}
+
+	.home-hero--image:not(.home-hero--mobile-image) .home-hero__nav-link:hover,
+	.home-hero--image:not(.home-hero--mobile-image) .home-hero__nav-link:focus-visible {
+		color: var(--color-accent-strong);
+		text-decoration-color: var(--color-accent);
+	}
+
 	.home-hero--image:not(.home-hero--mobile-image)
 		.home-hero__tools
 		.home-hero__tool {
@@ -1221,4 +1231,28 @@ body.is-hero-active .top-gradient-highlight {
 :root.dark .home-hero:not(.home-hero--image) .home-hero__arrow:hover,
 :root.dark .home-hero:not(.home-hero--image) .home-hero__arrow:focus-visible {
 	color: #54311f;
+}
+
+/* 快捷链接行暗色覆盖（照搬原版 .dark-mode 段的两层写法：
+   先给通用规则，再用 .home-hero--image 抬特异度覆盖图片模式） */
+:root.dark .home-hero__nav-link {
+	color: var(--muted, #797f8c);
+	text-decoration-color: rgba(255, 255, 255, 0.12);
+}
+
+:root.dark .home-hero__nav-link:hover,
+:root.dark .home-hero__nav-link:focus-visible {
+	color: var(--color-accent-muted);
+	text-decoration-color: var(--color-accent);
+}
+
+:root.dark .home-hero--image .home-hero__nav-link {
+	color: rgba(255, 253, 246, 0.85);
+	text-decoration-color: rgba(255, 253, 246, 0.35);
+}
+
+:root.dark .home-hero--image .home-hero__nav-link:hover,
+:root.dark .home-hero--image .home-hero__nav-link:focus-visible {
+	color: #fff;
+	text-decoration-color: #fff;
 }
