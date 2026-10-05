@@ -17,6 +17,44 @@
 </style>
 </head>
 <body>
+<script>
+  /* ── WebGL2 守卫（必须在 l2d-widget 之前）─────────────────────────────
+     Live2D Cubism SDK 内部只调用 canvas.getContext('webgl2')，
+     拿不到上下文时会执行原生 alert('Cannot initialize WebGL. This browser does not support.')，
+     对访客就是一条没头没尾的弹窗。这里做两件事：
+       1) 提前探测 WebGL2 能力，不支持就干脆不创建 widget（UI 静默，看板娘不出现）；
+       2) 兜底劫持 alert，把 SDK 那句弹窗降级成控制台日志（万一探测通过但初始化仍失败）。
+     探测出来的 ad-hoc 上下文用完立即 loseContext 释放，不占用 WebGL 上下文名额。 */
+  (function () {
+    var origAlert = window.alert;
+    window.alert = function (msg) {
+      if (typeof msg === 'string' && msg.indexOf('Cannot initialize WebGL') !== -1) {
+        console.warn('[pio] Live2D 无法初始化 WebGL2，已跳过渲染（弹窗已抑制）。' +
+          '若想找回看板娘，请检查浏览器是否开启了硬件加速，或访问 edge://gpu / chrome://gpu 看 WebGL2 状态。');
+        return;
+      }
+      return origAlert.apply(window, arguments);
+    };
+
+    window.__pioWebGL2 = (function () {
+      try {
+        var c = document.createElement('canvas');
+        var gl = c.getContext('webgl2');
+        if (!gl) return false;
+        var lose = gl.getExtension('WEBGL_lose_context');
+        if (lose) lose.loseContext();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })();
+
+    if (!window.__pioWebGL2) {
+      console.warn('[pio] 当前浏览器/设备没有可用的 WebGL2，看板娘（Live2D）不会渲染。' +
+        'Live2D Cubism 硬性要求 WebGL2；开启浏览器硬件加速后重开页面即可恢复。');
+    }
+  })();
+</script>
 <script src="/pio/l2d-widget.min.js"></script>
 <script>
   var widgetInstance = null;
@@ -209,6 +247,14 @@
       return;
     }
     if (loadingConfigKey === configKey) return;
+
+    // 没有 WebGL2 就别把控制权交给 Cubism：它只会 alert 一句然后什么也画不出来。
+    if (!window.__pioWebGL2) {
+      loadingConfigKey = '';
+      activeConfigKey = '';
+      try { parent.postMessage({ type: 'l2d-unsupported' }, '*'); } catch (err) {}
+      return;
+    }
 
     loadingConfigKey = configKey;
     if (widgetInstance) destroyWidget();

@@ -87,7 +87,7 @@ const assetVer = Date.now();
 
 <iframe
 	id="l2d-iframe"
-	src="/pio/live2d-host?v=2"
+	src="/pio/live2d-host?v=3"
 	allowtransparency="true"
 	style={"position: fixed; z-index: 999; pointer-events: none; border: none; bottom: 0;"
 		+ (isRight ? " right: 0;" : " left: 0;")
@@ -162,9 +162,13 @@ const assetVer = Date.now();
 			let currentConfigKey = "";
 			let pendingInit: number | undefined;
 			let swupHooksRegistered = false;
+			// 浏览器没有 WebGL2 时 iframe 会回一条 l2d-unsupported：永久隐藏，
+			// 别在页面上留一个透明空壳（它永远等不到 l2d-loaded）。
+			let webglUnsupported = false;
 
 			function applyVisibility() {
 				if (!currentEl) return;
+				if (webglUnsupported) { currentEl.style.display = "none"; return; }
 				if (currentHiddenOnMobile && window.innerWidth <= PIO_MOBILE_BREAKPOINT) currentEl.style.display = "none";
 				else currentEl.style.display = "";
 			}
@@ -183,6 +187,11 @@ const assetVer = Date.now();
 
 			function handleMessage(e: MessageEvent) {
 				if (!currentEl || e.source !== currentEl.contentWindow) return;
+				if (e.data.type === "l2d-unsupported") {
+					webglUnsupported = true;
+					applyVisibility();
+					return;
+				}
 				if (e.data.type === "l2d-loaded") {
 					const h = e.data.contentHeight || 500;
 					currentEl.style.height = h + "px";

@@ -2148,7 +2148,38 @@ function importNotebookMd(files) {
 /* ================= 站点与外观（settings · tabs + 递归折叠表单） ================= */
 var SETTINGS_FILES = ["site", "hero", "navbar", "footer", "profile", "comment", "music", "wallpaper", "license"];
 var SETTINGS_LOADED = {};
-function settingsVarName(file) { return file.charAt(0).toUpperCase() + file.slice(1) + "Config"; }
+/** 内容仓里的真实写法是 `const site: SiteSettings = {…}; export default site;`，
+ *  变量名是**小写 camelCase**（site / hero / navbar …），根本不是 `SiteConfig`。
+ *  早先这里只按文件名硬拼 `XxxConfig`，于是 9 个配置文件全部报「无法解析」。 */
+function settingsVarCandidates(file) {
+	var cap = file.charAt(0).toUpperCase() + file.slice(1);
+	return [file, cap + "Settings", cap + "Config", cap];
+}
+/** 解析 settings 源文件的数据段 → { val, mode, varName }（varName=null 表示只读、无法回写）
+ *  依次尝试：① 候选变量名（TSIO 支持 `const x = {…}` / `export const x = {…}`）
+ *            ② `export default <标识符>;` → 去抽那个标识符的 const
+ *            ③ `export default { … };` 内联字面量（只能读） */
+function resolveSettingsSource(raw, file) {
+	if (typeof raw !== "string" || !raw) return null;
+	var cands = settingsVarCandidates(file);
+	for (var i = 0; i < cands.length; i++) {
+		var v = TSIO.extract(raw, cands[i]);
+		if (v && typeof v === "object") return { val: v, varName: cands[i], mode: "var" };
+	}
+	var m = raw.match(/export\s+default\s+([A-Za-z_$][\w$]*)\s*;/);
+	if (m) {
+		var dv = TSIO.extract(raw, m[1]);
+		if (dv && typeof dv === "object") return { val: dv, varName: m[1], mode: "var" };
+	}
+	m = raw.match(/export\s+default\s*(\{[\s\S]*\})\s*;?\s*$/);
+	if (m) {
+		try {
+			var lv = new Function("return (" + m[1] + ");")();
+			if (lv && typeof lv === "object") return { val: lv, varName: null, mode: "default-literal" };
+		} catch (e) { /* 落到调用方统一报错 */ }
+	}
+	return null;
+}
 function renderSettings() {
 	var v = $("#v-settings");
 	v.innerHTML = pageHead("sys", "站点与外观", '<span class="mono">content/settings/</span> · 9 个文件 · 最深 4 层 → 递归折叠表单') +
@@ -2169,17 +2200,15 @@ function showSettingsTab(file) {
 	var body = $("#setBody");
 	if (SETTINGS_LOADED[file]) { renderSettingsBody(file); return; }
 	body.innerHTML = '<div class="empty-block">加载 ' + file + '.ts …</div>';
-	var varName = settingsVarName(file);
 	GIT.getFile(OWNER, REPO, "content/settings/" + file + ".ts", BRANCH).then(function (f) {
 		if (!f) { body.innerHTML = '<div class="error-block">settings/' + file + '.ts 不存在</div>'; return; }
-		var val = TSIO.extract(f.content, varName);
-		var mode = "var";
-		if (val === null) {
-			var m = f.content.match(/export\s+default\s+\{([\s\S]*)\};?\s*$/);
-			if (m) { try { val = eval("({" + m[1] + "})"); mode = "default"; } catch (e) { val = null; } }
+		var r = resolveSettingsSource(f.content, file);
+		if (!r) {
+			body.innerHTML = '<div class="error-block">无法解析 settings/' + esc(file) + '.ts 的数据段' +
+				'<br><span class="f-hint">已尝试：' + esc(settingsVarCandidates(file).join(" / ")) + '、export default &lt;标识符&gt;、export default {…}</span></div>';
+			return;
 		}
-		if (val === null || typeof val !== "object") { body.innerHTML = '<div class="error-block">无法解析 ' + varName + '</div>'; return; }
-		SETTINGS_LOADED[file] = { raw: f.content, sha: f.sha, val: val, mode: mode };
+		SETTINGS_LOADED[file] = { raw: f.content, sha: f.sha, val: r.val, mode: r.mode, varName: r.varName };
 		renderSettingsBody(file);
 	}).catch(function (e) { body.innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
 }
@@ -2188,16 +2217,19 @@ function renderSettingsBody(file) {
 	var body = $("#setBody");
 	if (!ctx || !body) return;
 	var html = '<div id="setForm">' + settingsFormHtml(file, ctx.val, "") + '</div>';
-	if (ctx.mode === "var") {
-		html += '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" type="button" id="setSave">💾 存入暂存区（' + esc(file) + '.ts）</button></div>';
+	if (ctx.varName) {
+		html += '<div class="f-hint" style="margin-top:10px">回写位置：<span class="mono">' + esc(file) + '.ts</span> → <span class="mono">' + esc(ctx.varName) + '</span>' +
+			'（只替换数据段，注释 / interface / import 一字不动）</div>';
+		html += '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary" type="button" id="setSave">💾 存入暂存区（' + esc(file) + '.ts）</button></div>';
 	} else {
-		html += '<div class="f-hint" style="margin-top:10px">该文件是 export default 写法，无法精确回写，暂不支持保存。</div>';
+		html += '<div class="f-hint" style="margin-top:10px">该文件是 <span class="mono">export default {…}</span> 内联字面量写法，没有可安全回写的变量名，这里只读。</div>';
 	}
 	body.innerHTML = html;
 	bindSettingsFields(file);
 	var sb = $("#setSave");
 	if (sb) sb.addEventListener("click", function () {
-		var content = TSIO.replace(ctx.raw, settingsVarName(file), ctx.val);
+		var content = TSIO.replace(ctx.raw, ctx.varName, ctx.val);
+		if (!content) { toast("回写失败：在 " + file + ".ts 里找不到 " + ctx.varName + " 的数据段"); return; }
 		DIRTY = false;
 		stagePut("content/settings/" + file + ".ts", content, "站点与外观 · " + file);
 		toast("已暂存：" + file + ".ts");
@@ -2209,7 +2241,9 @@ function settingsFormHtml(file, obj, prefix) {
 		var val = obj[k];
 		var fk = prefix + k;
 		if (val && typeof val === "object" && !Array.isArray(val)) return; /* 折叠区单独渲染 */
-		if (Array.isArray(val) && val.length && typeof val[0] === "object") return;
+		/* 数组：空数组、对象数组都交给下面折叠区 —— 别用单行 input 承接，
+		   否则「一行字符串」会被写回数组位置，把元素类型写坏。 */
+		if (Array.isArray(val) && (val.length === 0 || (val[0] && typeof val[0] === "object"))) return;
 		h += settingsFieldHtml(k, fk, val);
 	});
 	h += '</div>';
@@ -2218,8 +2252,11 @@ function settingsFormHtml(file, obj, prefix) {
 		var fk = prefix + k;
 		if (val && typeof val === "object" && !Array.isArray(val)) {
 			h += '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' + esc(k) + ' <span class="f-key">' + fk + '</span></summary><div class="fold-body">' + settingsFormHtml(file, val, fk + ".") + '</div></details>';
-		} else if (Array.isArray(val) && val.length && typeof val[0] === "object") {
-			h += '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' + esc(k) + ' <span class="f-key">' + fk + '</span><span class="fold-meta">数组 · ' + val.length + ' 项</span></summary><div class="fold-body">';
+		} else if (Array.isArray(val) && (val.length === 0 || (val[0] && typeof val[0] === "object"))) {
+			h += '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' + esc(k) + ' <span class="f-key">' + fk + '</span><span class="fold-meta">' + (val.length ? '数组 · ' + val.length + ' 项' : '空数组') + '</span></summary><div class="fold-body">';
+			if (!val.length) {
+				h += '<div class="f-hint">目前是空数组。空数组没有元素可以推断类型，编辑器不在这里新增项（避免写成字符串数组）；要加内容请在 GitHub 上直接改。</div>';
+			}
 			val.forEach(function (item, i) {
 				h += '<div class="block"><div class="block-head" style="display:flex;gap:10px;align-items:center"><span>⠿</span>' + esc(k) + '[' + i + ']<div style="flex:1"></div></div><div class="card-body">' + settingsFormHtml(file, item, fk + "." + i + ".") + '</div></div>';
 			});
@@ -2230,6 +2267,14 @@ function settingsFormHtml(file, obj, prefix) {
 }
 function settingsFieldHtml(label, fk, val) {
 	var type = typeof val;
+	/* 原始类型数组（images / desktop / mobile / imageOverlay …）：
+	   单行 input 装不下，改成一行的 textarea，回读时按行拆回数组并保留元素类型。 */
+	if (Array.isArray(val)) {
+		var rows = Math.min(8, Math.max(2, val.length || 2));
+		var isNum = val.length > 0 && val.every(function (x) { return typeof x === "number"; });
+		return '<div class="f wide"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span><span class="fold-meta">数组 · 每行一项' + (isNum ? ' · 数字' : '') + '</span></label>' +
+			'<textarea class="inp" rows="' + rows + '" data-sk="' + esc(fk) + '" data-skind="arr"' + (isNum ? ' data-snum="1"' : '') + '>' + esc(val.join("\n")) + '</textarea></div>';
+	}
 	if (type === "boolean") {
 		return '<div class="f"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><label class="sw"><input type="checkbox" data-sk="' + esc(fk) + '"' + (val ? " checked" : "") + '><i></i></label></div>';
 	}
@@ -2256,7 +2301,19 @@ function bindSettingsFields(file) {
 			var obj = ctx.val;
 			for (var i = 0; i < path.length - 1; i++) obj = obj[path[i]];
 			var k = path[path.length - 1];
-			obj[k] = inp.type === "checkbox" ? inp.checked : (inp.classList.contains("num") ? Number(inp.value) : inp.value);
+			if (inp.type === "checkbox") {
+				obj[k] = inp.checked;
+			} else if (inp.dataset.skind === "arr") {
+				/* 数组：一行一项 → 保持原元素类型（数字数组仍写数字），空行丢弃 */
+				var lines = inp.value.split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s !== ""; });
+				obj[k] = inp.dataset.snum === "1"
+					? lines.map(Number).filter(function (n) { return !isNaN(n); })
+					: lines;
+			} else if (inp.classList.contains("num")) {
+				obj[k] = Number(inp.value);
+			} else {
+				obj[k] = inp.value;
+			}
 			DIRTY = true;
 		});
 	});
