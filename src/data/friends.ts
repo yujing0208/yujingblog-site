@@ -162,17 +162,6 @@ const friendsData: FriendItem[] = [
 			"博客"
 		],
 		id: 22
-	},
-	{
-		title: "Homulilly",
-		imgurl: "https://homulilly.com/images/avatar.jpg",
-		desc: "圆环之外，仍有未尽之愿。",
-		siteurl: "https://homulilly.com",
-		rss: "https://homulilly.com/atom.xml",
-		tags: [
-			"博客"
-		],
-		id: 25
 	}
 ];
 export function getFriendsList(): FriendItem[] {
