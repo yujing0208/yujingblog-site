@@ -26,6 +26,8 @@
 name: Mirror Content
 
 on:
+  repository_dispatch:
+    types: [content-updated]
   schedule:
     - cron: "0,30 * * * *"
   workflow_dispatch: {}
