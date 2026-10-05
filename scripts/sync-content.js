@@ -155,7 +155,13 @@ const contentMappings = [
 	{ src: ["content/settings", "settings"], dest: "src/settings" },
 	// 可下载附件（PPT 原件 / PDF 等）。与 content/images 分开：
 	// images 面向文章插图（会被 Astro 图片优化），assets 面向原样分发的二进制文件。
-	{ src: ["content/assets", "assets"], dest: "public/assets" },
+	// ⚠️ merge：内容仓的 assets 只能「往 public/assets 里加文件」，不能整体替换。
+	// 站点仓自己也在 public/assets 下发资源（banner/ home/ friends/ projects/ js/ css/…），
+	// 且 hero.ts、wallpaper.ts、friends.astro 等直接引用它们。
+	// 2026-10-03 内容仓新增 content/assets/campaign-ppt/ 后，这里触发了整体替换
+	// （原目录被改名成 assets.backup），站点仓那批资源被挤出构建产物 ——
+	// 表现为线上 /assets/** 除 campaign-ppt 外全部 404（友链顶图就是这么崩的）。
+	{ src: ["content/assets", "assets"], dest: "public/assets", merge: true },
 ];
 
 const resolved = [];
@@ -182,6 +188,22 @@ for (const mapping of contentMappings) {
 	resolved.push({ mapping, srcRel });
 
 	const destPath = path.join(rootDir, mapping.dest);
+
+	// 合并模式：不备份、不软链，把内容仓的文件叠加到目标目录上。
+	// 目标若残留上一轮的软链（本地重复执行才会出现），先拆掉并还原备份，
+	// 否则 copyRecursive 会直接写进内容仓本体、污染 content/assets。
+	if (mapping.merge) {
+		if (fs.existsSync(destPath) && fs.lstatSync(destPath).isSymbolicLink()) {
+			fs.unlinkSync(destPath);
+			const bk = `${destPath}.backup`;
+			if (fs.existsSync(bk)) fs.renameSync(bk, destPath);
+		}
+		copyRecursive(srcPath, destPath);
+		console.log(
+			`已合并内容：${srcRel} -> ${mapping.dest}（保留站点仓原有文件）`,
+		);
+		continue;
+	}
 
 	// 如果目标已存在且不是符号链接,备份它
 	if (fs.existsSync(destPath) && !fs.lstatSync(destPath).isSymbolicLink()) {
