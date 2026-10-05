@@ -3,7 +3,6 @@
     [
       "MEMZGBL的博客",
       "https://blog.mcstarland.top",
-      "https://blog.mcstarland.top/friends/",
       "https://blog.mcstarland.top/assets/home/default-logo.png"
     ],
     [
@@ -65,7 +64,7 @@
     [
       "UpXuu's blog",
       "https://upxuu.com",
-      "https://upxuu.com/links/",
+      "https://upxuu.com/friends",
       "https://upxuu.com/images/me.jpg"
     ],
     [
@@ -106,7 +105,6 @@
     [
       "LonelyBingの小窝",
       "https://lonelybing.top",
-      "https://lonelybing.top/friends/",
       "https://img.lonelybing.top/file/头像/1789400498937.jpg"
     ],
     [
@@ -124,12 +122,12 @@
     [
       "Nevino's blog",
       "https://nevino2333.pages.dev/",
-      "https://nevino2333.pages.dev/links/",
       "https://nevino2333.pages.dev/assets/Avater.png"
     ],
     [
       "星空驿站 Starlight Station",
       "https://baiyangmu.xyz",
+      "https://baiyangmu.xyz/links",
       "https://baiyangmu.xyz/static/favicon-96x96.png"
     ],
     [
@@ -137,6 +135,12 @@
       "https://homulilly.com",
       "https://homulilly.com/links/",
       "https://homulilly.com/images/avatar.jpg"
+    ],
+    [
+      "Brandon's Blog",
+      "https://blog.oopss.top",
+      "https://blog.oopss.top/friends/",
+      "https://cdn.oopss.top/icon.jpg"
     ]
   ]
 }
