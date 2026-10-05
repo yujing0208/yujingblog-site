@@ -54,6 +54,295 @@
 		__toastTm = setTimeout(function () { t.classList.remove("on"); }, 2400);
 	}
 
+	/* ================= 复制 / 图片预览灯箱（编辑器全局共用） ================= */
+	function legacyCopy(txt) {
+		try {
+			var ta = document.createElement("textarea");
+			ta.value = txt;
+			ta.setAttribute("readonly", "");
+			ta.style.position = "fixed";
+			ta.style.left = "-9999px";
+			document.body.appendChild(ta);
+			ta.select();
+			var ok = document.execCommand("copy");
+			document.body.removeChild(ta);
+			return ok;
+		} catch (e) { return false; }
+	}
+	function copyText(txt) {
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			return navigator.clipboard.writeText(txt)
+				.then(function () { return true; })
+				.catch(function () { return legacyCopy(txt); });
+		}
+		return Promise.resolve(legacyCopy(txt));
+	}
+	/** 看起来像图片地址（外链 http(s) 或站内 /images/ 静态路径） */
+	function isImgSrc(s) {
+		var t = String(s == null ? "" : s).trim();
+		if (!t) return false;
+		if (/^https?:\/\//i.test(t)) return true;
+		return /^\/images\//.test(t) || /^\/pio\//.test(t);
+	}
+	/**
+	 * 打开大图预览灯箱：object-fit:contain ⇒ 完整图片（不是裁切的一角）。
+	 * 底部带 复制 Markdown / HTML / 直链 + 新窗口打开。
+	 */
+	function openImagePreview(src, name) {
+		if (!src) return;
+		var box = document.getElementById("__imgLbx");
+		if (!box) {
+			box = el("div", "lbx");
+			box.id = "__imgLbx";
+			box.innerHTML =
+				'<div class="lbx-veil" data-lbx-close></div>' +
+				'<figure class="lbx-fig"><img class="lbx-img" alt="" data-lbx-img>' +
+				'<figcaption class="lbx-cap"><span class="lbx-nm" data-lbx-name></span>' +
+				'<span class="lbx-ops">' +
+				'<button class="btn btn-sm" type="button" data-lbx-copy="md">复制 Markdown</button>' +
+				'<button class="btn btn-sm" type="button" data-lbx-copy="html">复制 HTML</button>' +
+				'<button class="btn btn-sm" type="button" data-lbx-copy="url">复制直链</button>' +
+				'<a class="btn btn-sm" data-lbx-open target="_blank" rel="noopener">新窗口打开</a>' +
+				'<button class="btn btn-sm" type="button" data-lbx-close>关闭</button>' +
+				"</span></figcaption></figure>";
+			document.body.appendChild(box);
+			box.addEventListener("click", function (e) {
+				if (e.target.closest("[data-lbx-close]")) { box.classList.remove("on"); return; }
+				var cp = e.target.closest("[data-lbx-copy]");
+				if (!cp) return;
+				var u = box.getAttribute("data-src") || "";
+				var kind = cp.getAttribute("data-lbx-copy");
+				var txt = kind === "md" ? "![](" + u + ")" : kind === "html" ? '<img src="' + u + '">' : u;
+				copyText(txt).then(function (ok) { toast(ok ? "已复制" : "复制失败，请手动选择"); });
+			});
+			document.addEventListener("keydown", function (e) {
+				if (e.key === "Escape" && box.classList.contains("on")) box.classList.remove("on");
+			});
+		}
+		box.setAttribute("data-src", src);
+		box.querySelector("[data-lbx-img]").setAttribute("src", src);
+		box.querySelector("[data-lbx-name]").textContent = name || String(src).split("/").pop() || "";
+		box.querySelector("[data-lbx-open]").setAttribute("href", src);
+		box.classList.add("on");
+	}
+	/** 表单 image 字段下方的缩略预览 */
+	function setImgPrev(box, url) {
+		if (!box) return;
+		if (isImgSrc(url)) {
+			box.classList.add("on");
+			box.innerHTML = '<img src="' + esc(String(url).trim()) + '" alt="" loading="lazy">';
+		} else {
+			box.classList.remove("on");
+			box.innerHTML = "";
+		}
+	}
+
+	/* ================= 全局拖拽：图片 → 图床 → 插入外链 ================= */
+	var LAST_TA = null;
+	function isImageFile(f) {
+		if (!f) return false;
+		if (/^image\//i.test(f.type || "")) return true;
+		return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(f.name || "");
+	}
+	function isMdFile(f) {
+		if (!f) return false;
+		if (/\.(md|markdown|mdx|txt)$/i.test(f.name || "")) return true;
+		return f.type === "text/markdown";
+	}
+	function readTextFile(file) {
+		return new Promise(function (res, rej) {
+			var r = new FileReader();
+			r.onload = function () { res(String(r.result || "")); };
+			r.onerror = function () { rej(new Error("读取失败")); };
+			r.readAsText(file, "utf-8");
+		});
+	}
+	/** 在光标处插入文本（并广播 input 事件，触发表单绑定） */
+	function insertAtCursor(ta, text) {
+		if (!ta) return false;
+		var s = ta.selectionStart, e2 = ta.selectionEnd;
+		if (typeof s !== "number" || typeof e2 !== "number") { s = e2 = ta.value.length; }
+		var before = ta.value.slice(0, s), after = ta.value.slice(e2);
+		var pre = (before && !/\n$/.test(before)) ? "\n" : "";
+		var suf = (after && !/^\n/.test(after)) ? "\n" : "";
+		ta.value = before + pre + text + suf + after;
+		var pos = (before + pre + text + suf).length;
+		try { ta.setSelectionRange(pos, pos); ta.focus(); } catch (e) { /* 忽略 */ }
+		ta.dispatchEvent(new Event("input", { bubbles: true }));
+		DIRTY = true;
+		return true;
+	}
+	/** 把 URL 写进 input[data-fk]（含 image 字段预览刷新） */
+	function setFieldValue(inp, v) {
+		if (!inp) return;
+		inp.value = v;
+		var f = inp.closest ? inp.closest(".f") : null;
+		if (f) setImgPrev(f.querySelector(".imgprev"), v);
+		inp.dispatchEvent(new Event("input", { bubbles: true }));
+		DIRTY = true;
+	}
+	/** 往 .tags 容器里追加一枚标签（走它自己的回车逻辑，保证同步归档） */
+	function addTagChip(box, val) {
+		var inp = box && box.querySelector("input");
+		if (!inp) return;
+		inp.value = val;
+		try {
+			inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+		} catch (e) { /* 极端环境忽略 */ }
+	}
+	function ensureDragVeil() {
+		var v = document.getElementById("__dragVeil");
+		if (!v) {
+			v = el("div", "drag-veil");
+			v.id = "__dragVeil";
+			v.innerHTML = '<div class="drag-veil-in"><b>松开即可上传到图床</b>' +
+				'<span>拖到「正文文本框」→ 在光标处插入 ![](外链)；拖到「图片字段 / 标签框」→ 直接填进去；' +
+				'拖到页面空白处 → 上传后把 Markdown 复制到剪贴板。</span>' +
+				'<span>.md / .markdown 文件：在「笔记本」页=批量导入校园杂记，其他页=新建文章草稿。</span></div>';
+			document.body.appendChild(v);
+		}
+		return v;
+	}
+	function hasFiles(e) {
+		var dt = e.dataTransfer;
+		if (!dt || !dt.types) return false;
+		return Array.prototype.some.call(dt.types, function (t) { return t === "Files"; });
+	}
+	/**
+	 * 图片落点判定（优先级）：正文 textarea > input[data-fk] > .tags 标签框 > 最后聚焦过的 textarea > 剪贴板
+	 */
+	function handleImageDrop(files, target) {
+		var t = target && target.closest ? target : null;
+		/* 相册面板的专属落区：本地模式 → 图片直接进相册；外链模式 → 传图床并追加外链 */
+		var alZone = t ? t.closest("[data-al-drop]") : null;
+		if (alZone && AL_STATE && AL_STATE.d) {
+			if (AL_STATE.mode === "external") {
+				toast("正在上传 " + files.length + " 张到图床…");
+				var got = [], k = 0;
+				var put = function () {
+					if (k >= files.length) {
+						var tabs = document.getElementById("alPhotosText");
+						if (tabs && got.length) {
+							var cur = tabs.value.replace(/\s+$/, "");
+							tabs.value = (cur ? cur + "\n" : "") + got.join("\n") + "\n";
+						}
+						toast(got.length ? "已追加 " + got.length + " 条外链，记得点「保存到暂存区」" : "上传失败");
+						return;
+					}
+					uploadToImgbed(files[k++]).then(function (r) { return r.json(); })
+						.then(function (j) { if (j && j.url) got.push(j.url); })
+						.catch(function () { }).then(put);
+				};
+				put();
+				return;
+			}
+			uploadAlbumPhotos(files);
+			return;
+		}
+		var ta = t && t.closest("textarea");
+		var fld = t && t.closest("input[data-fk]");
+		var tags = t && t.closest(".tags[data-fk]");
+		if (!fld) {
+			var wrap = t && t.closest(".inp-inline");
+			if (wrap) fld = wrap.querySelector("input[data-fk]");
+		}
+		if (!ta && !fld && !tags) ta = LAST_TA;
+		toast("正在上传 " + files.length + " 张到图床…");
+		var urls = [], fail = 0, i = 0;
+		function step() {
+			if (i >= files.length) return finish();
+			var f = files[i++];
+			uploadToImgbed(f).then(function (r) { return r.json(); }).then(function (j) {
+				if (j && j.url) urls.push(j.url); else fail++;
+			}).catch(function () { fail++; }).then(step);
+		}
+		function finish() {
+			if (!urls.length) { toast("上传失败" + (fail ? "（" + fail + " 张）" : "")); return; }
+			if (ta) {
+				insertAtCursor(ta, urls.map(function (u) { return "![](" + u + ")"; }).join("\n"));
+				toast("已插入 " + urls.length + " 张图片外链" + (fail ? "（失败 " + fail + "）" : ""));
+			} else if (fld) {
+				setFieldValue(fld, urls[0]);
+				toast("已填入图片地址" + (urls.length > 1 ? "（取第 1 张）" : ""));
+			} else if (tags) {
+				urls.forEach(function (u) { addTagChip(tags, u); });
+				toast("已加入 " + urls.length + " 张图片" + (fail ? "（失败 " + fail + "）" : ""));
+			} else {
+				var md = urls.map(function (u) { return "![](" + u + ")"; }).join("\n");
+				copyText(md).then(function (ok) {
+					toast(ok ? "已上传，Markdown 已复制到剪贴板" : "已上传：" + urls[0]);
+				});
+			}
+		}
+		step();
+	}
+	function handleMdDropFiles(files, target) {
+		var onNb = (target && target.closest && target.closest("[data-nb-drop]")) || current === "notebooks";
+		if (onNb) { importNotebookMd(files); return; }
+		var f = files[0];
+		readTextFile(f).then(function (txt) { newPostFromText(txt, f.name, null); })
+			.catch(function (e) { toast("读取失败：" + e.message); });
+	}
+	function initGlobalDnd() {
+		var depth = 0;
+		document.addEventListener("focusin", function (e) {
+			if (e.target && e.target.tagName === "TEXTAREA") LAST_TA = e.target;
+		});
+		document.addEventListener("dragenter", function (e) {
+			if (!hasFiles(e)) return;
+			depth++;
+			ensureDragVeil().classList.add("on");
+		});
+		document.addEventListener("dragover", function (e) {
+			if (!hasFiles(e)) return;
+			e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+		});
+		document.addEventListener("dragleave", function (e) {
+			if (!hasFiles(e)) return;
+			depth = Math.max(0, depth - 1);
+			if (depth === 0) ensureDragVeil().classList.remove("on");
+		});
+		document.addEventListener("dragend", function () {
+			depth = 0;
+			ensureDragVeil().classList.remove("on");
+		});
+		document.addEventListener("drop", function (e) {
+			if (!hasFiles(e)) return;
+			e.preventDefault();
+			depth = 0;
+			ensureDragVeil().classList.remove("on");
+			var all = Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []);
+			if (!all.length) return;
+			var imgs = all.filter(isImageFile);
+			var mds = all.filter(isMdFile);
+			if (imgs.length) handleImageDrop(imgs, e.target);
+			if (mds.length) handleMdDropFiles(mds, e.target);
+		});
+	}
+	/** 全局：点图片 → 大图预览；点「值就是图片地址」的标签 → 同样预览 */
+	function initImagePreviewClicks() {
+		document.addEventListener("click", function (e) {
+			var pv = e.target.closest ? e.target.closest("[data-imgprev]") : null;
+			if (pv) {
+				e.preventDefault();
+				openImagePreview(pv.getAttribute("data-imgprev"), pv.getAttribute("data-name") || "");
+				return;
+			}
+			var img = e.target.closest ? e.target.closest("img") : null;
+			if (img && img.closest(".views") && !img.hasAttribute("data-noprev") && !img.closest(".cmt-avatar")) {
+				var src = img.getAttribute("src");
+				if (isImgSrc(src)) { openImagePreview(src, img.getAttribute("alt") || ""); }
+				return;
+			}
+			var chip = e.target.closest ? e.target.closest(".tags .tag") : null;
+			if (chip) {
+				var val = chip.textContent.replace(/×$/, "").trim();
+				if (isImgSrc(val)) openImagePreview(val, "");
+			}
+		});
+	}
+
 	/* ================= 主题跟随（读博客 localStorage） ================= */
 	var BLOG_ACCENTS = ["green", "blue", "purple", "sakura", "pink", "orange", "black"];
 	function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -288,7 +577,7 @@ window.EditorAuthGate = {
 				var old = btn.textContent;
 				btn.disabled = true; btn.textContent = "上传中…";
 				uploadToImgbed(f).then(function (r) { return r.json(); }).then(function (j) {
-					if (j && j.url) { input.value = j.url; toast("图床上传成功"); }
+					if (j && j.url) { setFieldValue(input, j.url); toast("图床上传成功"); }
 					else throw new Error((j && j.error) || "上传失败");
 				}).catch(function (e) { toast("上传失败：" + e.message); })
 					.finally(function () { btn.disabled = false; btn.textContent = old; });
@@ -304,6 +593,15 @@ window.EditorAuthGate = {
 		STAGED[path] = { path: path, content: content, label: label || path, del: false, tm: pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) };
 		syncStageUI(); renderStageList();
 		toast("已暂存：" + path.split("/").pop() + "（待推送）");
+	}
+	/**
+	 * 暂存一个「二进制」文件（相册图片等）：内容是 base64。
+	 * pushAll 会带着 base64 走 Git Data API 建 blob，无需落地为文本。
+	 */
+	function stagePutBinary(path, base64, label) {
+		STAGED[path] = { path: path, base64: base64, label: label || path, del: false, tm: pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) };
+		syncStageUI(); renderStageList();
+		toast("已暂存图片：" + path.split("/").pop() + "（待推送）");
 	}
 	function stageDelete(path, label) {
 		STAGED[path] = { path: path, content: null, label: label || path, del: true, tm: pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) };
@@ -329,7 +627,7 @@ window.EditorAuthGate = {
 		keys.forEach(function (k) {
 			var it = STAGED[k];
 			var row = el("div", "sp-item");
-			row.innerHTML = '<span class="sp-tp">' + (it.del ? "删除" : "写入") + "</span>" +
+			row.innerHTML = '<span class="sp-tp">' + (it.del ? "删除" : (it.base64 ? "图片" : "写入")) + "</span>" +
 				'<span class="sp-nm" title="' + esc(k) + '">' + esc(k) + "</span>" +
 				'<span class="sp-tm num">' + (it.tm || "") + "</span>";
 			var rm = el("button", "btn btn-sm", "撤销");
@@ -349,7 +647,10 @@ window.EditorAuthGate = {
 		if (!keys.length) { openStage(false); return; }
 		var changes = keys.map(function (k) {
 			var it = STAGED[k];
-			return it.del ? { path: k, delete: true } : { path: k, content: it.content };
+			if (it.del) return { path: k, delete: true };
+			/* 二进制（相册图片）：直接给 base64，Git Data API 建 blob */
+			if (it.base64) return { path: k, base64: it.base64 };
+			return { path: k, content: it.content };
 		});
 		var btn = $("#spPush");
 		if (btn) { btn.disabled = true; btn.textContent = "推送中…"; }
@@ -588,7 +889,9 @@ window.EditorAuthGate = {
 		} else if (fd.type === "image") {
 			h += '<label class="f-label">' + esc(fd.label) + req + '</label><div class="inp-inline">' +
 				'<input class="inp" data-fk="' + fd.key + '" value="' + esc(val || "") + '">' +
-				'<button class="btn btn-sm btn-primary" type="button" data-imgup="' + fd.key + '">上传到图床</button></div>';
+				'<button class="btn btn-sm btn-primary" type="button" data-imgup="' + fd.key + '">上传到图床</button></div>' +
+				'<div class="imgprev' + (isImgSrc(val) ? " on" : "") + '">' +
+				(isImgSrc(val) ? '<img src="' + esc(String(val).trim()) + '" alt="" loading="lazy">' : "") + '</div>';
 		} else if (fd.type === "date") {
 			h += '<label class="f-label">' + esc(fd.label) + req + '</label><input class="inp" type="date" data-fk="' + fd.key + '" value="' + esc(String(val || "").slice(0, 10)) + '">';
 		} else if (fd.type === "datetime") {
@@ -624,6 +927,12 @@ window.EditorAuthGate = {
 				if (inp.classList.contains("num")) v = v === "" ? "" : Number(v);
 				data[k] = v;
 				DIRTY = true;
+				/* image 字段：同步下方缩略预览（跟着输入即时刷新） */
+				var fbox = inp.closest ? inp.closest(".f") : null;
+				if (fbox) {
+					var pv = fbox.querySelector(".imgprev");
+					if (pv) setImgPrev(pv, v);
+				}
 				if (onChange) onChange(k, v);
 			});
 		});
@@ -641,9 +950,14 @@ window.EditorAuthGate = {
 				if (e.key === "Enter" && inp.value.trim()) {
 					e.preventDefault();
 					var t = el("span", "tag"); t.innerHTML = esc(inp.value.trim()) + ' <b>×</b>';
+					if (isImgSrc(inp.value.trim())) t.setAttribute("data-img", "1");
 					box.insertBefore(t, inp); inp.value = ""; sync();
 				}
 			});
+		});
+		/* 值本身就是图片地址的标签：标出来，点击即大图预览 */
+		$$(".tags .tag", root).forEach(function (c) {
+			if (isImgSrc(c.textContent.replace(/×$/, "").trim())) c.setAttribute("data-img", "1");
 		});
 		$$("[data-now]", root).forEach(function (b) {
 			if (b.dataset.bound) return;
@@ -721,7 +1035,7 @@ function renderPosts() {
 			renderPostsList();
 		});
 	});
-	bindMdDrop($("#v-posts"));
+	/* .md / 图片拖拽统一由全局处理器接管（initGlobalDnd）：图片→图床→插入外链 */
 	loadPostsWithMeta().then(function (posts) {
 		$("#postsCount").textContent = posts.length + " 篇 · " + Object.keys(postCats(posts)).length + " 个分类";
 		renderPostsList();
@@ -992,34 +1306,8 @@ function newPostFromText(text, fromName, preset) {
 	$("#pfModeX").addEventListener("click", function () { banner.hidden = true; banner.innerHTML = ""; });
 	toast(fromName ? "已根据 " + fromName + " 建立新文章草稿" : "已新建文章草稿，开始写吧");
 }
-function bindMdDrop(host) {
-	if (!host || host.getAttribute("data-mdbound")) return;
-	host.setAttribute("data-mdbound", "1");
-	var on = function (e) {
-		if (!e.dataTransfer) return;
-		var fs = e.dataTransfer.files;
-		var hasMd = fs && fs.length && Array.prototype.some.call(fs, function (f) { return /\.(md|markdown|mdx|txt)$/i.test(f.name) || f.type === "text/markdown"; });
-		if (!hasMd) return;
-		e.preventDefault(); e.stopPropagation();
-		e.dataTransfer.dropEffect = "copy";
-		host.classList.add("drop-hot");
-	};
-	["dragenter", "dragover"].forEach(function (ev) { host.addEventListener(ev, on); });
-	["dragleave", "dragend"].forEach(function (ev) {
-		host.addEventListener(ev, function (e) { if (!host.contains(e.relatedTarget)) host.classList.remove("drop-hot"); });
-	});
-	host.addEventListener("drop", function (e) {
-		var fs = e.dataTransfer && e.dataTransfer.files;
-		host.classList.remove("drop-hot");
-		if (!fs || !fs.length) return;
-		var md = Array.prototype.filter.call(fs, function (f) { return /\.(md|markdown|mdx|txt)$/i.test(f.name) || f.type === "text/markdown"; })[0];
-		if (!md) return;
-		e.preventDefault(); e.stopPropagation();
-		var r = new FileReader();
-		r.onload = function () { newPostFromText(String(r.result || ""), md.name, null); };
-		r.readAsText(md, "utf-8");
-	});
-}
+/* 说明：.md / 图片的拖拽不再走页面级 bindMdDrop，统一由全局 initGlobalDnd 接管
+   —— 图片→图床（或相册）→ 插入外链；.md→笔记本批量导入 / 其他页新建文章。 */
 
 /* ================= 通用数据页（schema 驱动 · 预览稿皮肤） ================= */
 var DATA_SEL = {};
@@ -1086,7 +1374,15 @@ function dataItemThumb(schema, it) {
 function renderDataList(schema, arr) {
 	var box = $("#dpList", $("#v-" + (schema.__id || schema.id)) || document);
 	box.innerHTML = "";
-	arr.forEach(function (it, i) {
+	/* 「动态管理」按时间倒序 —— 内容仓 diary.ts 里新条目是追加在文件末尾的，
+	   不做排序就会把最新的几条压到列表最底部（2026-10-05 修复）。 */
+	var list = arr;
+	if (schema && schema.id === "diary") {
+		list = arr.slice().sort(function (a, b) {
+			return String((b && b.date) || "").localeCompare(String((a && a.date) || ""));
+		});
+	}
+	list.forEach(function (it, i) {
 		var row = el("div", "list-item" + (DATA_SEL[schema.id] === i ? " on" : ""));
 		row.setAttribute("data-sel", "");
 		row.setAttribute("data-i", i);
@@ -1192,36 +1488,421 @@ function renderAbout() {
 
 
 /* ================= 相册管理 ================= */
+/* 存储：内容仓 content/images/albums/<相册名>/
+   - 本地模式（默认）：info.json + cover.webp/cover.jpg + 若干图片；照片由构建期自动扫描
+   - 外链模式（info.mode === "external"）：info.json 里存 cover + photos[].src
+   线上路径：/images/albums/<相册名>/<文件名>（构建期由内容仓同步到 public/images） */
+var AL_VER = "ed" + Date.now().toString(36);   /* 同一次会话内复用，绕开 CDN 旧缓存 */
+var AL_UPLOADED = {};                           /* path -> { b64, url } 本会话刚上传的图片（无需等部署即可预览） */
+var AL_STATE = { d: null, info: null, files: [], mode: "local", edit: {} };
+
+function safeName(n) {
+	return String(n == null ? "" : n)
+		.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
+		.replace(/^\.+/, "")
+		.replace(/\.+$/, "")
+		.trim() || "";
+}
+function isImgName(n) { return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(String(n || "")); }
+function albumUrl(dir, file) {
+	return "/images/albums/" + encodeURIComponent(dir) + "/" + encodeURIComponent(file) + "?v=" + AL_VER;
+}
+function fileToBase64(file) {
+	return new Promise(function (res, rej) {
+		var r = new FileReader();
+		r.onload = function () {
+			var s = String(r.result || "");
+			var i = s.indexOf(",");
+			res(i >= 0 ? s.slice(i + 1) : "");
+		};
+		r.onerror = function () { rej(new Error("读取失败")); };
+		r.readAsDataURL(file);
+	});
+}
+/** 目录列表 = GitHub 上的文件 ∪ 暂存区里新增的（− 暂存区里删除的） */
+function listAlbumDir(dirPath) {
+	return GIT.listDir(OWNER, REPO, dirPath, BRANCH).then(function (files) {
+		var map = {};
+		files.forEach(function (f) { map[f.path] = f; });
+		Object.keys(STAGED).forEach(function (p) {
+			if (p.indexOf(dirPath + "/") !== 0) return;
+			if (p.slice(dirPath.length + 1).indexOf("/") >= 0) return;
+			var it = STAGED[p];
+			if (it.del) { delete map[p]; return; }
+			map[p] = { name: p.split("/").pop(), type: "file", path: p, staged: true };
+		});
+		return Object.keys(map).map(function (k) { return map[k]; });
+	}).catch(function () { return []; });
+}
+/** 读 info.json：优先读暂存区里未推送的版本 */
+function readAlbumInfo(dirPath) {
+	var p = dirPath + "/info.json";
+	var it = STAGED[p];
+	if (it) return Promise.resolve(it.del ? null : { content: it.content, sha: null, staged: true });
+	return GIT.getFile(OWNER, REPO, p, BRANCH);
+}
+/** 相册名列表（含仅存在于暂存区的「新相册」） */
+function albumDirNames() {
+	return GIT.listDir(OWNER, REPO, "content/images/albums", BRANCH).then(function (dirs) {
+		var names = dirs.filter(function (d) { return d.type === "dir"; }).map(function (d) { return d.name; });
+		Object.keys(STAGED).forEach(function (p) {
+			if (p.indexOf("content/images/albums/") !== 0) return;
+			if (STAGED[p].del) return;
+			var nm = p.slice("content/images/albums/".length).split("/")[0];
+			if (!nm || nm === ".gitkeep") return;
+			if (names.indexOf(nm) < 0) names.push(nm);
+		});
+		return names;
+	});
+}
+/** 相册列表行副标题：模式 · 张数 · 隐藏 · 加密 */
+function albumSubInfo(info, files) {
+	var ext = info.mode === "external";
+	var n = ext ? (Array.isArray(info.photos) ? info.photos.length : 0)
+		: files.filter(function (x) { return isImgName(x.name) && !/^cover\.(webp|jpg|jpeg|png)$/i.test(x.name); }).length;
+	return (ext ? "外链" : "本地") + " · " + n + " 张" + (info.hidden === true ? " · 隐藏" : "") + (info.password ? " · 🔒" : "");
+}
+function fillAlbumSub(dir, row) {
+	var sub = row && row.querySelector("[data-al-sub]");
+	if (!sub) return;
+	Promise.all([listAlbumDir(dir.path), readAlbumInfo(dir.path)]).then(function (rs) {
+		var files = rs[0], f = rs[1], info = {};
+		if (f && f.content) { try { info = JSON.parse(f.content) || {}; } catch (e) { info = {}; } }
+		sub.textContent = albumSubInfo(info, files);
+	}).catch(function () { sub.textContent = "读取失败"; });
+}
 function renderAlbums() {
 	var v = $("#v-albums");
-	v.innerHTML = pageHead("album", "相册管理", '<span class="mono">content/images/albums/</span>') +
-		'<div class="split"><div class="card split-list"><div id="alList"><div class="empty-block">加载中…</div></div></div>' +
-		'<div id="alPanel"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一个相册</div></div></div></div></div>';
-	GIT.listDir(OWNER, REPO, "content/images/albums", BRANCH).then(function (dirs) {
+	v.innerHTML = pageHead("album", "相册管理", '<span class="mono">content/images/albums/</span> · 本地图片 / 外链两种模式 · 点任意图片看大图',
+		'<button class="btn btn-primary" type="button" id="alNew">+ 新建相册</button>') +
+		'<div class="split"><div class="card split-list">' +
+		'<div class="card-head" style="padding:10px 12px"><span class="card-title">相册列表</span><span class="card-sub" style="margin-left:auto" id="alCount"></span></div>' +
+		'<div id="alList"><div class="empty-block">加载中…</div></div></div>' +
+		'<div id="alPanel"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一个相册，或点「+ 新建相册」</div></div></div></div></div>';
+	$("#alNew").addEventListener("click", createAlbum);
+	albumDirNames().then(function (names) {
 		var box = $("#alList");
+		if ($("#alCount")) $("#alCount").textContent = names.length + " 个";
+		if (!names.length) { box.innerHTML = '<div class="empty-block">暂无相册，点右上角「+ 新建相册」</div>'; return; }
 		box.innerHTML = "";
-		var albumDirs = dirs.filter(function (d) { return d.type === "dir"; });
-		if (!albumDirs.length) { box.innerHTML = '<div class="empty-block">暂无相册</div>'; return; }
-		albumDirs.forEach(function (d, i) {
-			GIT.listDir(OWNER, REPO, d.path, BRANCH).then(function (files) {
-				var imgs = files.filter(function (x) { return x.type === "file"; });
-				var row = el("div", "list-item" + (i === 0 ? " on" : ""));
-				row.setAttribute("data-sel", "");
-				row.innerHTML = '<div class="list-thumb">💌</div><div class="list-main"><div class="list-t">' + esc(d.name) + '</div><div class="list-s">' + imgs.length + ' 张</div></div>';
-				row.addEventListener("click", function () { openAlbum(d, imgs); });
-				box.appendChild(row);
-				if (i === 0) openAlbum(d, imgs);
+		names.forEach(function (nm, i) {
+			var d = { name: nm, path: "content/images/albums/" + nm };
+			var row = el("div", "list-item" + (i === 0 ? " on" : ""));
+			row.setAttribute("data-sel", "");
+			row.innerHTML = '<div class="list-thumb">💌</div><div class="list-main"><div class="list-t">' + esc(nm) + '</div><div class="list-s" data-al-sub>…</div></div>';
+			row.addEventListener("click", function () {
+				$$("#alList .list-item").forEach(function (x) { x.classList.remove("on"); });
+				row.classList.add("on");
+				loadAlbum(d, row);
 			});
+			box.appendChild(row);
+			fillAlbumSub(d, row);
+			if (i === 0) loadAlbum(d, row);
 		});
 	}).catch(function (e) { $("#alList").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
 }
-function openAlbum(dir, imgs) {
-	$("#alPanel").innerHTML = '<div class="card"><div class="card-head"><h2 class="card-title">' + esc(dir.name) + '</h2><span class="pill">images/</span></div>' +
-		'<div class="card-body"><div class="grid-img" id="alGrid">' +
-		imgs.map(function (f) {
-			return '<div class="thumb" data-sel><div class="ph" style="background-image:url(/content-api/' + esc(dir.name) + '/' + esc(f.name) + ')"></div><div class="cap">' + esc(f.name) + '</div></div>';
-		}).join("") + '</div>' +
-		'<div class="f-hint" style="margin-top:14px">相册图片为内容仓二进制文件，编辑器仅预览；重命名/删除可走发布面板（暂存区）。</div></div></div>';
+function loadAlbum(dir, row) {
+	AL_STATE.d = dir;
+	$("#alPanel").innerHTML = '<div class="card"><div class="card-body">' + loading("读取 " + dir.name + " …") + '</div></div>';
+	Promise.all([listAlbumDir(dir.path), readAlbumInfo(dir.path)]).then(function (rs) {
+		var files = rs[0], f = rs[1], info = {};
+		if (f && f.content) { try { info = JSON.parse(f.content) || {}; } catch (e) { info = {}; } }
+		AL_STATE.files = files;
+		AL_STATE.info = info;
+		AL_STATE.mode = info.mode === "external" ? "external" : "local";
+		try { AL_STATE.edit = JSON.parse(JSON.stringify(info)); } catch (e2) { AL_STATE.edit = {}; }
+		if (row) {
+			var sub = row.querySelector("[data-al-sub]");
+			if (sub) sub.textContent = albumSubInfo(info, files);
+		}
+		renderAlbumPanel();
+	}).catch(function (e) { $("#alPanel").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+}
+function renderAlbumPanel() {
+	var d = AL_STATE.d, info = AL_STATE.info || {}, isExt = AL_STATE.mode === "external";
+	var coverFile = AL_STATE.files.filter(function (x) { return /^cover\.(webp|jpg|jpeg|png)$/i.test(x.name); })[0];
+	var cover = isExt ? (info.cover || "")
+		: (coverFile && AL_UPLOADED[coverFile.path] ? AL_UPLOADED[coverFile.path].url : (coverFile ? albumUrl(d.name, coverFile.name) : ""));
+	var photos = isExt ? (Array.isArray(info.photos) ? info.photos : [])
+		: AL_STATE.files.filter(function (x) { return isImgName(x.name) && !/^cover\.(webp|jpg|jpeg|png)$/i.test(x.name); });
+
+	var h = '<div class="card"><div class="card-head"><h2 class="card-title">' + esc(info.title || d.name) + '</h2>' +
+		'<span class="pill">' + (isExt ? "外链模式" : "本地图片") + '</span>' +
+		'<span class="pill info" style="margin-left:6px">' + esc(d.name) + '</span></div><div class="card-body">';
+
+	/* 封面 */
+	h += '<div class="al-row" style="gap:14px;align-items:flex-start;flex-wrap:wrap">' +
+		'<div class="ph-wrap" style="width:210px;flex:0 0 auto">' +
+		'<div class="ph" data-imgprev="' + esc(cover) + '" data-name="封面" style="height:120px;border-radius:10px;border:1px solid var(--line);background-image:url(\'' + esc(cover) + '\')"></div>' +
+		'<span class="ph-badge">封面</span></div>' +
+		'<div style="flex:1 1 260px;min-width:0">' +
+		'<div class="f-hint"><b>封面</b>：' + (isExt ? '外链模式存 <span class="mono">info.json.cover</span>' : '本地模式 = 该文件夹下的 <span class="mono">cover.webp</span>') + '</div>' +
+		'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">' +
+		'<button class="btn btn-sm" type="button" id="alUpCover">⬆ 上传封面</button>' +
+		(isExt ? '' : '<button class="btn btn-sm" type="button" id="alCoverHint">设为某张图？点图片右上角</button>') +
+		'</div></div></div><div class="hr" style="margin:14px 0"></div>';
+
+	/* 元数据表单 */
+	h += '<div id="alForm">' + renderFields(ALBUM_FIELDS, AL_STATE.edit, "") + '</div>';
+	if (isExt) {
+		h += '<div class="form-grid" style="margin-top:2px">' +
+			fieldHtml({ key: "cover", label: "封面（外链）", type: "image" }, AL_STATE.edit.cover, "") + '</div>';
+	}
+	h += '<div class="hr" style="margin:14px 0"></div>';
+
+	/* 照片区 */
+	h += '<div class="al-row" style="margin-bottom:10px"><b>照片</b><span class="card-sub">' +
+		(isExt ? photos.length + " 张外链" : photos.length + " 张本地图片") + '</span>' +
+		'<div style="margin-left:auto;display:flex;gap:8px">' +
+		(isExt ? '' : '<button class="btn btn-sm btn-primary" type="button" id="alUpImgs">⬆ 上传图片</button>') + '</div></div>';
+	h += '<div class="nb-drop" data-al-drop><b>' + (isExt ? "把图片拖到这里 → 上传图床并追加外链" : "把图片拖到这里 → 直接加入本相册") +
+		'</b><br>' + (isExt ? "上传成功后自动往下方「照片外链」文本框追加一行，记得保存。" : "支持一次拖多张；图片先进暂存区，统一推送后随部署上线。") + '</div>';
+
+	if (isExt) {
+		var lines = photos.map(function (p) { return p && p.src ? p.src : ""; }).filter(Boolean).join("\n");
+		h += '<div class="f wide"><label class="f-label">照片外链（每行一条 <span class="mono">src</span>）</label>' +
+			'<textarea class="inp mono" id="alPhotosText" rows="8" style="font-size:12px" placeholder="https://img.yujingblog.top/file/xxx.webp">' + esc(lines) + '</textarea>' +
+			'<div class="f-hint">每行一条外链，保存后写入 <span class="mono">info.json</span> 的 <span class="mono">photos[].src</span>（其余字段按 src 保留）</div></div>';
+	}
+
+	if (photos.length) {
+		h += '<div class="grid-img">' + photos.map(function (p) {
+			var src, name, path, isCover2, coverIdx = -1;
+			if (isExt) {
+				src = p.src; name = p.alt || p.title || String(p.src || "").split("/").pop();
+				coverIdx = photos.indexOf(p);
+				isCover2 = !!info.cover && info.cover === p.src;
+				return '<div class="thumb"><div class="ph-wrap">' +
+					(isCover2 ? '<span class="ph-badge">封面</span>' : '') +
+					'<div class="ph" data-imgprev="' + esc(src) + '" data-name="' + esc(name) + '" style="background-image:url(\'' + esc(src) + '\')"></div>' +
+					'<div class="ph-ops">' + (isCover2 ? '' : '<button class="btn btn-sm" type="button" data-al-coverex="' + coverIdx + '">设为封面</button>') +
+					'<button class="btn btn-sm" type="button" data-al-delex="' + coverIdx + '">删除</button></div></div>' +
+					'<div class="cap">' + esc(name) + '</div></div>';
+			}
+			path = p.path; name = p.name;
+			src = AL_UPLOADED[path] ? AL_UPLOADED[path].url : albumUrl(d.name, name);
+			isCover2 = !!(coverFile && coverFile.name === name);
+			return '<div class="thumb"><div class="ph-wrap">' +
+				(isCover2 ? '<span class="ph-badge">封面</span>' : '') +
+				(p.staged ? '<span class="ph-badge" style="left:auto;right:6px;top:auto;bottom:6px;background:rgba(217,130,43,.9)">待推送</span>' : '') +
+				'<div class="ph" data-imgprev="' + esc(src) + '" data-name="' + esc(name) + '" style="background-image:url(\'' + esc(src) + '\')"></div>' +
+				'<div class="ph-ops">' + (isCover2 ? '' : '<button class="btn btn-sm" type="button" data-al-cover="' + esc(path) + '">设为封面</button>') +
+				'<button class="btn btn-sm" type="button" data-al-del="' + esc(path) + '">删除</button></div></div>' +
+				'<div class="cap">' + esc(name) + '</div></div>';
+		}).join("") + '</div>';
+	} else {
+		h += '<div class="empty-block alb-empty-hint">' + (isExt ? "还没有外链照片，在下方粘贴外链后保存" : "还没有图片 —— 点「⬆ 上传图片」，或直接把图片拖进本页") + '</div>';
+	}
+
+	/* 操作条 */
+	h += '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">' +
+		'<button class="btn btn-primary" type="button" id="alSave">💾 保存到暂存区</button>' +
+		'<div style="flex:1"></div>' +
+		'<button class="btn btn-danger" type="button" id="alDelAlbum">🗑 删除整个相册</button></div>' +
+		'<div class="f-hint" style="margin-top:8px">改动先进入暂存区，最后在右上角「统一推送」一次性提交到内容仓；部署完成后线上相册自动更新。</div>';
+	h += '</div></div>';
+	$("#alPanel").innerHTML = h;
+
+	/* 绑定 */
+	bindFields($("#alPanel"), AL_STATE.edit);
+	var upCoverBtn = $("#alUpCover");
+	if (upCoverBtn) {
+		upCoverBtn.addEventListener("click", function () {
+			var inp = document.createElement("input");
+			inp.type = "file"; inp.accept = "image/*";
+			inp.onchange = function () {
+				var f = inp.files[0]; if (!f) return;
+				fileToBase64(f).then(function (b64) {
+					/* 本地模式固定写 cover.webp；外链模式由用户自己填 URL（这里改成直接上传到图床） */
+					if (isExt) {
+						uploadToImgbed(f).then(function (r) { return r.json(); }).then(function (j) {
+							if (j && j.url) {
+								AL_STATE.edit.cover = j.url;
+								var inp2 = $("#alPanel [data-fk='cover']");
+								if (inp2) setFieldValue(inp2, j.url);
+								toast("封面已上传到图床，记得保存");
+							} else toast("上传失败");
+						}).catch(function (e) { toast("上传失败：" + e.message); });
+						return;
+					}
+					var p = d.path + "/cover.webp";
+					stagePutBinary(p, b64, d.name + " / 封面");
+					AL_UPLOADED[p] = { b64: b64, url: URL.createObjectURL(f) };
+					AL_STATE.files = AL_STATE.files.filter(function (x) { return x.path !== p; });
+					AL_STATE.files.push({ name: "cover.webp", type: "file", path: p, staged: true });
+					toast("封面已暂存（cover.webp）");
+					renderAlbumPanel();
+				}).catch(function (e) { toast("读取失败：" + e.message); });
+			};
+			inp.click();
+		});
+	}
+	var upImgs = $("#alUpImgs");
+	if (upImgs) upImgs.addEventListener("click", function () {
+		var inp = document.createElement("input");
+		inp.type = "file"; inp.accept = "image/*"; inp.multiple = true;
+		inp.onchange = function () { uploadAlbumPhotos(Array.prototype.slice.call(inp.files)); };
+		inp.click();
+	});
+	var saveBtn = $("#alSave");
+	if (saveBtn) saveBtn.addEventListener("click", saveAlbumInfo);
+	var delBtn = $("#alDelAlbum");
+	if (delBtn) delBtn.addEventListener("click", deleteAlbum);
+
+	$$("#alPanel [data-al-cover]").forEach(function (b) {
+		b.addEventListener("click", function (e) {
+			e.stopPropagation();
+			var p = b.getAttribute("data-al-cover");
+			var b64 = AL_UPLOADED[p] ? AL_UPLOADED[p].b64 : null;
+			var cp = d.path + "/cover.webp";
+			var applyCover = function (data) {
+				stagePutBinary(cp, data, d.name + " / 封面");
+				AL_STATE.files = AL_STATE.files.filter(function (x) { return !/^cover\.(webp|jpg|jpeg|png)$/i.test(x.name); });
+				AL_STATE.files.push({ name: "cover.webp", type: "file", path: cp, staged: true });
+				if (!AL_UPLOADED[cp]) AL_UPLOADED[cp] = { url: albumUrl(d.name, p.split("/").pop()) };
+				toast("已把这张设为封面（cover.webp）");
+				renderAlbumPanel();
+			};
+			if (b64) { applyCover(b64); return; }
+			/* 已在线上：抓回二进制再复制成 cover.webp */
+			toast("正在读取原图…");
+			fetch(albumUrl(d.name, p.split("/").pop()), { cache: "no-store" })
+				.then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); })
+				.then(function (bl) {
+					var fr = new FileReader();
+					fr.onload = function () {
+						var s = String(fr.result || ""), i = s.indexOf(",");
+						applyCover(i >= 0 ? s.slice(i + 1) : "");
+					};
+					fr.readAsDataURL(bl);
+				})
+				.catch(function (e) { toast("读取原图失败：" + e.message); });
+		});
+	});
+	$$("#alPanel [data-al-del]").forEach(function (b) {
+		b.addEventListener("click", function (e) {
+			e.stopPropagation();
+			var p = b.getAttribute("data-al-del");
+			if (!confirm("删除这张图片？\n" + p.split("/").pop() + "\n（先入暂存区，推送后生效）")) return;
+			stageDelete(p, d.name);
+			AL_STATE.files = AL_STATE.files.filter(function (x) { return x.path !== p; });
+			renderAlbumPanel();
+		});
+	});
+	$$("#alPanel [data-al-coverex]").forEach(function (b) {
+		b.addEventListener("click", function (e) {
+			e.stopPropagation();
+			var p = photos[Number(b.getAttribute("data-al-coverex"))];
+			if (!p) return;
+			AL_STATE.edit.cover = p.src;
+			var inp = $("#alPanel [data-fk='cover']");
+			if (inp) setFieldValue(inp, p.src);
+			toast("已设为封面，记得点「保存到暂存区」");
+		});
+	});
+	$$("#alPanel [data-al-delex]").forEach(function (b) {
+		b.addEventListener("click", function (e) {
+			e.stopPropagation();
+			var idx = Number(b.getAttribute("data-al-delex"));
+			var ta = $("#alPhotosText");
+			if (!ta) return;
+			var ls = ta.value.split(/\r?\n/).filter(function (s) { return s.trim(); });
+			ls.splice(idx, 1);
+			ta.value = ls.join("\n");
+			toast("已从列表移除，记得点「保存到暂存区」");
+		});
+	});
+}
+var ALBUM_FIELDS = [
+	{ key: "title", label: "标题", type: "string", required: true },
+	{ key: "date", label: "日期", type: "date" },
+	{ key: "location", label: "地点", type: "string" },
+	{ key: "description", label: "描述", type: "text" },
+	{ key: "tags", label: "标签", type: "tags" },
+	{ key: "password", label: "访问密码（留空 = 不加密）", type: "string" },
+	{ key: "passwordHint", label: "密码提示", type: "string" },
+	{ key: "hidden", label: "在站点隐藏该相册", type: "boolean" }
+];
+function uploadAlbumPhotos(files) {
+	var d = AL_STATE.d; if (!d) return;
+	var list = (files || []).filter(isImageFile);
+	if (!list.length) { toast("请选择图片文件"); return; }
+	var i = 0, ok = 0;
+	(function step() {
+		if (i >= list.length) {
+			toast("已暂存 " + ok + " 张图片，记得点「统一推送」");
+			renderAlbumPanel();
+			return;
+		}
+		var f = list[i++];
+		fileToBase64(f).then(function (b64) {
+			var nm = safeName(f.name || ("upload-" + Date.now() + ".webp"));
+			if (!nm) nm = "upload-" + Date.now() + ".webp";
+			var p = d.path + "/" + nm;
+			stagePutBinary(p, b64, d.name);
+			AL_UPLOADED[p] = { b64: b64, url: URL.createObjectURL(f) };
+			AL_STATE.files = AL_STATE.files.filter(function (x) { return x.path !== p; });
+			AL_STATE.files.push({ name: nm, type: "file", path: p, staged: true });
+			ok++;
+		}).catch(function (e) { toast("读取失败：" + e.message); }).then(step);
+	})();
+}
+function saveAlbumInfo() {
+	var d = AL_STATE.d; if (!d) return;
+	var src = AL_STATE.info || {}, E = AL_STATE.edit || {};
+	var out = {};
+	Object.keys(src).forEach(function (k) { out[k] = src[k]; });
+	["title", "description", "date", "location", "tags", "password", "passwordHint", "cover"].forEach(function (k) {
+		if (E.hasOwnProperty(k)) out[k] = E[k];
+	});
+	if (E.hidden === true) out.hidden = true; else delete out.hidden;
+	if (out.tags && (!Array.isArray(out.tags) || !out.tags.length)) delete out.tags;
+	if (!out.password) { delete out.password; delete out.passwordHint; delete out.encrypted; }
+	else out.encrypted = true;
+	if (!out.location) delete out.location;
+	if (typeof out.title !== "string" || !out.title.trim()) out.title = d.name;
+	if (!out.date) out.date = today();
+	if (typeof out.description !== "string") out.description = out.description == null ? "" : String(out.description);
+
+	if (AL_STATE.mode === "external") {
+		out.mode = "external";
+		var ta = $("#alPhotosText");
+		var lines = (ta ? ta.value : "").split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+		var oldBySrc = {};
+		(Array.isArray(src.photos) ? src.photos : []).forEach(function (p) { if (p && p.src) oldBySrc[p.src] = p; });
+		out.photos = lines.map(function (u) {
+			var o = oldBySrc[u] || {};
+			return { src: u, alt: o.alt || "" };
+		});
+		if (!out.cover) out.cover = lines[0] || "";
+		if (!out.cover) delete out.cover;
+	} else {
+		delete out.mode; delete out.photos;
+		if (!out.cover || /^https?:\/\//i.test(out.cover)) delete out.cover;
+	}
+	var text = JSON.stringify(out, null, 2) + "\n";
+	stagePut(d.path + "/info.json", text, "相册 " + (out.title || d.name));
+	AL_STATE.info = out;
+}
+function deleteAlbum() {
+	var d = AL_STATE.d; if (!d) return;
+	if (!confirm("删除整个相册「" + d.name + "」？\n（含 info.json 与所有图片，先入暂存区，推送后生效）")) return;
+	AL_STATE.files.forEach(function (f) { stageDelete(f.path, d.name); });
+	stageDelete(d.path + "/info.json", d.name);
+	AL_STATE.files = []; AL_STATE.info = {}; AL_STATE.edit = {};
+	toast("已暂存删除整个相册，推送后生效");
+	loadView("albums", true);
+}
+function createAlbum() {
+	var name = prompt("新相册名称（同时作为文件夹名 / 线上 URL 路径）：", "");
+	if (name == null) return;
+	name = safeName(name);
+	if (!name) { toast("名称不能为空或含非法字符"); return; }
+	var info = { title: name, description: "", date: today(), location: "", tags: [], layout: "Grid", columns: 3 };
+	stagePut("content/images/albums/" + name + "/info.json", JSON.stringify(info, null, 2) + "\n", "新建相册 " + name);
+	stagePut("content/images/albums/" + name + "/.gitkeep", "", "新建相册占位");
+	toast("新相册已进暂存区：现在上传封面 / 图片，再统一推送");
+	loadView("albums", true);
 }
 
 /* ================= 笔记本（书架） ================= */
@@ -1233,8 +1914,9 @@ var NB_BOOKS = [
 function renderNotebooks() {
 	var v = $("#v-notebooks");
 	v.innerHTML = pageHead("note", "笔记本", '线上 <span class="mono">/notebooks/</span> 是一排书架 · <b>3 本</b> · 校园杂记取自 <span class="mono">content/data/notebooks.ts</span>',
-		'<button class="btn btn-primary" type="button" id="nbAdd">+ 新增篇目</button>') +
+		'<button class="btn" type="button" id="nbImport">⬆ 批量导入 .md</button><button class="btn btn-primary" type="button" id="nbAdd">+ 新增篇目</button>') +
 		'<div class="nb-src"><span class="pill info">数据源</span><span><b>校园杂记</b> → <span class="mono">content/data/notebooks.ts</span> · <span class="mono">campusNotebook</span></span><span class="nb-src-sep"></span><span><b>自律日记 / 每日碎碎念</b> → 站点页内联（<b style="color:var(--bad)">不在内容仓</b>，编辑器无法保存）</span></div>' +
+		'<div class="nb-drop" id="nbDrop" data-nb-drop><b>把 .md / .markdown 文件拖到这里批量导入校园杂记</b><br>也支持一次选多个文件 —— 自动读 frontmatter 的 <span class="mono">date / title</span>，没有就取文件修改日期；导入后进暂存区，统一推送上线。</div>' +
 		'<div class="shelf" id="nbShelf"></div>' +
 		'<div class="split"><div class="card split-list"><div class="card-head" style="padding:10px 12px"><span class="card-title" id="nbTocTitle">校园杂记 · 目录</span><span class="card-sub" style="margin-left:auto" id="nbTocSub"></span></div>' +
 		'<div id="nbToc"><div class="empty-block">加载中…</div></div></div><div id="nbPane"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一篇</div></div></div></div></div>';
@@ -1255,6 +1937,24 @@ function renderNotebooks() {
 			openNbItem(null, { h: today(), body: "" }, -1);
 		});
 	}).catch(function (e) { $("#nbToc").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+
+	/* 批量导入 .md（选文件 + 拖拽落区高亮；真正的 drop 由全局 initGlobalDnd 派发到 importNotebookMd） */
+	var nbImport = $("#nbImport");
+	if (nbImport) nbImport.addEventListener("click", function () {
+		var inp = document.createElement("input");
+		inp.type = "file"; inp.accept = ".md,.markdown,.txt"; inp.multiple = true;
+		inp.onchange = function () { importNotebookMd(Array.prototype.slice.call(inp.files)); };
+		inp.click();
+	});
+	var nbDrop = $("#nbDrop");
+	if (nbDrop) {
+		["dragenter", "dragover"].forEach(function (ev) {
+			nbDrop.addEventListener(ev, function (e) { if (hasFiles(e)) { e.preventDefault(); nbDrop.classList.add("on"); } });
+		});
+		["dragleave", "dragend", "drop"].forEach(function (ev) {
+			nbDrop.addEventListener(ev, function () { nbDrop.classList.remove("on"); });
+		});
+	}
 	var shelf = $("#nbShelf");
 	NB_BOOKS.forEach(function (b, i) {
 		var card = el("button", "book-card" + (i === 0 ? " on" : ""));
@@ -1311,6 +2011,53 @@ function openNbItem(arr, it, idx) {
 			loadView("notebooks", true);
 		});
 	});
+}
+function ymdOf(ts) {
+	var d = new Date(ts);
+	if (isNaN(d.getTime())) return "";
+	return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+/**
+ * 批量导入 .md → 校园杂记（campusNotebook）
+ * 每篇 = { h: 日期, body: Markdown }：
+ *   日期优先 frontmatter 的 date / published / h，其次文件最后修改时间，最后今天
+ *   正文若 frontmatter 有 title 且正文开头不是标题，自动补一行 "# 标题"
+ */
+function importNotebookMd(files) {
+	var list = (files || []).filter(isMdFile);
+	if (!list.length) { toast("没有可导入的 .md / .markdown 文件"); return; }
+	var sch = window.getSchema("notebooks");
+	getTs(sch).then(function (ts) {
+		var base = Array.isArray(ts.value) ? ts.value.slice() : [];
+		var added = [], i = 0, skip = 0;
+		function step() {
+			if (i >= list.length) return finish();
+			var f = list[i++];
+			readTextFile(f).then(function (txt) {
+				var p = MDM.parse(txt);
+				var fm = p.data || {};
+				var h = String(fm.date || fm.published || fm.h || "").trim().slice(0, 10);
+				if (!/^\d{4}-\d{2}-\d{2}$/.test(h)) h = ymdOf(f.lastModified) || today();
+				var body = String(p.body || "").replace(/^\s+|\s+$/g, "");
+				var title = fm.title ? String(fm.title).trim() : "";
+				if (title && !/^#{1,6}\s/.test(body)) body = "# " + title + (body ? "\n\n" + body : "");
+				if (!body) { skip++; return; }
+				added.push({ h: h, body: body });
+			}).catch(function () { skip++; }).then(step);
+		}
+		function finish() {
+			if (!added.length) { toast("没有解析到有效内容" + (skip ? "（跳过 " + skip + " 个空文件）" : "")); return; }
+			var arr = base.concat(added);
+			arr.sort(function (a, b) { return String(a.h || "").localeCompare(String(b.h || "")); });
+			var content = TSIO.replace(ts.raw, "campusNotebook", arr);
+			clearTs(sch);
+			DIRTY = false;
+			stagePut(sch.path, content, "校园杂记（批量导入 " + added.length + " 篇）");
+			toast("已暂存 " + added.length + " 篇" + (skip ? "，跳过 " + skip + " 个空文件" : "") + "，点「统一推送」上线");
+			loadView("notebooks", true);
+		}
+		step();
+	}).catch(function (e) { toast("读取 notebook 数据失败：" + e.message); });
 }
 
 /* ================= 站点与外观（settings · tabs + 递归折叠表单） ================= */
@@ -1600,7 +2347,7 @@ function renderDash() {
 	$("#dashRefresh").addEventListener("click", function () { CACHE.posts = null; CACHE.comments = null; Object.keys(CACHE).forEach(function (k) { if (k.indexOf("ts:") === 0) delete CACHE[k]; }); renderDash(); });
 	$("#cmtAllBtn").addEventListener("click", function () { go("comments"); });
 	$("#depAllBtn").addEventListener("click", function () { window.open("https://vercel.com/yujing/~/deployments", "_blank", "noopener"); });
-	bindMdDrop($("#v-dash"));
+	/* .md / 图片拖拽统一由全局处理器接管（initGlobalDnd） */
 	var jobs = [
 		withTimeout(loadPostsWithMeta(), 20000),
 		withTimeout(getTs(window.getSchema("diary")), 10000),
@@ -1755,14 +2502,15 @@ function renderCfbed() {
 				var tot = j.total != null ? j.total : j.totalCount;
 				$("#cfSub").textContent = tot != null ? "共 " + tot + " 个" : "";
 				$("#cfPageInfo").textContent = "第 " + CF.page + " 页";
+				/* 缩略图：.ph 用 background-size:cover 铺满（不再只露左上角）；
+				   点卡片任意处 → 灯箱看「完整」大图（contain），复制外链在灯箱底部 */
 				$("#cfGrid").innerHTML = files.length ? files.map(function (f) {
-					return '<div class="thumb" data-sel data-url="' + esc(f.url || "") + '"><div class="ph" style="background-image:url(\'' + esc(f.url || "") + '\')"></div><div class="cap">' + esc(String(f.name || "").slice(0, 26)) + '</div><div class="thumb-meta"><span class="num">' + fmtBytes(f.size) + '</span></div></div>';
+					var u = f.url || "", nm = String(f.name || "");
+					return '<div class="thumb" data-sel data-url="' + esc(u) + '" data-imgprev="' + esc(u) + '" data-name="' + esc(nm) + '" title="点击看大图 / 复制外链">' +
+						'<div class="ph" style="background-image:url(\'' + esc(u) + '\')"></div>' +
+						'<div class="cap">' + esc(nm.slice(0, 26)) + '</div>' +
+						'<div class="thumb-meta"><span class="num">' + fmtBytes(f.size) + '</span></div></div>';
 				}).join("") : '<div class="empty-block">没有文件</div>';
-				$$("#cfGrid .thumb").forEach(function (t) {
-					t.addEventListener("click", function () {
-						promptImgUse(t.getAttribute("data-url"));
-					});
-				});
 			})
 			.catch(function (e) { $("#cfGrid").innerHTML = '<div class="error-block">' + esc(e.message) + "（需在 Vercel 配置 CFBED_TOKEN）</div>"; });
 	}
@@ -1906,6 +2654,8 @@ function renderBkDrafts() {
 function boot() {
 	applyBlogLook();
 	renderNav();
+	initGlobalDnd();           /* 拖拽：图片→图床→插入外链；.md→导入 */
+	initImagePreviewClicks();  /* 点任意图片 / 图片地址标签 → 大图预览 */
 	$("#backSite").addEventListener("click", function () { location.href = "/"; });
 	$("#collapseBtn").addEventListener("click", function () {
 		if (window.matchMedia("(max-width: 1023px)").matches) {
