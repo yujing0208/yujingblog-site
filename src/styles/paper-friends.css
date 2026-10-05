@@ -833,3 +833,78 @@ details.flatpaper-note > .flatpaper-note__title:hover {
 		width: 9px;
 	}
 }
+
+/* ============================================================
+   友链状态小点 + 「迷失」分组
+   数据：自建 Friend-Circle-Lite 的 link.json（reachable / has_backlink）
+   绿点 = 可达；红点 = 不可达或未检测到反链（收进底部默认折叠的「迷失」）
+   ============================================================ */
+
+.friend-card__title-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.friend-card__title-row .friend-card__name {
+	min-width: 0;
+	flex: 0 1 auto;
+}
+
+.friend-card__status {
+	flex-shrink: 0;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--green);
+	box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.2);
+}
+
+.friend-card__status--ok {
+	background: var(--green);
+	box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.2);
+}
+
+.friend-card__status--lost {
+	background: var(--red);
+	box-shadow: 0 0 0 2px rgba(var(--red-rgb), 0.22);
+}
+
+/* ---------- 迷失分组（默认折叠） ---------- */
+.friends-group--lost {
+	margin-top: 26px;
+}
+
+.friends-group__summary {
+	align-items: center;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+}
+
+.friends-group__summary::-webkit-details-marker {
+	display: none;
+}
+
+.friends-group__summary:hover h2 {
+	color: var(--color-accent-strong);
+}
+
+:root.dark .friends-group__summary:hover h2 {
+	color: var(--color-accent-muted);
+}
+
+.friends-group__chevron {
+	margin-left: auto;
+	width: 7px;
+	height: 7px;
+	border-right: 1.6px solid var(--muted);
+	border-bottom: 1.6px solid var(--muted);
+	transform: rotate(45deg);
+	transition: transform 0.2s ease;
+}
+
+.friends-group--lost[open] .friends-group__chevron {
+	transform: rotate(-135deg);
+}
