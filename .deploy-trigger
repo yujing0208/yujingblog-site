@@ -1,1 +1,3 @@
 trigger: 2026-10-05T04:50:00.720Z - fix delete in editor github.js
+
+trigger: 2026-10-05T05:11:05.892Z - v5 cache bust for delete fix
