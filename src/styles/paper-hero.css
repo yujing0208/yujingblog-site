@@ -346,6 +346,68 @@ body.is-hero-active::before {
 }
 
 /* ---------------------------------------------------------------------------
+ * 4.5 首屏个签下方快捷链接行（文字链接，区别于右下角社交书签图标条）
+ * ------------------------------------------------------------------------ */
+.home-hero__nav {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px 14px;
+	margin: 18px 0 0;
+}
+
+.home-hero__nav-link {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 14px;
+	font-size: 14px;
+	line-height: 1.4;
+	color: var(--ink-soft, #4a5751);
+	text-decoration: none;
+	border: 1px solid var(--paper-dash, rgba(89, 62, 30, 0.24));
+	border-radius: 999px;
+	background: transparent;
+	transition:
+		color 0.2s ease,
+		border-color 0.2s ease,
+		background-color 0.2s ease,
+		transform 0.2s ease;
+}
+
+.home-hero__nav-link:hover,
+.home-hero__nav-link:focus-visible {
+	color: var(--color-accent-strong, #b5742f);
+	border-color: var(--color-accent-strong, #b5742f);
+	background: var(--fp-accent-soft, rgba(201, 138, 60, 0.12));
+	outline: none;
+	transform: translateY(-1px);
+}
+
+/* 图片模式（本站默认）：资料卡是半透玻璃暗底，链接文字用浅色 */
+.home-hero--image .home-hero__nav-link {
+	color: rgba(255, 253, 246, 0.9);
+	border-color: rgba(255, 248, 236, 0.4);
+}
+.home-hero--image .home-hero__nav-link:hover,
+.home-hero--image .home-hero__nav-link:focus-visible {
+	color: #fff;
+	border-color: rgba(255, 248, 236, 0.75);
+	background: rgba(255, 248, 236, 0.14);
+}
+
+/* 暗色（非图模式）：资料卡是深色，链接文字用浅色 */
+:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link {
+	color: var(--ink-soft);
+	border-color: var(--paper-dash);
+}
+:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link:hover,
+:root.dark .home-hero:not(.home-hero--image) .home-hero__nav-link:focus-visible {
+	color: var(--fp-accent-muted, #e6b277);
+	border-color: var(--fp-accent, #c98a3c);
+	background: var(--fp-accent-soft, rgba(201, 138, 60, 0.16));
+}
+
+/* ---------------------------------------------------------------------------
  * 4. 社交书签条（照搬 .home-hero__links，挂在资料卡下沿）
  * ------------------------------------------------------------------------ */
 .home-hero .home-hero__profile .home-hero__links {
