@@ -286,40 +286,46 @@ const heroStyle = heroImage
 			<h1>{heroTitle}</h1>
 			<p class="home-hero__bio">{heroBio}</p>
 
-			<!-- 首屏个签下方快捷链接行（文字链接，区别于右下角社交书签图标条） -->
+			{/* 首屏个签下方快捷链接行（文字链接，区别于右下角社交书签图标条）
+			    · 结构照搬原版：.home-hero__nav > a.home-hero__nav-link > span
+			    · 原版此处是「有 nav 就渲染 nav，没有才渲染波浪分隔线」的二选一；
+			      两者同时渲染会使链接行下面多出一条波浪线（2026-10-05 实拍修正） */}
 			{
-				links && links.length > 0 && (
+				links.length > 0 ? (
 					<nav class="home-hero__nav" aria-label="快捷链接">
 						{links.map((l) => (
 							<a
 								class="home-hero__nav-link"
 								href={l.url}
+								title={l.name}
+								aria-label={l.name}
 								target={l.url.startsWith("http") ? "_blank" : undefined}
 								rel={l.url.startsWith("http") ? "noopener noreferrer" : undefined}
-							>{l.name}</a>
+							>
+								<span>{l.name}</span>
+							</a>
 						))}
 					</nav>
+				) : (
+					<div class="home-hero__divider" aria-hidden="true">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="56"
+							height="12"
+							viewBox="0 0 56 12"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M3 6c3.5-3.5 6.5-3.5 10 0s6.5 3.5 10 0 6.5-3.5 10 0 6.5 3.5 10 0 6.5-3.5 10 0"
+							></path>
+						</svg>
+					</div>
 				)
 			}
-
-			<!-- 波浪分隔线（原版在有 nav 链接时显示 nav，否则显示波浪线） -->
-			<div class="home-hero__divider" aria-hidden="true">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="56"
-					height="12"
-					viewBox="0 0 56 12"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path
-						d="M3 6c3.5-3.5 6.5-3.5 10 0s6.5 3.5 10 0 6.5-3.5 10 0 6.5 3.5 10 0 6.5-3.5 10 0"
-					></path>
-				</svg>
-			</div>
 
 			<!-- 社交书签（原版把它挂在资料卡下沿，做成书签条） -->
 			<div class="socials home-hero__links" aria-label="社交链接">
