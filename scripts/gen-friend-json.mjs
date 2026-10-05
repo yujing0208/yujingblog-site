@@ -8,13 +8,14 @@
 //       len<=3 -> [name, url, avatar]
 //       len>3  -> [name, url, linkpage, avatar]      ← linkpage 在 avatar 之前
 //     linkpage 决定反链检测跑不跑；探测不到的站点保持 3 字段（= 不检测，前端按「未知」处理）。
-//  3. 已探测到的 linkpage 会被保留（不重复探测、不丢人工修正），只补新增/缺失的。
+//  3. 已探测到的 linkpage 会**复核**：若是重定向空壳（很多站的 /links/ 只是 300 字节跳转页）
+//     或跳到 /404/，就重新探测。只认真正的友链页。
 //  4. 内容没变化就不提交 —— 避免空推刷 Vercel 构建。
 //
-// 需要的环境变量：GH_TOKEN（写站点仓）、CONTENT_TOKEN（读内容仓，公开仓可用 GITHUB_TOKEN）
+// 需要的环境变量：GH_TOKEN（写站点仓）、CONTENT_TOKEN（读内容仓，私有仓必须用 PAT）
 
 import { createRequire } from "node:module";
-import { writeFileSync, readFileSync, unlinkSync } from "node:fs";
+import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -26,8 +27,9 @@ const CONTENT = { owner: "yujing0208", repo: "yujingblog-content", path: "conten
 const GH_TOKEN = process.env.GH_TOKEN;
 const CONTENT_TOKEN = process.env.CONTENT_TOKEN || process.env.GH_TOKEN;
 
-const CANDIDATES = ["/links/", "/friends/", "/link/", "/links.html", "/friend/", "/pages/links/", "/links/index.html"];
+const CANDIDATES = ["/links/", "/friends/", "/link/", "/links.html", "/friend/", "/pages/links/", "/links/index.html", "/friends", "/links"];
 const KEYWORDS = ["友链", "友情链接", "友情连接", "friends", "links", "好友", "友情鏈接"];
+const MIN_PAGE_BYTES = 1000; // 小于这个基本就是重定向壳或空页
 
 const say = (...a) => console.log(a.join(" "));
 
@@ -62,8 +64,9 @@ async function api(token, method, url, body) {
 }
 
 async function getRaw(token, { owner, repo, branch, path }) {
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
-  const res = await fetch(url, { headers: { Authorization: "token " + token, "User-Agent": "friend-json-sync" } });
+  const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`, {
+    headers: { Authorization: "token " + token, "User-Agent": "friend-json-sync" },
+  });
   return { status: res.status, text: await res.text() };
 }
 
@@ -82,10 +85,10 @@ function parseFriendsTS(src) {
   const marker = "const friendsData: FriendItem[] = [";
   const i = src.indexOf(marker);
   if (i < 0) return null;
-  const start = i + marker.length - 1; // 指向 '['
+  const start = i + marker.length - 1;
   const end = src.indexOf("\n];", start);
   if (end < 0) return null;
-  const arrayText = src.slice(start, end + 3); // "[ ... ];"
+  const arrayText = src.slice(start, end + 3);
   const tmp = join(tmpdir(), "friends_data_" + Date.now() + ".cjs");
   writeFileSync(tmp, "module.exports = " + arrayText + "\n", "utf8");
   try {
@@ -96,29 +99,53 @@ function parseFriendsTS(src) {
   }
 }
 
+async function fetchPage(url) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(url, {
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    if (ct && !ct.includes("html") && !ct.includes("text")) return null;
+    const body = await res.text();
+    return { url, body, status: res.status };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 若抓到的是重定向壳（很多站的 /links/ 只是 300 字节的 <meta refresh> 跳转页），
+ * 跟随 canonical / meta refresh 目标再抓一次；跳到 /404/ 或仍然过小则判无效。
+ */
+async function resolveShell(page) {
+  if (!page) return null;
+  const isShell = page.body.length < MIN_PAGE_BYTES || /http-equiv=["']refresh["']/i.test(page.body);
+  if (!isShell) return page;
+  const m =
+    page.body.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+    page.body.match(/http-equiv=["']refresh["'][^>]*content=["']\d+;\s*url=([^"']+)["']/i);
+  if (!m) return null;
+  let target;
+  try { target = new URL(m[1], page.url).toString(); } catch { return null; }
+  if (/\/404|\/error|not-found/i.test(target)) return null;
+  const p2 = await fetchPage(target);
+  if (!p2 || p2.body.length < MIN_PAGE_BYTES) return null;
+  return p2;
+}
+
 async function probeLinkpage(site) {
   const base = String(site).replace(/\/+$/, "");
   for (const c of CANDIDATES) {
-    const url = base + c;
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 8000);
-      const res = await fetch(url, {
-        redirect: "follow",
-        signal: ctrl.signal,
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) friend-json-sync" },
-      });
-      clearTimeout(timer);
-      if (!res.ok) continue;
-      const ct = (res.headers.get("content-type") || "").toLowerCase();
-      if (ct && !ct.includes("html") && !ct.includes("text")) continue;
-      const body = (await res.text()).slice(0, 200000).toLowerCase();
-      if (!body) continue;
-      if (!KEYWORDS.some((k) => body.includes(k.toLowerCase()))) continue;
-      return url;
-    } catch {
-      // 超时 / 证书 / DNS 一律跳过
-    }
+    const page = await resolveShell(await fetchPage(base + c));
+    if (!page) continue;
+    if (!KEYWORDS.some((k) => page.body.toLowerCase().includes(k.toLowerCase()))) continue;
+    return page.url;
   }
   return "";
 }
@@ -143,7 +170,7 @@ async function probeLinkpage(site) {
       for (const row of JSON.parse(oldText).friends || []) {
         if (Array.isArray(row) && row.length >= 4 && row[2]) known.set(norm(row[1]), row[2]);
       }
-    } catch (e) {
+    } catch {
       say("::warning::现有 friend.json 解析失败，将整份重建");
     }
   } else if (cur.status !== 404) {
@@ -151,26 +178,35 @@ async function probeLinkpage(site) {
   }
   say(`existing linkpages=${known.size}`);
 
-  // 3) 组装新数据（只对缺失 linkpage 的站点探测）
+  // 3) 组装：先复核已有 linkpage，无效则重新探测
   const out = [];
-  let reused = 0, probed = 0, missing = 0;
+  let reused = 0, reprobed = 0, probed = 0, missing = 0;
   for (const f of friends) {
     const title = String(f.title || "").trim();
     const site = String(f.siteurl || "").trim();
     const avatar = String(f.imgurl || "").trim();
     if (!title || !site) continue;
     const key = norm(site);
-    let linkpage = known.get(key) || "";
-    if (linkpage) {
-      reused += 1;
-    } else {
+    let linkpage = "";
+    const prev = known.get(key) || "";
+    if (prev) {
+      const page = await resolveShell(await fetchPage(prev));
+      if (page) {
+        linkpage = page.url;
+        if (linkpage !== prev) { reprobed += 1; say(`  ~ ${title}: ${prev} -> ${linkpage}`); }
+        else reused += 1;
+      } else {
+        say(`  ! ${title}: 旧友链页 ${prev} 已失效，重新探测`);
+      }
+    }
+    if (!linkpage) {
       linkpage = await probeLinkpage(site);
-      if (linkpage) { probed += 1; say(`  + ${title} -> ${linkpage}`); }
+      if (linkpage) { prev ? reprobed += 1 : probed += 1; say(`  + ${title} -> ${linkpage}`); }
       else { missing += 1; say(`  - ${title} 未探测到友链页`); }
     }
     out.push(linkpage ? [title, site, linkpage, avatar] : [title, site, avatar]);
   }
-  say(`reused=${reused} newly_probed=${probed} missing=${missing}`);
+  say(`reused=${reused} corrected=${reprobed} newly_probed=${probed} missing=${missing}`);
 
   // 4) 无变化就不提交
   const newText = JSON.stringify({ friends: out }, null, 2) + "\n";
