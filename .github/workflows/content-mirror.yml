@@ -22,6 +22,11 @@
 #
 # 凭据：secrets.CONTENT_REPO_TOKEN（对该内容仓库有 Contents: Read 的 PAT），
 #       缺省回落到 secrets.DISPATCH_TOKEN；都没有时跳过（主链路仍在）。
+#
+# 2026-10-05 修订（修「编辑器提交后 Vercel 部署显示成匿名」）：
+#   Git Data API 建 commit 时若不带 author/committer，GITHUB_TOKEN 会让提交归属
+#   github-actions[bot] —— Vercel 部署行上就是一个没头像的空圈。这里显式署名到
+#   站长本人（env.GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL）。
 
 name: Mirror Content
 
@@ -45,6 +50,9 @@ env:
   CONTENT_REPO: yujing0208/yujingblog-content
   CONTENT_BRANCH: master
   SITE_BRANCH: main
+  # mirror commit 的署名（不要用 GITHUB_TOKEN 的默认身份，否则 Vercel 显示匿名）
+  GIT_AUTHOR_NAME: 余京
+  GIT_AUTHOR_EMAIL: 2803673194@qq.com
 
 jobs:
   mirror:
@@ -150,8 +158,11 @@ jobs:
           if ! is_sha "$newtree"; then echo "::error::第④步建 tree 失败"; exit 1; fi
           echo "④ tree=$newtree"
 
+          # 显式署名：不带 author 时 GITHUB_TOKEN 会把提交算到 github-actions[bot] 名下，
+          # Vercel 部署行就会显示成「匿名」（没有头像）。
+          now_iso=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           commit=$(api "$GH_TOKEN" POST "/repos/$SITE_REPO/git/commits" \
-            '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"]}' | js)
+            '{"message":"chore(content-mirror): sync content @'"$remote"'","tree":"'"$newtree"'","parents":["'"$parent"'"],"author":{"name":"'"$GIT_AUTHOR_NAME"'","email":"'"$GIT_AUTHOR_EMAIL"'","date":"'"$now_iso"'"},"committer":{"name":"'"$GIT_AUTHOR_NAME"'","email":"'"$GIT_AUTHOR_EMAIL"'","date":"'"$now_iso"'"}}' | js)
           if [ -z "$commit" ]; then commit=$(printf '%s' "$commit" | jsha); fi
           if ! is_sha "$commit"; then echo "::error::第⑤步建 commit 失败"; exit 1; fi
           echo "⑤ commit=$commit"
