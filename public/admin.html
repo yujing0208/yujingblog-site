@@ -108,15 +108,15 @@
 		<div class="sp-foot"><button class="btn btn-primary" type="button" id="spPush">🚀 一键推送</button></div>
 	</aside>
 
-	<!-- 引擎脚本（全部沿用线上既有文件，顺序与旧编辑器一致；登录闸门由 console.js 内置实现） -->
-	<script src="/js/editor/github.js?v=5"></script>
-	<script src="/js/editor/ts-io.js?v=3"></script>
-	<script src="/js/editor/md.js?v=3"></script>
-	<script src="/js/editor/markdown-it.min.js?v=1"></script>
-	<script src="/js/editor/schema.js?v=4"></script>
-	<script src="/js/editor/form.js?v=3"></script>
-	<script src="/js/editor/upload.js?v=3"></script>
-	<script src="/js/editor/imgbed.js?v=2"></script>
-	<script src="/js/editor/console.js?v=6"></script>
+	<!-- 引擎脚本（defer 并行下载、按顺序执行，不阻塞 HTML 解析） -->
+	<script defer src="/js/editor/github.js?v=5"></script>
+	<script defer src="/js/editor/ts-io.js?v=3"></script>
+	<script defer src="/js/editor/md.js?v=3"></script>
+	<script defer src="/js/editor/markdown-it.min.js?v=1"></script>
+	<script defer src="/js/editor/schema.js?v=4"></script>
+	<script defer src="/js/editor/form.js?v=3"></script>
+	<script defer src="/js/editor/upload.js?v=3"></script>
+	<script defer src="/js/editor/imgbed.js?v=2"></script>
+	<script defer src="/js/editor/console.js?v=6"></script>
 </body>
 </html>
