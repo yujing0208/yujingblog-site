@@ -3,6 +3,10 @@ import { deepMerge } from "./_settings";
 // ↓ 内容仓 content/settings/site.ts，经 junction 落到 src/settings/site.ts。
 //   和 announcementConfig.ts 引 ../data/announcement 是同一种写法，线上已实证。
 import editable from "../settings/site";
+// 首屏（PaperHero）的可编辑数据来自 content/settings/hero.ts（编辑器「首屏」tab）。
+// 此前 siteConfig 只从 site.ts 取 paperHero，导致「首屏」tab 的改动不生效；
+// 现在把 hero.ts 合并进 paperHero，让编辑器真正控制首屏。
+import heroEditable from "../settings/hero";
 
 // ══════════════════════════════════════════════════════════════════════
 // 站点语言（构建期常量，不可编辑）
@@ -166,11 +170,24 @@ const EDITABLE_DEFAULT = {
 		],
 		stickersDraggable: true,
 		ctaText: "开始阅读",
+		// 首屏个签下方的快捷链接行（文字链接，区别于右下角社交书签图标条）。
+		// 内容仓缺 links 时回落到这里的默认值（与「首屏」tab 初始数据一致）。
+		links: [
+			{ name: "个人主页", url: "https://home.yujingblog.top/" },
+			{ name: "朋友圈", url: "https://www.yujingblog.top/circle/" },
+			{ name: "留言板", url: "https://yujingblog.top/guestbook/" },
+			{ name: "便签墙", url: "https://notes.yujingblog.top/" },
+			{ name: "音乐", url: "https://yujingblog.top/music/" },
+		],
 	},
 };
 
 /** 从内容仓 content/settings/site.ts 取值的部分 */
 const editableMerged = deepMerge(EDITABLE_DEFAULT, editable);
+
+// 首屏（PaperHero）的可编辑数据来自 content/settings/hero.ts（编辑器「首屏」tab）。
+// 与写死的默认值合并：内容仓缺字段时回落到 EDITABLE_DEFAULT.paperHero。
+const paperHeroConfig = deepMerge(EDITABLE_DEFAULT.paperHero, heroEditable);
 
 /**
  * 站点核心配置。
@@ -182,6 +199,8 @@ const editableMerged = deepMerge(EDITABLE_DEFAULT, editable);
 export const siteConfig: SiteConfig = {
 	...HARDCODED,
 	...editableMerged,
+	// paperHero 由 hero.ts（编辑器「首屏」tab）驱动，见上方 paperHeroConfig
+	paperHero: paperHeroConfig,
 	// banner 与 toc 等嵌套对象需要单独合并一次，避免被 editable 的浅覆盖打散
 	banner: HARDCODED.banner,
 	toc: HARDCODED.toc,
