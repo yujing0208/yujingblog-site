@@ -18,6 +18,58 @@ const description = "这里收录了一些我喜欢的站点，欢迎互相交�
 // 稳定顺序（与 FlatPaper links.yml 一致，不做随机洗牌）
 const items = getFriendsList();
 
+// ── 友链可达性 / 反链状态 ──
+// 数据来自自建 Friend-Circle-Lite 的 link.json（GitHub Action 每 4 小时刷新，经 jsDelivr 分发）。
+// 构建期抓取；取不到就退化为「无状态」（不显示小点），不阻断部署。
+// 判定：不可达 或 已检测但无反链 → 迷失（红点，进底部折叠分组）；可达 → 绿点。
+const LINK_JSON = "https://cdn.jsdelivr.net/gh/yujing0208/Friend-Circle-Lite@page/link.json";
+
+function normSite(u: string): string {
+	const raw = String(u || "").trim();
+	try {
+		const url = new URL(raw);
+		return (url.host.replace(/^www\./, "") + url.pathname.replace(/\/+$/, "")).toLowerCase();
+	} catch {
+		return raw.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/+$/, "").toLowerCase();
+	}
+}
+
+type FriendState = "ok" | "lost" | "unknown";
+type FriendStatus = { state: FriendState; reason: string };
+
+const linkStatus = new Map<string, { reachable: boolean | null; hasBacklink: boolean | null }>();
+try {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), 8000);
+	const res = await fetch(LINK_JSON, { headers: { Accept: "application/json,text/plain,*/*" }, signal: controller.signal });
+	clearTimeout(timer);
+	if (res.ok) {
+		const data = await res.json();
+		for (const row of (data && data.link_data) || []) {
+			if (!row || !row.link) continue;
+			linkStatus.set(normSite(row.link), {
+				reachable: typeof row.reachable === "boolean" ? row.reachable : null,
+				hasBacklink: typeof row.has_backlink === "boolean" ? row.has_backlink : null,
+			});
+		}
+	}
+} catch (e) {
+	// 构建期取不到就退化为「无状态」
+}
+
+function statusOf(siteurl: string): FriendStatus {
+	const st = linkStatus.get(normSite(siteurl));
+	if (!st) return { state: "unknown", reason: "" };
+	if (st.reachable === false) return { state: "lost", reason: "站点不可达" };
+	if (st.hasBacklink === false) return { state: "lost", reason: "未检测到反链" };
+	if (st.reachable === true) return { state: "ok", reason: "可达" };
+	return { state: "unknown", reason: "" };
+}
+
+const statusMap = new Map<string, FriendStatus>();
+for (const f of items) statusMap.set(f.siteurl, statusOf(f.siteurl));
+const lostItems = items.filter((f) => statusMap.get(f.siteurl)?.state === "lost");
+
 // 按主标签分组，对应 FlatPaper 的 class_name 分组（friends-group__head）
 const GROUP_DESCS: Record<string, string> = {
 	博客: "收录的博客站点，欢迎互相走访。",
@@ -27,6 +79,8 @@ const GROUP_DESCS: Record<string, string> = {
 type Group = { name: string; desc?: string; items: typeof items };
 const groups: Group[] = [];
 for (const item of items) {
+	// 不可达 / 未检测到反链的站点不进常规分组，统一收到底部「迷失」
+	if (statusMap.get(item.siteurl)?.state === "lost") continue;
 	const name = item.tags?.[0] ?? "其他";
 	let g = groups.find((x) => x.name === name);
 	if (!g) {
@@ -34,6 +88,11 @@ for (const item of items) {
 		groups.push(g);
 	}
 	g.items.push(item);
+}
+
+// 某分组若整组都进了迷失，则不再展示空标题
+for (let i = groups.length - 1; i >= 0; i -= 1) {
+	if (!groups[i].items.length) groups.splice(i, 1);
 }
 
 // 头像加载失败时的占位图（内联 SVG，不需要静态资源）
@@ -104,7 +163,19 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 										/>
 									</div>
 									<div class="friend-card__body">
-										<strong class="friend-card__name">{item.title}</strong>
+										<span class="friend-card__title-row">
+											<strong class="friend-card__name">{item.title}</strong>
+											{statusMap.get(item.siteurl)?.state === "unknown" ? null : (
+												<span
+													class:list={[
+														"friend-card__status",
+														statusMap.get(item.siteurl)?.state === "ok" ? "friend-card__status--ok" : "friend-card__status--lost",
+													]}
+													title={statusMap.get(item.siteurl)?.reason || "可达"}
+													aria-label={statusMap.get(item.siteurl)?.reason || "可达"}
+												/>
+											)}
+										</span>
 										<span class="friend-card__desc">{item.desc}</span>
 									</div>
 								</a>
@@ -142,7 +213,62 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 				</section>
 			))
 		}
-			<!-- 本站信息 / 申请模板 / 友链申请要求（照抄 homulilly.com /links/ 的 friends-intro）
+			{/* ── 迷失：不可达或未检测到反链的站点（FCLite link.json，默认折叠）── */}
+		{
+			lostItems.length > 0 && (
+				<details class="friends-group friends-group--lost">
+					<summary class="friends-group__head friends-group__summary">
+						<h2>
+							<span class="friend-card__status friend-card__status--lost" />
+							迷失
+						</h2>
+						<span class="friends-group__desc">不可达或未检测到反链的站点 · {lostItems.length} 个</span>
+						<span class="friends-group__chevron" aria-hidden="true" />
+					</summary>
+
+					<ul class="friends-grid">
+						{lostItems.map((item) => {
+							const lostReason = statusMap.get(item.siteurl)?.reason || "状态异常";
+							return (
+								<li class="friend-card friend-card--tape">
+									<a
+										class="friend-card__link"
+										href={item.siteurl}
+										target="_blank"
+										rel="noopener noreferrer"
+										title={`${item.title} · ${lostReason}`}
+									>
+										<div class="friend-card__avatar-wrap">
+											<img
+												class="friend-card__avatar"
+												src={item.imgurl}
+												alt={item.title}
+												loading="lazy"
+												referrerpolicy="no-referrer"
+												onerror={onAvatarError}
+											/>
+										</div>
+										<div class="friend-card__body">
+											<span class="friend-card__title-row">
+												<strong class="friend-card__name">{item.title}</strong>
+												<span
+													class="friend-card__status friend-card__status--lost"
+													title={lostReason}
+													aria-label={lostReason}
+												/>
+											</span>
+											<span class="friend-card__desc">{item.desc}</span>
+										</div>
+									</a>
+								</li>
+							);
+						})}
+					</ul>
+				</details>
+			)
+		}
+
+		<!-- 本站信息 / 申请模板 / 友链申请要求（照抄 homulilly.com /links/ 的 friends-intro）
 		     必须位于 article-paper 纸卡内部，和友链卡片同板 -->
 		<div class="friends-intro">
 		<p><strong>本站信息</strong> : </p>
