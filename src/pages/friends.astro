@@ -82,8 +82,12 @@ function statusOf(item: { siteurl: string; title: string }): FriendStatus {
 	if (st.reachable === false) return { state: "lost", reason: "站点不可达" };
 	// 白名单：不要求反链，可达即绿点
 	if (whitelistKeys.has(normSite(item.siteurl)) || whitelistKeys.has(normKey(item.title))) return { state: "ok", reason: "可达（白名单）" };
+	// hasBacklink 三种取值：true=检测到了反链 / false=检测过但没有 / null=判定不了
+	// （没配友链页，或页面是 SPA·跳转壳，抓不出友链列表）。只有 false 才进迷失，
+	// null 不能当成「无反链」冤枉人。
+	if (st.hasBacklink === true) return { state: "ok", reason: "可达 · 已检测到反链" };
 	if (st.hasBacklink === false) return { state: "lost", reason: "未检测到反链" };
-	if (st.reachable === true) return { state: "ok", reason: "可达" };
+	if (st.reachable === true) return { state: "ok", reason: st.hasBacklink === null ? "可达 · 无法检测反链" : "可达" };
 	return { state: "unknown", reason: "" };
 }
 
