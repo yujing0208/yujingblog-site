@@ -26,6 +26,23 @@ const items = getFriendsList();
 //   实测 Action 更新 link.json 后 CDN 仍返回旧版（has_backlink 全为 null）→ 状态点会全部退化成绿点。
 const LINK_JSON = "https://raw.githubusercontent.com/yujing0208/Friend-Circle-Lite/page/link.json";
 
+// ── 白名单 ──
+// 名单里的站点：只要可达就是绿点，不再要求「检测到反链」（仍会因不可达进迷失）。
+// 可填站点 URL 或站点名，两种写法都行；大小写 / 末尾斜杠 / www 前缀都不敏感。
+// 加人方式：往下面数组里加一行字符串即可。
+const WHITELIST: string[] = [
+	// "https://example.com/",
+	// "某某站点",
+];
+
+function normKey(v: string): string {
+	const s = String(v || "").trim();
+	if (/^https?:\/\//i.test(s)) return normSite(s);
+	return s.toLowerCase();
+}
+
+const whitelistKeys = new Set<string>(WHITELIST.map(normKey));
+
 function normSite(u: string): string {
 	const raw = String(u || "").trim();
 	try {
@@ -59,17 +76,19 @@ try {
 	// 构建期取不到就退化为「无状态」
 }
 
-function statusOf(siteurl: string): FriendStatus {
-	const st = linkStatus.get(normSite(siteurl));
+function statusOf(item: { siteurl: string; title: string }): FriendStatus {
+	const st = linkStatus.get(normSite(item.siteurl));
 	if (!st) return { state: "unknown", reason: "" };
 	if (st.reachable === false) return { state: "lost", reason: "站点不可达" };
+	// 白名单：不要求反链，可达即绿点
+	if (whitelistKeys.has(normSite(item.siteurl)) || whitelistKeys.has(normKey(item.title))) return { state: "ok", reason: "可达（白名单）" };
 	if (st.hasBacklink === false) return { state: "lost", reason: "未检测到反链" };
 	if (st.reachable === true) return { state: "ok", reason: "可达" };
 	return { state: "unknown", reason: "" };
 }
 
 const statusMap = new Map<string, FriendStatus>();
-for (const f of items) statusMap.set(f.siteurl, statusOf(f.siteurl));
+for (const f of items) statusMap.set(f.siteurl, statusOf(f));
 const lostItems = items.filter((f) => statusMap.get(f.siteurl)?.state === "lost");
 
 // 按主标签分组，对应 FlatPaper 的 class_name 分组（friends-group__head）
