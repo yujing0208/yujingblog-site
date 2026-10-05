@@ -78,22 +78,31 @@ const heroImagesAttr =
 // 下拉纸签背景：random = 内置 9 张（与 homulilly.com 线上一致：内联样式给 01，
 // data-hero-cta-backgrounds 给全部 9 张由脚本随机轮换）
 const CTA_BUILTIN_COUNT = 9;
-// ?v=2：该目录 CDN 是 immutable 一年缓存，替换图片必须换 URL 才能立即生效
-// （2026-10-01 用 FlatPaper 原版 9 张药丸贴纸替换过一批错误素材）。
+/**
+ * 纸签背景的「缓存版本号」—— 唯一的作用是换一个 URL 去绕过 CDN 的旧缓存。
+ *
+ * ⚠️ 铁律：/assets/** 响应头是 `public, max-age=31536000, immutable`，
+ *    而这条规则**对 404 一样生效**。2026-10-03 内容仓 assets 覆盖事故期间，
+ *    这 9 张图在 CDN（Cloudflare 前置缓存）上被冻成「一年之内不再回源」的 404；
+ *    之后修好源文件、重新部署都救不回来 —— 旧 key 已经死了，且 CDN 缓存不随
+ *    Vercel 部署失效。唯一的解法就是**把 URL 换掉**。
+ *
+ * 所以：这里的图只要出过问题、或换了素材，就把这个号 +1。
+ *   历次：v=2 → 2026-10-01 换成 FlatPaper 原版药丸贴纸
+ *         v=3 → 2026-10-05 解冻被事故冻住的 404（首页纸签只剩文字）
+ */
+const CTA_ASSET_VERSION = 3;
+const ctaUrl = (i: number) =>
+	`/assets/home/cta/cta-bg-0${i + 1}.webp?v=${CTA_ASSET_VERSION}`;
 const ctaBackgrounds =
 	ctaBackground === "random"
-		? Array.from(
-				{ length: CTA_BUILTIN_COUNT },
-				(_, i) => `/assets/home/cta/cta-bg-0${i + 1}.webp?v=2`,
-			)
+		? Array.from({ length: CTA_BUILTIN_COUNT }, (_, i) => ctaUrl(i))
 		: ctaBackground
 			? [ctaBackground]
 			: [];
 const ctaBgAttr =
 	ctaBackgrounds.length > 1 ? JSON.stringify(ctaBackgrounds) : undefined;
-const ctaBgStyle = `--hero-cta-bg: url("${
-	ctaBackgrounds[0] ?? "/assets/home/cta/cta-bg-01.webp?v=2"
-}");`;
+const ctaBgStyle = `--hero-cta-bg: url("${ctaBackgrounds[0] ?? ctaUrl(0)}");`;
 
 const heroTitle = siteConfig.title;
 const heroSubtitle = profileConfig.name;

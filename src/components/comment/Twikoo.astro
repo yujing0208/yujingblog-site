@@ -31,7 +31,11 @@ const OWNER_DISPLAY_NICK = "YuJing";
 <script is:inline define:vars={{ config, OWNER_NICKS, OWNER_AVATAR_HASHES, OWNER_DISPLAY_NICK }}>
 	(function () {
 		const TWIKOO_CONTAINER_ID = "twikoo-container";
-		const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js?v=1.7.14";
+		// ?v=1.7.14b —— 后缀 b 是「解冻标记」，不是上游版本号。
+		// /assets/** 是 `max-age=31536000, immutable` 的一年缓存且**连 404 一起缓存**：
+		// 2026-10-03 的 assets 覆盖事故把原来的 ?v=1.7.14 在 CDN 上冻成 404，
+		// 修好源文件也回不来，换 URL 才能让浏览器重新取到脚本（否则评论区整块不加载）。
+		const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js?v=1.7.14b";
 		const ROOT_MARGIN = "200px";
 
 		let observer = null;

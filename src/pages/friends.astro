@@ -49,10 +49,13 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 	<!-- FlatPaper link.ejs 壳层：article-paper--with-top-img（顶图出血 + 标题上移压图） -->
 	<article class="article-paper friends-page article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full">
 		<!-- 顶图：FlatPaper 朋友圈同款拼贴图。
-		     ⚠️ 必须放 public/assets/**（构建时 public/images 会被 sync-content 整体替换成内容仓的 images） -->
+		     ⚠️ 必须放 public/assets/**（构建时 public/images 会被 sync-content 整体替换成内容仓的 images）
+		     ⚠️ ?v=2：/assets/** 是 `max-age=31536000, immutable` 的一年缓存，且**连 404 一起缓存**。
+		        2026-10-03 的 assets 覆盖事故把这个不带版本号的 URL 在 CDN 上冻成了 404，
+		        源文件修好也回不来 —— 只能靠换 URL 解冻。 -->
 		<figure class="article-top-img article-top-img--page" aria-label="友情链接">
 			<img
-				src="/assets/friends/links-top.webp"
+				src="/assets/friends/links-top.webp?v=2"
 				alt=""
 				loading="eager"
 				fetchpriority="high"
