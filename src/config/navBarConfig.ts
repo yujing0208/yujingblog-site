@@ -23,6 +23,9 @@ export const navBarConfig: NavBarConfig = deepMerge<NavBarConfig>(
 			{ name: "首页", url: "/", icon: "lucide:house" },
 			{ name: "归档", url: "/archive/", icon: "lucide:archive" },
 		],
+		// 顶栏品牌区「找到我」下拉：独立于 profileConfig.links（社交链接）。
+		// 这里是内容仓缺字段时的回落值，正常以 content/settings/navbar.ts 为准。
+		brandMenu: [{ name: "编辑器", url: "/admin", icon: "lucide:pen-line" }],
 	},
 	editable,
 );

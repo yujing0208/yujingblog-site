@@ -231,6 +231,13 @@ export interface NavBarLink {
 
 export interface NavBarConfig {
 	links: NavBarLink[];
+	/**
+	 * 顶栏品牌区（logo 旁的小方块）下拉菜单的条目。
+	 *
+	 * 独立于个人名片 / 首屏的社交链接（profileConfig.links）：
+	 * 这里放站点自身入口（如在线编辑器），不要和社交链接共用同一份数据。
+	 */
+	brandMenu?: NavBarLink[];
 }
 
 export interface ProfileConfig {

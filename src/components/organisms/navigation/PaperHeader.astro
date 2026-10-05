@@ -19,7 +19,7 @@
  */
 import { Icon } from "astro-icon/components";
 
-import { navBarConfig, profileConfig, siteConfig } from "../../../config";
+import { navBarConfig, siteConfig } from "../../../config";
 import type { NavBarLink } from "../../../types/config";
 import { url } from "../../../utils/url-utils";
 import MobileTOC from "../../features/toc/MobileTOC.svelte";
@@ -86,6 +86,14 @@ const isActive = (href: string) => {
 };
 
 const brandTitle = siteConfig.title || "FlatPaper";
+
+// 顶栏品牌区「找到我」下拉：读 navbar 自己的 brandMenu，
+// 不再共用 profileConfig.links（那是个人名片 / 首屏的社交链接）。
+const brandMenu = navBarConfig.brandMenu ?? [];
+// astro-icon 的 sprite 白名单由构建期扫描 src/ 里的静态字面量生成；
+// 品牌菜单的图标名来自配置（运行时变量），这里以字面量罗列一次保证被收集。
+const BRAND_MENU_ICON_MANIFEST = ["lucide:pen-line"];
+void BRAND_MENU_ICON_MANIFEST;
 ---
 
 <header class="site-header">
@@ -116,14 +124,14 @@ const brandTitle = siteConfig.title || "FlatPaper";
 				<div class="brand-nav-group">
 					<div class="brand-nav-title">找到我</div>
 					{
-						profileConfig.links.map((link) => (
+						brandMenu.map((link) => (
 							<a
 								role="menuitem"
 								href={link.url}
 								target="_blank"
 								rel="noopener noreferrer"
 							>
-								<Icon name={link.icon} is:inline />
+								{link.icon && <Icon name={link.icon} is:inline />}
 								<span>{link.name}</span>
 							</a>
 						))
