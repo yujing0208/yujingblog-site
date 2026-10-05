@@ -37,6 +37,9 @@ const KEYWORDS = ["友链", "友情链接", "友情连接", "friends", "links", 
 const MIN_PAGE_BYTES = 1000; // 小于这个基本就是重定向壳或空页
 const FETCH_TIMEOUT = 12000;
 const FETCH_ATTEMPTS = 2;
+// 这些状态码是「对方不让我看」（WAF / 限流 / 临时故障），不是「页面没了」——
+// 不能当成友链页失效，否则会把正确的 linkpage 误清空。
+const BLOCKED_STATUS = new Set([401, 403, 405, 406, 429, 500, 502, 503, 520, 521, 522, 524]);
 
 const say = (...a) => console.log(a.join(" "));
 
@@ -124,7 +127,8 @@ async function fetchPage(url) {
         headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" },
       });
       clearTimeout(timer);
-      if (!res.ok) return { ok: false, netfail: false, status: res.status };
+      const blocked = BLOCKED_STATUS.has(res.status);
+      if (!res.ok) return { ok: false, netfail: blocked, status: res.status };
       const ct = (res.headers.get("content-type") || "").toLowerCase();
       if (ct && !ct.includes("html") && !ct.includes("text")) return { ok: false, netfail: false, status: res.status };
       return { ok: true, url, body: await res.text(), status: res.status };
