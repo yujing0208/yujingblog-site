@@ -309,6 +309,35 @@
 				{ key: "body", label: "正文（Markdown）", type: "text", required: true },
 			],
 		},
+
+		/* 同文件第二、三个数据源：自律日记 / 每日碎碎念（与 campusNotebook 共用一个 ts 文件） */
+		notebooksRun: {
+			label: "自律日记",
+			format: "ts-array",
+			...CONTENT,
+			path: "content/data/notebooks.ts",
+			varName: "runNotebook",
+			itemLabel: "date",
+			fields: [
+				{ key: "date", label: "日期", type: "date", required: true },
+				{ key: "distance", label: "距离（km）", type: "number", required: true, step: 0.01 },
+				{ key: "duration", label: "用时（mm:ss）", type: "string", required: true, placeholder: "如 28:30" },
+				{ key: "heartRate", label: "平均心率", type: "number", optional: true },
+			],
+		},
+
+		notebooksDaily: {
+			label: "每日碎碎念",
+			format: "ts-array",
+			...CONTENT,
+			path: "content/data/notebooks.ts",
+			varName: "dailyNotebook",
+			itemLabel: "date",
+			fields: [
+				{ key: "date", label: "日期", type: "date", required: true },
+				{ key: "content", label: "内容", type: "text", required: true },
+			],
+		},
 	};
 
 	/** 取 schema（兼容 xxx-edit 后缀 + 单复数别名） */

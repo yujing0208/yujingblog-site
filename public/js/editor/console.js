@@ -419,17 +419,29 @@
 		});
 	}
 	function getTs(schema) {
-		var k = "ts:" + schema.path;
+		/* 同一个 ts 文件里可能有多个数据源（如 notebooks.ts 的 campusNotebook /
+		   runNotebook / dailyNotebook）：按 path 缓存原始文本，按 path+varName 缓存
+		   解析结果。否则先取的那本会把后取的顶掉（value 变成上一本的数组）。 */
+		var rawKey = "ts:raw:" + schema.path;
+		var k = "ts:val:" + schema.path + "#" + (schema.varName || "");
 		if (CACHE[k]) return Promise.resolve(CACHE[k]);
-		return GIT.getFile(schema.owner, schema.repo, schema.path, schema.branch).then(function (f) {
-			if (!f) throw new Error("文件不存在：" + schema.path);
-			var v = TSIO.extract(f.content, schema.varName);
+		var load = CACHE[rawKey] ? Promise.resolve(CACHE[rawKey])
+			: GIT.getFile(schema.owner, schema.repo, schema.path, schema.branch).then(function (f) {
+				if (!f) throw new Error("文件不存在：" + schema.path);
+				CACHE[rawKey] = { raw: f.content, sha: f.sha };
+				return CACHE[rawKey];
+			});
+		return load.then(function (o) {
+			var v = TSIO.extract(o.raw, schema.varName);
 			if (v === null) throw new Error("无法解析 " + schema.path + " 的数据段（" + schema.varName + "）");
-			CACHE[k] = { raw: f.content, sha: f.sha, value: v };
+			CACHE[k] = { raw: o.raw, sha: o.sha, value: v };
 			return CACHE[k];
 		});
 	}
-	function clearTs(schema) { delete CACHE["ts:" + schema.path]; }
+	function clearTs(schema) {
+		var rk = "ts:raw:" + schema.path, vp = "ts:val:" + schema.path + "#";
+		Object.keys(CACHE).forEach(function (k) { if (k === rk || k.indexOf(vp) === 0) delete CACHE[k]; });
+	}
 
 	/* 文章元数据（递归收集 + 解析 frontmatter） */
 	function listPosts() {
@@ -1906,39 +1918,83 @@ function createAlbum() {
 }
 
 /* ================= 笔记本（书架） ================= */
+/* 三本书的数据源都在同一个内容仓文件 content/data/notebooks.ts：
+   校园杂记 campusNotebook / 自律日记 runNotebook / 每日碎碎念 dailyNotebook */
 var NB_BOOKS = [
-	{ key: "campus", color: "#7aa585", lock: "🔒", ttl: "校园杂记", sub: "高中三年，值得留个档", tag1: "Markdown 日记", src: "内容仓", warn: "" },
-	{ key: "run", color: "#e0996b", lock: "📖", ttl: "自律日记", sub: "跑过的路，一步都不白费", tag1: "跑步记录", src: "非内容仓", warn: "数据源不在内容仓，编辑器暂无法保存" },
-	{ key: "daily", color: "#7d93c4", lock: "📖", ttl: "每日碎碎念", sub: "今天也在认真碎碎念", tag1: "短文本", src: "非内容仓", warn: "数据源不在内容仓，编辑器暂无法保存" },
+	{ key: "campus", color: "#7aa585", lock: "🔒", ttl: "校园杂记", sub: "高中三年，值得留个档", tag1: "Markdown 日记", schema: "notebooks", varName: "campusNotebook", kind: "md" },
+	{ key: "run", color: "#e0996b", lock: "📖", ttl: "自律日记", sub: "跑过的路，一步都不白费", tag1: "跑步记录", schema: "notebooksRun", varName: "runNotebook", kind: "run" },
+	{ key: "daily", color: "#7d93c4", lock: "📖", ttl: "每日碎碎念", sub: "今天也在认真碎碎念", tag1: "短文本", schema: "notebooksDaily", varName: "dailyNotebook", kind: "text" },
 ];
+var NB_CUR = "campus";
+function nbBook(key) { for (var i = 0; i < NB_BOOKS.length; i++) { if (NB_BOOKS[i].key === key) return NB_BOOKS[i]; } return NB_BOOKS[0]; }
+function nbSchema(b) { return window.getSchema(b.schema); }
+function nbSortKey(b) { return b.kind === "md" ? "h" : "date"; }
+/* 每条记录的字段定义（kind → 表单 + 列表展示） */
+function nbFields(b) {
+	if (b.kind === "run") return [
+		{ k: "date", l: "日期", t: "date", req: true },
+		{ k: "distance", l: "距离（km）", t: "number", req: true, ph: "如 3.5" },
+		{ k: "duration", l: "用时（mm:ss）", t: "text", req: true, ph: "如 28:30" },
+		{ k: "heartRate", l: "平均心率", t: "number", ph: "可留空" },
+	];
+	if (b.kind === "text") return [
+		{ k: "date", l: "日期", t: "date", req: true },
+		{ k: "content", l: "内容", t: "textarea", req: true },
+	];
+	return [
+		{ k: "h", l: "日期", t: "date", req: true },
+		{ k: "body", l: "正文（Markdown）", t: "textarea", req: true },
+	];
+}
+function nbEmptyItem(b) {
+	var it = {}; it[nbSortKey(b)] = today(); return it;
+}
+function nbRowTitle(b, it) {
+	if (b.kind === "run") return (it.date || "") + (it.distance != null && it.distance !== "" ? " · " + it.distance + " km" : "");
+	if (b.kind === "text") return it.date || "";
+	return it.h || "";
+}
+function nbRowSub(b, it) {
+	if (b.kind === "run") return "用时 " + (it.duration || "--") + (it.heartRate ? " · 心率 " + it.heartRate : "");
+	if (b.kind === "text") return String(it.content || "").slice(0, 20);
+	var body = String(it.body || "");
+	return body.slice(0, 18) + (body.length > 18 ? "…" : "");
+}
+function nbRowRight(b, it) {
+	if (b.kind === "run") return it.distance != null && it.distance !== "" ? String(it.distance) : "";
+	if (b.kind === "text") return String(it.content || "").length + " 字";
+	return String(it.body || "").length + " 字";
+}
+/* 统一落盘：replace 对应 varName → 清缓存 → 入暂存区 → 重渲染 */
+/* 三本书共用一个文件：若该文件已在暂存区（尚未推送），必须以「暂存区内容」为基准改，
+   否则用远端原始文本覆盖会把上一本刚暂存的改动抹掉。 */
+function tsRawFor(sch) {
+	var st = STAGED[sch.path];
+	if (st && typeof st.content === "string" && !st.del) return Promise.resolve({ raw: st.content, sha: null });
+	return getTs(sch);
+}
+function nbSaveList(b, list, label) {
+	var sch = nbSchema(b);
+	return tsRawFor(sch).then(function (ts) {
+		var content = TSIO.replace(ts.raw, b.varName, list);
+		if (content == null) throw new Error("无法写入 " + sch.path + " 的数据段（" + b.varName + "）");
+		clearTs(sch);
+		DIRTY = false;
+		stagePut(sch.path, content, label || b.ttl);
+		loadView("notebooks", true);
+	});
+}
 function renderNotebooks() {
 	var v = $("#v-notebooks");
-	v.innerHTML = pageHead("note", "笔记本", '线上 <span class="mono">/notebooks/</span> 是一排书架 · <b>3 本</b> · 校园杂记取自 <span class="mono">content/data/notebooks.ts</span>',
-		'<button class="btn" type="button" id="nbImport">⬆ 批量导入 .md</button><button class="btn btn-primary" type="button" id="nbAdd">+ 新增篇目</button>') +
-		'<div class="nb-src"><span class="pill info">数据源</span><span><b>校园杂记</b> → <span class="mono">content/data/notebooks.ts</span> · <span class="mono">campusNotebook</span></span><span class="nb-src-sep"></span><span><b>自律日记 / 每日碎碎念</b> → 站点页内联（<b style="color:var(--bad)">不在内容仓</b>，编辑器无法保存）</span></div>' +
+	v.innerHTML = pageHead("note", "笔记本", '线上 <span class="mono">/notebooks/</span> 是一排书架 · <b>3 本</b> · 数据都取自 <span class="mono">content/data/notebooks.ts</span>',
+		'<button class="btn" type="button" id="nbImport">⬆ 批量导入 .md</button><button class="btn btn-primary" type="button" id="nbAdd">+ 新增一条</button>') +
+		'<div class="nb-src"><span class="pill info">数据源</span><span><b>校园杂记</b> → <span class="mono">campusNotebook</span></span><span class="nb-src-sep"></span><span><b>自律日记</b> → <span class="mono">runNotebook</span></span><span class="nb-src-sep"></span><span><b>每日碎碎念</b> → <span class="mono">dailyNotebook</span></span><span class="nb-src-sep"></span><span>都在 <span class="mono">content/data/notebooks.ts</span> · <b style="color:var(--ok)">三本都可编辑保存</b></span></div>' +
 		'<div class="nb-drop" id="nbDrop" data-nb-drop><b>把 .md / .markdown 文件拖到这里批量导入校园杂记</b><br>也支持一次选多个文件 —— 自动读 frontmatter 的 <span class="mono">date / title</span>，没有就取文件修改日期；导入后进暂存区，统一推送上线。</div>' +
 		'<div class="shelf" id="nbShelf"></div>' +
 		'<div class="split"><div class="card split-list"><div class="card-head" style="padding:10px 12px"><span class="card-title" id="nbTocTitle">校园杂记 · 目录</span><span class="card-sub" style="margin-left:auto" id="nbTocSub"></span></div>' +
-		'<div id="nbToc"><div class="empty-block">加载中…</div></div></div><div id="nbPane"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一篇</div></div></div></div></div>';
-	getTs(window.getSchema("notebooks")).then(function (ts) {
-		var arr = Array.isArray(ts.value) ? ts.value.slice().sort(function (a, b) { return String(b.h || "").localeCompare(String(a.h || "")); }) : [];
-		$("#nbTocSub").textContent = arr.length + " 篇 · 倒序";
-		var box = $("#nbToc");
-		box.innerHTML = "";
-		arr.forEach(function (it, i) {
-			var row = el("div", "list-item" + (i === 0 ? " on" : ""));
-			row.setAttribute("data-sel", "");
-			row.innerHTML = '<div class="list-thumb" style="background:var(--bg-inset);font-size:11px">' + pad(arr.length - i) + '</div><div class="list-main"><div class="list-t">' + esc(it.h || "") + '</div><div class="list-s">' + esc(String(it.body || "").slice(0, 18)) + (String(it.body || "").length > 18 ? "…" : "") + '</div></div><div class="list-r num" style="font-size:11px">' + String(it.body || "").length + '</div>';
-			row.addEventListener("click", function () { openNbItem(arr, it, i); });
-			box.appendChild(row);
-		});
-		if (!arr.length) box.innerHTML = '<div class="empty-block">还没有篇目，点「+ 新增篇目」</div>';
-		$("#nbAdd").addEventListener("click", function () {
-			openNbItem(null, { h: today(), body: "" }, -1);
-		});
-	}).catch(function (e) { $("#nbToc").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+		'<div id="nbToc"><div class="empty-block">加载中…</div></div></div><div id="nbPane"><div class="card"><div class="card-body"><div class="empty-block">从左侧选择一条</div></div></div></div></div>';
 
-	/* 批量导入 .md（选文件 + 拖拽落区高亮；真正的 drop 由全局 initGlobalDnd 派发到 importNotebookMd） */
+	/* 批量导入 .md（仅校园杂记；选文件 + 拖拽落区高亮，真正的 drop 由全局 initGlobalDnd 派发） */
 	var nbImport = $("#nbImport");
 	if (nbImport) nbImport.addEventListener("click", function () {
 		var inp = document.createElement("input");
@@ -1955,61 +2011,90 @@ function renderNotebooks() {
 			nbDrop.addEventListener(ev, function () { nbDrop.classList.remove("on"); });
 		});
 	}
+
 	var shelf = $("#nbShelf");
-	NB_BOOKS.forEach(function (b, i) {
-		var card = el("button", "book-card" + (i === 0 ? " on" : ""));
+	NB_BOOKS.forEach(function (b) {
+		var card = el("button", "book-card" + (b.key === NB_CUR ? " on" : ""));
 		card.type = "button";
 		card.setAttribute("data-book", b.key);
 		card.style.setProperty("--bk", b.color);
 		card.innerHTML = '<span class="bk-band"></span><span class="bk-top"><span>YuJing Library</span><span>' + b.lock + '</span></span>' +
 			'<span class="bk-main"><span class="bk-ttl">' + b.ttl + '</span><span class="bk-bandtx">' + b.sub + '</span></span>' +
 			'<span class="bk-foot"><span class="bk-author">余京◎著</span></span>' +
-			'<span class="bk-tags"><span class="pill" style="padding:0 6px">' + b.tag1 + '</span><span class="num">' + (b.key === "campus" ? "…" : "0 条") + '</span>' + (b.src === "非内容仓" ? '<span class="pill warn" style="padding:0 6px">非内容仓</span>' : "") + '</span>';
+			'<span class="bk-tags"><span class="pill" style="padding:0 6px">' + b.tag1 + '</span><span class="num" id="nbCnt-' + b.key + '">…</span></span>';
 		card.addEventListener("click", function () {
 			$$("#nbShelf .book-card").forEach(function (x) { x.classList.remove("on"); });
 			card.classList.add("on");
-			if (b.key !== "campus") {
-				$("#nbToc").innerHTML = '<div class="nb-empty"><span class="nb-empty-ico">' + (b.key === "run" ? "🏃" : "📝") + '</span><b>数据不在内容仓</b><span>' + esc(b.warn) + '</span></div>';
-				$("#nbPane").innerHTML = '<div class="card"><div class="card-body"><div class="nb-warn"><b>数据源不在内容仓。</b>编辑器只写内容仓 ⇒ 这本笔记本暂不可编辑。</div></div></div>';
-			} else {
-				loadView("notebooks", true);
-			}
+			NB_CUR = b.key;
+			renderNbToc(b);
 		});
 		shelf.appendChild(card);
 	});
+	$("#nbAdd").addEventListener("click", function () {
+		var b = nbBook(NB_CUR);
+		openNbItem(b, [], nbEmptyItem(b), -1);
+	});
+	renderNbToc(nbBook(NB_CUR));
 }
-function openNbItem(arr, it, idx) {
+function renderNbToc(b) {
+	var sch = nbSchema(b);
+	$("#nbTocTitle").textContent = b.ttl + " · 目录";
+	$("#nbToc").innerHTML = '<div class="empty-block">加载中…</div>';
+	getTs(sch).then(function (ts) {
+		var arr = Array.isArray(ts.value) ? ts.value.slice() : [];
+		var sk = nbSortKey(b);
+		arr.sort(function (a, c) { return String(c[sk] || "").localeCompare(String(a[sk] || "")); });
+		var cnt = $("#nbCnt-" + b.key);
+		if (cnt) cnt.textContent = arr.length + " 条";
+		$("#nbTocSub").textContent = arr.length + " 条 · 倒序";
+		var box = $("#nbToc");
+		box.innerHTML = "";
+		arr.forEach(function (it, i) {
+			var row = el("div", "list-item" + (i === 0 ? " on" : ""));
+			row.setAttribute("data-sel", "");
+			row.innerHTML = '<div class="list-thumb" style="background:var(--bg-inset);font-size:11px">' + pad(arr.length - i) + '</div><div class="list-main"><div class="list-t">' + esc(nbRowTitle(b, it)) + '</div><div class="list-s">' + esc(nbRowSub(b, it)) + '</div></div><div class="list-r num" style="font-size:11px">' + esc(nbRowRight(b, it)) + '</div>';
+			row.addEventListener("click", function () { openNbItem(b, arr, it, i); });
+			box.appendChild(row);
+		});
+		if (!arr.length) box.innerHTML = '<div class="empty-block">还没有记录，点「+ 新增一条」</div>';
+	}).catch(function (e) { $("#nbToc").innerHTML = '<div class="error-block">' + esc(e.message) + '</div>'; });
+}
+function openNbItem(b, arr, it, idx) {
 	var isNew = idx < 0;
-	$$("#nbToc .list-item").forEach(function (x) { x.classList.toggle("on", false); });
-	$("#nbPane").innerHTML = '<div class="card"><div class="card-head"><h2 class="card-title">校园杂记</h2><span class="pill">markdown</span></div>' +
-		'<div class="card-body"><div class="form-grid">' +
-		'<div class="f"><label class="f-label">日期<span class="req">*</span></label><input class="inp" type="date" id="nbH" value="' + esc(it.h || today()) + '"></div>' +
-		'<div class="f wide"><label class="f-label">正文（Markdown）<span class="req">*</span></label><textarea class="inp mono ed-area" id="nbBody" style="min-height:260px;font-size:12.5px">' + esc(it.body || "") + '</textarea></div>' +
-		'</div><div class="f-hint" style="margin-top:10px">写入 <span class="mono">content/data/notebooks.ts</span> 的 <span class="mono">campusNotebook</span> 数组，每条为 <span class="mono">{ h: "YYYY-MM-DD", body: "…" }</span></div></div></div>' +
-		'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" type="button" id="nbSave">💾 存入暂存区</button><div style="flex:1"></div>' + (isNew ? "" : '<button class="btn btn-danger" type="button" id="nbDel">🗑 删除本篇</button>') + '</div>';
+	var defs = nbFields(b);
+	$$("#nbToc .list-item").forEach(function (x) { x.classList.remove("on"); });
+	var fields = defs.map(function (d) {
+		var val = it[d.k] == null ? "" : it[d.k];
+		var inp;
+		if (d.t === "textarea") inp = '<textarea class="inp mono ed-area" id="nbf-' + d.k + '" style="min-height:200px;font-size:12.5px">' + esc(val) + '</textarea>';
+		else if (d.t === "date") inp = '<input class="inp" type="date" id="nbf-' + d.k + '" value="' + esc(val) + '">';
+		else if (d.t === "number") inp = '<input class="inp" type="number" step="0.01" id="nbf-' + d.k + '" value="' + esc(val) + '" placeholder="' + (d.ph || "") + '">';
+		else inp = '<input class="inp" type="text" id="nbf-' + d.k + '" value="' + esc(val) + '" placeholder="' + (d.ph || "") + '">';
+		return '<div class="f' + (d.t === "textarea" ? " wide" : "") + '"><label class="f-label">' + d.l + (d.req ? '<span class="req">*</span>' : "") + '</label>' + inp + '</div>';
+	}).join("");
+	$("#nbPane").innerHTML = '<div class="card"><div class="card-head"><h2 class="card-title">' + b.ttl + '</h2><span class="pill">' + b.tag1 + '</span></div>' +
+		'<div class="card-body"><div class="form-grid">' + fields + '</div>' +
+		'<div class="f-hint" style="margin-top:10px">写入 <span class="mono">content/data/notebooks.ts</span> 的 <span class="mono">' + b.varName + '</span> 数组</div></div></div>' +
+		'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-primary" type="button" id="nbSave">💾 存入暂存区</button><div style="flex:1"></div>' + (isNew ? "" : '<button class="btn btn-danger" type="button" id="nbDel">🗑 删除这条</button>') + '</div>';
 	$("#nbSave").addEventListener("click", function () {
-		var item = { h: $("#nbH").value, body: $("#nbBody").value };
+		var item = {}, miss = [];
+		defs.forEach(function (d) {
+			var raw = $("#nbf-" + d.k).value;
+			if (d.t === "number") { if (raw !== "") item[d.k] = Number(raw); }
+			else item[d.k] = raw;
+			if (d.req && (item[d.k] === undefined || item[d.k] === "")) miss.push(d.l);
+		});
+		if (miss.length) { toast("请填写：" + miss.join("、")); return; }
 		var list = arr.slice();
 		if (isNew) list.push(item); else list[idx] = item;
-		list.sort(function (a, b) { return String(a.h || "").localeCompare(String(b.h || "")); });
-		getTs(window.getSchema("notebooks")).then(function (ts) {
-			var content = TSIO.replace(ts.raw, "campusNotebook", list);
-			clearTs(window.getSchema("notebooks"));
-			DIRTY = false;
-			stagePut("content/data/notebooks.ts", content, "校园杂记");
-			loadView("notebooks", true);
-		});
+		var sk = nbSortKey(b);
+		list.sort(function (a, c) { return String(a[sk] || "").localeCompare(String(c[sk] || "")); });
+		nbSaveList(b, list, b.ttl);
 	});
 	var del = $("#nbDel");
 	if (del) del.addEventListener("click", function () {
-		if (!confirm("删除本篇？（先入暂存区）")) return;
-		var list = arr.filter(function (x) { return x !== it; });
-		getTs(window.getSchema("notebooks")).then(function (ts) {
-			var content = TSIO.replace(ts.raw, "campusNotebook", list);
-			clearTs(window.getSchema("notebooks"));
-			stagePut("content/data/notebooks.ts", content, "校园杂记（删除一篇）");
-			loadView("notebooks", true);
-		});
+		if (!confirm("删除这条？（先入暂存区）")) return;
+		nbSaveList(b, arr.filter(function (x) { return x !== it; }), b.ttl + "（删除一条）");
 	});
 }
 function ymdOf(ts) {
@@ -2027,7 +2112,7 @@ function importNotebookMd(files) {
 	var list = (files || []).filter(isMdFile);
 	if (!list.length) { toast("没有可导入的 .md / .markdown 文件"); return; }
 	var sch = window.getSchema("notebooks");
-	getTs(sch).then(function (ts) {
+	tsRawFor(sch).then(function (ts) {
 		var base = Array.isArray(ts.value) ? ts.value.slice() : [];
 		var added = [], i = 0, skip = 0;
 		function step() {
@@ -2566,14 +2651,57 @@ function renderComments() {
 }
 
 /* ================= 网站统计 ================= */
+var ST_CMTS = [];       /* 最近一次拉到的评论，仅用于渲染分布 */
+var ST_DIST = "page";   /* 评论分布维度：page | month | user */
+function cmtDistRows(cmts, mode) {
+	var map = {};
+	cmts.forEach(function (c) {
+		var k;
+		if (mode === "month") {
+			var d = new Date(Number(c.created) || 0);
+			k = isNaN(d.getTime()) ? "（未知）" : d.getFullYear() + "-" + pad(d.getMonth() + 1);
+		} else if (mode === "user") {
+			k = (c.nick && String(c.nick).trim()) || "匿名";
+		} else {
+			k = String(c.url || "").replace(/^https?:\/\/[^/]+/, "").replace(/\/$/, "") || "/";
+		}
+		map[k] = (map[k] || 0) + 1;
+	});
+	var rows = Object.keys(map).map(function (k) { return { k: k, v: map[k] }; });
+	rows.sort(function (a, b) { return mode === "month" ? b.k.localeCompare(a.k) : (b.v - a.v) || a.k.localeCompare(b.k); });
+	return rows;
+}
+function renderCmtDist() {
+	var box = $("#stCmtDist");
+	if (!box) return;
+	var rows = cmtDistRows(ST_CMTS, ST_DIST);
+	if (!rows.length) { box.innerHTML = '<div class="empty-block">还没有评论数据</div>'; return; }
+	var total = ST_CMTS.length || 1;
+	var max = Math.max.apply(null, rows.map(function (r) { return r.v; }).concat([1]));
+	var shown = rows.slice(0, 12);
+	box.innerHTML = shown.map(function (r, i) {
+		return '<div class="rank-row"><span class="rank-i num">' + (i + 1) + '</span><div class="rank-k"><div class="rank-t">' + esc(r.k) + '</div><div class="rank-bar"><i style="width:' + (r.v / max * 100).toFixed(1) + '%"></i></div></div><span class="rank-v num">' + r.v + '</span><span class="rank-p num">' + (r.v / total * 100).toFixed(1) + '%</span></div>';
+	}).join("") + (rows.length > shown.length ? '<div class="rank-row" style="color:var(--ink-4);font-size:12px"><span class="rank-i"></span><div class="rank-k">还有 ' + (rows.length - shown.length) + ' 组未展示</div></div>' : "");
+}
 function renderStats() {
 	setView("stats",
 		pageHead("chart", "网站统计", 'Umami（浏览量 / 访问 / 游客 + 文章排行）· Twikoo（评论）· 实时拉取',
 			'<button class="btn" type="button" id="stRefresh">↻ 刷新</button>') +
 		'<div class="stat-row" id="stRow">' + loading() + "</div>" +
 		'<div class="card" style="margin-top:14px"><div class="card-head"><h2 class="card-title">文章阅读量排行</h2><span class="pill info">GET /metrics?type=title</span></div>' +
-		'<div data-ranklist id="stRank">' + loading() + "</div></div>");
+		'<div data-ranklist id="stRank">' + loading() + "</div></div>" +
+		'<div class="card" style="margin-top:14px"><div class="card-head"><h2 class="card-title">评论分布</h2>' +
+		'<div class="tabs" style="margin-left:auto;border-bottom:0"><button class="tab on" type="button" data-cdist="page">按页面</button><button class="tab" type="button" data-cdist="month">按月</button><button class="tab" type="button" data-cdist="user">按评论者</button></div>' +
+		'<span class="pill" id="stCmtTotal">—</span></div>' +
+		'<div id="stCmtDist">' + loading() + "</div></div>");
 	$("#stRefresh").addEventListener("click", function () { renderStats(); });
+	$$("#v-stats [data-cdist]").forEach(function (b) {
+		b.addEventListener("click", function () {
+			ST_DIST = b.getAttribute("data-cdist");
+			$$("#v-stats [data-cdist]").forEach(function (x) { x.classList.toggle("on", x === b); });
+			renderCmtDist();
+		});
+	});
 	Promise.all([
 		withTimeout(umami("/stats", "startAt=" + (Date.now() - 30 * 86400000) + "&endAt=" + Date.now()), 8000),
 		withTimeout(umami("/metrics", "startAt=" + (Date.now() - 30 * 86400000) + "&endAt=" + Date.now() + "&type=title"), 8000),
@@ -2594,9 +2722,14 @@ function renderStats() {
 		$("#stRank").innerHTML = rows.length ? rows.slice(0, 12).map(function (r, i) {
 			return '<div class="rank-row"><span class="rank-i num">' + (i + 1) + '</span><div class="rank-k"><div class="rank-t">' + esc(r.x || r.path || r.url || "?") + '</div><div class="rank-bar"><i style="width:' + ((r.y || 0) / max * 100).toFixed(1) + '%"></i></div></div><span class="rank-v num">' + (r.y || 0) + '</span><span class="rank-p num">' + ((r.y || 0) / total * 100).toFixed(1) + '%</span></div>';
 		}).join("") : '<div class="empty-block">暂无排行数据</div>';
+		ST_CMTS = Array.isArray(cmts) ? cmts : [];
+		var tot = $("#stCmtTotal");
+		if (tot) tot.textContent = ST_CMTS.length + " 条评论";
+		renderCmtDist();
 	}).catch(function (e) {
 		$("#stRow").innerHTML = '<div class="error-block">' + esc(e.message) + "</div>";
 		$("#stRank").innerHTML = "";
+		$("#stCmtDist").innerHTML = '<div class="error-block">' + esc(e.message) + "</div>";
 	});
 }
 

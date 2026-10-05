@@ -245,7 +245,7 @@ const subtitle = "三本随手记下的小书";
 		}
 	</style>
 
-	<script>import { campusNotebook } from "@/data/notebooks";
+	<script>import { campusNotebook, runNotebook, dailyNotebook } from "@/data/notebooks";
 
 
 		function initNotebooks() {
@@ -267,6 +267,19 @@ const subtitle = "三本随手记下的小书";
 				if (el && el.parentNode !== document.body) document.body.appendChild(el);
 			}
 
+			// 自律日记 / 每日碎碎念：数据源与校园杂记同在一个内容仓文件
+			// （content/data/notebooks.ts）。这里做同样的合法性防御，再交给阅读器。
+			const runs = (Array.isArray(runNotebook) ? runNotebook : []).filter(
+				(r) => r && typeof r.date === "string"
+			);
+			const _now = new Date();
+			const nowYm = _now.getFullYear() + "-" + String(_now.getMonth() + 1).padStart(2, "0");
+			const totalKm = Math.round(runs.reduce((s, r) => s + (Number(r.distance) || 0), 0) * 10) / 10;
+			const monthCheckins = runs.filter((r) => r.date.slice(0, 7) === nowYm).length;
+			const texts = (Array.isArray(dailyNotebook) ? dailyNotebook : []).filter(
+				(t) => t && typeof t.date === "string" && typeof t.content === "string"
+			);
+
 			const NOTEBOOKS = [
 				{
 					id: "campus", title: "校园杂记", accent: "#7aa585", band: "高中三年，值得留个档", author: "余京◎著", locked: true, type: "markdown",
@@ -274,12 +287,12 @@ const subtitle = "三本随手记下的小书";
 				},
 				{
 					id: "run", title: "自律日记", accent: "#e0996b", band: "跑过的路，一步都不白费", author: "余京◎著", type: "runs",
-					totalKm: 0, monthCheckins: 0, termGoal: 300,
-					runs: []
+					totalKm: totalKm, monthCheckins: monthCheckins, termGoal: 300,
+					runs: runs
 				},
 				{
 					id: "daily", title: "每日碎碎念", accent: "#7d93c4", band: "今天也在认真碎碎念", author: "余京◎著", type: "texts",
-					texts: []
+					texts: texts
 				}
 			];
 
