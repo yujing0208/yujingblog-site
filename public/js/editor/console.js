@@ -2147,6 +2147,11 @@ function importNotebookMd(files) {
 
 /* ================= 站点与外观（settings · tabs + 递归折叠表单） ================= */
 var SETTINGS_FILES = ["site", "hero", "navbar", "footer", "profile", "comment", "music", "wallpaper", "license"];
+/* tab 文案用中文（文件名叫什么可以 hover 看 title，表单底部也印了「回写位置」） */
+var SETTINGS_TAB_CN = {
+	site: "站点身份", hero: "首屏", navbar: "导航菜单", footer: "页脚", profile: "个人资料",
+	comment: "评论", music: "音乐", wallpaper: "壁纸", license: "许可协议",
+};
 var SETTINGS_LOADED = {};
 /** 内容仓里的真实写法是 `const site: SiteSettings = {…}; export default site;`，
  *  变量名是**小写 camelCase**（site / hero / navbar …），根本不是 `SiteConfig`。
@@ -2184,7 +2189,7 @@ function renderSettings() {
 	var v = $("#v-settings");
 	v.innerHTML = pageHead("sys", "站点与外观", '<span class="mono">content/settings/</span> · 9 个文件 · 最深 4 层 → 递归折叠表单') +
 		'<div class="card"><div class="tabs" style="padding:0 8px">' +
-		SETTINGS_FILES.map(function (f, i) { return '<button class="tab' + (i === 0 ? " on" : "") + '" data-tab="s-' + f + '">' + f + '</button>'; }).join("") +
+		SETTINGS_FILES.map(function (f, i) { return '<button class="tab' + (i === 0 ? " on" : "") + '" data-tab="s-' + f + '" title="content/settings/' + f + '.ts">' + esc(SETTINGS_TAB_CN[f] || f) + '</button>'; }).join("") +
 		'</div><div class="card-body" id="setBody"><div class="empty-block">加载中…</div></div></div>';
 	$$('#v-settings .tab').forEach(function (b) {
 		b.addEventListener("click", function () {
@@ -2235,6 +2240,137 @@ function renderSettingsBody(file) {
 		toast("已暂存：" + file + ".ts");
 	});
 }
+/* ============ 「站点与外观」字段中文名 / 说明 ============
+   键 = 归一化路径（数组下标写成 []，如 links[].url）；整条路径取不到就退到「最后一段键名」。
+   值 = [中文名, 说明?, 可选项数组?]（说明与可选项可省；给了可选项就渲染成下拉框，防手抖拼错）。
+   措辞沿用 preview/editor-preview.html 那版已签收的中文化稿。
+   注意：原始 key 仍以小灰标（.f-key）保留在中文名后面，方便对着 content/settings/*.ts 核对。 */
+var SETTINGS_CN = {
+	site: {
+		title: ["站点标题", "浏览器标签、SEO、页脚显示的站点名"],
+		subtitle: ["副标题 / 一句话简介"],
+		siteURL: ["站点网址", "必须带尾斜杠，如 https://yujingblog.top/"],
+		siteStartDate: ["建站日期", "主页「已运行 N 天」由它推算"],
+		themeColorHue: ["主题色相", "0–360：红=0 · 青=200 · 蓝绿=250 · 粉=345"],
+		navbarTitle: ["顶栏标题"],
+		"navbarTitle.mode": ["显示模式", "text-icon = 图标 + 文字；logo = 只显示 Logo", ["text-icon", "logo"]],
+		"navbarTitle.text": ["顶栏文字"],
+		"navbarTitle.icon": ["顶栏图标路径", "相对 public/，不要以 / 开头"],
+		"navbarTitle.logo": ["站点 Logo 路径", "同上，相对 public/"],
+	},
+	hero: {
+		enable: ["启用首屏", "关掉则首页直接进内容"],
+		images: ["背景图", "可写多张（每行一张），脚本随机挑一张；留空则用纯纸张底。路径是站点根绝对路径（以 / 开头）"],
+		mobileImage: ["移动端也用背景图", "这是个开关（不是图片路径）；关掉则手机端走纯纸底"],
+		imageOverlay: ["背景图上下遮罩", "两个 0~1 的数，分别对应 [上, 下]，控制图片上下渐变变暗的程度"],
+		noteText: ["便签贴纸文字", "用反斜杠 n 换行"],
+		stickers: ["图片贴纸", "最多 5 张"],
+		"stickers[].image": ["贴纸图片"],
+		"stickers[].link": ["点击跳转", "可选，留空即不可点"],
+		"stickers[].alt": ["替代文本", "可选，无障碍读屏用"],
+		"stickers[].size": ["显示尺寸", "单位 px"],
+		stickersDraggable: ["贴纸可拖拽", "允许访客拖动首屏上的贴纸"],
+		ctaText: ["下拉纸签文案"],
+	},
+	navbar: {
+		links: ["菜单项", "最多一层嵌套：children[] 与父级同构递归"],
+		"links[].name": ["菜单文字"],
+		"links[].url": ["跳转地址", "站内写 /xxx/，站外写完整 https://"],
+		"links[].external": ["站外链接", "勾上会加 target=_blank 并显示外链图标"],
+		"links[].icon": ["图标名", "Iconify 名称，如 lucide:house"],
+		"links[].children": ["子菜单"],
+		"links[].children[].name": ["子项文字"],
+		"links[].children[].url": ["子项地址"],
+		brandMenu: ["品牌菜单", "顶栏最左侧那组（当前放的是「编辑器」入口）"],
+	},
+	footer: {
+		enable: ["启用自定义页脚", "开启后可用 HTML 覆盖主题自带页脚（当前是关闭状态）"],
+		customHtml: ["页脚 HTML", "例如备案号。留空则使用默认页脚"],
+	},
+	profile: {
+		avatar: ["头像"],
+		name: ["显示名称", "侧边栏名片与首屏社交区都用它"],
+		bio: ["一句话签名"],
+		typewriter: ["打字机效果"],
+		"typewriter.enable": ["启用打字机", "签名逐字打出来的效果"],
+		"typewriter.speed": ["打字速度", "单位毫秒，越小越快"],
+		links: ["社交链接"],
+		"links[].name": ["名称"],
+		"links[].icon": ["图标", "Iconify 名称；写错不会报错，只是图标不显示"],
+		"links[].url": ["链接"],
+	},
+	comment: {
+		enable: ["启用评论", "关掉则文章页不渲染评论区"],
+		system: ["评论后端", "本站固定 Twikoo（Waline 组件已删除，切不回去了）", ["twikoo"]],
+		envId: ["云函数地址", "含 https://，不带路径。留空则留言墙显示加载失败，但页面本身不报错"],
+		lang: ["界面语言", "注意是短横线的 zh-CN，不是下划线的 zh_CN"],
+		avatarFallback: ["头像兜底图", "访客头像加载失败时显示这张"],
+	},
+	music: {
+		enable: ["启用播放器"],
+		showFloatingPlayer: ["显示悬浮播放器", "右下角那个能一直播放的小球"],
+		floatingEntryMode: ["悬浮入口模式", "fab = 并入右下角通用按钮组；default = 独立悬浮球", ["fab", "default"]],
+		metingApi: ["Meting API 地址", "地址里的 :server / :type / :id 会被下面几项替换进去"],
+		playlistId: ["歌单 ID", "换歌单只改这一个值"],
+		server: ["音乐源", "网易云 / QQ音乐 / 酷狗 / 虾米 / 百度", ["netease", "tencent", "kugou", "xiami", "baidu"]],
+		playlistType: ["清单类型", "一般是 playlist"],
+	},
+	wallpaper: {
+		enable: ["启用全屏壁纸"],
+		desktop: ["桌面端壁纸", "可写多张做轮播（每行一张）"],
+		mobile: ["移动端壁纸", "可写多张做轮播（每行一张）"],
+		position: ["对齐位置", "等同于 CSS object-position，只支持这三个值", ["top", "center", "bottom"]],
+		carousel: ["轮播"],
+		"carousel.enable": ["启用轮播"],
+		"carousel.interval": ["轮播间隔", "单位秒"],
+		zIndex: ["层级", "负数才会待在内容下面"],
+		opacity: ["壁纸不透明度", "0~1"],
+		blur: ["背景模糊半径", "单位 px，数值越大越糊"],
+		switchable: ["允许访客切换壁纸"],
+		overlay: ["纸张与卡片"],
+		"overlay.opacity": ["纸张不透明度", "壁纸上那层「纸」的浓度"],
+		"overlay.cardOpacity": ["卡片不透明度"],
+		overlaySwitchable: ["允许访客改纸张项"],
+		"overlaySwitchable.opacity": ["纸张不透明度"],
+		"overlaySwitchable.blur": ["模糊半径"],
+		"overlaySwitchable.cardOpacity": ["卡片不透明度"],
+		fullscreenSwitchable: ["全屏模式可调整项"],
+		"fullscreenSwitchable.opacity": ["不透明度"],
+		"fullscreenSwitchable.blur": ["模糊半径"],
+	},
+	license: {
+		enable: ["显示许可协议"],
+		name: ["协议名称", "文章 frontmatter 没写 licenseName 时用这个兜底"],
+		url: ["协议链接", "当前为空。CC 示例：https://creativecommons.org/licenses/by-nc-sa/4.0/"],
+	},
+};
+function normSettingPath(p) { return String(p).replace(/\.\d+\./g, "[].").replace(/\.\d+$/, "[]"); }
+function settingsCn(file, path) {
+	var t = SETTINGS_CN[file];
+	if (!t) return null;
+	var np = normSettingPath(path);
+	if (t[np]) return t[np];
+	return t[String(path).split(".").pop()] || null;
+}
+function settingsLabel(file, path, fallback) {
+	var c = settingsCn(file, path);
+	return c ? c[0] : (fallback == null ? String(path).split(".").pop() : fallback);
+}
+/** 中文名 + 原始 key 小灰标（extra 可再挂一个后缀，如「每行一项」） */
+function settingsLabHtml(file, key, fk, extra) {
+	var c = settingsCn(file, fk);
+	return '<label class="f-label">' + esc(c ? c[0] : key) + ' <span class="f-key">' + esc(fk) + '</span>' + (extra || '') + '</label>';
+}
+function settingsHintHtml(file, fk) {
+	var c = settingsCn(file, fk);
+	return c && c[1] ? '<div class="f-hint">' + esc(c[1]) + '</div>' : "";
+}
+function settingsFoldHtml(file, key, fk, meta, inner) {
+	return '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' +
+		esc(settingsLabel(file, fk, key)) + ' <span class="f-key">' + esc(fk) + '</span>' +
+		(meta ? '<span class="fold-meta">' + esc(meta) + '</span>' : '') +
+		'</summary><div class="fold-body">' + inner + '</div></details>';
+}
 function settingsFormHtml(file, obj, prefix) {
 	var h = '<div class="form-grid">';
 	Object.keys(obj).forEach(function (k) {
@@ -2244,50 +2380,63 @@ function settingsFormHtml(file, obj, prefix) {
 		/* 数组：空数组、对象数组都交给下面折叠区 —— 别用单行 input 承接，
 		   否则「一行字符串」会被写回数组位置，把元素类型写坏。 */
 		if (Array.isArray(val) && (val.length === 0 || (val[0] && typeof val[0] === "object"))) return;
-		h += settingsFieldHtml(k, fk, val);
+		h += settingsFieldHtml(file, k, fk, val);
 	});
 	h += '</div>';
 	Object.keys(obj).forEach(function (k) {
 		var val = obj[k];
 		var fk = prefix + k;
 		if (val && typeof val === "object" && !Array.isArray(val)) {
-			h += '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' + esc(k) + ' <span class="f-key">' + fk + '</span></summary><div class="fold-body">' + settingsFormHtml(file, val, fk + ".") + '</div></details>';
+			h += settingsFoldHtml(file, k, fk, '', settingsFormHtml(file, val, fk + "."));
 		} else if (Array.isArray(val) && (val.length === 0 || (val[0] && typeof val[0] === "object"))) {
-			h += '<details class="fold" style="margin-top:14px"><summary><svg class="arw" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>' + esc(k) + ' <span class="f-key">' + fk + '</span><span class="fold-meta">' + (val.length ? '数组 · ' + val.length + ' 项' : '空数组') + '</span></summary><div class="fold-body">';
+			var inner = '';
 			if (!val.length) {
-				h += '<div class="f-hint">目前是空数组。空数组没有元素可以推断类型，编辑器不在这里新增项（避免写成字符串数组）；要加内容请在 GitHub 上直接改。</div>';
+				inner += '<div class="f-hint">目前是空数组。空数组没有元素可以推断类型，编辑器不在这里新增项（避免写成字符串数组）；要加内容请在 GitHub 上直接改。</div>';
 			}
 			val.forEach(function (item, i) {
-				h += '<div class="block"><div class="block-head" style="display:flex;gap:10px;align-items:center"><span>⠿</span>' + esc(k) + '[' + i + ']<div style="flex:1"></div></div><div class="card-body">' + settingsFormHtml(file, item, fk + "." + i + ".") + '</div></div>';
+				inner += '<div class="block"><div class="block-head" style="display:flex;gap:10px;align-items:center"><span>⠿</span>' +
+					esc(settingsLabel(file, fk, k)) + ' #' + (i + 1) +
+					' <span class="f-key">' + esc(fk) + '[' + i + ']</span><div style="flex:1"></div></div>' +
+					'<div class="card-body">' + settingsFormHtml(file, item, fk + "." + i + ".") + '</div></div>';
 			});
-			h += '</div></details>';
+			h += settingsFoldHtml(file, k, fk, val.length ? '数组 · ' + val.length + ' 项' : '空数组', inner);
 		}
 	});
 	return h;
 }
-function settingsFieldHtml(label, fk, val) {
+function settingsFieldHtml(file, key, fk, val) {
+	var cs = settingsCn(file, fk);
+	var hint = settingsHintHtml(file, fk);
+	/* 字典里给了可选项 → 下拉框（比手打安全，避免拼错值） */
+	if (cs && cs[2] && typeof val === "string") {
+		var opts = cs[2].slice();
+		if (opts.indexOf(val) < 0) opts.unshift(val);
+		return '<div class="f">' + settingsLabHtml(file, key, fk) + '<select class="inp" data-sk="' + esc(fk) + '">' +
+			opts.map(function (o) { return '<option value="' + esc(o) + '"' + (o === val ? " selected" : "") + '>' + esc(o) + '</option>'; }).join("") +
+			'</select>' + hint + '</div>';
+	}
 	var type = typeof val;
 	/* 原始类型数组（images / desktop / mobile / imageOverlay …）：
 	   单行 input 装不下，改成一行的 textarea，回读时按行拆回数组并保留元素类型。 */
 	if (Array.isArray(val)) {
 		var rows = Math.min(8, Math.max(2, val.length || 2));
 		var isNum = val.length > 0 && val.every(function (x) { return typeof x === "number"; });
-		return '<div class="f wide"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span><span class="fold-meta">数组 · 每行一项' + (isNum ? ' · 数字' : '') + '</span></label>' +
-			'<textarea class="inp" rows="' + rows + '" data-sk="' + esc(fk) + '" data-skind="arr"' + (isNum ? ' data-snum="1"' : '') + '>' + esc(val.join("\n")) + '</textarea></div>';
+		return '<div class="f wide">' + settingsLabHtml(file, key, fk, '<span class="fold-meta">每行一项' + (isNum ? ' · 数字' : '') + '</span>') +
+			'<textarea class="inp" rows="' + rows + '" data-sk="' + esc(fk) + '" data-skind="arr"' + (isNum ? ' data-snum="1"' : '') + '>' + esc(val.join("\n")) + '</textarea>' + hint + '</div>';
 	}
 	if (type === "boolean") {
-		return '<div class="f"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><label class="sw"><input type="checkbox" data-sk="' + esc(fk) + '"' + (val ? " checked" : "") + '><i></i></label></div>';
+		return '<div class="f">' + settingsLabHtml(file, key, fk) + '<label class="sw"><input type="checkbox" data-sk="' + esc(fk) + '"' + (val ? " checked" : "") + '><i></i></label>' + hint + '</div>';
 	}
 	if (type === "number") {
-		return '<div class="f"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><input class="inp num" type="number" data-sk="' + esc(fk) + '" value="' + esc(val) + '"></div>';
+		return '<div class="f">' + settingsLabHtml(file, key, fk) + '<input class="inp num" type="number" data-sk="' + esc(fk) + '" value="' + esc(val) + '">' + hint + '</div>';
 	}
 	if (type === "string" && /\/|https?:/.test(val) && String(val).length > 3) {
-		return '<div class="f wide"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><input class="inp mono" data-sk="' + esc(fk) + '" value="' + esc(val) + '"></div>';
+		return '<div class="f wide">' + settingsLabHtml(file, key, fk) + '<input class="inp mono" data-sk="' + esc(fk) + '" value="' + esc(val) + '">' + hint + '</div>';
 	}
 	if (type === "string" && String(val).length > 40) {
-		return '<div class="f wide"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><textarea class="inp" rows="2" data-sk="' + esc(fk) + '">' + esc(val) + '</textarea></div>';
+		return '<div class="f wide">' + settingsLabHtml(file, key, fk) + '<textarea class="inp" rows="2" data-sk="' + esc(fk) + '">' + esc(val) + '</textarea>' + hint + '</div>';
 	}
-	return '<div class="f"><label class="f-label">' + esc(label) + ' <span class="f-key">' + esc(fk) + '</span></label><input class="inp" data-sk="' + esc(fk) + '" value="' + esc(val == null ? "" : val) + '"></div>';
+	return '<div class="f">' + settingsLabHtml(file, key, fk) + '<input class="inp" data-sk="' + esc(fk) + '" value="' + esc(val == null ? "" : val) + '">' + hint + '</div>';
 }
 function bindSettingsFields(file) {
 	var ctx = SETTINGS_LOADED[file];
@@ -2296,7 +2445,8 @@ function bindSettingsFields(file) {
 		if (inp.dataset.sbound) return;
 		inp.dataset.sbound = "1";
 		var path = inp.getAttribute("data-sk").split(".");
-		var ev = inp.type === "checkbox" ? "change" : "input";
+		/* <select> 用 change（部分浏览器不派发 input），其余文本类用 input */
+		var ev = (inp.type === "checkbox" || inp.tagName === "SELECT") ? "change" : "input";
 		inp.addEventListener(ev, function () {
 			var obj = ctx.val;
 			for (var i = 0; i < path.length - 1; i++) obj = obj[path[i]];
