@@ -7,9 +7,12 @@
 //  2. friend.json 列表格式（FCLite domain/models.py L83-91）：
 //       len<=3 -> [name, url, avatar]
 //       len>3  -> [name, url, linkpage, avatar]      ← linkpage 在 avatar 之前
-//     linkpage 决定反链检测跑不跑；探测不到的站点保持 3 字段（= 不检测，前端按「未知」处理）。
-//  3. 已探测到的 linkpage 会**复核**：若是重定向空壳（很多站的 /links/ 只是 300 字节跳转页）
-//     或跳到 /404/，就重新探测。只认真正的友链页。
+//     linkpage 决定反链检测跑不跑；探测不到的站点保持 3 字段（= 不检测，前端按「可达」处理）。
+//  3. 探测结果会缓存到 scripts/linkpage-known.json（自动维护，不用人手改）：
+//     - 探测成功 -> 写入/更新；
+//     - 复核时「网络超时/被限流」-> 保留旧值，绝不当成失效丢掉（实测 GH Actions 出口会被
+//       部分站点挡，9 个候选全超时，结果把正确的 /friends/ 误判成失效并清空）；
+//     - 复核明确 404 / 是跳转到 /404 的空壳 -> 判失效，重新探测。
 //  4. 内容没变化就不提交 —— 避免空推刷 Vercel 构建。
 //
 // 需要的环境变量：GH_TOKEN（写站点仓）、CONTENT_TOKEN（读内容仓，私有仓必须用 PAT）
@@ -21,7 +24,9 @@ import { join } from "node:path";
 
 const require_ = createRequire(import.meta.url);
 
-const SITE = { owner: "yujing0208", repo: "yujingblog-site", path: "public/friend.json", branch: "main" };
+const SITE = { owner: "yujing0208", repo: "yujingblog-site", branch: "main" };
+const FRIEND_JSON = { path: "public/friend.json" };
+const CACHE_JSON = { path: "scripts/linkpage-known.json" };
 const CONTENT = { owner: "yujing0208", repo: "yujingblog-content", path: "content/data/friends.ts", branch: "master" };
 
 const GH_TOKEN = process.env.GH_TOKEN;
@@ -30,6 +35,8 @@ const CONTENT_TOKEN = process.env.CONTENT_TOKEN || process.env.GH_TOKEN;
 const CANDIDATES = ["/links/", "/friends/", "/link/", "/links.html", "/friend/", "/pages/links/", "/links/index.html", "/friends", "/links"];
 const KEYWORDS = ["友链", "友情链接", "友情连接", "friends", "links", "好友", "友情鏈接"];
 const MIN_PAGE_BYTES = 1000; // 小于这个基本就是重定向壳或空页
+const FETCH_TIMEOUT = 12000;
+const FETCH_ATTEMPTS = 2;
 
 const say = (...a) => console.log(a.join(" "));
 
@@ -99,32 +106,44 @@ function parseFriendsTS(src) {
   }
 }
 
+/**
+ * 抓页面。返回：
+ *   { ok:true, url, body, status }
+ *   { ok:false, netfail:true }  —— 超时 / 连接失败（网络问题，不能当成页面失效）
+ *   { ok:false, netfail:false } —— 明确拿不到（404 / 非 html）
+ */
 async function fetchPage(url) {
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" },
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    if (ct && !ct.includes("html") && !ct.includes("text")) return null;
-    const body = await res.text();
-    return { url, body, status: res.status };
-  } catch {
-    return null;
+  let lastErr = "";
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
+      const res = await fetch(url, {
+        redirect: "follow",
+        signal: ctrl.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" },
+      });
+      clearTimeout(timer);
+      if (!res.ok) return { ok: false, netfail: false, status: res.status };
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
+      if (ct && !ct.includes("html") && !ct.includes("text")) return { ok: false, netfail: false, status: res.status };
+      return { ok: true, url, body: await res.text(), status: res.status };
+    } catch (e) {
+      lastErr = e && e.message ? e.message : String(e);
+    }
   }
+  return { ok: false, netfail: true, err: lastErr };
 }
 
 /**
  * 若抓到的是重定向壳（很多站的 /links/ 只是 300 字节的 <meta refresh> 跳转页），
  * 跟随 canonical / meta refresh 目标再抓一次；跳到 /404/ 或仍然过小则判无效。
+ * 网络失败（netfail）原样往上抛，交给调用方决定「保留旧值」。
  */
-async function resolveShell(page) {
-  if (!page) return null;
+async function resolveShell(res) {
+  if (!res) return null;
+  if (!res.ok) return res.netfail ? { netfail: true } : null;
+  const page = res;
   const isShell = page.body.length < MIN_PAGE_BYTES || /http-equiv=["']refresh["']/i.test(page.body);
   if (!isShell) return page;
   const m =
@@ -135,19 +154,22 @@ async function resolveShell(page) {
   try { target = new URL(m[1], page.url).toString(); } catch { return null; }
   if (/\/404|\/error|not-found/i.test(target)) return null;
   const p2 = await fetchPage(target);
-  if (!p2 || p2.body.length < MIN_PAGE_BYTES) return null;
+  if (!p2.ok || p2.body.length < MIN_PAGE_BYTES) return p2.netfail ? { netfail: true } : null;
   return p2;
 }
 
+/** 探测友链页；返回 { url, netfail } */
 async function probeLinkpage(site) {
   const base = String(site).replace(/\/+$/, "");
+  let netfail = false;
   for (const c of CANDIDATES) {
     const page = await resolveShell(await fetchPage(base + c));
+    if (page && page.netfail) { netfail = true; continue; }
     if (!page) continue;
     if (!KEYWORDS.some((k) => page.body.toLowerCase().includes(k.toLowerCase()))) continue;
-    return page.url;
+    return { url: page.url, netfail };
   }
-  return "";
+  return { url: "", netfail };
 }
 
 (async () => {
@@ -159,7 +181,7 @@ async function probeLinkpage(site) {
   say(`content friends=${friends.length}`);
 
   // 2) 读现有 friend.json（拿 sha + 已探测到的 linkpage）
-  const cur = await api(GH_TOKEN, "GET", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.path}?ref=${SITE.branch}`);
+  const cur = await api(GH_TOKEN, "GET", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${FRIEND_JSON.path}?ref=${SITE.branch}`);
   let sha = null;
   const known = new Map();
   let oldText = "";
@@ -174,67 +196,118 @@ async function probeLinkpage(site) {
       say("::warning::现有 friend.json 解析失败，将整份重建");
     }
   } else if (cur.status !== 404) {
-    die(`读 ${SITE.path} 失败 status=${cur.status}`);
+    die(`读 ${FRIEND_JSON.path} 失败 status=${cur.status}`);
   }
   say(`existing linkpages=${known.size}`);
 
-  // 3) 组装：先复核已有 linkpage，无效则重新探测
+  // 3) 读自动缓存的 linkpage（探测历史，网络受限时的兜底）
+  const cacheRes = await api(GH_TOKEN, "GET", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${CACHE_JSON.path}?ref=${SITE.branch}`);
+  let cacheSha = null;
+  const cache = new Map();
+  if (cacheRes.status === 200 && cacheRes.json && cacheRes.json.content) {
+    cacheSha = cacheRes.json.sha;
+    try {
+      for (const [k, v] of Object.entries(JSON.parse(Buffer.from(cacheRes.json.content, "base64").toString("utf8")))) {
+        if (v) cache.set(k, v);
+      }
+    } catch {
+      say("::warning::linkpage 缓存解析失败，将重建");
+    }
+  }
+  say(`cached linkpages=${cache.size}`);
+
+  // 4) 组装
   const out = [];
-  let reused = 0, reprobed = 0, probed = 0, missing = 0;
+  let reused = 0, corrected = 0, probed = 0, missing = 0, kept = 0;
   for (const f of friends) {
     const title = String(f.title || "").trim();
     const site = String(f.siteurl || "").trim();
     const avatar = String(f.imgurl || "").trim();
     if (!title || !site) continue;
     const key = norm(site);
+    const prev = known.get(key) || cache.get(key) || "";
     let linkpage = "";
-    const prev = known.get(key) || "";
+
     if (prev) {
-      const page = await resolveShell(await fetchPage(prev));
-      if (page) {
-        linkpage = page.url;
-        if (linkpage !== prev) { reprobed += 1; say(`  ~ ${title}: ${prev} -> ${linkpage}`); }
+      const checked = await resolveShell(await fetchPage(prev));
+      if (checked && checked.netfail) {
+        // 网络问题（超时/被限流）≠ 页面失效：保留旧值
+        linkpage = prev;
+        kept += 1;
+        say(`  * ${title}: 复核受网络限制，保留旧友链页 ${prev}`);
+      } else if (checked) {
+        linkpage = checked.url;
+        if (linkpage !== prev) { corrected += 1; say(`  ~ ${title}: ${prev} -> ${linkpage}`); }
         else reused += 1;
       } else {
         say(`  ! ${title}: 旧友链页 ${prev} 已失效，重新探测`);
       }
     }
+
     if (!linkpage) {
-      linkpage = await probeLinkpage(site);
-      if (linkpage) { prev ? reprobed += 1 : probed += 1; say(`  + ${title} -> ${linkpage}`); }
-      else { missing += 1; say(`  - ${title} 未探测到友链页`); }
+      const r = await probeLinkpage(site);
+      if (r.url) {
+        linkpage = r.url;
+        probed += 1;
+        say(`  + ${title} -> ${linkpage}`);
+      } else if (prev && r.netfail) {
+        // 探测也受网络限制，且历史上是有的 -> 保留旧值，别误清空
+        linkpage = prev;
+        kept += 1;
+        say(`  * ${title}: 探测受网络限制，保留旧友链页 ${prev}`);
+      } else {
+        missing += 1;
+        say(`  - ${title} 未探测到友链页`);
+      }
     }
+
+    if (linkpage) cache.set(key, linkpage);
+    else cache.delete(key);
+
     out.push(linkpage ? [title, site, linkpage, avatar] : [title, site, avatar]);
   }
-  say(`reused=${reused} corrected=${reprobed} newly_probed=${probed} missing=${missing}`);
+  say(`reused=${reused} corrected=${corrected} newly_probed=${probed} kept_on_netfail=${kept} missing=${missing}`);
 
-  // 4) 无变化就不提交
+  // 5) friend.json 无变化就不提交
   const newText = JSON.stringify({ friends: out }, null, 2) + "\n";
   const normOld = JSON.stringify(normalize(JSON.parse(oldText || '{"friends":[]}').friends || []));
   const normNew = JSON.stringify(normalize(out));
-  if (sha && normOld === normNew) {
-    say("内容无变化，跳过提交");
-    return;
+  if (sha && normOld === normNew) say("friend.json 内容无变化，跳过提交");
+  else {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const put = await api(GH_TOKEN, "PUT", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${FRIEND_JSON.path}`, {
+        message: `chore(friend.json): auto sync ${out.length} friends from content repo`,
+        content: Buffer.from(newText, "utf8").toString("base64"),
+        sha: sha || undefined,
+        branch: SITE.branch,
+      });
+      if (put.status < 300) { say(`friend.json committed=${put.json && put.json.commit && put.json.commit.sha}`); break; }
+      if (put.status === 409 || put.status === 422) {
+        say(`::warning::提交冲突(attempt ${attempt})，重取 sha`);
+        const again = await api(GH_TOKEN, "GET", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${FRIEND_JSON.path}?ref=${SITE.branch}`);
+        if (again.status === 200 && again.json) { sha = again.json.sha; continue; }
+      }
+      die(`friend.json 提交失败 status=${put.status} ${put.text.slice(0, 300)}`);
+    }
   }
 
-  // 5) 提交（409 = 期间有人推过，重取 sha 再试一次）
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const put = await api(GH_TOKEN, "PUT", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.path}`, {
-      message: `chore(friend.json): auto sync ${out.length} friends from content repo`,
-      content: Buffer.from(newText, "utf8").toString("base64"),
-      sha: sha || undefined,
+  // 6) 写回 linkpage 缓存
+  const cacheText = JSON.stringify(Object.fromEntries([...cache.entries()].sort()), null, 2) + "\n";
+  const cacheOld = cacheRes.status === 200 && cacheRes.json && cacheRes.json.content
+    ? Buffer.from(cacheRes.json.content, "base64").toString("utf8")
+    : "";
+  if (cacheOld === cacheText) {
+    say("linkpage 缓存无变化，跳过提交");
+  } else {
+    const put = await api(GH_TOKEN, "PUT", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${CACHE_JSON.path}`, {
+      message: "chore(friend.json): refresh known linkpage cache",
+      content: Buffer.from(cacheText, "utf8").toString("base64"),
+      sha: cacheSha || undefined,
       branch: SITE.branch,
     });
-    if (put.status < 300) {
-      say(`committed=${put.json && put.json.commit && put.json.commit.sha}`);
-      return;
-    }
-    if (put.status === 409 || put.status === 422) {
-      say(`::warning::提交冲突(attempt ${attempt})，重取 sha`);
-      const again = await api(GH_TOKEN, "GET", `https://api.github.com/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.path}?ref=${SITE.branch}`);
-      if (again.status === 200 && again.json) { sha = again.json.sha; continue; }
-    }
-    die(`提交失败 status=${put.status} ${put.text.slice(0, 300)}`);
+    say(`cache PUT status=${put.status}`);
+    if (put.status >= 300) say("::warning::缓存提交失败 " + put.text.slice(0, 200));
   }
-  die("提交重试后仍失败");
+
+  say("DONE");
 })();
