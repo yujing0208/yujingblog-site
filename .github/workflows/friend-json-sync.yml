@@ -6,7 +6,8 @@
 # 本 workflow 把它自动化：每周跑一次，新增站点自动探测友链页，内容没变就不提交。
 #
 # 凭据：GH_TOKEN 用内置 GITHUB_TOKEN 写站点仓；
-#       CONTENT_TOKEN 读内容仓（公开仓可回落 GITHUB_TOKEN，私有仓走 CONTENT_REPO_TOKEN）。
+#       CONTENT_TOKEN 读内容仓 —— 内容仓是私有仓，GITHUB_TOKEN 会 404，
+#       必须走 DISPATCH_TOKEN / CONTENT_REPO_TOKEN（与 Mirror Content 流程同源）。
 
 name: Sync Friend JSON
 
@@ -38,5 +39,6 @@ jobs:
       - name: Generate and commit friend.json if changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONTENT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          # 内容仓是私有仓，GITHUB_TOKEN 读不到（实测 404）；DISPATCH_TOKEN 与 mirror 流程同源
+          CONTENT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || secrets.DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
         run: node scripts/gen-friend-json.mjs
