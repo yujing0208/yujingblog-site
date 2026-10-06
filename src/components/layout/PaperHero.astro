@@ -166,10 +166,13 @@ const heroStyle = heroImage
 	<!-- 首帧打标：body.has-paper-hero 驱动 paper-header.css 的 body::after
 	     顶部遮罩时机（hero 在视口内时遮罩隐藏）。用内联脚本在首帧渲染前
 	     执行，避免遮罩在 JS 加载前闪现成页面顶端的白条。
-	     同时在这里直接维护 is-hero-gone（阈值与 paper-hero.js 完全一致：
-	     scrollY >= heroBottom，双写幂等）——遮罩时机不再依赖外部 JS 是否
-	     加载/版本新旧，旧缓存 paper-hero.js 也不会把遮罩永久藏掉导致
-	     吸顶导航上方缝隙露底（2026-10-02 深夜事故）。 -->
+	     同时在这里直接维护 is-nav-docked（判定逻辑与 paper-hero.js 完全一致：
+	     以 .site-header 的视口 top <= 17 表示导航已吸附到位，双写幂等）——
+	     遮罩时机不再依赖外部 JS 是否加载/版本新旧，旧缓存 paper-hero.js
+	     也不会把遮罩永久藏掉导致吸顶导航上方缝隙露底（2026-10-02 深夜事故）。
+	     2026-10-06：is-hero-gone 已废弃 → is-nav-docked（原因见
+	     paper-header.css 的「顶部遮罩的出现时机」注释：hero 底边恰好是
+	     导航吸顶临界点，用 y>=bottom 会留下最大 88px 的漏内容空窗）。 -->
 	<script is:inline>
 		document.body.classList.add("has-paper-hero");
 		(function () {
@@ -178,11 +181,13 @@ const heroStyle = heroImage
 			var ticking = false;
 			var sync = function () {
 				ticking = false;
-				var bottom = heroEl.offsetTop + heroEl.offsetHeight;
-				document.body.classList.toggle(
-					"is-hero-gone",
-					window.pageYOffset >= bottom
-				);
+				var header =
+					document.querySelector("#top-row .site-header") ||
+					document.querySelector(".site-header");
+				var docked = header
+					? header.getBoundingClientRect().top <= 17
+					: window.pageYOffset >= heroEl.offsetTop + heroEl.offsetHeight;
+				document.body.classList.toggle("is-nav-docked", docked);
 			};
 			window.addEventListener(
 				"scroll",
