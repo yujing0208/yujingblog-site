@@ -22,6 +22,23 @@ rainbow-dark = linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30)
  */
 
 :root
+  /* 页面容器宽度上限（2026-10-06 补定义）
+     ⚠️ 这个变量之前**从未定义过**，但全站 7 处 CSS 都在消费它：
+       #top-row            width: min(94%, var(--page-width))
+       .paper-shell-container { width: min(94%, var(--page-width)) }
+       #top-row.paper-hero-layout { width: min(94%, var(--page-width)) !important }
+       .max-w-\(--page-width\) { max-width: var(--page-width) }
+       --toc-width: calc((100vw - var(--page-width)) / 2 - 1rem)
+     CSS 规范：var() 引用未定义的自定义属性时，**整条声明作废**，
+     于是这些 width 全退回 initial(auto)，导航栏与内容容器各自被父级拉伸，
+     右端因此错位（参考站是同一宽度所以看不出来）。
+
+     值取 FlatPaper 原站真值 1300px ——
+     原站 style.css 原文：.site-header, .paper-shell, .site-footer
+       { width: min(94vw, 1300px); margin-inline: auto; }
+     本站多处注释「照搬 FlatPaper 的 min(94vw, 1300px)」也是这个数。 */
+  --page-width 1300px
+
   --radius-large 1rem
   /* 手绘不规则圆角：像用剪刀随手剪出来的纸片 */
   --radius-handdrawn 255px 15px 225px 15px / 15px 225px 15px 255px
