@@ -1,7 +1,7 @@
 {
     "outputDirectory":  "dist",
     "framework":  "astro",
-    "cleanUrls":  true,
+    "cleanUrls":  false,
     "functions":  {
                       "api/editor-sync.js":  {
                                                  "maxDuration":  30
@@ -53,12 +53,5 @@
     "env":  {
                 "ENABLE_CONTENT_SYNC":  "true",
                 "CONTENT_REPO_URL":  "https://github.com/yujing0208/yujingblog-content.git"
-            },
-    "routes":  [
-                   {
-                       "dest":  "/.well-known/moicp-verification.html",
-                       "status":  200,
-                       "src":  "^/\\.well-known/moicp-verification\\.html$"
-                   }
-               ]
+            }
 }
