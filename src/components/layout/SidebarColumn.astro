@@ -33,8 +33,6 @@ interface Props {
 	showMobile?: boolean;
 	showTablet?: boolean;
 	showDesktop?: boolean;
-	/** 由布局层注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
-	isPost?: boolean;
 }
 
 const {
@@ -48,7 +46,6 @@ const {
 	showMobile = false,
 	showTablet = true,
 	showDesktop = true,
-	isPost,
 } = Astro.props;
 
 const componentMap: Record<string, unknown> = {
@@ -86,63 +83,82 @@ const mobileStickyComponents = showMobile
 // 仅作用于 tablet/desktop 桌面左栏；mobile 走 drawer 组、right 组不参与，均不受影响。
 // Round 19（2026-09-30）：站点启用根路径永久链接，文章 URL 不在 /posts/ 下，
 // pathname 判定永远为 false 导致目录卡从不渲染 —— 改由布局层传 isPost（postSlug 是否存在）。
-const isPostPage =
-	isPost ?? Astro.url.pathname.startsWith("/posts/");
+// ⚠️ 2026-10-06：左栏 DOM 必须全站统一，文章页/非文章页的差异只体现在 data-widget-scope 的显隐上。
+// 原因：Swup 只替换 <main>，而 #sidebar 在 <main> 之外 —— 若按 isPostPage 走不同的组件集合，
+// 从文章页切到归档页时侧栏仍是文章页的 DOM（目录卡 + 最新文章卡残留，且非文章页专属的
+// 分类/标签/统计卡整个丢失）。改为「始终渲染全部左栏组件 + 客户端按 html[data-page-is-post]
+// 切换 data-widget-scope=post / nonpost 两组」，跨页切换才能立即正确。
+// 同理不再向下游传 isPost：CardTOC 始终渲染真实节点，由 CSS 控制显隐。
 
-// 文章页左栏分组：普通流放名片，粘性组放目录卡 + 最新文章（视觉顺序 = 名片 → 目录 → 最新文章）。
-// 旧版两个 position 各自兜底 paper-latest 导致它渲染两次，此处一并修正。
-function pickPostLeftComponents(
+/** 组件 → 作用域：post = 仅文章页显示，nonpost = 仅非文章页显示，其余全站显示。 */
+const WIDGET_SCOPE: Record<string, "post" | "nonpost"> = {
+	"card-toc": "post",
+	"paper-latest": "post",
+	"paper-categories": "nonpost",
+	"paper-tags": "nonpost",
+	"umami-stats": "nonpost",
+};
+
+/**
+ * 左栏组件清单（全站统一，不按 isPostPage 分叉）。
+ * top 组：名片 / 分类 / 标签 / 访问统计；sticky 组：目录卡 / 最新文章。
+ */
+function pickLeftComponents(
 	comps: ReturnType<typeof widgetManager.getComponentsByPosition>,
 	position: "top" | "sticky",
 ): ReturnType<typeof widgetManager.getComponentsByPosition> {
-	if (!isPostPage || side !== "left") {
+	if (side !== "left") {
 		return comps;
 	}
 	const order =
 		position === "top"
-			? (["paper-profile"] as const)
+			? ([
+					"paper-profile",
+					"paper-categories",
+					"paper-tags",
+					"umami-stats",
+				] as const)
 			: (["card-toc", "paper-latest"] as const);
-	return order
-		.map((type) => {
-			const found = comps.find((c) => c.type === type);
-			if (found) {
-				return found;
-			}
-			// paper-latest 不在 components.left，构造兜底条目（properties 已注册）
-			if (type === "paper-latest") {
-				return {
-					type,
-					position,
-					class: "onload-animation",
-					animationDelay: 150,
-				} as (typeof comps)[number];
-			}
-			return null;
-		})
-		.filter(Boolean) as ReturnType<typeof widgetManager.getComponentsByPosition>;
+	const result: ReturnType<typeof widgetManager.getComponentsByPosition> = [];
+	for (const type of order) {
+		// 先取配置里已有的条目（保留 class / animationDelay）
+		const found = comps.find((c) => c.type === type);
+		if (found) {
+			result.push(found);
+			continue;
+		}
+		// properties 里注册但不在 components.left 的构造兜底条目
+		const prop = widgetManager
+			.getConfig()
+			.properties.find((p) => p.type === type);
+		if (prop) {
+			result.push({ ...prop, position });
+		}
+	}
+	return result;
 }
 
 const tabletTopComponents = showTablet
-	? pickPostLeftComponents(
+	? pickLeftComponents(
 			widgetManager.getComponentsByPosition("top", side, "tablet"),
 			"top",
 		)
 	: [];
 const tabletStickyComponents = showTablet
-	? pickPostLeftComponents(
+	? pickLeftComponents(
 			widgetManager.getComponentsByPosition("sticky", side, "tablet"),
 			"sticky",
 		)
 	: [];
 
 const desktopTopComponents = showDesktop
-	? pickPostLeftComponents(
+	? pickLeftComponents(
 			widgetManager.getComponentsByPosition("top", side, "desktop"),
 			"top",
 		)
 	: [];
 const desktopStickyComponents = showDesktop
-	? pickPostLeftComponents(
+	? pickLeftComponents(
 			widgetManager.getComponentsByPosition("sticky", side, "desktop"),
 			"sticky",
 		)
@@ -192,15 +208,20 @@ function renderComponent(
 		props.tagCount = paperCounts.tags;
 	}
 
-	// card-toc 需要文章页判定（根路径永久链接下组件自身无法从 URL 判断）
-	if (component.type === "card-toc") {
-		props.isPost = isPostPage;
-	}
-
 	return {
 		Component: ComponentToRender,
 		props,
 	};
+}
+
+/**
+ * 组件 → 作用域。post = 仅文章页显示，nonpost = 仅非文章页显示，其余全站显示。
+ * 模板里用它给每个组件外包一层 <div data-widget-scope>，
+ * CSS 据此按 html[data-page-is-post] 切换显隐 —— 侧栏在 <main> 之外、
+ * Swup 不替换它，所以「哪些卡片该显示」只能由客户端按当前页驱动。
+ */
+function scopeOf(type: string): "post" | "nonpost" | "" {
+	return WIDGET_SCOPE[type] ?? "";
 }
 ---
 
@@ -216,7 +237,14 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
@@ -232,7 +260,14 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
@@ -248,7 +283,14 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
@@ -272,7 +314,14 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
@@ -288,7 +337,14 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
@@ -304,10 +360,27 @@ function renderComponent(
 						}
 
 						const { Component, props } = renderData;
-						return <Component {...props} />;
+						const scope = scopeOf(component.type);
+						return scope ? (
+							<div data-widget-scope={scope}>
+								<Component {...props} />
+							</div>
+						) : (
+							<Component {...props} />
+						);
 					})}
 				</div>
 			)
 		}
 	</div>
 </div>
+
+<style is:global>
+	/* 2026-10-06：侧栏在 <main> 之外，Swup 跨页不替换它，
+	   所以「哪些卡片该显示」必须由客户端按当前页类型驱动，不能靠构建期分叉 DOM。
+	   html[data-page-is-post] 由 Layout.astro 输出 + swup-hooks 在 page:view 时同步。 */
+	html[data-page-is-post="false"] [data-widget-scope="post"],
+	html[data-page-is-post="true"] [data-widget-scope="nonpost"] {
+		display: none !important;
+	}
+</style>

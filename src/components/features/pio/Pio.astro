@@ -87,7 +87,7 @@ const assetVer = Date.now();
 
 <iframe
 	id="l2d-iframe"
-	src="/pio/live2d-host?v=3"
+	src="/pio/live2d-host?v=4"
 	allowtransparency="true"
 	style={"position: fixed; z-index: 999; pointer-events: none; border: none; bottom: 0;"
 		+ (isRight ? " right: 0;" : " left: 0;")
@@ -130,6 +130,12 @@ const assetVer = Date.now();
 		function initPageTips() {
 			const PageTips = (window as any).MizukiPageTips;
 			if (!PageTips) return;
+			// 2026-10-06：与 initChat 一样加幂等守卫。此前每次站内换页都会 new 一个
+			// PageTips，而 PageTips 构造时绑定 document.body mouseover/mouseout 与
+			// window scroll —— 监听器随换页次数线性累积，滚动时每个实例都跑一次
+			// _hide() 并向 iframe postMessage，表现为「滑动时一顿一顿」。
+			if ((window as any).__mizukiPageTipsBound) return;
+			(window as any).__mizukiPageTipsBound = true;
 			new PageTips();
 		}
 
@@ -197,6 +203,14 @@ const assetVer = Date.now();
 					currentEl.style.height = h + "px";
 					currentEl.style.opacity = "1";
 					currentEl.style.pointerEvents = "auto";
+				}
+				// 2026-10-06：iframe 铺满左下角 280x600 且开了 pointer-events:auto，
+				// 鼠标落在看板娘矩形内时滚轮被 iframe 吞掉、页面不滚动（表现为滑动卡住）。
+				// 由 live2d-host.html 转发过来，在这里代为滚动父页面。
+				if (e.data.type === "l2d-wheel") {
+					const scale =
+						e.data.deltaMode === 1 ? 16 : e.data.deltaMode === 2 ? window.innerHeight : 1;
+					window.scrollBy(0, (e.data.deltaY || 0) * scale);
 				}
 				if (e.data.type === "l2d-action") menuActions[e.data.action]?.();
 			}

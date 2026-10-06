@@ -66,6 +66,7 @@
   var floatingContentPadding = 12;
   var layoutObserver = null;
   var layoutFrame = 0;
+  var layoutMeasuredAt = 0;
   var mascotTipTimer = 0;
   var touchMessages = []; // 原博客 touch 句子（点击看板娘时随机显示）
 
@@ -156,10 +157,30 @@
     notifyLoaded();
   }
 
+  // 2026-10-06：原实现每次 DOM 变更都 rAF 全量遍历 body（对每个元素 getComputedStyle
+  // + getBoundingClientRect）。看板娘 widget 自身持续动画 → MutationObserver 不断触发
+  // → 每帧一次强制同步布局，滚动时被这些布局抖动拖卡。
+  // 现在加时间闸门：距上次测量不足 400ms 直接跳过。
   function scheduleLayoutMeasurement() {
+    var now = Date.now();
+    if (layoutMeasuredAt && now - layoutMeasuredAt < 400) return;
     cancelAnimationFrame(layoutFrame);
-    layoutFrame = requestAnimationFrame(measureContentHeight);
+    layoutFrame = requestAnimationFrame(function() {
+      layoutMeasuredAt = Date.now();
+      measureContentHeight();
+    });
   }
+
+  // 2026-10-06：iframe 铺满左下角 280x600 且父页已开 pointer-events:auto，
+  // 鼠标落在看板娘矩形内时滚轮事件被 iframe 吞掉，页面不滚动 —— 表现为「滑动卡住」。
+  // 这里把滚轮转发给父页面滚动（iframe 自身不可滚动，无需 preventDefault）。
+  window.addEventListener('wheel', function(e) {
+    parent.postMessage({
+      type: 'l2d-wheel',
+      deltaY: e.deltaY,
+      deltaMode: e.deltaMode
+    }, '*');
+  }, { passive: true });
 
   function observeWidgetLayout() {
     if (layoutObserver) layoutObserver.disconnect();

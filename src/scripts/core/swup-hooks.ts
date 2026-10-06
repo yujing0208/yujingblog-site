@@ -173,6 +173,10 @@ export class SwupHooksManager {
 			this.ensureNavbarVisibleForFullscreen();
 			this.updatePageOverlay();
 
+			// 新页面的 #page-overlay-data 已就位，立刻同步侧栏/右栏显隐，
+			// 否则从归档页切走时右栏与目录卡会残留到过渡结束
+			this.syncPageScopedChrome();
+
 			// 初始化新页面的图片、公式、滚动条和 TOC
 			this.handlers.initFancybox?.();
 			this.handlers.checkKatex?.();
@@ -225,6 +229,10 @@ export class SwupHooksManager {
 			this.ensureNavbarVisibleForFullscreen();
 			this.updatePageOverlay();
 
+			// 侧栏 / 右栏 / 网格列都在 <main> 之外，Swup 不替换它们，
+			// 必须按新页面的 #page-overlay-data 标记重新同步显隐
+			this.syncPageScopedChrome();
+
 			// 扩展页面高度
 			this.extendPageHeight(false);
 
@@ -254,6 +262,48 @@ export class SwupHooksManager {
 	}
 
 	// ==================== 私有辅助方法 ====================
+
+	/**
+	 * 同步「按页面类型变化、但位于 <main> 之外」的布局外壳。
+	 *
+	 * 背景（2026-10-06）：Swup 只替换 <main>，而以下元素都在它之外，
+	 * 跨页后保留的是离开时的状态：
+	 *   · html[data-page-is-post]     → 侧栏卡片显隐（目录卡 / 分类标签统计卡）
+	 *   · #main-grid[data-has-right-rail] → 右栏显隐 + 桌面三列/两列网格
+	 * 两者的真值都写在 <main> 内的 #page-overlay-data 上（随新页面一起被替换），
+	 * 这里读取后同步到外壳即可。
+	 */
+	private syncPageScopedChrome(): void {
+		const data = document.getElementById("page-overlay-data");
+		if (!data) {
+			return;
+		}
+		const root = document.documentElement;
+		const isPost = data.getAttribute("data-is-post") === "true";
+		root.setAttribute("data-page-is-post", isPost ? "true" : "false");
+
+		const mainGrid = this.getCachedElement("#main-grid");
+		if (mainGrid) {
+			mainGrid.setAttribute(
+				"data-has-right-rail",
+				data.getAttribute("data-has-right-rail") === "true" ? "true" : "false",
+			);
+		}
+
+		// 目录卡从隐藏变为显示时，需要在可见之后再建目录
+		// （FlatpaperTOC 建目录时要读当前正文的标题）
+		if (isPost) {
+			setTimeout(() => {
+				document
+					.querySelectorAll("[data-card-toc-root]")
+					.forEach((el) => {
+						if (el.closest('[data-widget-scope="post"]')) {
+							el.dispatchEvent(new CustomEvent("card-toc:refresh"));
+						}
+					});
+			}, ANIMATION_CONFIG.tocReadyDelay);
+		}
+	}
 
 	/**
 	 * 跨布局导航守卫（兜底）

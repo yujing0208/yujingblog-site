@@ -31,15 +31,15 @@ import { i18n } from "../../../i18n/translation";
 interface Props {
 	class?: string;
 	style?: string;
-	/** 由 SidebarColumn 注入：当前页面是否为文章页（根路径永久链接下 pathname 判定不可靠） */
-	isPost?: boolean;
 }
 
-const { class: className, style, isPost } = Astro.props;
+const { class: className, style } = Astro.props;
 
 // FlatPaper 对齐：toc-card 只在文章页出现（flatpaper sidebar-right.ejs 的 is_post 分支）。
-// 非文章路径渲染空占位，避免归档/标签页出现「当前页面没有目录」的空卡。
-const isPostPage = isPost ?? Astro.url.pathname.startsWith("/posts/");
+// ⚠️ 2026-10-06：这里不再按 isPostPage 渲染「真实节点 or 空占位」，也不再接收 isPost。
+// 侧栏 #sidebar 在 <main> 之外、Swup 跨页不替换它 —— 若非文章页只输出空占位，
+// 从非文章页切到文章页时侧栏里就没有目录卡可显示（反之则残留）。
+// 现在始终输出真实节点，由 SidebarColumn 包的 data-widget-scope + CSS 控制显隐。
 
 const tocTitle = i18n(I18nKey.tableOfContents);
 const labelExpand = i18n(I18nKey.tocExpandAll);
@@ -49,46 +49,32 @@ const labelCollapse = i18n(I18nKey.tocCollapseAll);
 const tocDepth = 3;
 ---
 
-{
-	isPostPage ? (
-		<section
-			class:list={["side-card toc-card", className]}
-			style={style}
-			data-card-toc-root
-			data-toc-label-expand={labelExpand}
-			data-toc-label-collapse={labelCollapse}
-			data-toc-depth={String(tocDepth)}
+<section
+	class:list={["side-card toc-card", className]}
+	style={style}
+	data-card-toc-root
+	data-toc-label-expand={labelExpand}
+	data-toc-label-collapse={labelCollapse}
+	data-toc-depth={String(tocDepth)}
+>
+	<header class="toc-card__head">
+		<h2>
+			<Icon name="lucide:list" class="side-card-icon" is:inline />
+			{tocTitle}
+		</h2>
+		<button
+			type="button"
+			class="toc-toggle-all"
+			data-action="toggle-toc"
+			aria-pressed="false"
+			aria-label={labelExpand}
+			title={labelExpand}
 		>
-			<header class="toc-card__head">
-				<h2>
-					<Icon
-						name="lucide:list"
-						class="side-card-icon"
-						is:inline
-					/>
-					{tocTitle}
-				</h2>
-				<button
-					type="button"
-					class="toc-toggle-all"
-					data-action="toggle-toc"
-					aria-pressed="false"
-					aria-label={labelExpand}
-					title={labelExpand}
-				>
-					<Icon
-						name="lucide:chevron-down"
-						class="toc-toggle-all__icon"
-						is:inline
-					/>
-				</button>
-			</header>
-			<div class="fp-toc-content" data-card-toc-content />
-		</section>
-	) : (
-		<div class="hidden" aria-hidden="true" />
-	)
-}
+			<Icon name="lucide:chevron-down" class="toc-toggle-all__icon" is:inline />
+		</button>
+	</header>
+	<div class="fp-toc-content" data-card-toc-content />
+</section>
 
 <script>
 	import { FlatpaperTOC } from "@/utils/flatpaper-toc";
@@ -146,8 +132,18 @@ const tocDepth = 3;
 	 * 页面内可能同时存在多个 card-toc 实例（tablet / desktop 各一份）。
 	 * 统一批量初始化，确保每个可见实例都绑定到自己的容器。
 	 */
+	/**
+	 * 仅在文章页初始化目录。
+	 * 非文章页卡片被 data-widget-scope 隐藏，此时正文没有标题、建目录必然失败，
+	 * 重试轮询纯属浪费；也避免给隐藏节点绑 scroll 监听。
+	 */
+	function isCardVisible(root: Element): boolean {
+		return !root.closest('[data-widget-scope="post"]');
+	}
+
 	function initAllCardTOCs() {
 		document.querySelectorAll("[data-card-toc-root]").forEach((root) => {
+			if (!isCardVisible(root)) return;
 			initCardTOC(root);
 		});
 	}
@@ -158,7 +154,21 @@ const tocDepth = 3;
 		initAllCardTOCs();
 	}
 
-	document.addEventListener("swup:contentReplaced", () => {
+	// swup-hooks 在 html[data-page-is-post] 切为 true（即卡片刚变可见）后派发，
+	// 此时才建目录 —— 卡片隐藏期间正文可能还没换好
+	document.addEventListener("card-toc:refresh", (e) => {
+		const root = e.target;
+		if (root instanceof Element && isCardVisible(root)) {
+			initCardTOC(root);
+		}
+	});
+
+	// swup 4 的 DOM 事件是 swup:content:replace（旧的 swup:contentReplaced 是 swup 3 写法，
+	// 永远不触发 —— 这就是「切页后目录内容还是上一篇」的原因）
+	document.addEventListener("swup:content:replace", () => {
+		setTimeout(initAllCardTOCs, 100);
+	});
+	document.addEventListener("swup:page:view", () => {
 		setTimeout(initAllCardTOCs, 100);
 	});
 

@@ -269,6 +269,53 @@ void BRAND_MENU_ICON_MANIFEST;
 	(function () {
 		"use strict";
 
+		/* ---------------- 导航高亮（记号笔）跟随当前页 ----------------
+		 * 2026-10-06：原先 active 类只在构建期按 Astro.url.pathname 渲染一次。
+		 * 但 #navbar-wrapper 在 <main> 之外、Swup 跨页不替换它，
+		 * 于是「记号笔」会一直停在离开时的那一项上。
+		 * 现在每次换页用 DOM 里的链接 href 重新判定 active，
+		 * 前缀匹配规则与构建期 isActive() 保持一致。
+		 */
+		function normalizePath(p) {
+			var path = String(p || "").split("#")[0].split("?")[0];
+			if (!path) return "/";
+			// 补尾斜杠，使 /archive 与 /archive/ 判定一致
+			if (path.length > 1 && !/\/$/.test(path)) path += "/";
+			return path;
+		}
+
+		function isActivePath(href, currentPath) {
+			if (!href) return false;
+			var target;
+			try {
+				target = normalizePath(new URL(href, window.location.href).pathname);
+			} catch (e) {
+				return false;
+			}
+			if (target === "/") return currentPath === "/" || currentPath === "";
+			return currentPath === target || currentPath.indexOf(target) === 0;
+		}
+
+		function syncNavActiveState() {
+			var currentPath = normalizePath(window.location.pathname);
+			var nav = document.querySelector("#navbar-wrapper .site-nav");
+			if (!nav) return;
+
+			// 下拉里的子项
+			nav.querySelectorAll(".site-nav-menu a").forEach(function (link) {
+				link.classList.toggle("active", isActivePath(link.getAttribute("href"), currentPath));
+			});
+
+			// 顶层导航项：自身有 href 用自身判定；带下拉的用「子项命中」判定
+			nav.querySelectorAll(":scope > .site-nav-link, :scope > .site-nav-item").forEach(function (item) {
+				if (item.classList.contains("site-nav-item")) {
+					item.classList.toggle("active", item.querySelector(".site-nav-menu a.active") !== null);
+					return;
+				}
+				item.classList.toggle("active", isActivePath(item.getAttribute("href"), currentPath));
+			});
+		}
+
 		function bindOnce(selector, handler) {
 			document.querySelectorAll(selector).forEach(function (btn) {
 				// 预占 paper-header.js 的绑定标记：三个按钮的转发逻辑由本脚本负责，
@@ -327,6 +374,23 @@ void BRAND_MENU_ICON_MANIFEST;
 				if (event.key !== "Escape") return;
 				var panel = document.getElementById("nav-menu-panel");
 				if (panel) panel.classList.add("float-panel-closed");
+			});
+		}
+
+		// 首帧同步一次（SSR 渲染的 active 本就正确，这里覆盖直接改地址栏/回退的情况）
+		syncNavActiveState();
+
+		// Swup 换页后重算；popstate 覆盖浏览器前进/后退
+		if (!document.documentElement.dataset.navActiveBound) {
+			document.documentElement.dataset.navActiveBound = "1";
+			document.addEventListener("swup:content:replace", function () {
+				setTimeout(syncNavActiveState, 0);
+			});
+			document.addEventListener("swup:page:view", function () {
+				setTimeout(syncNavActiveState, 0);
+			});
+			window.addEventListener("popstate", function () {
+				setTimeout(syncNavActiveState, 0);
 			});
 		}
 	})();

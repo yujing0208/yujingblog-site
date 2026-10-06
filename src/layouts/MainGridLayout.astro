@@ -40,7 +40,15 @@ interface Props {
 	publishedDate?: Date;
 	category?: string;
 	wordCount?: number;
-	/** FlatPaper 列表页右栏（welcome-card + 最近动态）：仅 archive/tags/categories/tag/category/分页 列表页传入 true */
+	/**
+	 * FlatPaper 列表页右栏（welcome-card + 最近动态）：仅 archive/tags/categories/tag/category/分页 列表页传入 true
+	 *
+	 * ⚠️ 2026-10-06：右栏与 #main-grid 都在 <main> 之外，Swup 跨页不替换它们。
+	 * 原实现按 paperListRail 构建期分叉 DOM（列表页才渲染右栏、才用三列网格），
+	 * 于是「从 /archive/ 切到文章页」时右栏与三列网格会整块留在原地（非首页双侧边栏）。
+	 * 现在右栏始终渲染，显隐与网格列数改由 #main-grid[data-has-right-rail] 驱动，
+	 * 该属性在构建期写入初值、跨页由 swup-hooks 依据新页面的 data-has-right-rail 同步。
+	 */
 	paperListRail?: boolean;
 }
 
@@ -89,11 +97,13 @@ const {
 } = calculateGridLayout({
 	siteConfig,
 	widgetManager,
-	// FlatPaper 规则（2026-09-30）：右栏仅在首页/归档等传入 paperListRail 的页面渲染，
-	// 其余页面（标签/分类/文章/独立页）只保留左侧栏
-	rightRailEnabled: paperListRail,
+	// 2026-10-06：始终按「有右栏」计算三列网格，实际是否显示右栏交给
+	// #main-grid[data-has-right-rail] + CSS（见文件末尾 style），
+	// 避免构建期分叉 DOM 导致跨页后右栏/列数残留。
+	rightRailEnabled: true,
 });
 
+// 右栏组件是否齐备（齐备才可能显示）；实际显隐见 data-has-right-rail
 const { hasRightSidebarComponents, hasMobileDrawerComponents } =
 	sidebarPresence;
 
@@ -179,6 +189,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 				id="main-grid"
 				class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-none md:grid-rows-[auto] mx-auto gap-4 px-2 md:px-4 ${!mobileShowSidebar || !hasMobileDrawerComponents ? "mobile-no-sidebar" : ""} ${hasRightSidebarComponents ? "mobile-both-sidebar" : ""}`}
 				data-layout-mode={defaultPostListLayout}
+				data-has-right-rail={paperListRail ? "true" : "false"}
 			>
 				<!-- Banner image credit -->
 				{
@@ -228,18 +239,17 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 							<SideBar
 								class={`${sidebarClass} ${transparentClass}`}
 								headings={headings}
-								isPost={!!postSlug}
 							/>
 						)
 					}
 
 					{
-						hasRightSidebarComponents && paperListRail && (
+						hasRightSidebarComponents && (
 						<div
 							class={`right-sidebar-container ${rightSidebarClass} ${transparentClass}`}
 						>
 							<div class="hidden w-full flex-col gap-[22px] lg:flex">
-								{paperListRail && <PaperRandomCard limit={5} />}
+								<PaperRandomCard limit={5} />
 								<RightSideBar headings={headings} />
 							</div>
 						</div>
@@ -263,6 +273,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 							data-words={wordCount ? String(wordCount) : ""}
 							data-is-post={postSlug ? "true" : "false"}
 							data-is-home={isHomePage ? "true" : "false"}
+						data-has-right-rail={paperListRail ? "true" : "false"}
 							data-wallpaper-mode={siteConfig.wallpaperMode.defaultMode}
 							class="hidden"
 						>
@@ -301,6 +312,26 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 
 		.right-sidebar-container #right-sidebar {
 			height: fit-content;
+		}
+
+		/* 2026-10-06：右栏显隐与桌面三列/两列网格改由 data-has-right-rail 驱动。
+		   原因：#main-grid 与右栏都在 <main> 之外，Swup 跨页不替换，
+		   构建期分叉 DOM 会让「归档页 → 其他页」时右栏与三列网格整块残留。
+		   桌面端（≥1280px）覆盖 Tailwind 的 lg:grid-cols-* 与 lg:block：
+		   - 右栏列在无右栏时整体 display:none，主栏相应左移占两列；
+		   - 移动/平板断点不受影响（本来就只有单侧栏）。 */
+		@media (width >= 1280px) {
+			#main-grid[data-has-right-rail="false"] {
+				grid-template-columns: 17.5rem minmax(0, 1fr) !important;
+			}
+
+			#main-grid[data-has-right-rail="false"] .right-sidebar-container {
+				display: none !important;
+			}
+
+			#main-grid[data-has-right-rail="false"] > main {
+				grid-column: 2 / 3 !important;
+			}
 		}
 	</style>
 
