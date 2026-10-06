@@ -196,7 +196,7 @@ const bannerOffset =
 			})();
 		</script>
 
-		<!-- 可视化编辑器全局入口：点导航栏 logo 进入编辑（v2：capture 阶段抢事件，绕开 Swup） -->
+		<!-- 可视化编辑器全局入口：点导航栏 logo 进入编辑（v2：capture 阶段抢事件） -->
 		<script is:inline src="/js/editor-core.v2.js?v=3"></script>
 
 		<!-- GitHub 仓库卡片水合：正文里的 .card-github 骨架由 remark 插件编译产出，
@@ -217,13 +217,13 @@ const bannerOffset =
 
 		<!-- 搜索弹窗（flatpaper 同款 search-panel 视觉 + pagefind 后端，
 		     失败回退 /api/allPostMeta.json）。全站加载：capture 委托绑定
-		     .js-search-open，Swup 换页后依然有效 -->
+		     .js-search-open，与页面切换方式解耦 -->
 		<script is:inline defer src="/js/paper-search.js?v=2"></script>
 
 		<!-- 留言墙渲染（照搬 flatpaper main.js 的 renderGuestbookWall）
 		     读取 .guestbook-wall[data-guestbook-system] 的配置，
 		     调 Twikoo 的 getRecentComments 把评论铺成便签卡。
-		     必须放全站：Swup 切页后要能重新渲染 -->
+		     全站加载：进入留言板页面时本脚本会重新执行并渲染 -->
 		<script is:inline defer src="/js/paper-guestbook-wall.js?v=1"></script>
 
 		<!-- 第三方分析脚本 -->
@@ -299,7 +299,7 @@ const bannerOffset =
 		/>
 		<slot />
 
-		<!-- 页脚协议弹窗（隐私政策 / 用户协议）：挂在 Swup 容器之外，跨导航持久存在 -->
+		<!-- 页脚协议弹窗（隐私政策 / 用户协议） -->
 		<PrivacyModal />
 		<UserAgreementModal />
 
@@ -377,15 +377,6 @@ const bannerOffset =
 		}
 	}
 </style>
-
-<script>
-	// Swup 页面过渡管理器 - 统一入口
-	// 所有功能已重构为模块化架构，详见 src/scripts/ 目录
-	import { initSwupManager } from "../scripts/swup-manager";
-
-	// 初始化 Swup 管理器
-	initSwupManager();
-</script>
 
 <!-- 代码块折叠功能 -->
 <script>

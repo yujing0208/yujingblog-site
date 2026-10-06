@@ -176,7 +176,6 @@ void BRAND_MENU_ICON_MANIFEST;
 											href={cHref}
 											target={c.external ? "_blank" : null}
 											rel={c.external ? "noopener noreferrer" : null}
-											{...(cHref === "/music/" ? { "data-swup-ignore": true } : {})}
 										>
 											{c.icon && <Icon name={c.icon} is:inline />}
 											<span>{c.name}</span>
@@ -194,7 +193,6 @@ void BRAND_MENU_ICON_MANIFEST;
 						href={href}
 						target={l.external ? "_blank" : null}
 						rel={l.external ? "noopener noreferrer" : null}
-						{...(href === "/music/" ? { "data-swup-ignore": true } : {})}
 					>
 						{l.icon && <Icon name={l.icon} is:inline />}
 						<span>{l.name}</span>
@@ -392,17 +390,19 @@ void BRAND_MENU_ICON_MANIFEST;
 		// 首帧同步一次（SSR 渲染的 active 本就正确，这里覆盖直接改地址栏/回退的情况）
 		syncNavActiveState();
 
-		// Swup 换页后重算；popstate 覆盖浏览器前进/后退
+		// 2026-10-06：移除 swup 后，导航高亮随整页刷新由 SSR 渲染 + 上面的首帧
+		// 同步完成，不再需要监听 swup:content:replace / swup:page:view。
+		// 保留 popstate / pageshow 兜底：浏览器前进后退或从 bfcache 恢复时脚本
+		// 不会重跑，地址栏却可能已变，需要重算一次高亮。
 		if (!document.documentElement.dataset.navActiveBound) {
 			document.documentElement.dataset.navActiveBound = "1";
-			document.addEventListener("swup:content:replace", function () {
-				setTimeout(syncNavActiveState, 0);
-			});
-			document.addEventListener("swup:page:view", function () {
-				setTimeout(syncNavActiveState, 0);
-			});
 			window.addEventListener("popstate", function () {
 				setTimeout(syncNavActiveState, 0);
+			});
+			window.addEventListener("pageshow", function (event) {
+				if (event.persisted) {
+					setTimeout(syncNavActiveState, 0);
+				}
 			});
 		}
 	})();

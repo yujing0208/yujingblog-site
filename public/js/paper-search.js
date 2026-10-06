@@ -4,10 +4,10 @@
  * 结构/样式：src/styles/paper-header.css 的「#paper-search-root 搜索弹窗」段
  * 后端：pagefind（本站构建已生成 /pagefind/ 索引，Astro build 产物）；
  *       pagefind 不可用时回退 /api/allPostMeta.json（标题 + 摘要匹配）。
- * 绑定：document capture 阶段委托 .js-search-open —— swup 换页免疫，
+ * 绑定：document capture 阶段委托 .js-search-open —— 与页面切换方式解耦，
  *       并阻断 PaperHeader 内联脚本 / paper-header.js 对旧 Search 组件的转发。
- * 弹窗 DOM 首次打开时创建并挂在 body 直下（Swup 只换 #swup-container，
- * 弹窗跨页持久），Esc / 背景点击 / 关闭按钮均可关闭。
+ * 弹窗 DOM 首次打开时创建并挂在 body 直下（站点已改回整页刷新，
+ * 每次进入页面都会重新创建；懒创建只为避免首屏无谓的 DOM 开销）。
  */
 (function () {
 	"use strict";
@@ -363,7 +363,7 @@
 		document.body.classList.remove("fp-search-lock");
 	}
 
-	// capture 阶段委托：swup 换页免疫；stopPropagation 让事件到不了
+	// capture 阶段委托：与页面切换方式解耦；stopPropagation 让事件到不了
 	// 按钮上的旧转发监听（PaperHeader 内联脚本 / paper-header.js）
 	document.addEventListener(
 		"click",

@@ -17,43 +17,54 @@ const { enable, height, duration } = Astro.props;
 			style={`--page-progress-bar-height: ${height}px; --page-progress-bar-duration: ${duration}ms;`}
 		/>
 
+		<!-- 2026-10-06：原实现挂在 swup 的 visit:start / visit:end 上。
+		     移除 swup（改回浏览器原生整页刷新，对齐参考站）后这两个事件永不触发，
+		     进度条会永远不显示。这里改由文档自身的加载阶段驱动：
+		       readyState === "loading" —— 已在解析中，立即走进度动画，等 load 收尾；
+		       readyState 已就绪 —— 直接演一遍收尾动画，避免出现「卡在半途」的观感。
+		     与参考站差异：参考站没有进度条组件，这是本站保留的额外反馈，
+		     语义上等价于「整页刷新时的加载提示」。 -->
 		<script is:inline define:vars={{ enable }}>
 			if (!enable) {
 				const el = document.getElementById("page-progress-bar");
-			if (el) {el.remove();}
+				if (el) {
+					el.remove();
+				}
 			}
 
 			function setupProgressBar() {
-				if (!window.swup) {return;}
+				const bar = document.getElementById("page-progress-bar");
+				if (!bar) {
+					return;
+				}
 
-				window.swup.hooks.on("visit:start", () => {
-					const bar = document.getElementById("page-progress-bar");
-					if (bar) {
-						bar.classList.remove("finishing", "done");
-						void bar.offsetWidth;
-						bar.classList.add("loading");
-					}
-				});
+				function start() {
+					bar.classList.remove("finishing", "done");
+					void bar.offsetWidth;
+					bar.classList.add("loading");
+				}
 
-				window.swup.hooks.on("visit:end", () => {
-					const bar = document.getElementById("page-progress-bar");
-					if (bar) {
-						bar.classList.remove("loading");
-						bar.classList.add("finishing");
-						setTimeout(() => {
-							bar.classList.remove("finishing");
-							bar.classList.add("done");
-							setTimeout(() => bar.classList.remove("done"), 300);
-						}, 200);
-					}
-				});
+				function finish() {
+					bar.classList.remove("loading");
+					bar.classList.add("finishing");
+					setTimeout(() => {
+						bar.classList.remove("finishing");
+						bar.classList.add("done");
+						setTimeout(() => bar.classList.remove("done"), 300);
+					}, 200);
+				}
+
+				if (document.readyState === "loading") {
+					start();
+					window.addEventListener("load", finish, { once: true });
+					return;
+				}
+
+				start();
+				finish();
 			}
 
-			if (window.swup) {
-				setupProgressBar();
-			} else {
-				document.addEventListener("swup:enable", setupProgressBar);
-			}
+			setupProgressBar();
 		</script>
 	</>
 )}

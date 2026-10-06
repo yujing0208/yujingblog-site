@@ -11,8 +11,9 @@
  *       文案与 homulilly 一致。
  *    2. 原版依赖 safeRemoteUrl() 做 URL 白名单校验。此处内联同等实现
  *       （只允许 http/https，防 javascript: 注入）。
- *    3. 原版在 <body> 末尾一次性执行。本站用 Swup 做无刷新页面过渡，
- *       故挂到 swup:page:view 上，保证切页后重新渲染。
+ *    3. 原版在 <body> 末尾一次性执行。本站已改回浏览器原生整页刷新
+ *       （对齐 flatpaper 参考站），每次进入留言板都会重新执行本脚本；
+ *       另加 pageshow(persisted) 兜底覆盖 bfcache 恢复场景。
  * ========================================================================= */
 
 (function () {
@@ -62,7 +63,7 @@
 		if (!walls.length) return;
 
 		Array.prototype.forEach.call(walls, function (wall) {
-			// 已经初始化过就跳过（Swup 切页回来时不重复挂载）
+			// 已经初始化过就跳过（避免重复渲染 / 重复挂载）
 			if (wall.dataset.gbReady === "1") {
 				// 但若墙是空的（上次失败），允许重试一次
 				var existing = wall.querySelector("[data-guestbook-list]");
@@ -513,11 +514,11 @@
 	// 首次加载
 	renderGuestbookWall();
 
-	// Swup 页面过渡后重新渲染（回到留言板时墙上要重新铺）
-	document.addEventListener("swup:page:view", function () {
-		renderGuestbookWall();
-	});
-	document.addEventListener("swup:content:replace", function () {
-		renderGuestbookWall();
+	// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，回到留言板时
+	// 页面会整页重载并重新执行本脚本，原 swup:page:view / swup:content:replace
+	// 钩子已无触发可能，故删除。
+	// 保留 bfcache 恢复兜底：从缓存取回留言板时脚本不重跑，墙上需要重铺。
+	window.addEventListener("pageshow", function (event) {
+		if (event.persisted) renderGuestbookWall();
 	});
 })();

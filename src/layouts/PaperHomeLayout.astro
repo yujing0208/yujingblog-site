@@ -148,9 +148,12 @@ const tagCount = tagList.length;
 					<UmamiStats />
 				</aside>
 
-				<!-- 主栏（照搬 section.paper-main：grid gap 24px） -->
-				<main id="swup-container" class="paper-main transition-main">
-					<div id="content-wrapper" class="onload-animation transition-leaving">
+				<!-- 主栏（照搬 section.paper-main：grid gap 24px）
+				     2026-10-06：移除 swup 后 id 由 swup-container 改回语义 main-content，
+				     transition-main / transition-leaving 一并去掉（只在 html.is-animating
+				     下生效，摘除后永不命中）；onload-animation 首屏淡入保留。 -->
+				<main id="main-content" class="paper-main">
+					<div id="content-wrapper" class="onload-animation">
 						<div
 							id="page-overlay-data"
 							data-title={title || ""}

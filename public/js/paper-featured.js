@@ -10,7 +10,9 @@
  *   · mouseenter/focusin 暂停，mouseleave/focusout 恢复
  *   · 键盘 ArrowLeft / ArrowRight 切换
  *
- * 幂等：swup 换页后重复执行不会重复绑定。
+ * 幂等：重复执行不会重复绑定（dataset 标记）。
+ * 2026-10-06：站点已改回浏览器原生整页刷新（对齐 flatpaper 参考站），
+ *            每次跳转脚本都会重新执行，幂等标记用于 bfcache 恢复等场景。
  */
 (function () {
 	"use strict";
@@ -115,7 +117,11 @@
 		initPaperFeatured();
 	}
 
-	document.addEventListener("page:view", initPaperFeatured);
-	document.addEventListener("content:replace", initPaperFeatured);
-	document.addEventListener("swup:page:view", initPaperFeatured);
+	// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，脚本每次跳转都会
+	// 重新执行，原 page:view / content:replace / swup:page:view 三个
+	// 「无刷新换页后重新初始化」钩子已无触发可能，故一并删除。
+	// 保留 bfcache 恢复兜底（从缓存取回页面时脚本不重跑）。
+	window.addEventListener("pageshow", function (event) {
+		if (event.persisted) initPaperFeatured();
+	});
 })();

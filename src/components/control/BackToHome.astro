@@ -13,12 +13,10 @@ import { i18n } from "@i18n/translation";
 />
 
 <script is:raw is:inline define:vars={{ homeUrl: "/" }}>
+	// 2026-10-06：移除 swup 后站内跳转回到浏览器原生整页加载，
+	// 这里不再需要 window.swup.navigate 的无刷新分支，直接赋值 location.href。
 	window.backToHome = function () {
-		if (window.swup) {
-			window.swup.navigate(homeUrl);
-		} else {
-			window.location.href = homeUrl;
-		}
+		window.location.href = homeUrl;
 	};
 </script>
 
@@ -40,9 +38,7 @@ import { i18n } from "@i18n/translation";
 
 	updateBackToHomeVisibility();
 
-	document.addEventListener("astro:page-load", updateBackToHomeVisibility);
-	document.addEventListener(
-		"swup:contentReplaced",
-		updateBackToHomeVisibility,
-	);
+	// 2026-10-06：移除 swup 后不再有 swup:contentReplaced 事件，
+	// 整页刷新天然会重新执行本脚本，直接依赖 DOMContentLoaded 即可。
+	document.addEventListener("DOMContentLoaded", updateBackToHomeVisibility);
 </script>
