@@ -54,10 +54,11 @@
                 "ENABLE_CONTENT_SYNC":  "true",
                 "CONTENT_REPO_URL":  "https://github.com/yujing0208/yujingblog-content.git"
             },
-    "rewrites":  [
-                     {
-                         "destination":  "/.well-known/moicp-verification.html",
-                         "source":  "/.well-known/moicp-verification.html"
-                     }
-                 ]
+    "routes":  [
+                   {
+                       "dest":  "/.well-known/moicp-verification.html",
+                       "status":  200,
+                       "src":  "^/\\.well-known/moicp-verification\\.html$"
+                   }
+               ]
 }
