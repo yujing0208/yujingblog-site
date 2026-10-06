@@ -251,17 +251,36 @@
 
 		/* ---------------- 首屏激活态（供 body::before 淡出 + 顶部遮罩时机） ---------------- */
 		// has-paper-hero：标记「本页有 hero」，paper-header.css 的 body::after
-		// 顶部遮罩靠它与 is-hero-gone 决定显示时机（PaperHero.astro 的内联
-		// 脚本首帧也会打标，这里兜底 swup 换页回首页的场景）。
+		// 顶部遮罩靠它与 is-hero-active / is-nav-docked 决定显示时机
+		// （PaperHero.astro 的内联脚本首帧也会打标，这里兜底 swup 换页回首页的场景）。
 		document.body.classList.add("has-paper-hero");
 		var heroScrollTicking = false;
 		function setHeroActive() {
 			var y = window.pageYOffset;
 			var bottom = hero.offsetTop + hero.offsetHeight;
 			document.body.classList.toggle("is-hero-active", y < bottom - 80);
-			// is-hero-gone：hero 完全滚出视口后为 true —— 导航早已吸顶、
-			// 用户继续下滑，body::after 顶部遮罩此时才淡入（paper-header.css）。
-			document.body.classList.toggle("is-hero-gone", y >= bottom);
+
+			// is-nav-docked：导航栏「吸附到位」——此时它与视口顶之间只剩
+			// 设计留白（16px），不再有「缝隙透出页面内容」的问题，顶部遮罩
+			// 的使命结束，应立即退场，否则 z-index:45 的遮罩会压住
+			// z-index:20 的导航本体（含纸胶带）。
+			//
+			// ⚠️ 2026-10-06：这里曾用「hero 完全滚出视口」（y >= bottom）作为
+			// 显示遮罩的门槛，实测那是错误时机 —— hero 底边正好是导航吸顶的
+			// 临界点，导致 y=940~1010 全程没有遮罩而缝隙最大达 88px（透内容）。
+			// 改为直接测导航自身位置：吸附后 .site-header 的视口 top 恒为 16px，
+			// 用 getBoundingClientRect 判定真实吸附状态，比任何滚动像素阈值都准
+			// （阈值会随 hero 高度、视口高度、缩放变化而失准）。
+			var header = document.querySelector("#top-row .site-header") ||
+				document.querySelector(".site-header");
+			var docked = false;
+			if (header) {
+				docked = header.getBoundingClientRect().top <= 17;
+			} else {
+				// 兜底：拿不到导航元素时退回滚动距离估算
+				docked = y >= bottom;
+			}
+			document.body.classList.toggle("is-nav-docked", docked);
 		}
 		window.addEventListener(
 			"scroll",
