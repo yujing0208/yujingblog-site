@@ -120,15 +120,18 @@ function pickLeftComponents(
 	if (side !== "left") {
 		return comps;
 	}
+	// ⚠️ 2026-10-06：card-toc 从 sticky 组挪到 top 组，放在 paper-profile 之后、
+	// paper-categories 之前 —— 对齐文章页目录卡位置（关于页也要同样顺序）。
 	const order =
 		position === "top"
 			? ([
 					"paper-profile",
+					"card-toc",
 					"paper-categories",
 					"paper-tags",
 					"umami-stats",
 				] as const)
-			: (["card-toc", "paper-latest"] as const);
+			: (["paper-latest"] as const);
 	const result: ReturnType<typeof widgetManager.getComponentsByPosition> = [];
 	for (const type of order) {
 		// 先取配置里已有的条目（保留 class / animationDelay）
@@ -391,8 +394,13 @@ function scopeOf(type: string): "post" | "nonpost" | "toc" | "" {
 	   html[data-page-is-post] / html[data-page-has-toc] 由 Layout.astro 输出
 	   + swup-hooks 在 content:replace / page:view 时同步。 */
 	html[data-page-is-post="false"] [data-widget-scope="post"],
-	html[data-page-is-post="true"] [data-widget-scope="nonpost"],
-	html[data-page-has-toc="false"] [data-widget-scope="toc"] {
+	html[data-page-is-post="true"] [data-widget-scope="nonpost"] {
 		display: none !important;
+	}
+	/* ⚠️ 2026-10-07：目录卡用 opacity 淡入淡出，不用 display:none，
+	   否则 transition 无法过渡。 */
+	html[data-page-has-toc="false"] [data-widget-scope="toc"] {
+		opacity: 0 !important;
+		pointer-events: none !important;
 	}
 </style>

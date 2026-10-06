@@ -171,16 +171,9 @@
     });
   }
 
-  // 2026-10-06：iframe 铺满左下角 280x600 且父页已开 pointer-events:auto，
-  // 鼠标落在看板娘矩形内时滚轮事件被 iframe 吞掉，页面不滚动 —— 表现为「滑动卡住」。
-  // 这里把滚轮转发给父页面滚动（iframe 自身不可滚动，无需 preventDefault）。
-  window.addEventListener('wheel', function(e) {
-    parent.postMessage({
-      type: 'l2d-wheel',
-      deltaY: e.deltaY,
-      deltaMode: e.deltaMode
-    }, '*');
-  }, { passive: true });
+  // ⚠️ 2026-10-07：移除滚轮转发。跨 iframe 的 scrollBy 会导致滚动卡顿。
+  // iframe 保持 pointer-events:none，滚轮事件自然穿透父页面。
+  // 点击交互由父页的透明覆盖层捕获后通过 postMessage 转发。
 
   function observeWidgetLayout() {
     if (layoutObserver) layoutObserver.disconnect();
@@ -251,6 +244,15 @@
     // 聊天框开关状态 → 切换 💬/✕ 按钮
     if (e.data.type === 'l2d-chat-state') {
       setChatButtonState(e.data.open);
+      return;
+    }
+
+    // ⚠️ 2026-10-07：覆盖层点击转发，让父页透明代理层能把点击传给 Live2D
+    if (e.data.type === 'l2d-proxy-click') {
+      if (widgetInstance && typeof widgetInstance.hitTest === 'function') {
+        const hit = widgetInstance.hitTest('Body', e.data.offsetX, e.data.offsetY);
+        if (hit) widgetInstance.motion('TapBody', 0);
+      }
       return;
     }
 
