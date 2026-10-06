@@ -66,12 +66,10 @@ html.is-leaving .transition-leaving {
 }
 
 /* 导航栏 z-index 兜底
-   paper-header.css 的 body::after 是 z-index:19 的固定遮罩。
-   #navbar-wrapper 默认 z-index:auto → 遮罩覆盖在导航栏之上 → 导航栏上方漏内容。
-   确保 #navbar-wrapper 始终 > 19，与参考站 flatpaper 一致。 */
-#navbar-wrapper {
-  z-index: 20;
-}
+   paper-header.css 的 body::after 是 z-index:45 的固定遮罩。
+   #top-row (父级) 的 z-index 是 50，#navbar-wrapper 继承后 > 45，
+   无需单独设 z-index。若设了较低的值（如 20），会被遮罩覆盖 → 导航栏上方漏内容。 */
+/* #navbar-wrapper { z-index: 20; } ← 删除，让 #navbar-wrapper 继承 #top-row 的 50 */
 
 /* 首页隐藏 body::after 顶部遮罩
    paper-header.css 的 body::after 是 36px 固定纸色渐变带 (z-index:19)，
@@ -84,7 +82,7 @@ body.has-paper-hero::after {
 
 /* Swup fade 动画 */
 html.is-changing .transition-swup-fade {
-  transition: all var(--transition-duration) ease-out;
+  transition: opacity var(--transition-duration) ease-out, transform var(--transition-duration) ease-out;
 }
 
 html.is-animating .transition-swup-fade {
