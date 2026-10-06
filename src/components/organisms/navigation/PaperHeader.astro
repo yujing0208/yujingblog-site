@@ -80,6 +80,12 @@ function filterLinksByFeaturePages(items: NavBarLink[]): NavBarLink[] {
 const links: NavBarLink[] = filterLinksByFeaturePages(navBarConfig.links);
 
 const isActive = (href: string) => {
+	// 参考 FlatPaper scripts/menu-helpers.js 的 active()：
+	// # 锚点与外部链接（含 scheme: 或 //）不参与 active 判定，
+	// 否则会被错误地解析成根路径 "/" 而误命中首页（与客户端 isActivePath 保持一致）。
+	const raw = String(href || "").trim();
+	if (!raw || raw.charAt(0) === "#" || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw))
+		return false;
 	const path = href === "/" ? "/" : url(href);
 	if (path === "/") return currentPath === "/" || currentPath === "";
 	return currentPath.startsWith(path);
@@ -286,6 +292,12 @@ void BRAND_MENU_ICON_MANIFEST;
 
 		function isActivePath(href, currentPath) {
 			if (!href) return false;
+			// 参考 FlatPaper scripts/menu-helpers.js 的 active()：
+			// # 锚点与外部链接（含 scheme: 或 //）不参与 active 判定，
+			// 否则 new URL(external, location).pathname 会解析成 "/" 而误命中首页。
+			var raw = String(href || "").trim();
+			if (raw.charAt(0) === "#" || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw))
+				return false;
 			var target;
 			try {
 				target = normalizePath(new URL(href, window.location.href).pathname);
