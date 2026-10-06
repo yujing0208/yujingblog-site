@@ -82,11 +82,11 @@ body:not(.paper-layout) #top-row .site-header {
      body::before {
        position: fixed; top:0; left:0; right:0;
        height: 36px;
-       z-index: 19;                    /* ← 关键 */
+       z-index: 19;                    <- 关键
        background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 60%, transparent 100%);
        pointer-events: none;
      }
-     .site-header { position: sticky; top: 16px; z-index: 20; }   /* 20 > 19 */
+     .site-header { position: sticky; top: 16px; z-index: 20; }   <- 20 > 19
 
    **遮罩 z-index(19) 低于导航 z-index(20)** —— 这才是「遮罩能挡住导航上方缝隙、
    又不会压住导航与纸胶带」的真正机制。它不需要任何 JS 状态机：
