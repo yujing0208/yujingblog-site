@@ -335,15 +335,16 @@
 	}
 
 	/* ---------------- hero 状态类同步（swup 换页残留清理） ---------------- */
-	/* body.has-paper-hero / is-hero-gone / is-hero-active 由 paper-hero.js
+	/* body.has-paper-hero / is-hero-active / is-nav-docked 由 paper-hero.js
 	   在 hero 页面维护，驱动 paper-header.css 的 body::after 顶部遮罩时机。
 	   swup 从首页切到内页后 DOM 里已没有 hero，残留的类会让遮罩错误隐藏 ——
-	   这里按当前 DOM 实况同步一次（本函数随 initAll 在每次换页后执行）。 */
+	   这里按当前 DOM 实况同步一次（本函数随 initAll 在每次换页后执行）。
+	   2026-10-06：is-hero-gone 已废弃，改为 is-nav-docked（见 paper-hero.js）。 */
 	function syncHeroBodyState() {
 		var hasHero = !!document.querySelector("[data-paper-hero]");
 		document.body.classList.toggle("has-paper-hero", hasHero);
 		if (!hasHero) {
-			document.body.classList.remove("is-hero-active", "is-hero-gone");
+			document.body.classList.remove("is-hero-active", "is-nav-docked");
 		}
 	}
 
