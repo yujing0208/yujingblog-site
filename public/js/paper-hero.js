@@ -249,10 +249,11 @@
 			}).observe(heroSocialLinks);
 		}
 
-		/* ---------------- 首屏激活态（供 body::before 淡出 + 顶部遮罩时机） ---------------- */
-		// has-paper-hero：标记「本页有 hero」，paper-header.css 的 body::after
-		// 顶部遮罩靠它与 is-hero-active / is-nav-docked 决定显示时机
-		// （PaperHero.astro 的内联脚本首帧也会打标，这里兜底 swup 换页回首页的场景）。
+		/* ---------------- 首屏激活态（供 body::before 淡出） ---------------- */
+		// has-paper-hero：标记「本页有 hero」（paper-header.css 的遮罩已改为常显，
+		// 本类现主要供调试与潜在语义使用；PaperHero.astro 内联脚本首帧也会打标）。
+		// is-hero-active：hero 仍在视口内，驱动 paper-theme.css / paper-hero.css
+		// 的首屏纸张底纹淡出（这个用途仍然有效，不能删）。
 		document.body.classList.add("has-paper-hero");
 		var heroScrollTicking = false;
 		function setHeroActive() {
@@ -260,27 +261,21 @@
 			var bottom = hero.offsetTop + hero.offsetHeight;
 			document.body.classList.toggle("is-hero-active", y < bottom - 80);
 
-			// is-nav-docked：导航栏「吸附到位」——此时它与视口顶之间只剩
-			// 设计留白（16px），不再有「缝隙透出页面内容」的问题，顶部遮罩
-			// 的使命结束，应立即退场，否则 z-index:45 的遮罩会压住
-			// z-index:20 的导航本体（含纸胶带）。
-			//
-			// ⚠️ 2026-10-06：这里曾用「hero 完全滚出视口」（y >= bottom）作为
-			// 显示遮罩的门槛，实测那是错误时机 —— hero 底边正好是导航吸顶的
-			// 临界点，导致 y=940~1010 全程没有遮罩而缝隙最大达 88px（透内容）。
-			// 改为直接测导航自身位置：吸附后 .site-header 的视口 top 恒为 16px，
-			// 用 getBoundingClientRect 判定真实吸附状态，比任何滚动像素阈值都准
-			// （阈值会随 hero 高度、视口高度、缩放变化而失准）。
+			// is-nav-docked：导航栏「吸附到位」标记。
+			// ⚠️ 2026-10-06 最终定稿：顶部遮罩已改为「常显 + z-index:19 < 导航 20」，
+			// 不再需要任何显隐状态机（详见 paper-header.css 的 body::after 注释）。
+			// 本类目前**没有 CSS 消费者**，保留 toggle 仅为兼容可能残留的旧缓存
+			// CSS 与便于调试观察，逻辑已精简。
+			// （历史教训：曾用它做「吸顶后隐藏遮罩」——那是错误方向，因为吸附后
+			//  sticky top:16px 决定导航上方永远有 16px 缝隙，遮罩一退场就永久漏内容。）
 			var header = document.querySelector("#top-row .site-header") ||
 				document.querySelector(".site-header");
-			var docked = false;
 			if (header) {
-				docked = header.getBoundingClientRect().top <= 17;
-			} else {
-				// 兜底：拿不到导航元素时退回滚动距离估算
-				docked = y >= bottom;
+				document.body.classList.toggle(
+					"is-nav-docked",
+					header.getBoundingClientRect().top <= 17
+				);
 			}
-			document.body.classList.toggle("is-nav-docked", docked);
 		}
 		window.addEventListener(
 			"scroll",
