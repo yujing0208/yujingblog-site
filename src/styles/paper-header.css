@@ -78,14 +78,22 @@ body:not(.paper-layout) #top-row .site-header {
    钉在 top:16px（首页首屏在 28px），上方那条 16~28px 的间隙滚动时会把
    页面内容透出来。
    这里用 body::after 补同款遮罩（全站样式已确认无人占用 body::after）：
-   盖在内容之上、导航（z-index 50）之下，颜色跟随明暗模式自动切换。 */
+   盖在内容之上、导航（z-index 50）之下，颜色跟随明暗模式自动切换。
+
+   2026-10-06：height 44px → 16px。
+   遮罩的唯一职责是盖住「吸顶导航上方那条 16px 空隙」——
+   .site-header 是 sticky; top:16px，本身占 16~88px，而本遮罩 z-index:45
+   高于 .site-header 的 z-index:20，于是 44px 的高度会连导航栏顶部
+   16~44px 一起压住，导航栏的纸胶带被这层纸色盖掉。
+   收到 16px 后刚好只覆盖空隙，导航栏与胶带完全不受影响，
+   遮罩的原始职责（滚动时不透出页面内容）也完整保留。 */
 body::after {
 	content: "";
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 44px;
+	height: 16px;
 	z-index: 45;
 	pointer-events: none;
 	/* 2026-10-02：出现/消失改为淡入淡出（flatpaper 原版无动画，
