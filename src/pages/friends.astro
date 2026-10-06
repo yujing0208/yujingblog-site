@@ -68,7 +68,7 @@ try {
 			if (!row || !row.link) continue;
 			linkStatus.set(normSite(row.link), {
 				reachable: typeof row.reachable === "boolean" ? row.reachable : null,
-				hasBacklink: typeof row.has_backlink === "boolean" ? row.has_backlink : null,
+				hasBacklink: typeof row.has_backlink === "boolean" ? row.hasBacklink : null,
 			});
 		}
 	}
@@ -82,13 +82,11 @@ function statusOf(item: { siteurl: string; title: string }): FriendStatus {
 	if (st.reachable === false) return { state: "lost", reason: "站点不可达" };
 	// 白名单：不要求反链，可达即绿点
 	if (whitelistKeys.has(normSite(item.siteurl)) || whitelistKeys.has(normKey(item.title))) return { state: "ok", reason: "可达（白名单）" };
-	// hasBacklink 三种取值：true=检测到了反链 / false=检测过但没有 / null=判定不了
-	// （没配友链页，或页面是 SPA·跳转壳，抓不出友链列表）。只有 false 才进迷失，
-	// null 不能当成「无反链」冤枉人。
-	if (st.hasBacklink === true) return { state: "ok", reason: "可达 · 已检测到反链" };
+	// 上游 willow-god/Friend-Circle-Lite 两值语义：has_backlink 只有 true/false，
+	// null 仅表示「未检测」（未配 linkpage 或站点不可达）。只有「检测过但无反链」(false)
+	// 才进迷失；true 和 null 都是绿点。
 	if (st.hasBacklink === false) return { state: "lost", reason: "未检测到反链" };
-	if (st.reachable === true) return { state: "ok", reason: st.hasBacklink === null ? "可达 · 无法检测反链" : "可达" };
-	return { state: "unknown", reason: "" };
+	return { state: "ok", reason: st.hasBacklink === true ? "可达 · 已检测到反链" : "可达" };
 }
 
 const statusMap = new Map<string, FriendStatus>();
@@ -379,7 +377,6 @@ const onAvatarError = `this.onerror=null;this.src='${FALLBACK_AVATAR}'`;
 						ta.select();
 						try { document.execCommand("copy"); } catch (err) {}
 						ta.remove();
-						done();
 					}
 					return;
 				}
