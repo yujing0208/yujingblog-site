@@ -57,12 +57,27 @@ html.is-leaving .transition-leaving {
   transform: none;
 }
 
+/* 侧栏过渡：禁用「all」全属性过渡
+   swup 切页时 sidebar 的 opacity/transform/位置都可能短暂跳变，
+   transition: "all" 会让侧栏在每次换页都做完整过渡 → 视觉上「上移一下又下来」。
+   改为 opacity 过渡（侧栏显隐只涉及 opacity）。 */
+#sidebar {
+  transition: opacity var(--transition-duration) var(--transition-easing);
+}
+
+/* 导航栏 z-index 兜底
+   paper-header.css 的 body::after 是 z-index:19 的固定遮罩。
+   #navbar-wrapper 默认 z-index:auto → 遮罩覆盖在导航栏之上 → 导航栏上方漏内容。
+   确保 #navbar-wrapper 始终 > 19，与参考站 flatpaper 一致。 */
+#navbar-wrapper {
+  z-index: 20;
+}
+
 /* 首页隐藏 body::after 顶部遮罩
    paper-header.css 的 body::after 是 36px 固定纸色渐变带 (z-index:19)，
    用于在文章页遮挡吸顶导航下方的内容缝隙。
    但在首页 (has-paper-hero) 深色 hero 上，它叠加在 hero 暗色遮罩之上，
-   形成一条洗白带（用户截图实证：1088px 宽度下导航栏与卡片对比度被洗掉）。
-   首页 hero 自带暗色遮罩，不需要纸色遮罩叠加。 */
+   形成一条洗白带。首页 hero 自带暗色遮罩，不需要纸色遮罩叠加。 */
 body.has-paper-hero::after {
   display: none;
 }
