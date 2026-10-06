@@ -18,7 +18,7 @@ const { Content } = await render(aboutPost);
 const title = String(aboutPost.data.title || i18n(I18nKey.about));
 ---
 
-<MainGridLayout title={title}>
+<MainGridLayout title={title} hasToc={true}>
 	<!-- 引入右侧边栏布局管理器 -->
 	<script>
 		import("../scripts/right-sidebar-layout.js");

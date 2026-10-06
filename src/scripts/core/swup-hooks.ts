@@ -268,9 +268,10 @@ export class SwupHooksManager {
 	 *
 	 * 背景（2026-10-06）：Swup 只替换 <main>，而以下元素都在它之外，
 	 * 跨页后保留的是离开时的状态：
-	 *   · html[data-page-is-post]     → 侧栏卡片显隐（目录卡 / 分类标签统计卡）
+	 *   · html[data-page-is-post]     → 侧栏卡片显隐（分类/标签/统计卡）
+	 *   · html[data-page-has-toc]     → 侧栏目录卡（toc 作用域：文章页 + 关于页）
 	 *   · #main-grid[data-has-right-rail] → 右栏显隐 + 桌面三列/两列网格
-	 * 两者的真值都写在 <main> 内的 #page-overlay-data 上（随新页面一起被替换），
+	 * 三者的真值都写在 <main> 内的 #page-overlay-data 上（随新页面一起被替换），
 	 * 这里读取后同步到外壳即可。
 	 */
 	private syncPageScopedChrome(): void {
@@ -282,6 +283,12 @@ export class SwupHooksManager {
 		const isPost = data.getAttribute("data-is-post") === "true";
 		root.setAttribute("data-page-is-post", isPost ? "true" : "false");
 
+		// 目录卡作用域：文章页（data-page-is-post=true）与关于页（显式 hasToc）
+		// 都走 toc 作用域，由 data-page-has-toc 驱动显隐。这里按新页 #page-overlay-data
+		// 同步该标记，跨页后侧栏的目录卡才会立即正确显示/隐藏。
+		const hasToc = data.getAttribute("data-has-toc") === "true";
+		root.setAttribute("data-page-has-toc", hasToc ? "true" : "false");
+
 		const mainGrid = this.getCachedElement("#main-grid");
 		if (mainGrid) {
 			mainGrid.setAttribute(
@@ -291,13 +298,16 @@ export class SwupHooksManager {
 		}
 
 		// 目录卡从隐藏变为显示时，需要在可见之后再建目录
-		// （FlatpaperTOC 建目录时要读当前正文的标题）
-		if (isPost) {
+		// （FlatpaperTOC 建目录时要读当前正文的标题）。
+		// 文章页与关于页都走 toc 作用域，故按 data-page-has-toc 判定，
+		// 派发目标改为 data-widget-scope="toc"（不再绑定 post 作用域，
+		// 否则关于页的目录卡永远不会被触发重建）。
+		if (hasToc) {
 			setTimeout(() => {
 				document
 					.querySelectorAll("[data-card-toc-root]")
 					.forEach((el) => {
-						if (el.closest('[data-widget-scope="post"]')) {
+						if (el.closest('[data-widget-scope="toc"]')) {
 							el.dispatchEvent(new CustomEvent("card-toc:refresh"));
 						}
 					});

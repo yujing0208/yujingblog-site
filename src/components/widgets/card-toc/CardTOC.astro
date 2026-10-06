@@ -133,12 +133,31 @@ const tocDepth = 3;
 	 * 统一批量初始化，确保每个可见实例都绑定到自己的容器。
 	 */
 	/**
-	 * 仅在文章页初始化目录。
-	 * 非文章页卡片被 data-widget-scope 隐藏，此时正文没有标题、建目录必然失败，
-	 * 重试轮询纯属浪费；也避免给隐藏节点绑 scroll 监听。
+	 * 卡片在当前页是否可见 —— 决定是否值得初始化目录。
+	 * 侧栏外壳在 <main> 之外、Swup 不替换它，卡片显隐由 html 上的标记驱动
+	 * （见 SidebarColumn 的全局 CSS）：
+	 *   html[data-page-is-post]  控制 post / nonpost 作用域
+	 *   html[data-page-has-toc]  控制 toc 作用域（文章页 + 关于页）
+	 * 隐藏页正文没有标题、建目录必然失败，重试轮询纯属浪费；也避免给隐藏节点绑 scroll 监听。
+	 * ⚠️ 2026-10-06：旧实现写成 `!root.closest('[data-widget-scope="post"]')`，
+	 * 而目录卡本身恒在 data-widget-scope 包裹层内 —— 于是恒返回 false，
+	 * 目录永远不初始化（症状：有目录卡片但没有目录内容）。改为按作用域读对应标记。
 	 */
 	function isCardVisible(root: Element): boolean {
-		return !root.closest('[data-widget-scope="post"]');
+		const scopeEl = root.closest("[data-widget-scope]");
+		if (!scopeEl) return true;
+		const scope = scopeEl.getAttribute("data-widget-scope");
+		const html = document.documentElement;
+		if (scope === "post") {
+			return html.getAttribute("data-page-is-post") === "true";
+		}
+		if (scope === "nonpost") {
+			return html.getAttribute("data-page-is-post") !== "true";
+		}
+		if (scope === "toc") {
+			return html.getAttribute("data-page-has-toc") === "true";
+		}
+		return true;
 	}
 
 	function initAllCardTOCs() {

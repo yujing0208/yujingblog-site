@@ -37,6 +37,8 @@ interface Props {
 	postSlug?: string;
 	headings?: MarkdownHeading[];
 	coverImage?: string;
+	/** 是否显示左栏「文章目录」卡（toc 作用域）：文章页由 postSlug 自动推导，关于页显式传 true */
+	hasToc?: boolean;
 	publishedDate?: Date;
 	category?: string;
 	wordCount?: number;
@@ -64,6 +66,7 @@ const {
 	postSlug,
 	coverImage,
 	headings = [],
+	hasToc,
 	publishedDate,
 	category,
 	wordCount,
@@ -71,6 +74,11 @@ const {
 } = Astro.props;
 const hasBannerCredit = siteConfig.banner.credit.enable;
 const hasBannerLink = !!siteConfig.banner.credit.url;
+
+// 目录卡出现范围：文章页（postSlug 存在）或显式声明 hasToc（关于页）。
+// 写入 #page-overlay-data[data-has-toc]，随新页面被 Swup 替换，
+// swup-hooks 据此同步 html[data-page-has-toc]（SidebarColumn 的 toc 作用域显隐依据）。
+const showToc = hasToc ?? Boolean(postSlug);
 
 // 检查是否为首页
 const isHomePage = Astro.url.pathname === "/" || Astro.url.pathname === "";
@@ -131,6 +139,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 	setOGTypeArticle={setOGTypeArticle}
 	postSlug={postSlug}
 	coverImage={coverImage}
+	hasToc={hasToc}
 >
 	<!-- 2026-09-30：内页不再响应壁纸模式切换/浏览器残留的 localStorage 模式，
 	     wallpaperEnabled=false 锁定为配置默认值（none）——顶部就是导航栏，与 FlatPaper 一致 -->
@@ -271,9 +280,10 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 							data-date={publishedDate ? formatDateToYYYYMMDD(publishedDate) : ""}
 							data-category={category || ""}
 							data-words={wordCount ? String(wordCount) : ""}
-							data-is-post={postSlug ? "true" : "false"}
-							data-is-home={isHomePage ? "true" : "false"}
-						data-has-right-rail={paperListRail ? "true" : "false"}
+						data-is-post={postSlug ? "true" : "false"}
+						data-is-home={isHomePage ? "true" : "false"}
+						data-has-toc={showToc ? "true" : "false"}
+					data-has-right-rail={paperListRail ? "true" : "false"}
 							data-wallpaper-mode={siteConfig.wallpaperMode.defaultMode}
 							class="hidden"
 						>
