@@ -1,75 +1,83 @@
 @import "./_transition-vars.css";
 
-/* ⚠️ 2026-10-07：页面切换过渡 — 纯 opacity，不做 transform 位移。 */
+/* 主要内容区域的过渡动画 - 纯垂直效果 */
 .transition-main {
-  transition: opacity var(--transition-duration) var(--transition-easing);
+  transition:
+    opacity var(--transition-duration) var(--transition-easing),
+    transform var(--transition-duration) var(--transition-easing);
 }
 
+/* 离开动画 */
 .transition-leaving {
-  transition: opacity var(--transition-duration) var(--transition-easing-out);
+  transition:
+    transform var(--transition-duration) var(--transition-easing-out),
+    opacity var(--transition-duration) var(--transition-easing-out);
 }
 
 html.is-changing .transition-main {
-  transition: opacity var(--transition-duration) var(--transition-easing);
+  transition:
+    opacity var(--transition-duration) var(--transition-easing),
+    transform var(--transition-duration) var(--transition-easing);
 }
 
 html.is-leaving .transition-main {
-  transition: opacity var(--transition-duration) var(--transition-easing-out);
+  transition:
+    opacity var(--transition-duration) var(--transition-easing-out),
+    transform var(--transition-duration) var(--transition-easing-out);
 }
 
-/* ⚠️ 2026-10-07：切换页面改为纯 opacity 交叉淡入淡出，不做位移。
-   参考 flatpaper —— 直接刷新，不滑入滑出。 */
+/* 进入动画 - 纯垂直 */
 html.is-animating .transition-main {
   opacity: 0;
+  transform: translateY(var(--transition-translate));
 }
 
+/* 离开动画 - 向上滑出 */
 html.is-animating.is-leaving .transition-leaving {
+  transform: translateY(calc(var(--transition-translate) * -1));
   opacity: 0;
 }
 
-/* Swup fade 动画 — 纯淡入淡出 */
+/* Swup fade 动画 */
 html.is-changing .transition-swup-fade {
-  transition: opacity var(--transition-duration) ease-out;
+  transition: all var(--transition-duration) ease-out;
 }
 
 html.is-animating .transition-swup-fade {
   opacity: 0;
+  transform: translateY(var(--transition-translate));
 }
 
 /* 淡入动画 */
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(0.5rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(var(--transition-translate));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--transition-translate) * -1));
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* ⚠️ 2026-10-07：Swup 导航期间禁用内容区的 entrance 动画，
-   只做纯 opacity 切换。onload-animation 只在首次整页加载时运行。 */
-html.is-changing .onload-animation,
-html.is-animating .onload-animation {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-/* ⚠️ 2026-10-07：侧栏也在 <main> 之外，但 onload-animation 随 Swup 重新执行，
-   导致「卡片从下往上划入」。导航期间一律禁用。 */
-html.is-changing .sidebar-root .onload-animation,
-html.is-animating .sidebar-root .onload-animation,
-html.is-changing [data-widget-scope] .onload-animation,
-html.is-animating [data-widget-scope] .onload-animation {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-/* ⚠️ 2026-10-07：目录卡 opacity 淡入淡出 */
-[data-widget-scope="toc"] {
-  transition: opacity 200ms ease-out;
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* 页面加载动画 */

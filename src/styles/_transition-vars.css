@@ -4,12 +4,11 @@
  */
 
 :root {
-  /* ⚠️ 2026-10-07：页面切换改为极短纯 opacity 过渡，近乎即时刷新 */
   --transition-duration: 120ms;
-  --transition-easing: ease-out;
-  --transition-easing-out: ease-in;
-  --transition-translate: 0px;
-  --transition-stagger: 0ms;
+  --transition-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-easing-out: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --transition-translate: 1.5rem;
+  --transition-stagger: 35ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -22,6 +21,7 @@
 
 @media (width < 768px) {
   :root {
-    --transition-duration: 100ms;
+    --transition-translate: 0.5rem;
+    --transition-duration: 150ms;
   }
 }

@@ -90,19 +90,9 @@ const mobileStickyComponents = showMobile
 // 切换 data-widget-scope=post / nonpost 两组」，跨页切换才能立即正确。
 // 同理不再向下游传 isPost：CardTOC 始终渲染真实节点，由 CSS 控制显隐。
 
-/**
- * 组件 → 作用域：
- *   post    = 仅文章页显示
- *   nonpost = 仅非文章页显示
- *   toc     = 「有目录的页面」显示（文章页 + 关于页），由 html[data-page-has-toc] 驱动
- *   其余    = 全站显示
- *
- * ⚠️ 2026-10-06：目录卡改用独立作用域 toc —— 用户要求目录卡在「文章页 + 关于页」
- * 出现、其余页面不出现，而关于页并非文章页（data-page-is-post=false），
- * 故不能再挂在 post 作用域下（否则关于页永远看不到目录卡）。
- */
-const WIDGET_SCOPE: Record<string, "post" | "nonpost" | "toc"> = {
-	"card-toc": "toc",
+/** 组件 → 作用域：post = 仅文章页显示，nonpost = 仅非文章页显示，其余全站显示。 */
+const WIDGET_SCOPE: Record<string, "post" | "nonpost"> = {
+	"card-toc": "post",
 	"paper-latest": "post",
 	"paper-categories": "nonpost",
 	"paper-tags": "nonpost",
@@ -120,18 +110,15 @@ function pickLeftComponents(
 	if (side !== "left") {
 		return comps;
 	}
-	// ⚠️ 2026-10-06：card-toc 从 sticky 组挪到 top 组，放在 paper-profile 之后、
-	// paper-categories 之前 —— 对齐文章页目录卡位置（关于页也要同样顺序）。
 	const order =
 		position === "top"
 			? ([
 					"paper-profile",
-					"card-toc",
 					"paper-categories",
 					"paper-tags",
 					"umami-stats",
 				] as const)
-			: (["paper-latest"] as const);
+			: (["card-toc", "paper-latest"] as const);
 	const result: ReturnType<typeof widgetManager.getComponentsByPosition> = [];
 	for (const type of order) {
 		// 先取配置里已有的条目（保留 class / animationDelay）
@@ -233,7 +220,7 @@ function renderComponent(
  * CSS 据此按 html[data-page-is-post] 切换显隐 —— 侧栏在 <main> 之外、
  * Swup 不替换它，所以「哪些卡片该显示」只能由客户端按当前页驱动。
  */
-function scopeOf(type: string): "post" | "nonpost" | "toc" | "" {
+function scopeOf(type: string): "post" | "nonpost" | "" {
 	return WIDGET_SCOPE[type] ?? "";
 }
 ---
@@ -391,16 +378,9 @@ function scopeOf(type: string): "post" | "nonpost" | "toc" | "" {
 <style is:global>
 	/* 2026-10-06：侧栏在 <main> 之外，Swup 跨页不替换它，
 	   所以「哪些卡片该显示」必须由客户端按当前页类型驱动，不能靠构建期分叉 DOM。
-	   html[data-page-is-post] / html[data-page-has-toc] 由 Layout.astro 输出
-	   + swup-hooks 在 content:replace / page:view 时同步。 */
+	   html[data-page-is-post] 由 Layout.astro 输出 + swup-hooks 在 page:view 时同步。 */
 	html[data-page-is-post="false"] [data-widget-scope="post"],
 	html[data-page-is-post="true"] [data-widget-scope="nonpost"] {
 		display: none !important;
-	}
-	/* ⚠️ 2026-10-07：目录卡用 opacity 淡入淡出，不用 display:none，
-	   否则 transition 无法过渡。 */
-	html[data-page-has-toc="false"] [data-widget-scope="toc"] {
-		opacity: 0 !important;
-		pointer-events: none !important;
 	}
 </style>

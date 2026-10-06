@@ -99,11 +99,6 @@ const assetVer = Date.now();
 	data-width={widgetWidth}
 ></iframe>
 
-<!-- ⚠️ 2026-10-07：iframe 保持 pointer-events:none（滚轮穿透），点击由透明覆盖层转发 -->
-<div id="l2d-click-proxy" style={"position: fixed; z-index: 1000; bottom: 0; display: none; "
-	+ (isRight ? " right: 0;" : " left: 0;")
-	+ " width: " + widgetWidth + "px; height: 600px; cursor: pointer;"}></div>
-
 <link rel="stylesheet" href={"/pio/waifu-chat.css?v=" + assetVer} />
 <script src={"/pio/waifu-chat.js?v=" + assetVer} is:inline></script>
 
@@ -207,11 +202,16 @@ const assetVer = Date.now();
 					const h = e.data.contentHeight || 500;
 					currentEl.style.height = h + "px";
 					currentEl.style.opacity = "1";
-					const proxy = document.getElementById("l2d-click-proxy");
-					if (proxy) proxy.style.height = h + "px";
+					currentEl.style.pointerEvents = "auto";
 				}
-				// ⚠️ 2026-10-07：已移除 l2d-wheel 转发逻辑。
-				// iframe 保持 pointer-events:none，滚轮事件自然穿透。
+				// 2026-10-06：iframe 铺满左下角 280x600 且开了 pointer-events:auto，
+				// 鼠标落在看板娘矩形内时滚轮被 iframe 吞掉、页面不滚动（表现为滑动卡住）。
+				// 由 live2d-host.html 转发过来，在这里代为滚动父页面。
+				if (e.data.type === "l2d-wheel") {
+					const scale =
+						e.data.deltaMode === 1 ? 16 : e.data.deltaMode === 2 ? window.innerHeight : 1;
+					window.scrollBy(0, (e.data.deltaY || 0) * scale);
+				}
 				if (e.data.type === "l2d-action") menuActions[e.data.action]?.();
 			}
 
@@ -249,35 +249,6 @@ const assetVer = Date.now();
 					if (nextEl.contentDocument?.readyState === "complete") scheduleInit();
 				},
 			};
-		}
-
-		// ⚠️ 2026-10-07：iframe 保持 pointer-events:none（滚轮穿透父页面），
-		// 点击由透明覆盖层捕获，转发给 iframe 内的 Live2D 模型。
-		const clickProxy = document.getElementById("l2d-click-proxy");
-		if (clickProxy) {
-			const updateProxyBounds = () => {
-				const rect = currentEl?.getBoundingClientRect();
-				if (rect && currentEl?.style.display !== "none" && currentEl?.style.opacity !== "0") {
-					clickProxy.style.display = "block";
-					clickProxy.style.width = rect.width + "px";
-					clickProxy.style.height = rect.height + "px";
-				} else {
-					clickProxy.style.display = "none";
-				}
-			};
-			clickProxy.addEventListener("click", (ev) => {
-				if (!currentEl?.contentWindow) return;
-				const rect = currentEl.getBoundingClientRect();
-				currentEl.contentWindow.postMessage({
-					type: "l2d-proxy-click",
-					clientX: ev.clientX,
-					clientY: ev.clientY,
-					offsetX: ev.clientX - rect.left,
-					offsetY: ev.clientY - rect.top,
-				}, "*");
-			});
-			updateProxyBounds();
-			window.addEventListener("resize", updateProxyBounds);
 		}
 
 		win.__mizukiPioController.update(el, config, hiddenOnMobile);
