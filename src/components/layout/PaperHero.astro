@@ -323,14 +323,15 @@ const heroStyle = heroImage
 
 	<!-- 下拉纸签 CTA（照搬 FlatPaper：背景用 cta-bg-01..09.webp 花朵药丸贴纸，
 	     random 时输出全部 9 张由脚本随机轮换，text-shadow 提可读性）
-	     2026-10-06：站点已移除 Swup、改回浏览器原生整页刷新，原先为绕开
-	     Swup 的 history.replaceState 而加的 data-no-swup 属性已无意义，故删除。
-	     行为仍与参考站一致：脚本内 preventDefault + stopPropagation，
-	     滚动生效但网址不被写入 #hash。 -->
+	     data-no-swup：本站是 Astro+Swup，Swup 会在 document 级接管同页锚点点击并
+	     自行 replaceState 把 #paper-home-content 写进地址栏；参考站是纯 Hexo 无 Swup，
+	     preventDefault 就够了。这里显式让 Swup 跳过该链接（配合 JS 里的
+	     stopPropagation 双保险），做到与参考站一致：滚动生效但网址不变。 -->
 	<a
 		class="home-hero__arrow"
 		href={`#${ctaTarget}`}
 		data-hero-scroll
+		data-no-swup
 		data-hero-cta-backgrounds={ctaBgAttr}
 		aria-label={ctaText}
 		title={ctaText}

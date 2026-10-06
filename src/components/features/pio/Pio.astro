@@ -116,8 +116,8 @@ const assetVer = Date.now();
 		async function initChat() {
 			const MizukiChat = (window as any).MizukiChat;
 			if (!MizukiChat) return;
-			// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，本脚本每次
-			// 跳转只会执行一次，__mizukiChatBound 仍作为多次执行时的保险保留。
+			// swup 切页会重新执行本脚本：只初始化一次，避免多个聊天框实例叠加、
+			// message 监听重复绑定（否则每个实例都 toggle，关闭时要点多次）
 			if ((window as any).__mizukiChatBound) return;
 			(window as any).__mizukiChatBound = true;
 			const userCfg = await MizukiChat.loadConfig();
@@ -163,9 +163,11 @@ const assetVer = Date.now();
 			let currentEl: HTMLIFrameElement | null = null;
 			let currentConfig: Record<string, unknown> = {};
 			let currentHiddenOnMobile = true;
+			let isTransitioning = false;
 			let initSent = false;
 			let currentConfigKey = "";
 			let pendingInit: number | undefined;
+			let swupHooksRegistered = false;
 			// 浏览器没有 WebGL2 时 iframe 会回一条 l2d-unsupported：永久隐藏，
 			// 别在页面上留一个透明空壳（它永远等不到 l2d-loaded）。
 			let webglUnsupported = false;
@@ -177,12 +179,8 @@ const assetVer = Date.now();
 				else currentEl.style.display = "";
 			}
 
-			// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新。
-			// 原 isTransitioning 由 swup 的 link:click / visit:end 维护，用于
-			// 「无刷新换页途中不发 l2d-init」；整页刷新时整个 iframe 会随页面
-			// 重建，该守卫不再有意义，故删除（保留 initSent 防重复发送）。
 			function postInit() {
-				if (!currentEl || initSent) return;
+				if (!currentEl || initSent || isTransitioning) return;
 				if (currentHiddenOnMobile && window.innerWidth <= PIO_MOBILE_BREAKPOINT) return;
 				currentEl.contentWindow?.postMessage({ type: "l2d-init", config: currentConfig }, "*");
 				initSent = true;
@@ -217,8 +215,23 @@ const assetVer = Date.now();
 				if (e.data.type === "l2d-action") menuActions[e.data.action]?.();
 			}
 
+			function setupSwupHooks() {
+				const swup = (window as any).swup;
+				if (swupHooksRegistered || !swup?.hooks) return;
+				swupHooksRegistered = true;
+				// ⚠️ 2026-10-07：不再在 visit:end 里重发 l2d-init。
+				// 根因：每次切页都重新初始化 Live2D 模型，
+				// iframe 内的 WebGL 渲染抢占 GPU，导致切页瞬间上下滑动卡顿。
+				// iframe 在 <main> 之外，Swup 不替换它，模型会持久存在，
+				// 不需要在每次导航时重新加载。
+				swup.hooks.on("link:click", () => { isTransitioning = true; });
+				swup.hooks.on("visit:end", () => { isTransitioning = false; });
+			}
+
 			window.addEventListener("message", handleMessage);
 			window.addEventListener("resize", () => { applyVisibility(); scheduleInit(); });
+			if ((window as any).swup) setupSwupHooks();
+			else document.addEventListener("swup:enable", setupSwupHooks, { once: true });
 
 			win.__mizukiPioController = {
 				update(nextEl, nextConfig, nextHiddenOnMobile) {

@@ -13,10 +13,37 @@ let isChanging = false;
 onMount(() => {
 	mode = getStoredTheme();
 
-	// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，
-	// 不再有「同一文档内替换内容」的时刻，原 content:replace / swup:enable
-	// 钩子已无触发可能。主题在每次整页加载时由 head 内联脚本从 localStorage
-	// 重新初始化，这里的 onMount 读值即为权威状态，无需再做跨页同步。
+	// 监听 Swup 的内容替换事件，确保在页面切换后同步主题状态
+	const handleContentReplace = () => {
+		requestAnimationFrame(() => {
+			const newMode = getStoredTheme();
+			if (mode !== newMode) {
+				mode = newMode;
+			}
+		});
+	};
+
+	let swupHooked = false;
+
+	const setupSwupHook = () => {
+		if (!swupHooked && window.swup?.hooks) {
+			window.swup.hooks.on("content:replace", handleContentReplace);
+			swupHooked = true;
+		}
+	};
+
+	if (window.swup?.hooks) {
+		setupSwupHook();
+	} else {
+		document.addEventListener("swup:enable", setupSwupHook, { once: true });
+	}
+
+	return () => {
+		if (window.swup?.hooks && swupHooked) {
+			window.swup.hooks.off("content:replace", handleContentReplace);
+		}
+		document.removeEventListener("swup:enable", setupSwupHook);
+	};
 });
 
 function switchScheme(newMode: LIGHT_DARK_MODE) {

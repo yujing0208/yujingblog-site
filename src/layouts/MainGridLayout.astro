@@ -43,11 +43,11 @@ interface Props {
 	/**
 	 * FlatPaper 列表页右栏（welcome-card + 最近动态）：仅 archive/tags/categories/tag/category/分页 列表页传入 true
 	 *
-	 * 2026-10-06 更新：站点已移除 swup、改回浏览器原生整页刷新（对齐 flatpaper 参考站）。
-	 * 右栏曾为「Swup 只替换 <main>、外壳跨页残留」而改成「始终渲染 + data-has-right-rail
-	 * 驱动显隐」；整页刷新下构建期分支本可恢复，但当前实现同样正确且更简单，
-	 * 故保留：右栏始终渲染，显隐与网格列数由 #main-grid[data-has-right-rail] 驱动，
-	 * 该属性在构建期按页面类型写入即最终值，不再需要跨页同步。
+	 * ⚠️ 2026-10-06：右栏与 #main-grid 都在 <main> 之外，Swup 跨页不替换它们。
+	 * 原实现按 paperListRail 构建期分叉 DOM（列表页才渲染右栏、才用三列网格），
+	 * 于是「从 /archive/ 切到文章页」时右栏与三列网格会整块留在原地（非首页双侧边栏）。
+	 * 现在右栏始终渲染，显隐与网格列数改由 #main-grid[data-has-right-rail] 驱动，
+	 * 该属性在构建期写入初值、跨页由 swup-hooks 依据新页面的 data-has-right-rail 同步。
 	 */
 	paperListRail?: boolean;
 }
@@ -266,19 +266,13 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 				}
 				</div>
 
-				<!-- 2026-10-06：原 id="swup-container"（swup 的换页容器选择器）。
-				     移除 swup 后改回语义 id="main-content"，站点已改回浏览器
-				     原生整页刷新，<main> 不再是「被替换的片段」，而是普通主内容区。
-				     class 里的 transition-main 一并去掉：它只在 html.is-animating
-				     下生效（swup 运行时加的类），摘除后永不命中。
-				     content-wrapper 上的 onload-animation（首屏淡入）保留。 -->
 				<main
-					id="main-content"
-					class={mainContentClass}
+					id="swup-container"
+					class={`${mainContentClass} transition-main`}
 				>
 					<div
 						id="content-wrapper"
-						class="onload-animation"
+						class="onload-animation transition-leaving"
 					>
 						<div
 							id="page-overlay-data"
@@ -298,10 +292,10 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 				</main>
 
 				<!-- 桌面页脚：必须是 #main-grid 的直接子元素（col-span-full），
-				     不能放进 main#main-content —— main 只是三栏网格的中间列，
+				     不能放进 main#swup-container —— main 只是三栏网格的中间列，
 				     页脚的 100vw 通栏色带需要以视口居中的容器为定位基准，
 				     放进中间列会导致内页页脚色带错位（看起来像卡片）。
-				     页脚内容全站一致，放在主内容区外也不会有问题。 -->
+				     页脚内容全站一致，放在 Swup 容器外也不会在导航时丢失。 -->
 				<div
 					class="footer col-span-full onload-animation hidden lg:block"
 				>
@@ -329,10 +323,9 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 			height: fit-content;
 		}
 
-		/* 2026-10-06：右栏显隐与桌面三列/两列网格由 data-has-right-rail 驱动。
-		   该属性在构建期按页面类型写入（#main-grid 在 <main> 之外，构建期分叉
-		   DOM 会让右栏三列网格在整页刷新间无法按页面类型切换，改由属性 + CSS
-		   统一裁决，构建期写入即最终值）。
+		/* 2026-10-06：右栏显隐与桌面三列/两列网格改由 data-has-right-rail 驱动。
+		   原因：#main-grid 与右栏都在 <main> 之外，Swup 跨页不替换，
+		   构建期分叉 DOM 会让「归档页 → 其他页」时右栏与三列网格整块残留。
 		   桌面端（≥1280px）覆盖 Tailwind 的 lg:grid-cols-* 与 lg:block：
 		   - 右栏列在无右栏时整体 display:none，主栏相应左移占两列；
 		   - 移动/平板断点不受影响（本来就只有单侧栏）。 */
@@ -352,7 +345,7 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 	</style>
 
 	<!-- 2026-09-30 Round 19：删除文章右侧悬浮目录（FlatPaper 两栏结构无此物），
-	     目录改由左栏 card-toc 卡片承担。保留隐藏 #toc-container 作为兼容占位 -->
+	     目录改由左栏 card-toc 卡片承担。保留隐藏 #toc-container 供 swup 选择器兼容 -->
 	<div id="toc-container" class="hidden" />
 </Layout>
 

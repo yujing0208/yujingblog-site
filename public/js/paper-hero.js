@@ -13,8 +13,7 @@
  *   · 滚动时切换 body.is-hero-active
  *
  * 与原版差异：原版是 Hexo 全局 main.js 的一部分，这里抽成独立脚本，
- * 并加了幂等保护（重复执行不会重复绑定）。2026-10-06：站点已改回浏览器
- * 原生整页刷新（对齐 flatpaper 参考站），幂等标记用于 bfcache 恢复场景。
+ * 并加了幂等（swup 换页后重复执行不会重复绑定）。
  */
 (function () {
 	"use strict";
@@ -146,10 +145,9 @@
 			var target = document.getElementById(href.slice(1));
 			if (!target) return;
 			event.preventDefault();
-			// 参考站 flatpaper 的做法：滚动生效但网址不被写入 #hash
-			// （不污染地址栏、不产生历史记录）。站点已移除 swup，
-			// preventDefault 本身即可达成；stopPropagation 作为对其他
-			// document 级委托监听的防御保留。
+			// Swup listens on document and rewrites the URL (history.replaceState)
+			// for same-page hash links. Stop propagation so it never sees the click:
+			// the reference site is plain Hexo (no Swup) and keeps a clean URL.
 			if (event.stopPropagation) event.stopPropagation();
 			scrollToHome();
 			});
@@ -447,11 +445,8 @@
 		initPaperHero();
 	}
 
-	// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，每次跳转脚本都会
-	// 重新执行一遍，原 page:view / content:replace / swup:page:view 三个
-	// 「无刷新换页后重新初始化」钩子已无触发可能，故一并删除。
-	// 保留 bfcache 恢复兜底：从缓存取回页面时脚本不重跑，需要补一次初始化。
-	window.addEventListener("pageshow", function (event) {
-		if (event.persisted) initPaperHero();
-	});
+	// swup 无刷新换页后重新初始化
+	document.addEventListener("page:view", initPaperHero);
+	document.addEventListener("content:replace", initPaperHero);
+	document.addEventListener("swup:page:view", initPaperHero);
 })();

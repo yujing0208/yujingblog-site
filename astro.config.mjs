@@ -5,6 +5,7 @@ import { unified } from '@astrojs/markdown-remark';
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
+import swup from "@swup/astro";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
 import expressiveCode from "astro-expressive-code";
@@ -109,15 +110,56 @@ export default defineConfig({
 		umami({
 			shareUrl: 'https://cloud.umami.is/share/eq6I2iWnakVCH2Rt',
 		}),
-		// 2026-10-06：移除 @swup/astro 无刷新导航，改为浏览器原生整页刷新，
-		// 与参考站 flatpaper.nep.me 完全一致（原站无任何 pjax/turbo/barba/swup 类库）。
-		// 移除后带来的行为变化（均为期望行为）：
-		//   · 每次站内跳转都是整页加载，head/body 全量重渲染，不再有过渡动画；
-		//   · 不再需要跨布局守卫（原 ignore 选项）、persistTags/awaitAssets 等
-		//     head 差量补丁，样式与脚本始终从零加载，天然不会有残留状态；
-		//   · 首屏大图/音乐播放器在换页时会重新初始化（与参考站一致）。
-		// 相关清理见 src/layouts/Layout.astro（已删除 initSwupManager 入口）、
-		// src/scripts/swup-manager.ts 及其 hooks（文件保留但不再被引用）。
+		swup({
+			theme: false,
+			animationClass: "transition-swup-",
+			containers: ["main"],
+			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
+			cache: true,
+			// 开启悬停预取：鼠标悬停链接即预载整页 HTML，点击时近乎瞬时。
+			// 原 preload:false 实为每次点击冷请求整页文档，反而更慢。
+			preload: true,
+			accessibility: true,
+			// 修复站内切换 CSS 丢失：对象形式让 Swup 等待新页样式表加载完成再换内容，
+			// 并把共享 CSS 标记为常驻（不反复移除/重加），消除 head 差量竞态。
+			// persistTags:true 保留所有既有 head 标签（含内联 <style>），仅新增缺失项，
+			// 从机制上杜绝切换后样式/导航条丢失（刷新才恢复）的问题。
+			// 仅生产环境开启 head 更新（与原有 NODE_ENV 门控保持一致）。
+			updateHead:
+				process.env.NODE_ENV === "production"
+					? { awaitAssets: true, persistAssets: true, persistTags: true }
+					: false,
+			updateBodyClass: false,
+			globalInstance: true,
+			// 跨布局导航保护（修复：从其他页面返回首页偶发显示异常，需手动刷新）：
+			// 手账首页(PaperHomeLayout)与其他页面(MainGridLayout)的 DOM 骨架完全不同
+			// （.paper-shell 三栏 vs #main-grid 网格），而 Swup 只替换 <main> 元素，
+			// 跨布局换页时外层壳无法凭空生成 —— 回首页丢 hero/壳、进文章页丢侧栏网格。
+			// ignore 返回 true 时 Swup 完全不接管该导航（官方行为：浏览器整页加载）。
+			// 注意：此函数会被序列化进客户端脚本，必须自包含、不能引用外部变量；
+			// 仅匹配站点根路径("/")为手账首页，若未来改为子路径部署需同步调整。
+			ignore: (targetUrl) => {
+				try {
+					const path = String(targetUrl).split("#")[0].split("?")[0];
+					// /circle/ 是 1:1 移植 FCLite「友链清册」的独立整页：自带 <html>/<head>、内联国风
+					// CSS 与 <style is:global>、末尾原生 <script>，且不挂 Layout —— 没有 Swup
+					// 运行时，也没有 #content-wrapper/main 可被 morph。Swup 接管会导致脚本不执行、
+					// 样式错位，必须交给浏览器整页加载。
+					if (/^\/circle(\/|$)/.test(path)) {
+						return true;
+					}
+					const targetIsPaperHome = path.replace(/^\/+|\/+$/g, "") === "";
+					const currentIsPaperHome =
+						!!document.querySelector(".paper-shell");
+					return targetIsPaperHome !== currentIsPaperHome;
+				} catch {
+					return false;
+				}
+			},
+			// 注：原 resolveUrl / animateHistoryBrowsing / skipPopStateHandling
+			// 三项不在 @swup/astro 1.8 支持的选项列表中（一直被静默忽略），
+			// 已移除以免误导；popstate 跨布局兜底见 src/scripts/core/swup-hooks.ts。
+		}),
 		icon({
 			include: {
 			    ...buildIconInclude(),
@@ -280,6 +322,7 @@ export default defineConfig({
 					"src/components/organisms/navigation/Search.svelte",
 					"src/components/control/ThemeSwitch.svelte",
 					"src/components/features/settings/DisplaySettings.svelte",
+					"src/scripts/swup-manager.ts",
 				],
 			},
 		},
@@ -288,7 +331,8 @@ export default defineConfig({
 			assetsInlineLimit: 4096,
 			// CSS 代码分割：关闭，将全站样式合并为单个 CSS 文件。
 			// 原来每页 19 个独立 CSS 请求，串行排队导致加载/切换长时间转圈；
-			// 合并后每页只请求 1 个 CSS（约 50KB 压缩后），加载速度大幅提升。
+			// 合并后每页只请求 1 个 CSS（约 50KB 压缩后），切换时样式全在浏览器缓存，
+			// 加载与站内切换速度大幅提升，且 Swup persistAssets 对单一共享 CSS 保护更彻底。
 			cssCodeSplit: false,
 			cssMinify: "esbuild",
 			// 内联小型 CSS 文件以减少网络请求

@@ -11,9 +11,7 @@
  *   · logo 菜单 .brand-mark-wrapper → 开合
  *   · 配色选择器 .accent-picker/.accent-toggle/.accent-option → 开合 + 选中
  *
- * 幂等：所有绑定都用 dataset 标记，重复执行不会重复绑定。
- * 2026-10-06：站点已改回浏览器原生整页刷新（对齐 flatpaper 参考站），
- *            每次跳转脚本都会重新执行，幂等标记用于 bfcache 恢复等场景。
+ * 幂等：所有绑定都用 dataset 标记，swup 换页后重复执行不会重复绑定。
  */
 (function () {
 	"use strict";
@@ -322,11 +320,9 @@
 				var target = id ? document.getElementById(id) : null;
 				if (!target) return;
 				event.preventDefault();
-				// 阻止默认的锚点跳转：参考站 flatpaper 的做法是滚动生效但网址
-				// 不被写入 #hash（不污染地址栏、不产生历史记录）。
-				// 原注释提到 Swup 会改写地址栏，站点已移除 swup，但
-				// preventDefault 本身就足以达成该行为，stopPropagation 作为
-				// 对其他 document 级委托监听（如导航高亮）的防御保留。
+				// Swup listens on document and rewrites the URL for same-page hash
+				// links (history.replaceState), which adds #paper-home-content to
+				// the address bar. Stop propagation so Swup never sees the click.
 				if (event.stopPropagation) event.stopPropagation();
 				var header = document.querySelector(".site-header");
 				var offset = header ? header.getBoundingClientRect().height + 56 : 56;
@@ -338,11 +334,11 @@
 		});
 	}
 
-	/* ---------------- hero 状态类同步 ---------------- */
+	/* ---------------- hero 状态类同步（swup 换页残留清理） ---------------- */
 	/* body.has-paper-hero / is-hero-active / is-nav-docked 由 paper-hero.js
 	   在 hero 页面维护，驱动 paper-header.css 的 body::after 顶部遮罩时机。
-	   整页刷新下内页 DOM 本就没有 hero，这里的同步仍保留作为幂等兜底
-	   （例如 bfcache 恢复、脚本执行顺序变化时的状态收敛）。
+	   swup 从首页切到内页后 DOM 里已没有 hero，残留的类会让遮罩错误隐藏 ——
+	   这里按当前 DOM 实况同步一次（本函数随 initAll 在每次换页后执行）。
 	   2026-10-06：is-hero-gone 已废弃，改为 is-nav-docked（见 paper-hero.js）。 */
 	function syncHeroBodyState() {
 		var hasHero = !!document.querySelector("[data-paper-hero]");
@@ -371,11 +367,7 @@
 		initAll();
 	}
 
-	// 2026-10-06：移除 swup 后站点回到浏览器原生整页刷新，脚本每次跳转都会
-	// 重新执行，原 page:view / content:replace / swup:page:view 三个
-	// 「无刷新换页后重新绑定」钩子已无触发可能，故一并删除。
-	// 保留 bfcache 恢复兜底（从缓存取回页面时脚本不重跑，需重新绑定）。
-	window.addEventListener("pageshow", function (event) {
-		if (event.persisted) initAll();
-	});
+	document.addEventListener("page:view", initAll);
+	document.addEventListener("content:replace", initAll);
+	document.addEventListener("swup:page:view", initAll);
 })();
