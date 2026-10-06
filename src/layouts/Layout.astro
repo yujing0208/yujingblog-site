@@ -32,8 +32,6 @@ interface Props {
 	setOGTypeArticle?: boolean;
 	postSlug?: string;
 	coverImage?: string;
-	/** 是否显示左栏「文章目录」卡（toc 作用域）：文章页由 postSlug 自动推导，关于页显式传 true */
-	hasToc?: boolean;
 	/** 手账布局（PaperHomeLayout 等）：body 加 paper-layout 类，跳过整页缩放 */
 	paper?: boolean;
 }
@@ -46,16 +44,10 @@ let {
 	setOGTypeArticle,
 	postSlug,
 	coverImage,
-	hasToc,
 	paper = false,
 } = Astro.props;
 
 const isPaperLayout = paper;
-
-// 目录卡出现范围：文章页（postSlug 存在）或显式声明 hasToc（关于页）。
-// 输出到 <html data-page-has-toc>，供侧栏 [data-widget-scope="toc"] 显隐
-// 与 CardTOC 的初始化判定共用（swup 换页后由 swup-hooks 按 #page-overlay-data 同步）。
-const showToc = hasToc ?? Boolean(postSlug);
 
 // defines global css variables
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
@@ -174,7 +166,6 @@ const bannerOffset =
 	data-banner-title-config-enabled={siteConfig.banner?.homeText?.enable ? "true" : "false"}
 	data-post-list-layout-enabled={siteConfig.postListLayout?.enable ? "true" : "false"}
 	data-page-is-post={postSlug ? "true" : "false"}
-	data-page-has-toc={showToc ? "true" : "false"}
 >
 	<head>
 		<meta charset="UTF-8" />
