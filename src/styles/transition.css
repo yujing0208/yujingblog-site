@@ -40,6 +40,33 @@ html.is-animating.is-leaving .transition-leaving {
   opacity: 0;
 }
 
+/* 覆盖 @swup/astro 默认进入/离开动画
+   @swup/astro 内置：
+     html.is-entering .transition-main { opacity:0; transform:translateY(1.5rem) }
+     html.is-leaving .transition-leaving { opacity:0; transform:translateY(-1rem) }
+   这是「上浮」与「切换卡」感知的根因 —— 每次切页主栏从下方 24px 滑入，
+   在跨境网络下 120ms 动画内要完成 24px 位移，帧率不足就显卡。
+   改为纯 opacity 过渡（与 is-animating 分支一致）。 */
+html.is-entering .transition-main {
+  opacity: 0;
+  transform: none;
+}
+
+html.is-leaving .transition-leaving {
+  opacity: 0;
+  transform: none;
+}
+
+/* 首页隐藏 body::after 顶部遮罩
+   paper-header.css 的 body::after 是 36px 固定纸色渐变带 (z-index:19)，
+   用于在文章页遮挡吸顶导航下方的内容缝隙。
+   但在首页 (has-paper-hero) 深色 hero 上，它叠加在 hero 暗色遮罩之上，
+   形成一条洗白带（用户截图实证：1088px 宽度下导航栏与卡片对比度被洗掉）。
+   首页 hero 自带暗色遮罩，不需要纸色遮罩叠加。 */
+body.has-paper-hero::after {
+  display: none;
+}
+
 /* Swup fade 动画 */
 html.is-changing .transition-swup-fade {
   transition: all var(--transition-duration) ease-out;
