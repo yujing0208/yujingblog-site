@@ -59,8 +59,22 @@
 }
 
 /* ⚠️ 侧栏卡片间距（FlatPaper 的 gap: 22px）—— 之前漏搬导致卡片贴在一起 */
+/* ⚠️ 2026-10-06 修复「右栏卡片右端溢出栏位 19px」：
+   .paper-sidebar 是 display:grid，但**从未声明 grid-template-columns**。
+   CSS Grid 规范：未声明的轨道落在「隐式网格」里，隐式列尺寸由
+   grid-auto-columns 决定，其初值是 `auto` —— 即「按内容 max-content 收缩/撑开」，
+   完全无视容器 280px 的可用宽度。
+   CDP 实测（首页右栏 .paper-sidebar--left）：
+     栏位宽 280px，但 getComputedStyle 的 grid-template-columns = 299.156px，
+     .welcome-card rectWidth = 299.16、rectRight = 1361.7
+     （导航栏右缘 / .paper-shell 右缘 = 1342.5）→ 卡片右端溢出 19.2px。
+   这就是「右栏右端与导航栏对不齐」的真正原因：即使 --page-width 已定义、
+   外层容器已对齐，卡片自身仍被隐式 auto 列撑出栏位。
+   修法：显式声明 minmax(0, 1fr) —— 唯一列严格占满栏位且允许内容收缩
+   （min 为 0 才能压住内部长 URL / 长标题的 min-content）。 */
 .paper-sidebar {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: 22px;
 }
 
