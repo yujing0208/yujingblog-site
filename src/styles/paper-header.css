@@ -80,20 +80,41 @@ body:not(.paper-layout) #top-row .site-header {
    这里用 body::after 补同款遮罩（全站样式已确认无人占用 body::after）：
    盖在内容之上、导航（z-index 50）之下，颜色跟随明暗模式自动切换。
 
-   2026-10-06：height 44px → 16px。
-   遮罩的唯一职责是盖住「吸顶导航上方那条 16px 空隙」——
-   .site-header 是 sticky; top:16px，本身占 16~88px，而本遮罩 z-index:45
-   高于 .site-header 的 z-index:20，于是 44px 的高度会连导航栏顶部
-   16~44px 一起压住，导航栏的纸胶带被这层纸色盖掉。
-   收到 16px 后刚好只覆盖空隙，导航栏与胶带完全不受影响，
-   遮罩的原始职责（滚动时不透出页面内容）也完整保留。 */
+   2026-10-06：height 44px → 16px。（⚠️ 当次改成 16px 是**错误方向**，同日已回退修正）
+   遮罩的唯一职责是盖住「吸顶导航上方那条空隙」——.site-header 是 sticky; top:16px。
+   当时的推理是「遮罩 z-index:45 高于 .site-header 的 z-index:20，44px 会连导航栏
+   顶部 16~44px 一起压住、把纸胶带盖掉，所以收到 16px 刚好只覆盖空隙」。
+   但 CDP 实测（leak.cjs，首页逐 10px 细扫）证明这个推理不成立、且后果是回归：
+
+     y=940: gap=88px, maskH=16, maskOpacity=0, leak=72px  ← 遮罩未显示 + 高度太小
+     y=970: gap=58px, maskH=16, maskOpacity=0, leak=42px
+     y=980: gap=48px, maskH=16, maskOpacity=0, leak=32px
+     y=990: gap=38px, maskH=16, maskOpacity=0, leak=22px
+     y=1000: gap=28px, maskH=16, maskOpacity=1, leak=12px ← 遮罩比缝隙矮 12px，上沿漏
+     y=1010: gap=18px, maskH=16, maskOpacity=1, leak=2px
+     y=1020: gap=16px, maskH=16, maskOpacity=1, leak=0px  ← 只有吸顶完成后才盖得住
+
+   两个独立缺陷同时存在，必须一起修：
+     ① **高度不够**：导航吸顶过程中「导航顶边与视口顶」的空隙是**渐变收窄**的
+        （hero 底部随滚动上移，导航从静止位逐渐贴到 top:16px），最大 88px+。
+        遮罩高度必须覆盖这段过渡期的最大缝隙，16px 远不够 → 定 120px。
+     ② **时机太晚**：显示门槛是 is-hero-gone（y >= hero 底边），而 hero 底边
+        = 导航吸顶临界点（y≈1012），也就是说 y=940~1010 全程 opacity:0，
+        缝隙完全裸露（leak 最大 72px）。显示时机必须**提前到吸顶过程开始**。
+
+   为什么 height 加大到 120px 不会重新盖住导航与胶带？
+     因为 z-index:45 > .site-header 的 20 这个事实，只影响「重叠区域谁在上」；
+     而导航一旦吸顶（y >= 1012），遮罩**下方**那 120px 里 16~88px 段是导航本体。
+     解法不是缩小遮罩，而是**让遮罩在导航吸顶后立即退场**——见下面的
+     is-nav-docked 规则：吸附完成即 opacity:0，于是高度与「不压胶带」不再冲突。
+     过渡期（y=940~1012）遮罩显示且足够高，吸顶后遮罩消失，两全。 */
 body::after {
 	content: "";
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 16px;
+	height: 120px;
 	z-index: 45;
 	pointer-events: none;
 	/* 2026-10-02：出现/消失改为淡入淡出（flatpaper 原版无动画，
@@ -678,18 +699,44 @@ body::after {
 	vertical-align: middle;
 }
 
-/* ---- 顶部遮罩的出现时机（2026-10-02 白条修复 + 同日二次优化） ----
-   body::after 顶部 44px 渐变遮罩是为「吸顶导航上方 16px 缝隙」服务的。
-   首页 hero 在视口内时必须整段隐藏（否则就是盖在首屏图上的白条）；
-   且要在「导航栏已吸附到页顶 + 用户继续下滑（hero 完全滚出视口）」之后
-   才淡入 —— 之前的 is-hero-active 阈值（heroBottom - 80px）会在 hero
-   残影还压在导航下方时就弹出遮罩，观感突兀。
-   状态由 paper-hero.js 维护：
-     has-paper-hero  hero 组件所在页面（PaperHero.astro 内联脚本首帧打标，
-                     paper-header.js 在 swup 换页后按 DOM 实况同步）
-     is-hero-gone    hero 已完全滚出视口（scrollY >= heroBottom）
-   内页两个类都不存在 -> 遮罩始终可见，行为不变。 */
-body.has-paper-hero:not(.is-hero-gone)::after {
+/* ---- 顶部遮罩的出现时机（2026-10-02 建档；2026-10-06 CDP 实测后重做） ----
+   body::after 顶部 120px 渐变遮罩的唯一职责：盖住「吸顶导航上方那条
+   会透出页面内容的缝隙」。
+
+   ⚠️ 2026-10-06 重做根因（CDP leak.cjs 首页逐 10px 细扫，实测数据）：
+   旧实现用 has-paper-hero + is-hero-gone 控时机，语义是「hero 完全滚出
+   视口后才显示遮罩」。但 hero 底边（1000px）恰好就是导航吸顶的临界点
+   （y≈1012），于是出现两个致命空窗：
+     y=940  gap=88px  opacity=0  → 缝隙整段裸漏
+     y=970  gap=58px  opacity=0  → 缝隙整段裸漏
+     y=990  gap=38px  opacity=0  → 缝隙整段裸漏
+     y=1000 gap=28px  opacity=1  但遮罩仅 16px → 上沿仍漏 12px
+     y=1010 gap=18px  opacity=1  遮罩 16px    → 仍漏 2px
+     y=1020 gap=16px  opacity=1  遮罩 16px    → leak=0（只有吸顶后才盖得住）
+   即：**需要遮罩的那整段时间它还没出现；出现了又不够高。**
+
+   现状态机（类由 paper-hero.js 打）：
+     has-paper-hero  本页有 hero（内页无此类 → 遮罩恒显示，行为不变）
+     is-hero-active  hero 仍占据首屏显著区域（y < heroBottom - 80）
+                     → 首屏期间隐藏，避免纸色遮罩在 hero 大图上拉出一条白带
+     is-nav-docked   导航已**吸附到位**（.site-header 的
+                     getBoundingClientRect().top <= 17，精确判定，非估算阈值）
+                     → 吸附到位 = 缝隙归零 = 遮罩使命完成，立即退场
+
+   于是首页滚动全程的可见性：
+     首屏（is-hero-active）        → 隐藏（防白条）
+     过渡窗口（吸顶进行中）        → **显示**（120px 足够覆盖最大 88px 缝隙）
+     已吸顶（is-nav-docked）       → 隐藏（让出导航本体与纸胶带）
+
+   ⚠️ 为什么「已吸顶」必须立即退场（关键）：
+   遮罩 z-index:45 > .site-header 的 z-index:20，吸顶后导航本体（16~88px）
+   正好落在遮罩高度区间内。若继续显示，就会把导航栏的纸胶带压掉。
+   上一轮把 height 缩到 16px 正是想回避这一点，但代价是过渡期重新漏内容
+   ——「过渡期要够高」与「吸顶后别压胶带」在同一层同一时刻无法同时成立。
+   按时间切开即可两全：真正的吸附完成点之后缝隙已为 0，遮罩此时退场，
+   既不再需要它挡内容，也不会压到胶带。 */
+body.has-paper-hero.is-hero-active::after,
+body.has-paper-hero.is-nav-docked::after {
 	opacity: 0;
 }
 
