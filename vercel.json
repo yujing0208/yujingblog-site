@@ -1,42 +1,63 @@
 {
-  "outputDirectory": "dist",
-  "framework": "astro",
-  "cleanUrls": true,
-  "functions": {
-    "api/editor-sync.js": {
-      "maxDuration": 30
-    },
-    "api/editor-github.js": {
-      "maxDuration": 15
-    },
-    "api/editor-auth.js": {
-      "maxDuration": 10
-    }
-  },
-  "headers": [
-    {
-      "source": "/images/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
-      ]
-    },
-    {
-      "source": "/favicon.ico",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, immutable" }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" }
-      ]
-    }
-  ],
-  "env": {
-    "ENABLE_CONTENT_SYNC": "true",
-    "CONTENT_REPO_URL": "https://github.com/yujing0208/yujingblog-content.git"
-  }
+    "outputDirectory":  "dist",
+    "framework":  "astro",
+    "cleanUrls":  true,
+    "functions":  {
+                      "api/editor-sync.js":  {
+                                                 "maxDuration":  30
+                                             },
+                      "api/editor-github.js":  {
+                                                   "maxDuration":  15
+                                               },
+                      "api/editor-auth.js":  {
+                                                 "maxDuration":  10
+                                             }
+                  },
+    "headers":  [
+                    {
+                        "source":  "/images/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "Cache-Control",
+                                            "value":  "public, max-age=86400, stale-while-revalidate=604800"
+                                        }
+                                    ]
+                    },
+                    {
+                        "source":  "/favicon.ico",
+                        "headers":  [
+                                        {
+                                            "key":  "Cache-Control",
+                                            "value":  "public, max-age=86400, immutable"
+                                        }
+                                    ]
+                    },
+                    {
+                        "source":  "/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "X-Content-Type-Options",
+                                            "value":  "nosniff"
+                                        },
+                                        {
+                                            "key":  "X-Frame-Options",
+                                            "value":  "SAMEORIGIN"
+                                        },
+                                        {
+                                            "key":  "X-XSS-Protection",
+                                            "value":  "1; mode=block"
+                                        }
+                                    ]
+                    }
+                ],
+    "env":  {
+                "ENABLE_CONTENT_SYNC":  "true",
+                "CONTENT_REPO_URL":  "https://github.com/yujing0208/yujingblog-content.git"
+            },
+    "rewrites":  [
+                     {
+                         "destination":  "/.well-known/moicp-verification.html",
+                         "source":  "/.well-known/moicp-verification.html"
+                     }
+                 ]
 }
