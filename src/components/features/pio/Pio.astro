@@ -219,8 +219,13 @@ const assetVer = Date.now();
 				const swup = (window as any).swup;
 				if (swupHooksRegistered || !swup?.hooks) return;
 				swupHooksRegistered = true;
+				// ⚠️ 2026-10-07：不再在 visit:end 里重发 l2d-init。
+				// 根因：每次切页都重新初始化 Live2D 模型，
+				// iframe 内的 WebGL 渲染抢占 GPU，导致切页瞬间上下滑动卡顿。
+				// iframe 在 <main> 之外，Swup 不替换它，模型会持久存在，
+				// 不需要在每次导航时重新加载。
 				swup.hooks.on("link:click", () => { isTransitioning = true; });
-				swup.hooks.on("visit:end", () => { isTransitioning = false; scheduleInit(); });
+				swup.hooks.on("visit:end", () => { isTransitioning = false; });
 			}
 
 			window.addEventListener("message", handleMessage);
