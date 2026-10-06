@@ -7,8 +7,12 @@
   --transition-duration: 120ms;
   --transition-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --transition-easing-out: cubic-bezier(0.55, 0.055, 0.675, 0.19);
-  --transition-translate: 1.5rem;
-  --transition-stagger: 35ms;
+  /* 2026-10-06：位移与逐个延迟归零 —— 整站不再有「卡片上浮」入场效果。
+     保留变量名（而非删除），避免其它消费点
+     （.transition-swup-fade / .transition-slide-in / .card-animation / .nav-animation）
+     引用未定义变量而令整条声明作废。 */
+  --transition-translate: 0;
+  --transition-stagger: 0ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -21,7 +25,7 @@
 
 @media (width < 768px) {
   :root {
-    --transition-translate: 0.5rem;
+    --transition-translate: 0;
     --transition-duration: 150ms;
   }
 }

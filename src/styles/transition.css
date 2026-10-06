@@ -26,15 +26,17 @@ html.is-leaving .transition-main {
     transform var(--transition-duration) var(--transition-easing-out);
 }
 
-/* 进入动画 - 纯垂直 */
+/* 进入动画
+   2026-10-06：去掉 translateY 位移（原来正文区会整体上浮 1.5rem）。
+   只保留极短的 opacity 过渡 —— swup 靠 transitionend 判定换页动画结束，
+   若把过渡声明也删掉，swup 会一直等不到事件、只能靠超时兜底。 */
 html.is-animating .transition-main {
   opacity: 0;
-  transform: translateY(var(--transition-translate));
 }
 
-/* 离开动画 - 向上滑出 */
+/* 离开动画
+   同上：去掉「向上滑出」的位移，只保留淡出。 */
 html.is-animating.is-leaving .transition-leaving {
-  transform: translateY(calc(var(--transition-translate) * -1));
   opacity: 0;
 }
 
@@ -80,33 +82,21 @@ html.is-animating .transition-swup-fade {
   }
 }
 
-/* 页面加载动画 */
-.onload-animation {
-  opacity: 0;
-  animation: fade-in-up var(--transition-duration) ease-out forwards;
-}
-
+/* 页面加载动画
+   2026-10-06：整站去掉「卡片上浮」入场效果。
+   原实现是 opacity:0 + fade-in-up（translateY 1.5rem → 0）+ nth-child 逐个延迟，
+   于是每次加载/换页正文与侧栏的卡片都会从下往上依次浮出，观感拖沓。
+   现在直接呈现：静态 opacity:1，不播动画、不加延迟。 */
+.onload-animation,
 .onload-animation-fade-in {
-  opacity: 0;
-  animation: fade-in var(--transition-duration) ease-in forwards;
+  opacity: 1;
+  animation: none;
 }
 
-/* 渐进式动画延迟 */
-.onload-animation:nth-child(1) {
-  animation-delay: calc(var(--transition-stagger) * 0);
-}
-.onload-animation:nth-child(2) {
-  animation-delay: calc(var(--transition-stagger) * 1);
-}
-.onload-animation:nth-child(3) {
-  animation-delay: calc(var(--transition-stagger) * 2);
-}
-.onload-animation:nth-child(4) {
-  animation-delay: calc(var(--transition-stagger) * 3);
-}
-.onload-animation:nth-child(5) {
-  animation-delay: calc(var(--transition-stagger) * 4);
-}
+/* 渐进式动画延迟（已废弃）
+   2026-10-06：卡片不再逐个浮出，stagger 延迟整段移除。
+   --transition-stagger 变量本身保留（模板里可能仍有内联 animationDelay 在消费它），
+   但已不影响任何可见效果。 */
 
 /* 特殊元素的动画 */
 .transition-slide-in {

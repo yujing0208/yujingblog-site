@@ -138,7 +138,25 @@ const tocDepth = 3;
 	 * 重试轮询纯属浪费；也避免给隐藏节点绑 scroll 监听。
 	 */
 	function isCardVisible(root: Element): boolean {
-		return !root.closest('[data-widget-scope="post"]');
+		// ⚠️ 2026-10-06：原实现是 return !root.closest('[data-widget-scope="post"]')。
+		// 但 card-toc 恰恰被 SidebarColumn 包在 <div data-widget-scope="post"> 里
+		// （该属性在 SidebarColumn 的 WIDGET_SCOPE 里只表示「仅文章页显示」），
+		// 因此 closest() 永远命中，判定恒为 false → initCardTOC 第一步就被跳过
+		// → 目录卡永远只有标题、没有目录内容（非文章页/文章页都一样）。
+		// 正确做法：data-widget-scope 只是一个「仅哪类页面显示」的标签，
+		// 真实显隐由 html[data-page-is-post] 裁决（Layout 构建期写入 +
+		// swup-hooks 在 content:replace / page:view 时跨页同步）。
+		const wrapper = root.closest("[data-widget-scope]");
+		const scope = wrapper?.getAttribute("data-widget-scope") ?? "";
+		const isPost =
+			document.documentElement.getAttribute("data-page-is-post") === "true";
+		if (scope === "post") {
+			return isPost;
+		}
+		if (scope === "nonpost") {
+			return !isPost;
+		}
+		return true;
 	}
 
 	function initAllCardTOCs() {

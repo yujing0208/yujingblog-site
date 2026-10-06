@@ -53,13 +53,18 @@ export interface TransitionConfig {
 	staggerDelay: number;
 }
 
-// 过渡动画默认配置 - 灵感来自 Firefly 主题的快速流畅体验
+// 过渡动画默认配置
+// 2026-10-06：translateDistance / staggerDelay 归零 —— 整站去掉「卡片上浮」入场效果。
+// 原值 "1.5rem" / 35 会让正文与侧栏卡片在每次加载、换页时从下往上依次浮出。
+// ⚠️ 注意 TransitionEffect.applyConfig() 会把这些值写成 documentElement 的内联
+//    CSS 变量，内联样式优先级高于 src/styles/_transition-vars.css ——
+//    两处必须同步改，只改 CSS 不生效（会被内联值盖掉）。
 export const TRANSITION_CONFIG: TransitionConfig = {
 	duration: 120,
 	easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
 	easingOut: "cubic-bezier(0.55, 0.055, 0.675, 0.19)",
-	translateDistance: "1.5rem",
-	staggerDelay: 35,
+	translateDistance: "0px",
+	staggerDelay: 0,
 } as const;
 
 // 动画配置
