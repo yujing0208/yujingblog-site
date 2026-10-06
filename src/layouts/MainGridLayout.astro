@@ -184,7 +184,16 @@ const defaultPostListLayout = siteConfig.postListLayout?.defaultMode || "list";
 		style={`top: ${finalMainPanelTop}`}
 	>
 		<!-- The pointer-events-none here prevent blocking the click event of the TOC -->
-		<div class="relative max-w-(--page-width) mx-auto pointer-events-auto">
+		<!-- 2026-10-06：宽度与导航栏统一为 min(94%, var(--page-width))。
+		     原来只有 max-w-(--page-width)（= max-width:1300px，没有 94% 收窄），
+		     而 #top-row 用的是 min(94%, var(--page-width)) —— 两套口径不一致，
+		     内容容器比导航栏宽出 6%（≈78px），右端对不齐。
+		     FlatPaper 原站 .site-header 与 .paper-shell 同为 min(94vw, 1300px)，此处照齐。
+		     用内联 style 而非改 Tailwind 任意值类，避免影响其它 max-w-(--page-width) 用法。 -->
+		<div
+			class="relative mx-auto pointer-events-auto"
+			style="width: min(94%, var(--page-width));"
+		>
 			<div
 				id="main-grid"
 				class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-none md:grid-rows-[auto] mx-auto gap-4 px-2 md:px-4 ${!mobileShowSidebar || !hasMobileDrawerComponents ? "mobile-no-sidebar" : ""} ${hasRightSidebarComponents ? "mobile-both-sidebar" : ""}`}
