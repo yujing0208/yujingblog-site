@@ -71,14 +71,11 @@ html.is-leaving .transition-leaving {
    无需单独设 z-index。若设了较低的值（如 20），会被遮罩覆盖 → 导航栏上方漏内容。 */
 /* #navbar-wrapper { z-index: 20; } ← 删除，让 #navbar-wrapper 继承 #top-row 的 50 */
 
-/* 首页隐藏 body::after 顶部遮罩
-   paper-header.css 的 body::after 是 36px 固定纸色渐变带 (z-index:19)，
-   用于在文章页遮挡吸顶导航下方的内容缝隙。
-   但在首页 (has-paper-hero) 深色 hero 上，它叠加在 hero 暗色遮罩之上，
-   形成一条洗白带。首页 hero 自带暗色遮罩，不需要纸色遮罩叠加。 */
-body.has-paper-hero::after {
-  display: none;
-}
+/* 2026-10-07：移除「首页隐藏 body::after 遮罩」。
+   该规则 2026-10-06 加入，本意规避深色 hero 上的「洗白带」，
+   副作用是首页吸顶后导航上方缝隙漏出 hero（用户反馈）。
+   还原 2026-10-02 工作态：遮罩在首页保持可见（z-index:45 < #top-row:50），
+   导航压在遮罩之上，只补导航上方缝隙。 */
 
 /* Swup fade 动画 */
 html.is-changing .transition-swup-fade {

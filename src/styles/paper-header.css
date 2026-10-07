@@ -56,7 +56,7 @@ body:not(.paper-layout) #top-row .site-header {
  * 根因：伪元素默认 display:none，必须显式设 display:block 才能渲染。
  * 2026-10-07 实测：computed style 里 body::after 的 display 是 none —— CSS 规则从未生效。
  * 
- * z-index:19 < .site-header:20：遮罩永远在导航后面，不需要任何 JS 协同。
+ * z-index:45 < #top-row:50：遮罩在导航之下、hero 之上，只补缝隙（2026-10-02 工作态）。
  */
 body::after {
 	content: "";
@@ -66,7 +66,7 @@ body::after {
 	left: 0;
 	right: 0;
 	height: 36px;
-	z-index: 19;
+	z-index: 45;
 	pointer-events: none;
 	opacity: 1;
 	background: linear-gradient(
