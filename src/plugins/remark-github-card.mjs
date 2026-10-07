@@ -21,7 +21,7 @@ export function remarkGithubCard() {
         if (match) {
           const repo = match[1].trim();
           if (repo.includes("/")) {
-            const cardHtml = `<a class="card-github fetch-waiting" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
+            const cardHtml = `<a class="card-github fetch-waiting no-styling" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
   <div class="gc-titlebar">
     <div class="gc-titlebar-left">
       <div class="gc-owner">
@@ -56,7 +56,7 @@ export function remarkGithubCard() {
           if (match) {
             const repo = match[1].trim();
             if (repo.includes("/")) {
-              const cardHtml = `<a class="card-github fetch-waiting" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
+              const cardHtml = `<a class="card-github fetch-waiting no-styling" href="https://github.com/${repo}" target="_blank" rel="noopener noreferrer">
   <div class="gc-titlebar">
     <div class="gc-titlebar-left">
       <div class="gc-owner">
