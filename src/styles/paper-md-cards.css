@@ -36,7 +36,7 @@
   padding: 0;
   background: var(--paper-warm);
   border: 2px dashed var(--dash);
-  border-radius: var(--radius-card, 10px);
+  border-radius: 4px;
   overflow: hidden;
   /* hover 反馈走 translate（与全站卡片上浮同手法，避开 onload-animation） */
   transition:
@@ -49,7 +49,7 @@
    否则 4px 纸层会从手绘圆角底下漏出来 */
 .markdown-content.markdown-content .wiki-card.card-base {
   background: var(--paper-warm);
-  border-radius: var(--radius-card, 10px);
+  border-radius: 4px;
   border: 2px dashed var(--dash);
 }
 .markdown-content.markdown-content .wiki-card.card-base::after {
