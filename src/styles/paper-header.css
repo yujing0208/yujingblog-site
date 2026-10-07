@@ -114,6 +114,7 @@ body::after {
 	/* 19 < .site-header 的 20：自动落在导航与纸胶带的下层，
 	   永远只挡「导航本体以外」的内容，不需要任何 JS 协同。 */
 	display: block;
+	display: block;
 	z-index: 19;
 	pointer-events: none;
 	/* 常显。flatpaper 原版同样没有出现/消失逻辑。 */
