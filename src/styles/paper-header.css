@@ -65,8 +65,9 @@ body::after {
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 36px;
+	height: 120px;
 	z-index: 45;
+	transition: opacity 0.2s ease;
 	pointer-events: none;
 	opacity: 1;
 	background: linear-gradient(
@@ -75,6 +76,22 @@ body::after {
 		var(--page-bg) 60%,
 		transparent 100%
 	);
+}
+
+/* ---- 顶部遮罩的出现时机（2026-10-02 建档；2026-10-06 CDP 实测后重做） ----
+   遮罩唯一职责：盖住「吸顶导航上方那条会透出页面内容的缝隙」。
+   状态由 paper-hero.js / PaperHero.astro 首帧脚本维护：
+     has-paper-hero  本页有 hero（内页无此类 → 遮罩恒显示，行为不变）
+     is-hero-active   hero 仍占首屏显著区域 → 首屏期间隐藏，避免纸色遮罩在 hero 大图上拉出白条
+     is-nav-docked   导航已吸附到位（.site-header rect.top <= 17）→ 吸附完成缝隙归零，遮罩退场，
+                     否则 z-index:45 会压住导航本体（含纸胶带）
+   首页滚动全程可见性：
+     首屏(is-hero-active)   → 隐藏（防白条）
+     过渡窗口(吸顶进行中)    → 显示（120px 覆盖最大 88px 缝隙）
+     已吸顶(is-nav-docked)   → 隐藏（让出导航与胶带） */
+body.has-paper-hero.is-hero-active::after,
+body.has-paper-hero.is-nav-docked::after {
+	opacity: 0;
 }
 
 /* 永不隐藏 */

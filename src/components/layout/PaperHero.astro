@@ -170,6 +170,33 @@ const heroStyle = heroImage
 	     只保留首帧打标，避免每帧读 getBoundingClientRect 的无谓开销。 -->
 	<script is:inline>
 		document.body.classList.add("has-paper-hero");
+		(function () {
+			var heroEl = document.querySelector("[data-paper-hero]");
+			if (!heroEl) return;
+			var ticking = false;
+			var sync = function () {
+				ticking = false;
+				var header =
+					document.querySelector("#top-row .site-header") ||
+					document.querySelector(".site-header");
+				var docked = header
+					? header.getBoundingClientRect().top <= 17
+					: window.pageYOffset >= heroEl.offsetTop + heroEl.offsetHeight;
+				document.body.classList.toggle("is-nav-docked", docked);
+			};
+			window.addEventListener(
+				"scroll",
+				function () {
+					if (!ticking) {
+						ticking = true;
+						window.requestAnimationFrame(sync);
+					}
+				},
+				{ passive: true }
+			);
+			window.addEventListener("resize", sync, { passive: true });
+			sync();
+		})();
 	</script>
 
 	<!-- 颗粒层 -->
