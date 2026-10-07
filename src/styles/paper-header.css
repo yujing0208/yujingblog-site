@@ -34,13 +34,6 @@
 #top-row {
 	position: sticky;
 	top: 16px;
-	z-index: 50;
-	/* 背景色：挡住滚动时从导航栏上方透出的内容 */
-	background: var(--page-bg);
-	/* 顶部 16px 渐隐过渡：让导航栏上方的纸色自然融入页面背景 */
-	border-top: 16px solid transparent;
-	margin-top: -16px;
-	padding-top: 16px;
 }
 
 /* 内页（MainGridLayout）：主内容容器是 absolute，body 的实际高度只有导航那 72px，
@@ -52,7 +45,6 @@ body:not(.paper-layout) #top-row {
 	left: 0;
 	right: 0;
 	margin-top: 0;
-	z-index: 50;
 }
 
 body:not(.paper-layout) #top-row .site-header {
