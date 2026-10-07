@@ -82,7 +82,7 @@ export function GithubCardComponent(properties, children) {
 	return h(
 		`a#${cardUuid}-card`,
 		{
-			class: "card-github fetch-waiting no-styling",
+			class: "card-github fetch-waiting",
 			href: `https://github.com/${repo}`,
 			target: "_blank",
 			repo,
