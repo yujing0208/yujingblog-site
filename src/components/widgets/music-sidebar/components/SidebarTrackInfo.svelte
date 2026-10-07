@@ -156,7 +156,7 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 	.meta-row {
 		display: flex;
 		align-items: center;
-		gap: 0.55rem;
+		gap: 0.75rem;
 		min-width: 0;
 		justify-content: space-between;
 	}
@@ -239,7 +239,7 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 		}
 
 		.meta-row {
-			gap: 0.4rem;
+			gap: 0.6rem;
 		}
 
 		.time-label {
