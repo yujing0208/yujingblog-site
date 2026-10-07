@@ -65,16 +65,14 @@ body::after {
 	top: 0;
 	left: 0;
 	right: 0;
-	/* 加高到导航底部，且全宽 —— 博客 hero 是日落大图（≠页面底色），
-	   参考站那套 36px 遮罩会漏左右缝隙和上方 28px 缝隙，这里按 hero 实际高度补满。
-	   z-index:19 低于 .site-header:20，遮罩永远在导航与纸胶带之下，只挡导航外区域。 */
-	height: 150px;
+	height: 36px;
 	z-index: 19;
 	pointer-events: none;
+	opacity: 1;
 	background: linear-gradient(
 		to bottom,
 		var(--page-bg) 0%,
-		var(--page-bg) 50%,
+		var(--page-bg) 60%,
 		transparent 100%
 	);
 }
