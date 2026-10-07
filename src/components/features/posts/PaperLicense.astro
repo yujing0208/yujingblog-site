@@ -73,7 +73,7 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 	</div>
 </section>
 
-<style is:global>
+<style>
 	/* ---------- 头部：与结尾区小标题同级（15px/700 ink + 16px accent 图标） ---------- */
 	.paper-license__head {
 		display: flex;
@@ -95,16 +95,12 @@ const licenseText = licenseName || DEFAULT_LICENSE_NAME;
 		color: var(--color-accent-muted);
 	}
 
-	/* ---------- 单层 tape 手绘方框（与评论/分享按钮同语言，不做纸中纸） ----------
-	   2026-10-06：圆角由 255px 15px 225px… 改为 var(--radius-card)。
-	   版权卡是整行宽（约 600px+）的成块容器，超椭圆值会被浏览器按比例
-	   撑到接近半宽，两端渲染成巨大圆头；改用统一卡片圆角后与正文区
-	   其余卡片弧度一致。手绘歪扭感仍由 2px 虚线边框承担。 */
+	/* ---------- 单层 tape 手绘方框（与评论/分享按钮同语言，不做纸中纸） ---------- */
 	.paper-license__box {
 		position: relative;
 		padding: 14px 20px 16px;
 		border: 2px dashed var(--dash);
-		border-radius: var(--radius-card, 10px);
+		border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 		background: var(--paper-warm);
 		overflow: hidden;
 	}
