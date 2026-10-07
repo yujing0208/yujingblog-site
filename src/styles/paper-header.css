@@ -14,7 +14,7 @@
  *    --muted            → --muted
  *    --color-accent     → --fp-accent
  *    --color-accent-strong → --fp-accent-muted（纸面文字 hover 用，保证可读）
- *    --color-accent-soft   → --fp-accent-soft
+    --color-accent-soft   → --fp-accent-soft
  *    --color-accent-muted  → --fp-accent-muted（深色模式文字）
  *    --bg               → --page-bg
  *    --paper-shadow-rgb → --paper-shadow-rgb
@@ -30,19 +30,6 @@
 
 /* ============================================================================
  *  吸顶（2026-10-01 需求：导航栏在每个页面都一样，且滚动时始终钉在屏幕最上方，不会消失）
- *
- *  根因（实测）：参考站 flatpaper 的 .site-header 是 <body> 的直接子元素 ——
- *  父级是整页高度，所以它的 position:sticky 有足够的滚动余地。
- *  本站多包了两层：#top-row > #navbar-wrapper > .site-header，
- *  后两层的高度都恰好等于导航自身（72px），sticky 放在 .site-header 上等于
- *  没有可滚动空间 —— 实测 /archive/、/about/ 滚动后 rectTop 直接变 -872（整条滚走）。
- *  首页之所以能吸顶，是因为 #top-row.paper-hero-layout 单独写了 sticky。
- *
- *  修正：sticky 上提到最外层 #top-row（它的父级是 body，整页高），钉在 top:16px
- *  （与参考站 .site-header 的 top 值一致：首屏在 28px 处，钉住后到 16px）。
- *  顶部那 28px 留白改由 #top-row 的 margin-top 提供 —— 留在 .site-header 上会在
- *  钉住时叠成 44px（margin 参与 sticky 定位，参考站是靠「margin 被 sticky 吸收」
- *  才做到 28→16 的，本站多一层，只能把 margin 上移一层）。
  * ========================================================================= */
 #top-row {
 	position: sticky;
@@ -52,15 +39,10 @@
 
 /* 内页（MainGridLayout）：主内容容器是 absolute，body 的实际高度只有导航那 72px，
    sticky 的可滚动空间为零 —— 实测 /archive/ 滚动后 header rectTop = -1083（整条滚走）。
-   这里改用 position: fixed —— 视觉上与「钉住」完全一致，且任何滚动位置都不会消失。
-   不写 left/right：保持 static position + margin-inline:auto 居中，
-   宽度仍取 min(94%, var(--page-width))，与首页对齐。 */
+   这里改用 position: fixed —— 视觉上与「钉住」完全一致，且任何滚动位置都不会消失。 */
 body:not(.paper-layout) #top-row {
 	position: fixed;
 	top: 16px;
-	/* ⚠️ 必须写 left/right：定位元素在 left/right 都为 auto 时，
-	   margin-inline:auto 会被归零（实测 headerLeft 掉到 0，导航贴最左），
-	   写了 left:0;right:0 之后 auto 外边距才真正水平居中（实测 x=81，与首页一致）。 */
 	left: 0;
 	right: 0;
 	margin-top: 0;
@@ -72,60 +54,22 @@ body:not(.paper-layout) #top-row .site-header {
 }
 
 /* ---- 顶部渐隐纸色（1:1 照搬 flatpaper 的 body::before 顶部遮罩） ----
-   参考站滚动时导航栏上方是干净的纸色空白，因为 flatpaper 的 body::before
-   自带「固定在视口顶部、向下渐隐的纸色遮罩」。本站的 body::before 已被
-   纸张底纹占用（paper-theme.css 第 1 节），所以用 body::after 补同款。
-
-   ⚠️⚠️ 2026-10-06 最终修复（前两轮都改错了方向，这里是真·根因）⚠️⚠️
-   拉 flatpaper.nep.me/css/style.css 原文核对，它的实现是：
-
-     body::before {
-       position: fixed; top:0; left:0; right:0;
-       height: 36px;
-       z-index: 19;                    <- 关键
-       background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 60%, transparent 100%);
-       pointer-events: none;
-     }
-     .site-header { position: sticky; top: 16px; z-index: 20; }   <- 20 > 19
-
-   **遮罩 z-index(19) 低于导航 z-index(20)** —— 这才是「遮罩能挡住导航上方缝隙、
-   又不会压住导航与纸胶带」的真正机制。它不需要任何 JS 状态机：
-   遮罩永远显示、高度随便给（36px 足够盖住任意吸附过渡期的缝隙），
-   因为叠放次序上它永远在导航**后面**，重叠区域一切以导航为准。
-
-   本站之前把 body::after 写成 z-index:45（高于导航的 20），于是必须靠
-   「缩到 16px」或「吸顶后退场」来回避压胶带 —— 两个方案都是错的方向，
-   CDP 实测都漏内容：
-     z-index:45 + height:16px  → y=1000 缝隙 28px 时仍漏 12px
-     z-index:45 + is-nav-docked 退场 → 吸附后 gap 恒为 16px（sticky top:16px
-        决定导航上方永远有 16px 空白），遮罩一退场就永远露着 16px 内容，
-        命中测试实测缝隙里是 SECTION.side-card / IMG 卡片内容（用户截图实证）
-
-   现在改为与参考站完全一致：height:36px + z-index:19，并删除 is-nav-docked /
-   is-hero-active 状态机（那些类已无用，JS 侧的 toggle 保留也无害）。
-   内页与首页行为一致，不再区分 —— 因为根本不需要区分。 */
+ * 
+ * 根因：伪元素默认 display:none，必须显式设 display:block 才能渲染。
+ * 2026-10-07 实测：computed style 里 body::after 的 display 是 none —— CSS 规则从未生效。
+ * 
+ * z-index:19 < .site-header:20：遮罩永远在导航后面，不需要任何 JS 协同。
+ */
 body::after {
 	content: "";
+	display: block;
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
 	height: 36px;
-	/* 19 < .site-header 的 20：自动落在导航与纸胶带的下层，
-	   永远只挡「导航本体以外」的内容，不需要任何 JS 协同。 */
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
-	display: block;
 	z-index: 19;
 	pointer-events: none;
-	/* 常显。flatpaper 原版同样没有出现/消失逻辑。 */
 	opacity: 1;
 	background: linear-gradient(
 		to bottom,
@@ -135,9 +79,7 @@ body::after {
 	);
 }
 
-/* 永不隐藏：swup 切页（swup-hooks）与 back-to-top 处理器会给 #navbar-wrapper
-   加 .navbar-hidden（opacity:0 + -translate-y-16）。需求要求导航栏任何时刻都可见，
-   这里直接反制，JS 那侧的加类逻辑不用动。 */
+/* 永不隐藏 */
 #navbar-wrapper.navbar-hidden,
 #top-row.navbar-hidden,
 #top-row .navbar-hidden {
@@ -246,7 +188,6 @@ body::after {
 	display: inline-block;
 	color: var(--deep-text, #2a2620);
 	text-decoration: none;
-	/* 站题手写风：英文 New Tegomin + 中文楷书，见 main.css --font-display */
 	font-family: var(--font-display);
 	transition:
 		color 0.2s ease,
@@ -446,27 +387,11 @@ body::after {
 	opacity: 0.72;
 }
 
-/* Drawer-only nav card. Hidden on desktop; shown when the drawer opens on narrow screens. */
-.nav-card {
-	display: none;
-}
+.nav-card { display: none; }
+.drawer-toolbar { display: none; }
+.brand-link-card { display: none; }
+.icon-button.drawer-close { display: none; }
 
-.drawer-toolbar {
-	display: none;
-}
-
-.brand-link-card {
-	display: none;
-}
-
-.icon-button.drawer-close {
-	display: none;
-}
-
-/* 搜索按钮静止倾角 -3deg（2026-10-01 参考站实机 matrix -3deg）。
-   ⚠️ 本文件在 paper-accent.css 之后加载，此规则 (0,3,0) 会压过
-   .icon-button:hover (0,2,0) 的 transform —— hover 形态须在此写全，
-   颜色/背景/阴影仍由 paper-accent.css 的 :hover 提供（本规则未覆盖）。 */
 .site-header .icon-button.js-search-open {
 	transform: rotate(-3deg);
 }
@@ -519,18 +444,10 @@ body::after {
 }
 
 :root.dark .site-nav > .site-nav-link:hover,
-:root.dark .site-nav-item:hover > .site-nav-link {
-	color: var(--fp-accent-muted);
-	background: transparent;
-}
-
+:root.dark .site-nav-item:hover > .site-nav-link,
 :root.dark .site-nav > .site-nav-link.active,
 :root.dark .site-nav-item.active > .site-nav-link,
-:root.dark .site-nav-item.is-open > .site-nav-link {
-	color: var(--fp-accent-muted);
-	background: transparent;
-}
-
+:root.dark .site-nav-item.is-open > .site-nav-link,
 :root.dark .site-nav-menu a:hover,
 :root.dark .site-nav-menu a.active {
 	color: var(--fp-accent-muted);
@@ -621,9 +538,7 @@ body::after {
 	gap: 12px;
 }
 
-/* ---- theme-toggle（照搬 header.styl 549-602） ----
-   2026-10-01：tape 方框化（2px 虚线 + 手绘圆角）+ 静止倾角 -2deg（复刻 flatpaper 实机）
-   （参考站实机 matrix -2deg）；hover 回正上浮微放大。 */
+/* ---- theme-toggle ---- */
 .theme-toggle {
 	display: inline-grid;
 	place-items: center;
@@ -698,38 +613,15 @@ body::after {
 	display: inline-grid;
 }
 
-/* ---- 通用图标尺寸（astro-icon / material-symbols） ---- */
 .site-header [astro-icon] {
 	display: inline-block;
 	flex-shrink: 0;
 	vertical-align: middle;
 }
 
-/* ---- 顶部遮罩不再需要显隐状态机（2026-10-06 最终定稿） ----
-   ⚠️ 这里原本有 body.has-paper-hero:not(.is-hero-gone)::after { opacity:0 }
-   之类的规则，靠 JS 维护 body 上的类来决定遮罩何时显示。
-   全部删除 —— 因为 z-index:19 < .site-header:20 已经从根本上解决了问题：
-   遮罩永远显示即可，它与导航重叠的部分天然被导航盖住，不会压到纸胶带；
-   非重叠部分（导航上方那条缝隙）则被稳定挡住。任何时刻都不需要 JS 参与。
-
-   下方这些类名 JS 侧（paper-hero.js / PaperHero.astro / paper-header.js）
-   仍在 toggle，但已无 CSS 消费者，属于无害的历史残留；保留是为了避免
-   改了 CSS 又去动 JS 引入新风险（is-hero-active 另被 paper-theme.css /
-   paper-hero.css 用于「首屏隐藏纸张底纹」，不能删）。 */
-
 /* ===========================================================================
- *  搜索弹窗（2026-10-02：1:1 移植 flatpaper 的 search-panel）
- *  结构由 public/js/paper-search.js 动态创建并挂在 body 下（Swup 换页不丢），
- *  搜索后端用本站已有的 pagefind 索引（/pagefind/pagefind.js），
- *  pagefind 不可用时回退 /api/allPostMeta.json（标题 + 摘要匹配）。
- *  变量映射（flatpaper -> 本站 paper-theme.css）：
- *    --paper -> --card-bg      --paper-warm -> --page-bg   --paper-solid -> --card-bg
- *    --dash  -> --paper-dash   --color-accent -> --fp-accent
- *    --color-accent-soft -> --fp-accent-soft   --ink -> --deep-text
- *    .dark-mode -> :root.dark
- *  所有规则挂在 #paper-search-root 下：避免误伤 Search.svelte 遗留的
- *  .search-panel（Mizuki 原搜索浮层，已弃用但仍渲染）。
- * ========================================================================= */
+ *  搜索弹窗
+ *  ========================================================================= */
 #paper-search-root {
 	position: fixed;
 	inset: 0;
@@ -929,12 +821,8 @@ body.fp-search-lock {
 	}
 }
 @keyframes fp-search-fade {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
+	from { opacity: 0; }
+	to { opacity: 1; }
 }
 @keyframes fp-search-pop {
 	from {
