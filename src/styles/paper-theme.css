@@ -99,7 +99,7 @@
 	   归档卡 / 时间线卡 全部收敛到这一个值，全站卡片弧度才一致。
 	   4px 是 .card-base::after 撕边纸层的既有值；10px 兼顾手账纸感
 	   与「弧度不要过大」的诉求。 */
-	--radius-card: 10px;
+	--radius-card: 4px;
 	/* 纸张投影（照搬） */
 	--paper-shadow-rgb: 82, 64, 38;
 	--shadow: 0 18px 38px rgba(var(--paper-shadow-rgb), 0.13);
