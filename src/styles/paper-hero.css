@@ -1085,7 +1085,7 @@ body.no-banner-mode #top-row.paper-hero-layout,
 	   （内页 #top-row 是 50，无此问题）。提到 50 与内页一致：
 	   遮罩在导航和胶带之下，只补导航上方的缝隙。
 	   （注：本条在 bde651f 提交过，被 f9a2834 的旧本地副本覆盖，此处重打。） */
-	z-index: 50;
+	z-index: 20;
 }
 
 #top-row.paper-hero-layout #navbar-wrapper {
