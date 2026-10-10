@@ -1,18 +1,35 @@
 ---
-import { PageHeader } from "@components/features/page-header";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import "../styles/paper-page.css";
 
 const title = "笔记本";
 const subtitle = "三本随手记下的小书";
 ---
 
 <MainGridLayout title={title} description={subtitle}>
-	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-		<div class="card-base z-10 px-6 sm:px-9 py-8 relative w-full">
-			<PageHeader title={title} subtitle={subtitle} />
-			<main class="shelf" id="shelf"></main>
-		</div>
-	</div>
+	<!-- 顶图布局与友链页一致（article-paper--with-top-img + article-top-img--page，4:1） -->
+	<article
+		class="article-paper article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
+	>
+		<figure class="article-top-img article-top-img--page" aria-label={title}>
+			<img
+				src="/assets/pages/notebooks-top.webp?v=1"
+				alt=""
+				loading="eager"
+				fetchpriority="high"
+				referrerpolicy="no-referrer"
+				draggable="false"
+			/>
+		</figure>
+
+		<header class="article-header">
+			<span class="label-pill">笔记本</span>
+			<h1>{title}</h1>
+			<p class="page-subtitle">{subtitle}</p>
+		</header>
+
+		<main class="shelf" id="shelf"></main>
+	</article>
 
 	<!-- 密码弹窗 -->
 	<div class="overlay" id="pwOverlay">
