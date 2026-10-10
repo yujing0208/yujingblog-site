@@ -293,6 +293,48 @@
 	font-size: 13px;
 }
 
+/* ---------- 顶图变体：宽扁 6:1（--wide-top-img，整幅连续场景图专用） ----------
+   场景类顶图的元素横贯全幅、垂直层次多，塞进 4:1 容器会被 object-fit:cover
+   上下各裁一截，再叠加 ::before/::after 纸色渐隐与页头 126px 叠压，实际只剩
+   中间一条能看清。压成 6:1 让图片比例与「可见带」吻合：不裁切、画面完整；
+   同时把页头叠压量收小，标题落到图片下缘的渐隐区，不再占用画面主体。
+   ⚠️ 本变体特异性高于 .article-paper--page-top-img，也高于 paper-responsive.css
+      里的断点覆盖（后代选择器 + 双类），故无需依赖声明顺序。 */
+.article-paper--with-top-img.article-paper--wide-top-img {
+	--article-top-img-overlap: 56px;
+	--article-top-img-header-height: 108px;
+}
+
+.article-paper--wide-top-img .article-top-img--page {
+	aspect-ratio: 6 / 1;
+	min-height: 128px;
+	max-height: 300px;
+}
+
+@media (max-width: 960px) {
+	.article-paper--with-top-img.article-paper--wide-top-img {
+		--article-top-img-overlap: 48px;
+	}
+
+	.article-paper--wide-top-img .article-top-img--page {
+		aspect-ratio: 5 / 1;
+		min-height: 120px;
+		max-height: 240px;
+	}
+}
+
+@media (max-width: 600px) {
+	.article-paper--with-top-img.article-paper--wide-top-img {
+		--article-top-img-overlap: 40px;
+	}
+
+	.article-paper--wide-top-img .article-top-img--page {
+		aspect-ratio: 6 / 1;
+		min-height: 110px;
+		max-height: 170px;
+	}
+}
+
 /* ---------- 响应式（与 paper-responsive.css 960px 断点同值重申，防顺序漂移） ---------- */
 @media (max-width: 960px) {
 	.article-paper {
