@@ -78,19 +78,19 @@ body::after {
 	);
 }
 
-/* ---- 顶部遮罩的出现时机（2026-10-02 建档；2026-10-06 CDP 实测后重做） ----
+/* ---- 顶部遮罩的出现时机（2026-10-02 建档；2026-10-10 回归实测修正） ----
    遮罩唯一职责：盖住「吸顶导航上方那条会透出页面内容的缝隙」。
-   状态由 paper-hero.js / PaperHero.astro 首帧脚本维护：
-     has-paper-hero  本页有 hero（内页无此类 → 遮罩恒显示，行为不变）
-     is-hero-active   hero 仍占首屏显著区域 → 首屏期间隐藏，避免纸色遮罩在 hero 大图上拉出白条
-     is-nav-docked   导航已吸附到位（.site-header rect.top <= 17）→ 吸附完成缝隙归零，遮罩退场，
-                     否则 z-index:45 会压住导航本体（含纸胶带）
+   状态只看两个 body 类（首屏页由 Layout.astro SSR 预置，滚动后由 paper-hero.js 更新）：
+     has-paper-hero  本页有 hero。内页 / 分页页(/2/,/3/)无此类 → 遮罩恒显示，行为不变
+     is-hero-active  hero 仍占首屏显著区域 → 隐藏，避免纸色遮罩在 hero 大图上拉出白条
    首页滚动全程可见性：
-     首屏(is-hero-active)   → 隐藏（防白条）
-     过渡窗口(吸顶进行中)    → 显示（120px 覆盖最大 88px 缝隙）
-     已吸顶(is-nav-docked)   → 隐藏（让出导航与胶带） */
-body.has-paper-hero.is-hero-active::after,
-body.has-paper-hero.is-nav-docked::after {
+     首屏(is-hero-active) → 隐藏（防纸色条压在 hero 大图上）
+     滚过首屏之后          → 恒显示（覆盖 sticky top:16px 决定的那条 16px 缝隙）
+   ⚠️ 铁律：绝不能用「已吸顶(is-nav-docked)」去隐藏遮罩。
+     sticky top:16px 决定导航上方永远有 16px 缝隙 —— 遮罩一退场就永久漏内容
+     （245b3c28 曾按此法隐藏，2026-10-10 首页吸顶后缝隙漏内容即此因，已撤）。
+     且遮罩 z-index:45 < #top-row:50，本就盖不住导航本体与纸胶带，本无退场的必要。 */
+body.has-paper-hero.is-hero-active::after {
 	opacity: 0;
 }
 
