@@ -1,6 +1,5 @@
 ---
 import { FilterTabs } from "@components/atoms/filter-tabs";
-import { PageHeader } from "@components/features/page-header";
 import { ProjectCard } from "@components/features/projects";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
@@ -10,6 +9,7 @@ import { UNCATEGORIZED } from "../constants/constants";
 import { projectsData } from "../data/projects";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
+import "../styles/paper-page.css";
 
 if (!siteConfig.featurePages.projects) {
 	return Astro.redirect("/404/");
@@ -82,11 +82,26 @@ const subtitle = i18n(I18nKey.projectsSubtitle);
 
 	<script is:inline src="/js/filter-tabs-handler.js"></script>
 
-	<div
-		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
+	<!-- 顶图布局与友链页一致（article-paper--with-top-img + article-top-img--page，4:1） -->
+	<article
+		class="article-paper article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
 	>
-		<div class="card-base z-10 px-6 sm:px-9 py-6 relative w-full">
-			<PageHeader title={title} subtitle={subtitle} />
+		<figure class="article-top-img article-top-img--page" aria-label={title}>
+			<img
+				src="/assets/pages/projects-top.webp?v=1"
+				alt=""
+				loading="eager"
+				fetchpriority="high"
+				referrerpolicy="no-referrer"
+				draggable="false"
+			/>
+		</figure>
+
+		<header class="article-header">
+			<span class="label-pill">项目</span>
+			<h1>{title}</h1>
+			{subtitle && <p class="page-subtitle">{subtitle}</p>}
+		</header>
 
 			<div class="mb-8">
 				<FilterTabs tabs={filterTabs} dataAttr="category" />
@@ -111,7 +126,6 @@ const subtitle = i18n(I18nKey.projectsSubtitle);
 				<p class="text-black/40 dark:text-white/40 text-lg">
 					No matching projects
 				</p>
-			</div>
 		</div>
-	</div>
+	</article>
 </MainGridLayout>
