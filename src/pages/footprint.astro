@@ -1,6 +1,6 @@
 ---
-import { PageHeader } from "@components/features/page-header";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import "../styles/paper-page.css";
 
 // 足迹数据来自内容仓库（yujingblog-content/data/footprints.ts），
 // 经 sync-content.js 同步到 src/data，构建时在此处被内联进静态 HTML。
@@ -41,26 +41,43 @@ const description = "用一张地图，记录我去过的山川与城市 🗺️
 <MainGridLayout title={title} description={description}>
 	<link rel="stylesheet" href="/footprint/css/footprintmap.css" />
 
-	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-		<div class="card-base z-10 px-6 sm:px-9 py-6 relative w-full">
-			<PageHeader title={title} subtitle={description} />
+	<!-- 顶图布局与友链页一致（article-paper--with-top-img + article-top-img--page，4:1）
+	     ⚠️ 图必须放 public/assets/**（public/images 构建时会被 sync-content 整体替换成内容仓的 images） -->
+	<article
+		class="article-paper article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
+	>
+		<figure class="article-top-img article-top-img--page" aria-label={title}>
+			<img
+				src="/assets/pages/footprint-top.webp?v=1"
+				alt=""
+				loading="eager"
+				fetchpriority="high"
+				referrerpolicy="no-referrer"
+				draggable="false"
+			/>
+		</figure>
 
-			<p class="fp-tip">
-				记录自 2026 年 8 月 5 日
-			</p>
+		<header class="article-header">
+			<span class="label-pill">足迹</span>
+			<h1>{title}</h1>
+			{description && <p class="page-subtitle">{description}</p>}
+		</header>
 
-			<div
-				class="footprint-map"
-				data-footprints={JSON.stringify(footprintsData)}
-				data-amap-key={amapKey}
-				data-amap-security={amapSecurityCode}
-				data-highlight={highlightMode}
-				data-locate="auto"
-				style="width: 100%; height: 70vh; min-height: 480px; border-radius: 4px; overflow: hidden; margin-top: 1rem;"
-			>
-			</div>
+		<p class="fp-tip">
+			记录自 2026 年 8 月 5 日
+		</p>
+
+		<div
+			class="footprint-map"
+			data-footprints={JSON.stringify(footprintsData)}
+			data-amap-key={amapKey}
+			data-amap-security={amapSecurityCode}
+			data-highlight={highlightMode}
+			data-locate="auto"
+			style="width: 100%; height: 70vh; min-height: 480px; border-radius: 4px; overflow: hidden; margin-top: 1rem;"
+		>
 		</div>
-	</div>
+	</article>
 
 	<!--
 		足迹地图初始化编排（is:inline，Swup 无刷新切换时会重新执行）：
