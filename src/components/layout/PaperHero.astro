@@ -164,10 +164,10 @@ const heroStyle = heroImage
 	data-hero-images={heroImagesAttr}
 >
 	<!-- 首帧打标：body.has-paper-hero 标记「本页有 hero」。
-	     2026-10-06 最终定稿：顶部遮罩已改为「常显 + z-index:19 < 导航 20」，
-	     不再需要任何显隐状态机（详见 paper-header.css 的 body::after 注释）。
-	     因此这里原先维护 is-hero-gone / is-nav-docked 的 scroll 监听已全部移除，
-	     只保留首帧打标，避免每帧读 getBoundingClientRect 的无谓开销。 -->
+	     （首屏页 Layout.astro 已 SSR 预置 has-paper-hero / is-hero-active，这里补标幂等）
+	     本脚本只维护 is-nav-docked（导航是否吸顶）——**仅供调试，无 CSS 消费者**。
+	     顶部遮罩（body::after）的显隐只看 is-hero-active，且绝不能用 is-nav-docked
+	     去隐藏它（见 paper-header.css 的 body::after 注释与 245b3c28 的教训）。 -->
 	<script is:inline>
 		document.body.classList.add("has-paper-hero");
 		(function () {
