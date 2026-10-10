@@ -61,35 +61,8 @@
 			],
 		},
 
-		website: {
-			label: "网站导航",
-			format: "ts-array",
-			...CONTENT,
-			path: "content/data/website.ts",
-			varName: "websiteData",
-			bom: true,
-			itemLabel: "title",
-			fields: [
-				{ key: "title", label: "名称", type: "string", required: true },
-				{ key: "imgurl", label: "图标", type: "image", placeholder: "图片外链 URL" },
-				{ key: "desc", label: "描述", type: "text" },
-				{ key: "siteurl", label: "网址", type: "string", required: true, autoIconTarget: "imgurl", autoFillIcon: true },
-				{
-					key: "category",
-					label: "分类",
-					type: "select",
-					required: true,
-					options: [
-						{ value: "dev", label: "开发" },
-						{ value: "project", label: "项目" },
-						{ value: "design", label: "设计" },
-						{ value: "ai", label: "AI" },
-						{ value: "tool", label: "工具" },
-						{ value: "resource", label: "资源" },
-					],
-				},
-			],
-		},
+	// ── website（网站导航 / /websites/ 页面）已于 2026-10-10 随页面一并移除 ──
+	// 数据源 content/data/website.ts 保留在内容仓，如需恢复可从 git 历史取回本段。
 
 		timeline: {
 			label: "时间线",
