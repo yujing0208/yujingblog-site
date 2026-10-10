@@ -187,6 +187,7 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 
 	.volume-btn {
 		display: flex;
+		flex: 0 0 auto; /* 图标按钮不可压缩：被压缩后会把整个音量组挤到时间标签上 */
 		align-items: center;
 		justify-content: center;
 		width: 1.5rem;
@@ -212,7 +213,9 @@ function handleVolumeKeyDown(event: KeyboardEvent) {
 		);
 		overflow: hidden;
 		cursor: pointer;
-		flex-shrink: 0;
+		/* 必须允许收缩：侧栏列仅 ~144px，滑块若刚性则 .volume-wrap 的子项会向左溢出、压住 .time-label */
+		flex-shrink: 1;
+		min-width: 2rem;
 		transition: height 150ms ease;
 	}
 
