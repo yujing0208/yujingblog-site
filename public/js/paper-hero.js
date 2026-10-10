@@ -249,11 +249,13 @@
 			}).observe(heroSocialLinks);
 		}
 
-		/* ---------------- 首屏激活态（供 body::before 淡出） ---------------- */
-		// has-paper-hero：标记「本页有 hero」（paper-header.css 的遮罩已改为常显，
-		// 本类现主要供调试与潜在语义使用；PaperHero.astro 内联脚本首帧也会打标）。
-		// is-hero-active：hero 仍在视口内，驱动 paper-theme.css / paper-hero.css
-		// 的首屏纸张底纹淡出（这个用途仍然有效，不能删）。
+		/* ---------------- 首屏激活态（供 body::before 淡出 + 顶部遮罩显隐） ---------------- */
+		// has-paper-hero：标记「本页有 hero」。首屏页由 Layout.astro SSR 预置，
+		// 这里再补一次是幂等的（PaperHero.astro 内联脚本首帧也会打标）。
+		// is-hero-active：hero 仍在视口内，两个消费者：
+		//   ① paper-theme.css / paper-hero.css 的首屏纸张底纹淡出；
+		//   ② paper-header.css 的 body::after 顶部遮罩（hero 在首屏时隐藏，防纸色白条）。
+		// 只按「hero 是否还在视口」判定，不参与「导航是否吸顶」。
 		document.body.classList.add("has-paper-hero");
 		var heroScrollTicking = false;
 		function setHeroActive() {
@@ -261,13 +263,11 @@
 			var bottom = hero.offsetTop + hero.offsetHeight;
 			document.body.classList.toggle("is-hero-active", y < bottom - 80);
 
-			// is-nav-docked：导航栏「吸附到位」标记。
-			// ⚠️ 2026-10-06 最终定稿：顶部遮罩已改为「常显 + z-index:19 < 导航 20」，
-			// 不再需要任何显隐状态机（详见 paper-header.css 的 body::after 注释）。
-			// 本类目前**没有 CSS 消费者**，保留 toggle 仅为兼容可能残留的旧缓存
-			// CSS 与便于调试观察，逻辑已精简。
-			// （历史教训：曾用它做「吸顶后隐藏遮罩」——那是错误方向，因为吸附后
-			//  sticky top:16px 决定导航上方永远有 16px 缝隙，遮罩一退场就永久漏内容。）
+			// is-nav-docked：导航栏「吸附到位」标记 —— **仅供调试，无 CSS 消费者**。
+			// ⚠️ 铁律（两次踩坑）：绝不能拿它去隐藏顶部遮罩 ——
+			//   sticky top:16px 决定导航上方永远有 16px 缝隙，遮罩一退场就永久漏内容
+			//   （245b3c28 这么干过，2026-10-10 首页吸顶后缝隙漏内容即此因）。
+			//   且遮罩 z-index:45 < #top-row:50，本就盖不住导航与纸胶带，无需退场。
 			var header = document.querySelector("#top-row .site-header") ||
 				document.querySelector(".site-header");
 			if (header) {
