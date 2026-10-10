@@ -28,8 +28,21 @@ const avatarFallback = "/images/icon-error.webp";
 	<div class="article-tape-wrap w-full relative">
 		<span class="tape tape--top-right" aria-hidden="true"></span>
 		<article
-			class="article-paper guestbook-page card-base relative z-10 w-full"
+			class="article-paper guestbook-page article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
 		>
+			<!-- 顶图：FlatPaper 留言板同款拼贴图（照搬 homulilly.com/comment/ 的 top-comment.webp）
+			     ⚠️ 必须放 public/assets/**（构建时 public/images 会被 sync-content 整体替换成内容仓的 images） -->
+			<figure class="article-top-img article-top-img--page" aria-label="留言板">
+				<img
+					src="/assets/pages/guestbook-top.webp?v=1"
+					alt=""
+					loading="eager"
+					fetchpriority="high"
+					referrerpolicy="no-referrer"
+					draggable="false"
+				/>
+			</figure>
+
 			<!-- 页面头：label-pill + h1（flatpaper guestbook.ejs article-header） -->
 			<header class="article-header">
 				<span class="label-pill">留言板</span>
