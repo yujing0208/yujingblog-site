@@ -23,13 +23,15 @@ const title = String(aboutPost.data.title || i18n(I18nKey.about));
 	<script>
 		import("../scripts/right-sidebar-layout.js");
 	</script>
-	<!-- 顶图布局与友链页一致（article-paper--with-top-img + article-top-img--page，4:1） -->
+	<!-- 顶图布局与友链页一致（with-top-img + page-top-img）。
+	     关于页是整幅连续场景图，改用宽扁 6:1 变体 --wide-top-img：
+	     4:1 容器会 cover 掉画面上下各一截，再叠加下缘渐隐与页头叠压，实际只剩中间一条。 -->
 	<article
-		class="article-paper article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
+		class="article-paper article-paper--with-top-img article-paper--page-top-img article-paper--wide-top-img card-base relative z-10 w-full"
 	>
 		<figure class="article-top-img article-top-img--page" aria-label={title}>
 			<img
-				src="/assets/pages/about-top.webp?v=1"
+				src="/assets/pages/about-top.webp?v=2"
 				alt=""
 				loading="eager"
 				fetchpriority="high"
