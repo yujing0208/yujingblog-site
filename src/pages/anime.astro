@@ -1,5 +1,6 @@
 ---
 import "../styles/anime.css";
+import "../styles/paper-page.css";
 
 import Comment from "@components/comment/index.astro";
 import {
@@ -7,7 +8,6 @@ import {
 	AnimeGrid,
 	AnimeTabNav,
 } from "@components/features/anime";
-import { PageHeader } from "@components/features/page-header";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 import { siteConfig } from "../config";
@@ -130,17 +130,30 @@ const statusOptionsByCategory = {
 	title={i18n(I18nKey.anime)}
 	description={i18n(I18nKey.animeSubtitle)}
 >
-	<div
-		class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
+	<!-- 顶图布局与友链页一致（article-paper--with-top-img + article-top-img--page，4:1） -->
+	<article
+		class="article-paper anime-page article-paper--with-top-img article-paper--page-top-img card-base relative z-10 w-full"
 	>
-		<div class="card-base anime-card-base z-10 px-9 py-6 relative w-full">
-			<div class="relative w-full mb-8">
-				<PageHeader
-					title={i18n(I18nKey.animeTitle)}
-					subtitle={i18n(I18nKey.animeSubtitle)}
-				/>
+		<figure class="article-top-img article-top-img--page" aria-label={i18n(I18nKey.animeTitle)}>
+			<img
+				src="/assets/pages/anime-top.webp?v=1"
+				alt=""
+				loading="eager"
+				fetchpriority="high"
+				referrerpolicy="no-referrer"
+				draggable="false"
+			/>
+		</figure>
 
-				<!-- Firely-style Filter: 分类标签 + 状态药片 -->
+		<header class="article-header">
+			<span class="label-pill">番剧</span>
+			<h1>{i18n(I18nKey.animeTitle)}</h1>
+			<p class="page-subtitle">{i18n(I18nKey.animeSubtitle)}</p>
+		</header>
+
+		<div class="anime-card-base relative w-full">
+			<div class="relative w-full mb-8">
+			<!-- Firely-style Filter: 分类标签 + 状态药片 -->
 			<div class="bangumi-filter-section">
 				<!-- 分类标签 (TabNav) -->
 				<AnimeTabNav tabs={categoryTabs} activeTab="anime" />
@@ -195,7 +208,7 @@ const statusOptionsByCategory = {
 			<!-- Comments Section -->
 			<Comment path="/anime" />
 		</div>
-	</div>
+	</article>
 
 	<script is:inline define:vars={{ hasRightSidebars }}>
 		(function () {
