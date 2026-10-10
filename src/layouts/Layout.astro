@@ -68,7 +68,6 @@ const EDIT_PAGE = (() => {
 	const p = Astro.url.pathname;
 	if (p === "/projects/" || p.startsWith("/projects")) return "projects";
 	if (p === "/friends/") return "friends";
-	if (p === "/websites/") return "websites";
 	if (p === "/about/") return "about";
 	if (p === "/timeline/") return "timeline";
 	if (p === "/diary/") return "diary";
