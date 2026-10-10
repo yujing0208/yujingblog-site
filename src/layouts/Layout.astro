@@ -34,6 +34,15 @@ interface Props {
 	coverImage?: string;
 	/** 手账布局（PaperHomeLayout 等）：body 加 paper-layout 类，跳过整页缩放 */
 	paper?: boolean;
+	/**
+	 * 本页是否渲染手账首屏（PaperHero）。与 paper 配合使用：
+	 * 首屏页在 <body> 上 SSR 预置 has-paper-hero / is-hero-active，
+	 * 使顶部遮罩（body::after）首帧即隐藏 —— 否则遮罩会先按初始 opacity:1 画出
+	 * 一条纸色白条，待 paper-hero.js 打标后才消失（进/退首页时「闪一次白条」）。
+	 * ⚠️ 分页页（/2/、/3/…）复用同一套 paper 布局但没有 hero，必须传 false，
+	 *    否则遮罩被永久隐藏 → 吸顶后缝隙漏内容。
+	 */
+	hero?: boolean;
 }
 
 let {
@@ -45,6 +54,7 @@ let {
 	postSlug,
 	coverImage,
 	paper = false,
+	hero = false,
 } = Astro.props;
 
 const isPaperLayout = paper;
@@ -261,7 +271,7 @@ const bannerOffset =
   <script defer src="https://cloud.umami.is/script.js" data-website-id="7c89b032-a326-4890-b75f-7a8a8537489d"></script>
 </head>
 	<body
-		class={`min-h-screen${enableBanner ? " enable-banner" : ""}${siteConfig.card?.border ? " enable-card-border" : ""}${isPaperLayout ? " paper-layout" : ""}`}
+		class={`min-h-screen${enableBanner ? " enable-banner" : ""}${siteConfig.card?.border ? " enable-card-border" : ""}${isPaperLayout ? " paper-layout" : ""}${hero ? " has-paper-hero is-hero-active" : ""}`}
 
 		data-note-style="sticky"
 		data-note-icons="on"
